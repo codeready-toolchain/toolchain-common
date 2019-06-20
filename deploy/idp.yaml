@@ -1,0 +1,21 @@
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+  - name: rhd
+    mappingMethod: lookup
+    type: OpenID
+    openID:
+      clientID: toolchain
+      clientSecret:
+        name: rhd-idp-secret
+      claims:
+        preferredUsername:
+        - preferred_username
+        name:
+        - name
+        email:
+        - email
+      issuer: https://sso.prod-preview.openshift.io/auth/realms/toolchain-dev

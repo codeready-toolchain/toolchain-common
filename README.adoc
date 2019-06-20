@@ -2,6 +2,23 @@
 
 This repo is for controllers, libs, scripts, make files, etc to be shared between host and member operators.
 
+== Configuring developers.redhat.com Authentication in OpenShift 4 Cluster
+
+Create a secret with Identity Provider credentials:
+```
+$ oc apply -f deploy/idp_secret.yaml
+```
+Create an Identity Provider:
+```
+$ oc apply -f deploy/idp.yaml
+```
+
+== Creating User
+
+Create a user, identity and user identity mapping:
+```
+$ oc apply -f deploy/user.yaml
+```
 
 == Scripts
 
