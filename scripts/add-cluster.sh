@@ -37,6 +37,7 @@ metadata:
   namespace: ${OPERATOR_NS}
   labels:
     type: ${JOINING_CLUSTER_TYPE}
+    namespace: toolchain-${JOINING_CLUSTER_TYPE}-operator
 spec:
   apiEndpoint: ${API_ENDPOINT}
   caBundle: ${SA_CA_CRT}
