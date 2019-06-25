@@ -127,7 +127,7 @@ func (s *KubeFedClusterService) buildClusterConfig(fedCluster *v1beta1.KubeFedCl
 
 	secretName := fedCluster.Spec.SecretRef.Name
 	if secretName == "" {
-		return nil, errors.Errorf("Cluster %s does not have a secret name", clusterName)
+		return nil, errors.Errorf("cluster %s does not have a secret name", clusterName)
 	}
 	secret := &v1.Secret{}
 	name := types.NamespacedName{Namespace: fedNamespace, Name: secretName}
