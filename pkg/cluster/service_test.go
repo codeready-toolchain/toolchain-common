@@ -117,7 +117,7 @@ func TestAddKubeFedClusterAsHost(t *testing.T) {
 
 func TestAddKubeFedClusterFailsBecauseOfMissingSecret(t *testing.T) {
 	// given
-	defer gock.OffAll()
+	defer gock.All()
 	status := newClusterStatus(common.ClusterReady, corev1.ConditionTrue)
 	kubeFedCluster, _ := newKubeFedCluster("east", "secret", status, labels("", ""))
 	cl := fake.NewFakeClient()
