@@ -32,16 +32,15 @@ type KubeFedClusterService struct {
 // AddKubeFedCluster takes the KubeFedCluster CR object,
 // creates FedCluster with a kube client and stores it in a cache
 func (s *KubeFedClusterService) AddKubeFedCluster(obj interface{}) {
-	cluster, ok := obj.(*v1beta1.KubeFedCluster)
-	if !ok {
-		err := fmt.Errorf("incorrect type of KubeFedCluster: %+v", obj)
+	cluster, err := castToKubeFedCluster(obj)
+	if err != nil {
 		s.Log.Error(err, "cluster not added")
 		return
 	}
 	log := s.enrichLogger(cluster)
 	log.Info("observed a new cluster")
 
-	err := s.addKubeFedCluster(cluster)
+	err = s.addKubeFedCluster(cluster)
 	if err != nil {
 		log.Error(err, "the new cluster was not added")
 	}
@@ -83,9 +82,8 @@ func (s *KubeFedClusterService) addKubeFedCluster(fedCluster *v1beta1.KubeFedClu
 // DeleteKubeFedCluster takes the KubeFedCluster CR object
 // and deletes FedCluster instance that has same name from a cache (if exists)
 func (s *KubeFedClusterService) DeleteKubeFedCluster(obj interface{}) {
-	cluster, ok := obj.(*v1beta1.KubeFedCluster)
-	if !ok {
-		err := fmt.Errorf("incorrect type of KubeFedCluster: %+v", obj)
+	cluster, err := castToKubeFedCluster(obj)
+	if err != nil {
 		s.Log.Error(err, "cluster not deleted")
 		return
 	}
@@ -98,15 +96,15 @@ func (s *KubeFedClusterService) DeleteKubeFedCluster(obj interface{}) {
 // creates FedCluster with a kube client and stores it in a cache.
 // If there cache already contains such an instance, then it is overridden.
 func (s *KubeFedClusterService) UpdateKubeFedCluster(_, newObj interface{}) {
-	newCluster, ok := newObj.(*v1beta1.KubeFedCluster)
-	if !ok {
-		err := fmt.Errorf("incorrect type of new KubeFedCluster: %+v", newObj)
+	newCluster, err := castToKubeFedCluster(newObj)
+	if err != nil {
 		s.Log.Error(err, "cluster not updated")
+		return
 	}
 	log := s.enrichLogger(newCluster)
 	log.Info("observed an updated cluster")
 
-	err := s.addKubeFedCluster(newCluster)
+	err = s.addKubeFedCluster(newCluster)
 	if err != nil {
 		log.Error(err, "the cluster was not updated")
 	}
@@ -151,4 +149,12 @@ func (s *KubeFedClusterService) buildClusterConfig(fedCluster *v1beta1.KubeFedCl
 	clusterConfig.Burst = util.KubeAPIBurst
 
 	return clusterConfig, nil
+}
+
+func castToKubeFedCluster(obj interface{}) (*v1beta1.KubeFedCluster, error) {
+	cluster, ok := obj.(*v1beta1.KubeFedCluster)
+	if !ok {
+		return nil, fmt.Errorf("incorrect type of KubeFedCluster: %+v", obj)
+	}
+	return cluster, nil
 }
