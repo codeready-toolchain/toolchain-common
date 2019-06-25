@@ -9,6 +9,9 @@ import (
 	"testing"
 )
 
+var getFedClusterFuncs = []func(name string) (*FedCluster, bool){
+	clusterCache.getFedCluster, GetFedCluster}
+
 func TestAddCluster(t *testing.T) {
 	// given
 	defer resetClusterCache()
@@ -29,24 +32,30 @@ func TestGetCluster(t *testing.T) {
 	clusterCache.addFedCluster(fedCluster)
 	clusterCache.addFedCluster(newTestFedCluster("cluster", v1.ConditionTrue))
 
-	// when
-	returnedFedCluster, ok := clusterCache.getFedCluster("testCluster")
+	for _, getFedCluster := range getFedClusterFuncs {
 
-	// then
-	assert.True(t, ok)
-	assert.Equal(t, fedCluster, returnedFedCluster)
+		// when
+		returnedFedCluster, ok := getFedCluster("testCluster")
+
+		// then
+		assert.True(t, ok)
+		assert.Equal(t, fedCluster, returnedFedCluster)
+	}
 }
 
 func TestGetClusterWhenIsEmpty(t *testing.T) {
 	// given
 	resetClusterCache()
 
-	// when
-	returnedFedCluster, ok := clusterCache.getFedCluster("testCluster")
+	for _, getFedCluster := range getFedClusterFuncs {
 
-	// then
-	assert.False(t, ok)
-	assert.Nil(t, returnedFedCluster)
+		// when
+		returnedFedCluster, ok := getFedCluster("testCluster")
+
+		// then
+		assert.False(t, ok)
+		assert.Nil(t, returnedFedCluster)
+	}
 }
 
 func TestGetClusterUsingDifferentKey(t *testing.T) {
@@ -54,27 +63,15 @@ func TestGetClusterUsingDifferentKey(t *testing.T) {
 	defer resetClusterCache()
 	clusterCache.addFedCluster(newTestFedCluster("cluster", v1.ConditionTrue))
 
-	// when
-	returnedFedCluster, ok := clusterCache.getFedCluster("testCluster")
+	for _, getFedCluster := range getFedClusterFuncs {
 
-	// then
-	assert.False(t, ok)
-	assert.Nil(t, returnedFedCluster)
-}
+		// when
+		returnedFedCluster, ok := getFedCluster("testCluster")
 
-func TestExportedGetCluster(t *testing.T) {
-	// given
-	defer resetClusterCache()
-	fedCluster := newTestFedCluster("testCluster", v1.ConditionTrue)
-	clusterCache.addFedCluster(fedCluster)
-	clusterCache.addFedCluster(newTestFedCluster("cluster", v1.ConditionTrue))
-
-	// when
-	returnedFedCluster, ok := GetFedCluster("testCluster")
-
-	// then
-	assert.True(t, ok)
-	assert.Equal(t, fedCluster, returnedFedCluster)
+		// then
+		assert.False(t, ok)
+		assert.Nil(t, returnedFedCluster)
+	}
 }
 
 func TestUpdateCluster(t *testing.T) {
