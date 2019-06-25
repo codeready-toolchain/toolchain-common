@@ -85,7 +85,7 @@ func TestAddKubeFedClusterAsMember(t *testing.T) {
 
 func TestAddKubeFedClusterAsHost(t *testing.T) {
 	// given
-	defer gock.OffAll()
+	defer gock.Off()
 	status := newClusterStatus(common.ClusterReady, corev1.ConditionFalse)
 	memberLabels := []map[string]string{
 		labels(cluster.Host, ""),
