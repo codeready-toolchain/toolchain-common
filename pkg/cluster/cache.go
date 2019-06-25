@@ -17,7 +17,7 @@ type kubeFedClusterClients struct {
 type FedCluster struct {
 	// Client is the kube client for the cluster.
 	Client client.Client
-	// Name is a name of the cluster
+	// Name is a name of the cluster. Has to be unique - is used as a key in a map.
 	Name string
 	// Type is a type of the cluster (either host or member)
 	Type Type
