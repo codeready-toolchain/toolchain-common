@@ -52,7 +52,7 @@ func newKubeFedCluster(name, secName string, status v1beta1.KubeFedClusterStatus
 
 func TestAddKubeFedClusterAsMember(t *testing.T) {
 	// given
-	defer gock.OffAll()
+	defer gock.Off()
 	status := newClusterStatus(common.ClusterReady, corev1.ConditionTrue)
 	memberLabels := []map[string]string{
 		labels("", ""),
