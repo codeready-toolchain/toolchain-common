@@ -19,7 +19,7 @@ func TestAddCluster(t *testing.T) {
 
 	// then
 	assert.Len(t, clusterCache.clusters, 1)
-	assert.Equal(t, *fedCluster, *(clusterCache.clusters["testCluster"]))
+	assert.Equal(t, fedCluster, clusterCache.clusters["testCluster"])
 }
 
 func TestGetCluster(t *testing.T) {
@@ -34,7 +34,7 @@ func TestGetCluster(t *testing.T) {
 
 	// then
 	assert.True(t, ok)
-	assert.Equal(t, *fedCluster, *returnedFedCluster)
+	assert.Equal(t, fedCluster, returnedFedCluster)
 }
 
 func TestExportedGetCluster(t *testing.T) {
@@ -49,7 +49,7 @@ func TestExportedGetCluster(t *testing.T) {
 
 	// then
 	assert.True(t, ok)
-	assert.Equal(t, *fedCluster, *returnedFedCluster)
+	assert.Equal(t, fedCluster, returnedFedCluster)
 }
 
 func TestUpdateCluster(t *testing.T) {
@@ -64,7 +64,7 @@ func TestUpdateCluster(t *testing.T) {
 
 	// then
 	assert.Len(t, clusterCache.clusters, 1)
-	assert.Equal(t, *falseCluster, *(clusterCache.clusters["testCluster"]))
+	assert.Equal(t, falseCluster, clusterCache.clusters["testCluster"])
 }
 
 func TestDeleteCluster(t *testing.T) {
@@ -80,7 +80,7 @@ func TestDeleteCluster(t *testing.T) {
 
 	// then
 	assert.Len(t, clusterCache.clusters, 1)
-	assert.Equal(t, *fedCluster, *(clusterCache.clusters["testCluster"]))
+	assert.Equal(t, fedCluster, clusterCache.clusters["testCluster"])
 }
 
 func newTestFedCluster(name string, status v1.ConditionStatus) *FedCluster {
