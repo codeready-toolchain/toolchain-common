@@ -138,7 +138,7 @@ func (s *KubeFedClusterService) buildClusterConfig(fedCluster *v1beta1.KubeFedCl
 
 	token, tokenFound := secret.Data[util.TokenKey]
 	if !tokenFound || len(token) == 0 {
-		return nil, errors.Errorf("The secret for cluster %s is missing a non-empty value for %q", clusterName, util.TokenKey)
+		return nil, errors.Errorf("the secret for cluster %s is missing a non-empty value for %q", clusterName, util.TokenKey)
 	}
 
 	clusterConfig, err := clientcmd.BuildConfigFromFlags(apiEndpoint, "")
