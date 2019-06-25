@@ -179,7 +179,7 @@ func TestUpdateKubeFedCluster(t *testing.T) {
 
 func TestDeleteKubeFedCluster(t *testing.T) {
 	// given
-	defer gock.OffAll()
+	defer gock.Off()
 	status := newClusterStatus(common.ClusterReady, corev1.ConditionTrue)
 	kubeFedCluster, sec := newKubeFedCluster("east", "sec", status, labels("", ""))
 	cl := fake.NewFakeClient(sec)
