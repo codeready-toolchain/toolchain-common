@@ -122,7 +122,7 @@ func (s *KubeFedClusterService) buildClusterConfig(fedCluster *v1beta1.KubeFedCl
 
 	apiEndpoint := fedCluster.Spec.APIEndpoint
 	if apiEndpoint == "" {
-		return nil, errors.Errorf("The api endpoint of cluster %s is empty", clusterName)
+		return nil, errors.Errorf("the api endpoint of cluster %s is empty", clusterName)
 	}
 
 	secretName := fedCluster.Spec.SecretRef.Name
