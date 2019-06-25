@@ -131,7 +131,7 @@ func (s *KubeFedClusterService) buildClusterConfig(fedCluster *v1beta1.KubeFedCl
 	name := types.NamespacedName{Namespace: fedNamespace, Name: secretName}
 	err := s.Client.Get(context.TODO(), name, secret)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to get secret %s for cluster %s", name, clusterName)
 	}
 
 	token, tokenFound := secret.Data[util.TokenKey]
