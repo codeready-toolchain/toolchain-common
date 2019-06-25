@@ -37,6 +37,31 @@ func TestGetCluster(t *testing.T) {
 	assert.Equal(t, fedCluster, returnedFedCluster)
 }
 
+func TestGetClusterWhenIsEmpty(t *testing.T) {
+	// given
+	resetClusterCache()
+
+	// when
+	returnedFedCluster, ok := clusterCache.getFedCluster("testCluster")
+
+	// then
+	assert.False(t, ok)
+	assert.Nil(t, returnedFedCluster)
+}
+
+func TestGetClusterUsingDifferentKey(t *testing.T) {
+	// given
+	defer resetClusterCache()
+	clusterCache.addFedCluster(newTestFedCluster("cluster", v1.ConditionTrue))
+
+	// when
+	returnedFedCluster, ok := clusterCache.getFedCluster("testCluster")
+
+	// then
+	assert.False(t, ok)
+	assert.Nil(t, returnedFedCluster)
+}
+
 func TestExportedGetCluster(t *testing.T) {
 	// given
 	defer resetClusterCache()
