@@ -46,9 +46,23 @@ func (c *kubeFedClusterClients) getFedCluster(name string) (*FedCluster, bool) {
 	return cluster, ok
 }
 
+func (c *kubeFedClusterClients) getFirstFedCluster() (*FedCluster, bool) {
+	c.RLock()
+	defer c.RUnlock()
+	for _, cluster := range c.clusters {
+		return cluster, true
+	}
+	return nil, false
+}
+
 // GetFedCluster returns a kube client for the cluster (with the given name) and info if the client exists
 func GetFedCluster(name string) (*FedCluster, bool) {
 	return clusterCache.getFedCluster(name)
+}
+
+// GetFirstFedCluster returns a first kube client from the cache of clusters and info if such a client exists
+func GetFirstFedCluster() (*FedCluster, bool) {
+	return clusterCache.getFirstFedCluster()
 }
 
 // Type is a cluster type (either host or member)

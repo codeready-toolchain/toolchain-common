@@ -12,6 +12,9 @@ import (
 var getFedClusterFuncs = []func(name string) (*FedCluster, bool){
 	clusterCache.getFedCluster, GetFedCluster}
 
+var getFirstFedClusterFuncs = []func() (*FedCluster, bool){
+	clusterCache.getFirstFedCluster, GetFirstFedCluster}
+
 func TestAddCluster(t *testing.T) {
 	// given
 	defer resetClusterCache()
@@ -43,6 +46,23 @@ func TestGetCluster(t *testing.T) {
 	}
 }
 
+func TestGetFirstCluster(t *testing.T) {
+	// given
+	defer resetClusterCache()
+	fedCluster := newTestFedCluster("testCluster", v1.ConditionTrue)
+	clusterCache.addFedCluster(fedCluster)
+
+	for _, getFirstFedCluster := range getFirstFedClusterFuncs {
+
+		// when
+		returnedFedCluster, ok := getFirstFedCluster()
+
+		// then
+		assert.True(t, ok)
+		assert.Equal(t, fedCluster, returnedFedCluster)
+	}
+}
+
 func TestGetClusterWhenIsEmpty(t *testing.T) {
 	// given
 	resetClusterCache()
@@ -51,6 +71,21 @@ func TestGetClusterWhenIsEmpty(t *testing.T) {
 
 		// when
 		returnedFedCluster, ok := getFedCluster("testCluster")
+
+		// then
+		assert.False(t, ok)
+		assert.Nil(t, returnedFedCluster)
+	}
+}
+
+func TestGetFirstClusterWhenIsEmpty(t *testing.T) {
+	// given
+	resetClusterCache()
+
+	for _, getFirstFedCluster := range getFirstFedClusterFuncs {
+
+		// when
+		returnedFedCluster, ok := getFirstFedCluster()
 
 		// then
 		assert.False(t, ok)
