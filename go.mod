@@ -1,4 +1,4 @@
-module github.com/codeready-toolchain/toolchain
+module github.com/codeready-toolchain/toolchain-common
 
 require (
 	github.com/appscode/jsonpatch v0.0.0-20190108182946-7c0e3b262f30 // indirect
