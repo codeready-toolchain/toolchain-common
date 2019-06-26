@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/codeready-toolchain/toolchain/pkg/cluster"
+	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"

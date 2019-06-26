@@ -1,7 +1,7 @@
 package cluster_test
 
 import (
-	"github.com/codeready-toolchain/toolchain/pkg/cluster"
+	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
