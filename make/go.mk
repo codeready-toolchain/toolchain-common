@@ -3,8 +3,15 @@ GO_PACKAGE_ORG_NAME ?= $(shell basename $$(dirname $$PWD))
 GO_PACKAGE_REPO_NAME ?= $(shell basename $$PWD)
 GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
 
+# enable Go modules
 GO111MODULE?=on
 export GO111MODULE
+
+.PHONY: build
+## Build
+build: $(shell find . -path ./vendor -prune -o -name '*.go' -print)
+	$(Q)CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
+	    go build ./...
 
 .PHONY: vendor
 vendor:
