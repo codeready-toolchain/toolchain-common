@@ -1,0 +1,39 @@
+FROM centos:7 as build-tools
+
+LABEL maintainer "Devtools <devtools@redhat.com>"
+LABEL author "Devtools <devtools@redhat.com>"
+
+ENV LANG=en_US.utf8 \
+    GOPATH=/tmp/go \
+    GOCACHE=/tmp/.cache \
+    PATH=$PATH:$GOPATH/bin \
+    GIT_COMMITTER_NAME=devtools \
+    GIT_COMMITTER_EMAIL=devtools@redhat.com \
+    OPERATOR_SDK_VERSION=v0.8.1
+
+ARG GO_PACKAGE_PATH=github.com/codeready-toolchain/toolchain-common
+
+RUN yum install epel-release -y \
+    && yum install --enablerepo=centosplus install -y --quiet \
+    findutils \
+    git \
+    golang \
+    make \
+    procps-ng \
+    tar \
+    wget \
+    which \
+    bc \
+    kubectl \
+    yamllint \
+    python36-virtualenv \
+    && yum clean all
+
+# download, verify and install openshift client tools (oc and kubectl)
+WORKDIR /tmp
+
+RUN mkdir -p ${GOPATH}/src/${GO_PACKAGE_PATH}/
+
+WORKDIR ${GOPATH}/src/${GO_PACKAGE_PATH}
+
+ENTRYPOINT [ "/bin/bash" ]
