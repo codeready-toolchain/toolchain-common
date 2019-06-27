@@ -25,10 +25,7 @@ $ oc apply -f deploy/user.yaml
 === add-cluster.sh
 
 The CodeReady Toolchain architecture contains two types of clusters `host` and `member`.
-To connect these two clusters together it is necessary to run a script link:scripts/add-cluster.sh[] that takes two arguments:
-
-1. type of the cluster to be added
-2. name of the cluster to be added
+To connect these two clusters together it is necessary to run a script link:scripts/add-cluster.sh[] that takes one argument - type of the cluster to be added.
 
 The script is working with Minishift profiles and expects that there are two clusters (profiles) called `host` and `member`.
 To be able to run the script, you need to have both clusters prepared, which means:
@@ -36,11 +33,12 @@ To be able to run the script, you need to have both clusters prepared, which mea
 - created CRDs
 - created ServiceAccount with ClusterRole/ClusterRoleBinding
 
-When the script is executed with parameters `add-cluster.sh member member-cluster` then it does these steps:
+When the script is executed with parameters `add-cluster.sh member` then it does these steps:
 
 1. goes to the `member` profile
 2. takes a secret of the SA (from the `member`)
-3. takes API endpoint of the `member` cluster from Kube config
+3. takes API endpoint and cluster name of the `member` cluster from Kube config
 4. goes to `host` profile
+5. takes cluster name of the `host` cluster from Kube config
 5. creates a secret with the SA token taken from the `member`
 6. creates `KubeFedCluster` CR representing the added `member`

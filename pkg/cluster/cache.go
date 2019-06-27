@@ -25,6 +25,11 @@ type FedCluster struct {
 	OperatorNamespace string
 	// ClusterStatus is the cluster result as of the last health check probe.
 	ClusterStatus *v1beta1.KubeFedClusterStatus
+	// LocalName keeps the name of the cluster the KubeFedCluster resource is created in
+	// eg. if this KubeFedCluster identifies a Host cluster (and thus is created in Member)
+	// then the LocalName has a name of the member - it has to be same name as the name
+	// that is used for identifying the member in a Host cluster
+	LocalName string
 }
 
 func (c *kubeFedClusterClients) addFedCluster(cluster *FedCluster) {

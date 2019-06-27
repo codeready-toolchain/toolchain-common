@@ -15,6 +15,11 @@ import (
 	"testing"
 )
 
+const (
+	nameHost   = "dsaas"
+	nameMember = "east"
+)
+
 func newKubeFedCluster(name, secName string, status v1beta1.KubeFedClusterStatus, labels map[string]string) (*v1beta1.KubeFedCluster, *corev1.Secret) {
 	logf.SetLogger(zap.Logger())
 	gock.New("http://cluster.com").
@@ -55,9 +60,9 @@ func TestAddKubeFedClusterAsMember(t *testing.T) {
 	defer gock.Off()
 	status := newClusterStatus(common.ClusterReady, corev1.ConditionTrue)
 	memberLabels := []map[string]string{
-		labels("", ""),
-		labels(cluster.Member, ""),
-		labels(cluster.Member, "member-ns")}
+		labels("", "", nameHost),
+		labels(cluster.Member, "", nameHost),
+		labels(cluster.Member, "member-ns", nameHost),}
 	for _, labels := range memberLabels {
 
 		t.Run("add member KubeFedCluster", func(t *testing.T) {
@@ -79,6 +84,7 @@ func TestAddKubeFedClusterAsMember(t *testing.T) {
 				assert.Equal(t, labels["namespace"], fedCluster.OperatorNamespace)
 			}
 			assert.Equal(t, status, *fedCluster.ClusterStatus)
+			assert.Equal(t, nameHost, fedCluster.LocalName)
 		})
 	}
 }
@@ -88,8 +94,8 @@ func TestAddKubeFedClusterAsHost(t *testing.T) {
 	defer gock.Off()
 	status := newClusterStatus(common.ClusterReady, corev1.ConditionFalse)
 	memberLabels := []map[string]string{
-		labels(cluster.Host, ""),
-		labels(cluster.Host, "host-ns")}
+		labels(cluster.Host, "", nameMember),
+		labels(cluster.Host, "host-ns", nameMember)}
 	for _, labels := range memberLabels {
 
 		t.Run("add host KubeFedCluster", func(t *testing.T) {
@@ -111,6 +117,7 @@ func TestAddKubeFedClusterAsHost(t *testing.T) {
 				assert.Equal(t, labels["namespace"], fedCluster.OperatorNamespace)
 			}
 			assert.Equal(t, status, *fedCluster.ClusterStatus)
+			assert.Equal(t, nameMember, fedCluster.LocalName)
 		})
 	}
 }
@@ -119,7 +126,7 @@ func TestAddKubeFedClusterFailsBecauseOfMissingSecret(t *testing.T) {
 	// given
 	defer gock.Off()
 	status := newClusterStatus(common.ClusterReady, corev1.ConditionTrue)
-	kubeFedCluster, _ := newKubeFedCluster("east", "secret", status, labels("", ""))
+	kubeFedCluster, _ := newKubeFedCluster("east", "secret", status, labels("", "", nameHost))
 	cl := fake.NewFakeClient()
 	service := cluster.KubeFedClusterService{Log: logf.Log, Client: cl}
 
@@ -136,7 +143,8 @@ func TestAddKubeFedClusterFailsBecauseOfEmptySecret(t *testing.T) {
 	// given
 	defer gock.Off()
 	status := newClusterStatus(common.ClusterReady, corev1.ConditionTrue)
-	kubeFedCluster, _ := newKubeFedCluster("east", "secret", status, labels("", ""))
+	kubeFedCluster, _ := newKubeFedCluster("east", "secret", status,
+		labels("", "", nameHost))
 	secret := &corev1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "secret",
@@ -158,9 +166,11 @@ func TestUpdateKubeFedCluster(t *testing.T) {
 	// given
 	defer gock.Off()
 	statusTrue := newClusterStatus(common.ClusterReady, corev1.ConditionTrue)
-	kubeFedCluster1, sec1 := newKubeFedCluster("east", "secret1", statusTrue, labels("", ""))
+	kubeFedCluster1, sec1 := newKubeFedCluster("east", "secret1", statusTrue,
+		labels("", "", nameMember))
 	statusFalse := newClusterStatus(common.ClusterReady, corev1.ConditionFalse)
-	kubeFedCluster2, sec2 := newKubeFedCluster("east", "secret2", statusFalse, labels(cluster.Host, ""))
+	kubeFedCluster2, sec2 := newKubeFedCluster("east", "secret2", statusFalse,
+		labels(cluster.Host, "", nameMember))
 	cl := fake.NewFakeClient(sec1, sec2)
 	service := cluster.KubeFedClusterService{Log: logf.Log, Client: cl}
 	defer service.DeleteKubeFedCluster(kubeFedCluster2)
@@ -175,13 +185,15 @@ func TestUpdateKubeFedCluster(t *testing.T) {
 	assert.Equal(t, cluster.Host, fedCluster.Type)
 	assert.Equal(t, "toolchain-host-operator", fedCluster.OperatorNamespace)
 	assert.Equal(t, statusFalse, *fedCluster.ClusterStatus)
+	assert.Equal(t, nameMember, fedCluster.LocalName)
 }
 
 func TestDeleteKubeFedCluster(t *testing.T) {
 	// given
 	defer gock.Off()
 	status := newClusterStatus(common.ClusterReady, corev1.ConditionTrue)
-	kubeFedCluster, sec := newKubeFedCluster("east", "sec", status, labels("", ""))
+	kubeFedCluster, sec := newKubeFedCluster("east", "sec", status,
+		labels("", "", nameHost))
 	cl := fake.NewFakeClient(sec)
 	service := cluster.KubeFedClusterService{Log: logf.Log, Client: cl}
 	service.AddKubeFedCluster(kubeFedCluster)
@@ -204,7 +216,7 @@ func newClusterStatus(conType common.ClusterConditionType, conStatus corev1.Cond
 	}
 }
 
-func labels(clType cluster.Type, ns string) map[string]string {
+func labels(clType cluster.Type, ns, localName string) map[string]string {
 	labels := map[string]string{}
 	if clType != "" {
 		labels["type"] = string(clType)
@@ -212,5 +224,6 @@ func labels(clType cluster.Type, ns string) map[string]string {
 	if ns != "" {
 		labels["namespace"] = ns
 	}
+	labels["localName"] = localName
 	return labels
 }
