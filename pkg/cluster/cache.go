@@ -46,13 +46,16 @@ func (c *kubeFedClusterClients) getFedCluster(name string) (*FedCluster, bool) {
 	return cluster, ok
 }
 
-func (c *kubeFedClusterClients) getFirstFedCluster() (*FedCluster, bool) {
+func (c *kubeFedClusterClients) getFedClustersByType(clusterType Type) []*FedCluster {
 	c.RLock()
 	defer c.RUnlock()
+	clusters := make([]*FedCluster, 0, len(c.clusters))
 	for _, cluster := range c.clusters {
-		return cluster, true
+		if cluster.Type == clusterType {
+			clusters = append(clusters, cluster)
+		}
 	}
-	return nil, false
+	return clusters
 }
 
 // GetFedCluster returns a kube client for the cluster (with the given name) and info if the client exists
@@ -60,9 +63,19 @@ func GetFedCluster(name string) (*FedCluster, bool) {
 	return clusterCache.getFedCluster(name)
 }
 
-// GetFirstFedCluster returns a first kube client from the cache of clusters and info if such a client exists
-func GetFirstFedCluster() (*FedCluster, bool) {
-	return clusterCache.getFirstFedCluster()
+// GetHostCluster returns the kube client for the host cluster from the cache of the clusters
+// and info if such a client exists
+func GetHostCluster() (*FedCluster, bool) {
+	clusters := clusterCache.getFedClustersByType(Host)
+	if len(clusters) == 0 {
+		return nil, false
+	}
+	return clusters[0], true
+}
+
+// GetMemberClusters returns the kube clients for the host clusters from the cache of the clusters
+func GetMemberClusters() []*FedCluster {
+	return clusterCache.getFedClustersByType(Member)
 }
 
 // Type is a cluster type (either host or member)
