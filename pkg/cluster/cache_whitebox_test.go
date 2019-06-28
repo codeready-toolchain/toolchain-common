@@ -1,24 +1,22 @@
 package cluster
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/kubefed/pkg/apis/core/common"
 	"sigs.k8s.io/kubefed/pkg/apis/core/v1beta1"
-	"testing"
 )
 
 var getFedClusterFuncs = []func(name string) (*FedCluster, bool){
 	clusterCache.getFedCluster, GetFedCluster}
 
-var getFirstFedClusterFuncs = []func() (*FedCluster, bool){
-	clusterCache.getFirstFedCluster, GetFirstFedCluster}
-
 func TestAddCluster(t *testing.T) {
 	// given
 	defer resetClusterCache()
-	fedCluster := newTestFedCluster("testCluster", v1.ConditionTrue)
+	fedCluster := newTestFedCluster("testCluster", Member, v1.ConditionTrue)
 
 	// when
 	clusterCache.addFedCluster(fedCluster)
@@ -31,31 +29,14 @@ func TestAddCluster(t *testing.T) {
 func TestGetCluster(t *testing.T) {
 	// given
 	defer resetClusterCache()
-	fedCluster := newTestFedCluster("testCluster", v1.ConditionTrue)
+	fedCluster := newTestFedCluster("testCluster", Member, v1.ConditionTrue)
 	clusterCache.addFedCluster(fedCluster)
-	clusterCache.addFedCluster(newTestFedCluster("cluster", v1.ConditionTrue))
+	clusterCache.addFedCluster(newTestFedCluster("cluster", Member, v1.ConditionTrue))
 
 	for _, getFedCluster := range getFedClusterFuncs {
 
 		// when
 		returnedFedCluster, ok := getFedCluster("testCluster")
-
-		// then
-		assert.True(t, ok)
-		assert.Equal(t, fedCluster, returnedFedCluster)
-	}
-}
-
-func TestGetFirstCluster(t *testing.T) {
-	// given
-	defer resetClusterCache()
-	fedCluster := newTestFedCluster("testCluster", v1.ConditionTrue)
-	clusterCache.addFedCluster(fedCluster)
-
-	for _, getFirstFedCluster := range getFirstFedClusterFuncs {
-
-		// when
-		returnedFedCluster, ok := getFirstFedCluster()
 
 		// then
 		assert.True(t, ok)
@@ -78,25 +59,127 @@ func TestGetClusterWhenIsEmpty(t *testing.T) {
 	}
 }
 
-func TestGetFirstClusterWhenIsEmpty(t *testing.T) {
-	// given
-	resetClusterCache()
+func TestGetClustersByType(t *testing.T) {
+	t.Run("get clusters by type", func(t *testing.T) {
 
-	for _, getFirstFedCluster := range getFirstFedClusterFuncs {
+		t.Run("not found", func(t *testing.T) {
+			defer resetClusterCache()
+			// given
+			// empty cache
 
-		// when
-		returnedFedCluster, ok := getFirstFedCluster()
+			//when
+			clusters := clusterCache.getFedClustersByType(Member)
 
-		// then
-		assert.False(t, ok)
-		assert.Nil(t, returnedFedCluster)
-	}
+			//then
+			assert.Empty(t, clusters)
+
+			//when
+			clusters = clusterCache.getFedClustersByType(Host)
+
+			//then
+			assert.Empty(t, clusters)
+		})
+
+		t.Run("found", func(t *testing.T) {
+			defer resetClusterCache()
+			// given
+			// Two members, one host
+			member1 := newTestFedCluster("cluster-1", Member, v1.ConditionTrue)
+			clusterCache.addFedCluster(member1)
+			member2 := newTestFedCluster("cluster-2", Member, v1.ConditionTrue)
+			clusterCache.addFedCluster(member2)
+			host := newTestFedCluster("cluster-3", Host, v1.ConditionTrue)
+			clusterCache.addFedCluster(host)
+
+			//when
+			clusters := clusterCache.getFedClustersByType(Member)
+
+			//then
+			assert.Len(t, clusters, 2)
+			assert.Contains(t, clusters, member1)
+			assert.Contains(t, clusters, member2)
+
+			//when
+			clusters = clusterCache.getFedClustersByType(Host)
+
+			//then
+			assert.Len(t, clusters, 1)
+			assert.Contains(t, clusters, host)
+		})
+	})
+
+	t.Run("get member clusters", func(t *testing.T) {
+		defer resetClusterCache()
+
+		// noise
+		host := newTestFedCluster("cluster-host", Host, v1.ConditionTrue)
+		clusterCache.addFedCluster(host)
+
+		t.Run("not found", func(t *testing.T) {
+			// given
+			// no members
+
+			//when
+			clusters := GetMemberClusters()
+
+			//then
+			assert.Empty(t, clusters)
+		})
+
+		t.Run("found", func(t *testing.T) {
+			// given
+			member1 := newTestFedCluster("cluster-1", Member, v1.ConditionTrue)
+			clusterCache.addFedCluster(member1)
+			member2 := newTestFedCluster("cluster-2", Member, v1.ConditionTrue)
+			clusterCache.addFedCluster(member2)
+
+			//when
+			clusters := GetMemberClusters()
+
+			//then
+			assert.Len(t, clusters, 2)
+			assert.Contains(t, clusters, member1)
+			assert.Contains(t, clusters, member2)
+		})
+	})
+
+	t.Run("get host cluster", func(t *testing.T) {
+		defer resetClusterCache()
+
+		// noise
+		member1 := newTestFedCluster("cluster-member-1", Member, v1.ConditionTrue)
+		clusterCache.addFedCluster(member1)
+
+		t.Run("not found", func(t *testing.T) {
+			// given
+			// no host
+
+			//when
+			_, ok := GetHostCluster()
+
+			//then
+			assert.False(t, ok)
+		})
+
+		t.Run("found", func(t *testing.T) {
+			// given
+			host := newTestFedCluster("cluster-host", Host, v1.ConditionTrue)
+			clusterCache.addFedCluster(host)
+
+			//when
+			cluster, ok := GetHostCluster()
+
+			//then
+			assert.True(t, ok)
+			assert.Equal(t, host, cluster)
+		})
+	})
 }
 
 func TestGetClusterUsingDifferentKey(t *testing.T) {
 	// given
 	defer resetClusterCache()
-	clusterCache.addFedCluster(newTestFedCluster("cluster", v1.ConditionTrue))
+	clusterCache.addFedCluster(newTestFedCluster("cluster", Member, v1.ConditionTrue))
 
 	for _, getFedCluster := range getFedClusterFuncs {
 
@@ -112,8 +195,8 @@ func TestGetClusterUsingDifferentKey(t *testing.T) {
 func TestUpdateCluster(t *testing.T) {
 	// given
 	defer resetClusterCache()
-	trueCluster := newTestFedCluster("testCluster", v1.ConditionTrue)
-	falseCluster := newTestFedCluster("testCluster", v1.ConditionFalse)
+	trueCluster := newTestFedCluster("testCluster", Member, v1.ConditionTrue)
+	falseCluster := newTestFedCluster("testCluster", Member, v1.ConditionFalse)
 	clusterCache.addFedCluster(trueCluster)
 
 	// when
@@ -127,9 +210,9 @@ func TestUpdateCluster(t *testing.T) {
 func TestDeleteCluster(t *testing.T) {
 	// given
 	defer resetClusterCache()
-	fedCluster := newTestFedCluster("testCluster", v1.ConditionTrue)
+	fedCluster := newTestFedCluster("testCluster", Member, v1.ConditionTrue)
 	clusterCache.addFedCluster(fedCluster)
-	clusterCache.addFedCluster(newTestFedCluster("cluster", v1.ConditionTrue))
+	clusterCache.addFedCluster(newTestFedCluster("cluster", Member, v1.ConditionTrue))
 	assert.Len(t, clusterCache.clusters, 2)
 
 	// when
@@ -140,13 +223,13 @@ func TestDeleteCluster(t *testing.T) {
 	assert.Equal(t, fedCluster, clusterCache.clusters["testCluster"])
 }
 
-func newTestFedCluster(name string, status v1.ConditionStatus) *FedCluster {
+func newTestFedCluster(name string, clusterType Type, status v1.ConditionStatus) *FedCluster {
 	cl := fake.NewFakeClient()
 	fedCluster := &FedCluster{
 		Name:              name,
 		Client:            cl,
 		OperatorNamespace: name + "Namespace",
-		Type:              Member,
+		Type:              clusterType,
 		ClusterStatus: &v1beta1.KubeFedClusterStatus{
 			Conditions: []v1beta1.ClusterCondition{{
 				Type:   common.ClusterReady,
