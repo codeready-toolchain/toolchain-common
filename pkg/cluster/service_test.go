@@ -62,7 +62,7 @@ func TestAddKubeFedClusterAsMember(t *testing.T) {
 	memberLabels := []map[string]string{
 		labels("", "", nameHost),
 		labels(cluster.Member, "", nameHost),
-		labels(cluster.Member, "member-ns", nameHost),}
+		labels(cluster.Member, "member-ns", nameHost)}
 	for _, labels := range memberLabels {
 
 		t.Run("add member KubeFedCluster", func(t *testing.T) {
@@ -84,7 +84,7 @@ func TestAddKubeFedClusterAsMember(t *testing.T) {
 				assert.Equal(t, labels["namespace"], fedCluster.OperatorNamespace)
 			}
 			assert.Equal(t, status, *fedCluster.ClusterStatus)
-			assert.Equal(t, nameHost, fedCluster.LocalName)
+			assert.Equal(t, nameHost, fedCluster.OwnerClusterName)
 		})
 	}
 }
@@ -117,7 +117,7 @@ func TestAddKubeFedClusterAsHost(t *testing.T) {
 				assert.Equal(t, labels["namespace"], fedCluster.OperatorNamespace)
 			}
 			assert.Equal(t, status, *fedCluster.ClusterStatus)
-			assert.Equal(t, nameMember, fedCluster.LocalName)
+			assert.Equal(t, nameMember, fedCluster.OwnerClusterName)
 		})
 	}
 }
@@ -185,7 +185,7 @@ func TestUpdateKubeFedCluster(t *testing.T) {
 	assert.Equal(t, cluster.Host, fedCluster.Type)
 	assert.Equal(t, "toolchain-host-operator", fedCluster.OperatorNamespace)
 	assert.Equal(t, statusFalse, *fedCluster.ClusterStatus)
-	assert.Equal(t, nameMember, fedCluster.LocalName)
+	assert.Equal(t, nameMember, fedCluster.OwnerClusterName)
 }
 
 func TestDeleteKubeFedCluster(t *testing.T) {
@@ -216,7 +216,7 @@ func newClusterStatus(conType common.ClusterConditionType, conStatus corev1.Cond
 	}
 }
 
-func labels(clType cluster.Type, ns, localName string) map[string]string {
+func labels(clType cluster.Type, ns, ownerClusterName string) map[string]string {
 	labels := map[string]string{}
 	if clType != "" {
 		labels["type"] = string(clType)
@@ -224,6 +224,6 @@ func labels(clType cluster.Type, ns, localName string) map[string]string {
 	if ns != "" {
 		labels["namespace"] = ns
 	}
-	labels["localName"] = localName
+	labels["ownerClusterName"] = ownerClusterName
 	return labels
 }

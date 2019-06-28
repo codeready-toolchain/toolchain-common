@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	labelType      = "type"
-	labelNamespace = "namespace"
-	labelLocalName = "localName"
+	labelType             = "type"
+	labelNamespace        = "namespace"
+	labelOwnerClusterName = "ownerClusterName"
 
 	defaultHostOperatorNamespace   = "toolchain-host-operator"
 	defaultMemberOperatorNamespace = "toolchain-member-operator"
@@ -64,7 +64,7 @@ func (s *KubeFedClusterService) addKubeFedCluster(fedCluster *v1beta1.KubeFedClu
 		ClusterStatus:     &fedCluster.Status,
 		Type:              Type(fedCluster.Labels[labelType]),
 		OperatorNamespace: fedCluster.Labels[labelNamespace],
-		LocalName:         fedCluster.Labels[labelLocalName],
+		OwnerClusterName:  fedCluster.Labels[labelOwnerClusterName],
 	}
 	if cluster.Type == "" {
 		cluster.Type = Member

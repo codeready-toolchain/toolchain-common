@@ -39,7 +39,7 @@ metadata:
   labels:
     type: ${JOINING_CLUSTER_TYPE}
     namespace: toolchain-${JOINING_CLUSTER_TYPE}-operator
-    localName: ${CLUSTER_JOIN_TO}-${CLUSTER_JOIN_TO_NAME}
+    ownerClusterName: ${CLUSTER_JOIN_TO}-${CLUSTER_JOIN_TO_NAME}
 spec:
   apiEndpoint: ${API_ENDPOINT}
   caBundle: ${SA_CA_CRT}
