@@ -1,5 +1,9 @@
 = CodeReady Toolchain
 
+image:https://goreportcard.com/badge/github.com/codeready-toolchain/toolchain-common[Go Report Card, link="https://goreportcard.com/report/github.com/codeready-toolchain/toolchain-common"]
+image:https://godoc.org/github.com/codeready-toolchain/toolchain-common?status.png[GoDoc,link="https://godoc.org/github.com/codeready-toolchain/toolchain-common"]
+image:https://codecov.io/gh/codeready-toolchain/toolchain-common/branch/master/graph/badge.svg[Codecov.io,link="https://codecov.io/gh/codeready-toolchain/toolchain-common"]
+
 This repo is for controllers, libs, scripts, make files, etc to be shared between host and member operators.
 
 == Configuring developers.redhat.com Authentication in OpenShift 4 Cluster
