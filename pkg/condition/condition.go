@@ -9,7 +9,6 @@ import (
 // with the same type in the current condition array then the condition is updated in the result slice.
 // If the condition is not changed then the same unmodified slice is returned.
 // Also returns a bool flag which indicates if the conditions where updated/added
-// TODO: move to toolchain-common
 func AddOrUpdateStatusConditions(conditions []toolchainv1alpha1.Condition, newConditions ...toolchainv1alpha1.Condition) ([]toolchainv1alpha1.Condition, bool) {
 	var atLeastOneUpdated bool
 	var updated bool
@@ -21,7 +20,6 @@ func AddOrUpdateStatusConditions(conditions []toolchainv1alpha1.Condition, newCo
 	return conditions, atLeastOneUpdated
 }
 
-// TODO: move to toolchain-common
 func addOrUpdateStatusCondition(conditions []toolchainv1alpha1.Condition, newCondition toolchainv1alpha1.Condition) ([]toolchainv1alpha1.Condition, bool) {
 	newCondition.LastTransitionTime = metav1.Now()
 
