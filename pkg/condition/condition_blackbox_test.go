@@ -7,7 +7,7 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
-	"github.com/stretchr/testify/require"
+	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 
 	"github.com/stretchr/testify/assert"
 	apiv1 "k8s.io/api/core/v1"
@@ -31,7 +31,7 @@ func TestAddOrUpdateStatusConditions(t *testing.T) {
 		result, updated := condition.AddOrUpdateStatusConditions(existingConditions(0), newConds...)
 		// then
 		assert.True(t, updated)
-		assertConditions(t, result, newConds...)
+		test.AssertConditionsMatch(t, result, newConds...)
 	})
 
 	t.Run("add new conditions", func(t *testing.T) {
@@ -42,7 +42,7 @@ func TestAddOrUpdateStatusConditions(t *testing.T) {
 		result, updated := condition.AddOrUpdateStatusConditions(current, newConds...)
 		// then
 		assert.True(t, updated)
-		assertConditions(t, result, append(current, newConds...)...)
+		test.AssertConditionsMatch(t, result, append(current, newConds...)...)
 	})
 
 	t.Run("update conditions", func(t *testing.T) {
@@ -83,7 +83,7 @@ func TestAddOrUpdateStatusConditions(t *testing.T) {
 		// then
 		assert.True(t, updated)
 		// 1st and the 5th are from the current condition slice and 2-3 are from the new one
-		assertConditions(t, result, []toolchainv1alpha1.Condition{current[0], newConds[0], newConds[1], newConds[2], current[4]}...)
+		test.AssertConditionsMatch(t, result, []toolchainv1alpha1.Condition{current[0], newConds[0], newConds[1], newConds[2], current[4]}...)
 		// Check the LastTransitionTime. Should be changed in 3rd only where we updated the status.
 		for i, c := range current {
 			if i != 2 {
@@ -118,19 +118,6 @@ func conditions(size int, prefix string) []toolchainv1alpha1.Condition {
 		}
 	}
 	return conditions
-}
-
-// assertConditions compares two slices of conditions. We can't use assert.Equal for the slices itself
-// because the LastTransitionTime of the actual conditions can be modified but the conditions
-// still should be treated as equal
-func assertConditions(t *testing.T, actual []toolchainv1alpha1.Condition, expected ...toolchainv1alpha1.Condition) {
-	require.Equal(t, len(expected), len(actual))
-	for i, c := range actual {
-		assert.Equal(t, expected[i].Type, c.Type)
-		assert.Equal(t, expected[i].Status, c.Status)
-		assert.Equal(t, expected[i].Reason, c.Reason)
-		assert.Equal(t, expected[i].Message, c.Message)
-	}
 }
 
 func reverseStatus(status apiv1.ConditionStatus) apiv1.ConditionStatus {
