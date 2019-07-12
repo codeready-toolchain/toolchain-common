@@ -46,6 +46,11 @@ func ConditionsMatch(actual []toolchainv1alpha1.Condition, expected ...toolchain
 			return false
 		}
 	}
+	for _, c := range actual {
+		if !ContainsCondition(expected, c) {
+			return false
+		}
+	}
 	return true
 }
 
