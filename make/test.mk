@@ -40,4 +40,5 @@ upload-codecov-report:
 		-P $(PULL_NUMBER)  \
 		-b $(BUILD_ID) \
 		-Z
+	exit 1
 
