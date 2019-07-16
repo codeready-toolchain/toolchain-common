@@ -24,5 +24,16 @@ test-with-coverage:
 # Uploads the test coverage reports to codecov.io. 
 # DO NOT USE LOCALLY: must only be called by OpenShift CI when processing new PR and when a PR is merged! 
 upload-codecov-report: 
-	# Upload coverage to codecov.io
-	bash <(curl -s https://codecov.io/bash) -f $(COV_DIR)/coverage.txt -t 543cc327-510b-4e3e-9574-2c9cba1f2bc7
+	@echo "uploading test coverage report..."
+	# Upload coverage to codecov.io. Since we don't run on a supported CI platform (Jenkins, Travis-ci, etc.), 
+	# we need to provide the PR metadata explicitely using env vars used coming from https://github.com/openshift/test-infra/blob/master/prow/jobs.md#job-environment-variables
+	# 
+	# Also: not using the `-F unittests` flag for now as it's temporarily disabled in the codecov UI 
+	# (see https://docs.codecov.io/docs/flags#section-flags-in-the-codecov-ui)
+	bash <(curl -s https://codecov.io/bash) \
+		-t 543cc327-510b-4e3e-9574-2c9cba1f2bc7 \
+		-f $(COV_DIR)/coverage.txt \
+		-C $(PULL_PULL_SHA) \
+		-r $(REPO_OWNER)/$(REPO_NAME) \
+		-P $(PULL_NUMBER)
+
