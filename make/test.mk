@@ -32,6 +32,7 @@ upload-codecov-report:
 	# 
 	# Also: not using the `-F unittests` flag for now as it's temporarily disabled in the codecov UI 
 	# (see https://docs.codecov.io/docs/flags#section-flags-in-the-codecov-ui)
+	echo "JOB_SPEC=$(JOB_SPEC)"s
 	bash <(curl -s https://codecov.io/bash) \
 		-t $(CODECOV_TOKEN) \
 		-f $(COV_DIR)/coverage.txt \
