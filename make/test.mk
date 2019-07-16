@@ -30,10 +30,13 @@ upload-codecov-report:
 	# 
 	# Also: not using the `-F unittests` flag for now as it's temporarily disabled in the codecov UI 
 	# (see https://docs.codecov.io/docs/flags#section-flags-in-the-codecov-ui)
+	BRANCH := $(shell git branch | grep \* | cut -d ' ' -f2)
 	bash <(curl -s https://codecov.io/bash) \
 		-t 543cc327-510b-4e3e-9574-2c9cba1f2bc7 \
 		-f $(COV_DIR)/coverage.txt \
+		-B $(BRANCH) \
 		-C $(PULL_PULL_SHA) \
 		-r $(REPO_OWNER)/$(REPO_NAME) \
-		-P $(PULL_NUMBER)
+		-P $(PULL_NUMBER)  \
+		-b $(BUILD_ID)
 
