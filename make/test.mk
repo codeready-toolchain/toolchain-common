@@ -20,12 +20,6 @@ test-with-coverage:
 	@-rm $(COV_DIR)/coverage.txt
 	$(Q)go test -vet off ${V_FLAG} $(shell go list ./... | grep -v /test/e2e) -coverprofile=$(COV_DIR)/coverage.txt -covermode=atomic ./...
 
-CODECOV_TOKEN := "543cc327-510b-4e3e-9574-2c9cba1f2bc7"
-COMMIT := $(shell echo $(CLONEREFS_OPTIONS) | jq '.refs[0].pulls[0].sha')
-REPO_OWNER := $(shell echo $(CLONEREFS_OPTIONS) | jq '.refs[0].org')
-REPO_NAME := $(shell echo $(CLONEREFS_OPTIONS) | jq '.refs[0].repo')
-PULL_NUMBER := $(shell echo $(CLONEREFS_OPTIONS) | jq '.refs[0].pulls[0].number')
-
 .PHONY: upload-codecov-report
 # Uploads the test coverage reports to codecov.io. 
 # DO NOT USE LOCALLY: must only be called by OpenShift CI when processing new PR and when a PR is merged! 
@@ -36,7 +30,12 @@ upload-codecov-report:
 	# 
 	# Also: not using the `-F unittests` flag for now as it's temporarily disabled in the codecov UI 
 	# (see https://docs.codecov.io/docs/flags#section-flags-in-the-codecov-ui)
-	env
+	@echo "CLONEREFS_OPTIONS=$(CLONEREFS_OPTIONS)"
+	CODECOV_TOKEN := "543cc327-510b-4e3e-9574-2c9cba1f2bc7" && \
+	COMMIT := $(shell echo $(CLONEREFS_OPTIONS) | jq '.refs[0].pulls[0].sha') && \
+	REPO_OWNER := $(shell echo $(CLONEREFS_OPTIONS) | jq '.refs[0].org') && \
+	REPO_NAME := $(shell echo $(CLONEREFS_OPTIONS) | jq '.refs[0].repo') && \
+	PULL_NUMBER := $(shell echo $(CLONEREFS_OPTIONS) | jq '.refs[0].pulls[0].number') && \
 	bash <(curl -s https://codecov.io/bash) \
 		-t $(CODECOV_TOKEN) \
 		-f $(COV_DIR)/coverage.txt \
