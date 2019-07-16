@@ -20,7 +20,6 @@ test-with-coverage:
 	@-rm $(COV_DIR)/coverage.txt
 	$(Q)go test -vet off ${V_FLAG} $(shell go list ./... | grep -v /test/e2e) -coverprofile=$(COV_DIR)/coverage.txt -covermode=atomic ./...
 
-
 CODECOV_TOKEN := "543cc327-510b-4e3e-9574-2c9cba1f2bc7"
 
 .PHONY: upload-codecov-report
