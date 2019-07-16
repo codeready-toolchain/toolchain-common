@@ -35,5 +35,6 @@ upload-codecov-report:
 		-f $(COV_DIR)/coverage.txt \
 		-C $(PULL_PULL_SHA) \
 		-r $(REPO_OWNER)/$(REPO_NAME) \
-		-P $(PULL_NUMBER)
+		-P $(PULL_NUMBER) \
+		-F unittests
 
