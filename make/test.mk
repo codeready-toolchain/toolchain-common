@@ -20,6 +20,9 @@ test-with-coverage:
 	@-rm $(COV_DIR)/coverage.txt
 	$(Q)go test -vet off ${V_FLAG} $(shell go list ./... | grep -v /test/e2e) -coverprofile=$(COV_DIR)/coverage.txt -covermode=atomic ./...
 
+
+CODECOV_TOKEN := "543cc327-510b-4e3e-9574-2c9cba1f2bc7"
+
 .PHONY: upload-codecov-report
 # Uploads the test coverage reports to codecov.io. 
 # DO NOT USE LOCALLY: must only be called by OpenShift CI when processing new PR and when a PR is merged! 
@@ -30,9 +33,8 @@ upload-codecov-report:
 	# 
 	# Also: not using the `-F unittests` flag for now as it's temporarily disabled in the codecov UI 
 	# (see https://docs.codecov.io/docs/flags#section-flags-in-the-codecov-ui)
-	TOKEN := 543cc327-510b-4e3e-9574-2c9cba1f2bc7
 	bash <(curl -s https://codecov.io/bash) \
-		-t $(TOKEN) \
+		-t $(CODECOV_TOKEN) \
 		-f $(COV_DIR)/coverage.txt \
 		-C $(PULL_PULL_SHA) \
 		-r $(REPO_OWNER)/$(REPO_NAME) \
