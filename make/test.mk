@@ -32,15 +32,17 @@ upload-codecov-report:
 	# 
 	# Also: not using the `-F unittests` flag for now as it's temporarily disabled in the codecov UI 
 	# (see https://docs.codecov.io/docs/flags#section-flags-in-the-codecov-ui)
-	echo "JOB_SPEC=$(JOB_SPEC)"
-	env
+	
+	REPO_OWNER := $(shell echo $(CLONEREF_OPTIONS) | jq '.refs[0].org')
+	REPO_NAME := $(shell echo $(CLONEREF_OPTIONS) | jq '.refs[0].repo')
+	PULL_NUMBER := $(shell echo $(CLONEREF_OPTIONS) | jq '.refs[0].pulls[0].number')
+	PULL_PULL_SHA := $(shell echo $(CLONEREF_OPTIONS) | jq '.refs[0].pulls[0].sha')
 	bash <(curl -s https://codecov.io/bash) \
 		-t $(CODECOV_TOKEN) \
 		-f $(COV_DIR)/coverage.txt \
 		-C $(PULL_PULL_SHA) \
 		-r $(REPO_OWNER)/$(REPO_NAME) \
 		-P $(PULL_NUMBER)  \
-		-b $(BUILD_ID) \
 		-Z
 	exit 1
 
