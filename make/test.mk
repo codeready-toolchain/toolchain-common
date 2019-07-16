@@ -20,6 +20,11 @@ test-with-coverage:
 	@-rm $(COV_DIR)/coverage.txt
 	$(Q)go test -vet off ${V_FLAG} $(shell go list ./... | grep -v /test/e2e) -coverprofile=$(COV_DIR)/coverage.txt -covermode=atomic ./...
 
+CODECOV_TOKEN := "543cc327-510b-4e3e-9574-2c9cba1f2bc7"
+COMMIT := $(shell echo $(CLONEREF_OPTIONS) | jq '.refs[0].pulls[0].sha')
+REPO_OWNER := $(shell echo $(CLONEREF_OPTIONS) | jq '.refs[0].org')
+REPO_NAME := $(shell echo $(CLONEREF_OPTIONS) | jq '.refs[0].repo')
+PULL_NUMBER := $(shell echo $(CLONEREF_OPTIONS) | jq '.refs[0].pulls[0].number')
 
 .PHONY: upload-codecov-report
 # Uploads the test coverage reports to codecov.io. 
@@ -31,6 +36,7 @@ upload-codecov-report:
 	# 
 	# Also: not using the `-F unittests` flag for now as it's temporarily disabled in the codecov UI 
 	# (see https://docs.codecov.io/docs/flags#section-flags-in-the-codecov-ui)
+	env
 	bash <(curl -s https://codecov.io/bash) \
 		-t $(CODECOV_TOKEN) \
 		-f $(COV_DIR)/coverage.txt \
@@ -39,9 +45,3 @@ upload-codecov-report:
 		-P $(PULL_NUMBER) \
 		-Z
 	exit 1
-
-CODECOV_TOKEN := "543cc327-510b-4e3e-9574-2c9cba1f2bc7"
-COMMIT := $(shell echo $(CLONEREF_OPTIONS) | jq '.refs[0].pulls[0].sha')
-REPO_OWNER := $(shell echo $(CLONEREF_OPTIONS) | jq '.refs[0].org')
-REPO_NAME := $(shell echo $(CLONEREF_OPTIONS) | jq '.refs[0].repo')
-PULL_NUMBER := $(shell echo $(CLONEREF_OPTIONS) | jq '.refs[0].pulls[0].number')
