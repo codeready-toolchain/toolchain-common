@@ -8,24 +8,28 @@ This repo is for controllers, libs, scripts, make files, etc to be shared betwee
 
 == Setting Up and Connecting Host and Member Clusters
 
-In a new terminal, navigate to codeready-toolchain/host-operator directory and execute the following commands
+In a new terminal, execute the following commands
 ```
+$ cd $GOPATH/github.com/codeready-toolchain/host-operator
 $ minishift start --profile toolchain
 $ make up-local
 ^C
 ```
-In the same terminal, navigate to codeready-toolchain/member-operator directory and execute the following commands
+
 ```
+$ cd $GOPATH/github.com/codeready-toolchain/member-operator
 $ make up-local
 ^C
 $ make add-member-to-host
 ```
-In the same terminal, navigate back to codeready-toolchain/host-operator directory and execute the following commands
+
 ```
+$ cd $GOPATH/github.com/codeready-toolchain/host-operator
 make add-host-to-member
 ```
-In the same terminal, navigate back to codeready-toolchain/member-operator directory and execute the following commands
+
 ```
+$ cd $GOPATH/github.com/codeready-toolchain/member-operator
 $ make up-local
 ```
 
