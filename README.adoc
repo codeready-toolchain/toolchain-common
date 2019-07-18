@@ -41,6 +41,61 @@ $ oc project toolchain-member-operator
 $ oc apply -f '/path/to/useraccount.yaml'
 ```
 
+**Example masteruserrecord.yaml:**
+```
+apiVersion: toolchain.dev.openshift.com/v1alpha1
+kind: MasterUserRecord
+metadata:
+  name: example
+spec:
+  disabled: false
+  deprovisioned: false
+  userID: 86505192-a386-11e9-ad56-525400ad2b23
+  userAccounts:
+  - targetCluster: member-192-168-42-61-8443
+    syncIndex: 86505192-a386-11e9-ad56-525400ad2b23
+    spec:
+      nsLimit: admin
+      userID: 86505192-a386-11e9-ad56-525400ad2b23
+      nsTemplateSet:
+        tierName: basic
+        namespaces:
+        - type: ide
+          revision: abcdef
+        - type: cicd
+          revision: abcdef
+status:
+  conditions:
+  - type: Ready
+    status: True
+  userAccounts:
+  - targetCluster: target-member-cluster
+    syncIndex: 86505192-a386-11e9-ad56-525400ad2b23
+```
+
+**Example useraccount.yaml:**
+```
+apiVersion: toolchain.dev.openshift.com/v1alpha1
+kind: UserAccount
+metadata:
+  name: example
+spec:
+  userID: 86505192-a386-11e9-ad56-525400ad2b23
+  disabled: false
+  nsLimit: admin
+  nsTemplateSet:
+    tierName: basic
+    namespaces:
+    - type: ide
+      revision: abcdef
+    - type: cicd
+      revision: abcdef
+status:
+  conditions:
+  - type: Ready
+    status: True
+```
+
 == Configuring developers.redhat.com Authentication in OpenShift 4 Cluster
 
 Create a secret with Identity Provider credentials:
