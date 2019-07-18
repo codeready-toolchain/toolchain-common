@@ -36,7 +36,7 @@ $ make up-local
 Now that we are setup, we can add resources and watch the logs on the member-operator! To do so, open a new terminal and run the following commands
 ```
 $ oc project toolchain-host-operator
-$ oc apply -f '/path/to/masteruserreord.yaml'
+$ oc apply -f '/path/to/masteruserrecord.yaml'
 $ oc project toolchain-member-operator
 $ oc apply -f '/path/to/useraccount.yaml'
 ```
