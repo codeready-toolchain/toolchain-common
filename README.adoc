@@ -6,7 +6,7 @@ image:https://codecov.io/gh/codeready-toolchain/toolchain-common/branch/master/g
 
 This repo is for controllers, libs, scripts, make files, etc to be shared between host and member operators.
 
-== Setting Up and Connecting Host and Member Operators
+== Setting Up and Connecting Host and Member Clusters
 
 In a new terminal, navigate to codeready-toolchain/host-operator directory and execute the following commands
 ```
