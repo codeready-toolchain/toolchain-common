@@ -11,25 +11,17 @@ This repo is for controllers, libs, scripts, make files, etc to be shared betwee
 In a new terminal, execute the following commands
 ```
 $ cd $GOPATH/github.com/codeready-toolchain/host-operator
-$ minishift start --profile toolchain
+$ minishift start --profile host
 $ make up-local
 ^C
 ```
 
 ```
 $ cd $GOPATH/github.com/codeready-toolchain/member-operator
+$ minishift start --profile member
 $ make up-local
 ^C
 $ make add-member-to-host
-```
-
-```
-$ cd $GOPATH/github.com/codeready-toolchain/host-operator
-make add-host-to-member
-```
-
-```
-$ cd $GOPATH/github.com/codeready-toolchain/member-operator
 $ make up-local
 ```
 
