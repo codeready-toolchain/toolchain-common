@@ -22,6 +22,7 @@ $ minishift start --profile member
 $ make up-local
 ^C
 $ make add-member-to-host
+$ make add-host-to-member
 $ make up-local
 ```
 
