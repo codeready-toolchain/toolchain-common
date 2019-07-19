@@ -13,7 +13,6 @@ In a new terminal, execute the following commands
 $ cd $GOPATH/github.com/codeready-toolchain/host-operator
 $ minishift start --profile host
 $ make up-local
-^C
 ```
 
 ```
@@ -28,8 +27,10 @@ $ make up-local
 
 Now that we are setup, we can add resources and watch the logs on the member-operator! To do so, open a new terminal and run the following commands
 ```
+$ cd $GOPATH/github.com/codeready-toolchain/host-operator
 $ oc project toolchain-host-operator
 $ oc apply -f '/path/to/masteruserrecord.yaml'
+$ cd $GOPATH/github.com/codeready-toolchain/member-operator
 $ oc project toolchain-member-operator
 $ oc apply -f '/path/to/useraccount.yaml'
 ```
