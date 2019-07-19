@@ -46,6 +46,8 @@ $ oc apply -f '/path/to/useraccount.yaml'
 ```
 
 **Example masteruserrecord.yaml:**
+
+_Note:_ The `targetCluster` field must contain the correct IP address of the member cluster.
 ```
 apiVersion: toolchain.dev.openshift.com/v1alpha1
 kind: MasterUserRecord
