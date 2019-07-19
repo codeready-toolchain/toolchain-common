@@ -12,27 +12,36 @@ In a new terminal, execute the following commands
 ```
 $ cd $GOPATH/github.com/codeready-toolchain/host-operator
 $ minishift start --profile host
-$ make up-local
+$ make login-as-admin 
+$ make create-namespace 
+$ make deploy-rbac
+$ make deploy-crd
 ```
 
-In another new terminal, execute the following commands
 ```
 $ cd $GOPATH/github.com/codeready-toolchain/member-operator
 $ minishift start --profile member
-$ make up-local
-^C
+$ make login-as-admin 
+$ make create-namespace 
+$ make deploy-rbac
+$ make deploy-crd
 $ make add-member-to-host
 $ make add-host-to-member
-$ make up-local
+$ make build
+$ make vendor
+$ export OPERATOR_NAMESPACE=toolchain-member-operator
+$ operator-sdk up local --namespace=toolcha-member-operator --verbose
 ```
 
 Now that we are setup, we can add resources and watch the logs on the member-operator! To do so, open a new terminal and run the following commands
 ```
 $ cd $GOPATH/github.com/codeready-toolchain/host-operator
-$ oc project toolchain-host-operator
+$ minishift profile set host
+$ make use-namespace
 $ oc apply -f '/path/to/masteruserrecord.yaml'
 $ cd $GOPATH/github.com/codeready-toolchain/member-operator
-$ oc project toolchain-member-operator
+$ minishift profile set member
+$ make use-namespace
 $ oc apply -f '/path/to/useraccount.yaml'
 ```
 
@@ -48,7 +57,7 @@ spec:
   userID: 86505192-a386-11e9-ad56-525400ad2b23
   userAccounts:
   - targetCluster: member-192-168-42-61-8443
-    syncIndex: 86505192-a386-11e9-ad56-525400ad2b23
+    syncIndex: 86505a
     spec:
       nsLimit: admin
       userID: 86505192-a386-11e9-ad56-525400ad2b23
