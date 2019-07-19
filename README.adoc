@@ -15,6 +15,7 @@ $ minishift start --profile host
 $ make up-local
 ```
 
+In another new terminal, execute the following commands
 ```
 $ cd $GOPATH/github.com/codeready-toolchain/member-operator
 $ minishift start --profile member
