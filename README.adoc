@@ -30,7 +30,7 @@ $ make add-host-to-member
 $ make build
 $ make vendor
 $ export OPERATOR_NAMESPACE=toolchain-member-operator
-$ operator-sdk up local --namespace=toolcha-member-operator --verbose
+$ operator-sdk up local --namespace=toolchain-member-operator --verbose
 ```
 
 Now that we are setup, we can add resources and watch the logs on the member-operator! To do so, open a new terminal and run the following commands
