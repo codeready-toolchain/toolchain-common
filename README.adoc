@@ -57,13 +57,6 @@ spec:
           revision: abcdef
         - type: cicd
           revision: abcdef
-status:
-  conditions:
-  - type: Ready
-    status: True
-  userAccounts:
-  - targetCluster: target-member-cluster
-    syncIndex: 86505192-a386-11e9-ad56-525400ad2b23
 ```
 
 **Example useraccount.yaml:**
@@ -83,10 +76,6 @@ spec:
       revision: abcdef
     - type: cicd
       revision: abcdef
-status:
-  conditions:
-  - type: Ready
-    status: True
 ```
 
 == Configuring developers.redhat.com Authentication in OpenShift 4 Cluster
