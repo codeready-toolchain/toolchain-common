@@ -2,7 +2,7 @@ module github.com/codeready-toolchain/toolchain-common
 
 require (
 	github.com/appscode/jsonpatch v0.0.0-20190108182946-7c0e3b262f30 // indirect
-	github.com/codeready-toolchain/api v0.0.0-20190709160753-31636807b6f1
+	github.com/codeready-toolchain/api v0.0.0-20190812113906-bd1f09d19c28
 	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.0 // indirect
