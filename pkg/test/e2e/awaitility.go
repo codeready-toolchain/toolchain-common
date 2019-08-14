@@ -23,7 +23,7 @@ type Awaitility struct {
 	HostNs   string
 }
 
-// SingleAwaitility contains information necessary for verifying availability of resources in a single operators
+// SingleAwaitility contains information necessary for verifying availability of resources in a single operator
 type SingleAwaitility struct {
 	T      *testing.T
 	Client framework.FrameworkClient
