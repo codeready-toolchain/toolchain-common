@@ -138,7 +138,7 @@ func InitializeOperators(t *testing.T, obj runtime.Object, clusterType cluster.T
 	err = awaitility.WaitForReadyKubeFedClusters()
 	require.NoError(t, err)
 
-	t.Log("both operators ar ready and in running state")
+	t.Log("both operators are ready and in running state")
 	return ctx, awaitility
 }
 
