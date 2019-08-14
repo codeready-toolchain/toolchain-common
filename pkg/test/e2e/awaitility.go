@@ -83,9 +83,9 @@ func (a *SingleAwaitility) WaitForKubeFedCluster(expNs string, clusterType clust
 	})
 }
 
-// WaitForKubeFedClusterWithName waits until there is a KubeFedCluster with the given name
+// WaitForKubeFedClusterConditionWithName waits until there is a KubeFedCluster with the given name
 // and with the given ClusterCondition (if it the condition is nil, then it skips this check)
-func (a *SingleAwaitility) WaitForKubeFedClusterWithName(name string, condition *v1beta1.ClusterCondition) error {
+func (a *SingleAwaitility) WaitForKubeFedClusterConditionWithName(name string, condition *v1beta1.ClusterCondition) error {
 	timeout := Timeout
 	if condition != nil {
 		timeout = (util.DefaultClusterHealthCheckPeriod + 5) * time.Second

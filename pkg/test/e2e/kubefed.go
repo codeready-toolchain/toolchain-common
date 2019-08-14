@@ -67,11 +67,11 @@ func VerifyKubeFedCluster(t *testing.T, targetClusterType cluster.Type) {
 
 		// then the KubeFedCluster should be ready
 		require.NoError(t, err)
-		err = singleAwait.WaitForKubeFedClusterWithName(newFedCluster.Name, ReadyKubeFedCluster)
+		err = singleAwait.WaitForKubeFedClusterConditionWithName(newFedCluster.Name, ReadyKubeFedCluster)
 		require.NoError(t, err)
 		err = awaitility.WaitForReadyKubeFedClusters()
 		require.NoError(t, err)
-		err = singleAwait.WaitForKubeFedClusterWithName(current.Name, ReadyKubeFedCluster)
+		err = singleAwait.WaitForKubeFedClusterConditionWithName(current.Name, ReadyKubeFedCluster)
 		require.NoError(t, err)
 	})
 	t.Run("create new KubeFedCluster with incorrect data and expect to be offline", func(t *testing.T) {
@@ -85,7 +85,7 @@ func VerifyKubeFedCluster(t *testing.T, targetClusterType cluster.Type) {
 
 		// then the KubeFedCluster should be offline
 		require.NoError(t, err)
-		err = singleAwait.WaitForKubeFedClusterWithName(newFedCluster.Name, &v1beta1.ClusterCondition{
+		err = singleAwait.WaitForKubeFedClusterConditionWithName(newFedCluster.Name, &v1beta1.ClusterCondition{
 			Type:   common.ClusterOffline,
 			Status: corev1.ConditionTrue,
 		})
