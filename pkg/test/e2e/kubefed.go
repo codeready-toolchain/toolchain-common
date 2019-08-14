@@ -65,7 +65,7 @@ func VerifyKubeFedCluster(t *testing.T, targetClusterType cluster.Type) {
 		// when
 		err := awaitility.Client.Create(context.TODO(), newFedCluster, CleanupOptions(ctx))
 
-		// then the KubeFedCluster should not be ready
+		// then the KubeFedCluster should be ready
 		require.NoError(t, err)
 		err = singleAwait.WaitForKubeFedClusterWithName(newFedCluster.Name, ReadyKubeFedCluster)
 		require.NoError(t, err)
@@ -83,7 +83,7 @@ func VerifyKubeFedCluster(t *testing.T, targetClusterType cluster.Type) {
 		// when
 		err := awaitility.Client.Create(context.TODO(), newFedCluster, CleanupOptions(ctx))
 
-		// then
+		// then the KubeFedCluster should be offline
 		require.NoError(t, err)
 		err = singleAwait.WaitForKubeFedClusterWithName(newFedCluster.Name, &v1beta1.ClusterCondition{
 			Type:   common.ClusterOffline,
