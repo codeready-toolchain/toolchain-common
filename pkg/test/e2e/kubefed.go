@@ -129,10 +129,11 @@ func InitializeOperators(t *testing.T, obj runtime.Object, clusterType cluster.T
 	require.NoError(t, err, "failed while waiting for member operator deployment")
 
 	awaitility := &Awaitility{
-		T:        t,
-		Client:   f.Client,
-		HostNs:   hostNs,
-		MemberNs: memberNs,
+		T:                t,
+		Client:           f.Client,
+		ControllerClient: f.Client.Client,
+		HostNs:           hostNs,
+		MemberNs:         memberNs,
 	}
 
 	err = awaitility.WaitForReadyKubeFedClusters()

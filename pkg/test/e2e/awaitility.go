@@ -17,10 +17,11 @@ import (
 
 // Awaitility contains information necessary for verifying availability of resources in both operators
 type Awaitility struct {
-	T        *testing.T
-	Client   framework.FrameworkClient
-	MemberNs string
-	HostNs   string
+	T                *testing.T
+	Client           framework.FrameworkClient
+	ControllerClient client.Client
+	MemberNs         string
+	HostNs           string
 }
 
 // SingleAwaitility contains information necessary for verifying availability of resources in a single operator
