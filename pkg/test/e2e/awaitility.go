@@ -7,6 +7,7 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kubefed/pkg/apis/core/common"
 	"sigs.k8s.io/kubefed/pkg/apis/core/v1beta1"
@@ -19,6 +20,7 @@ import (
 type Awaitility struct {
 	T                *testing.T
 	Client           framework.FrameworkClient
+	KubeClient       kubernetes.Interface
 	ControllerClient client.Client
 	MemberNs         string
 	HostNs           string

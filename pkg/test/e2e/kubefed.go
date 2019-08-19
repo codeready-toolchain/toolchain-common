@@ -131,6 +131,7 @@ func InitializeOperators(t *testing.T, obj runtime.Object, clusterType cluster.T
 	awaitility := &Awaitility{
 		T:                t,
 		Client:           f.Client,
+		KubeClient:       f.KubeClient,
 		ControllerClient: f.Client.Client,
 		HostNs:           hostNs,
 		MemberNs:         memberNs,
