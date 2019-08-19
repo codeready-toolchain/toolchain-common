@@ -13,15 +13,24 @@ import (
 // NewFakeClient creates a fake K8s client with ability to override specific Create/Update/Delete functions
 func NewFakeClient(t *testing.T, initObjs ...runtime.Object) *FakeClient {
 	client := fake.NewFakeClientWithScheme(scheme.Scheme, initObjs...)
-	return &FakeClient{client, t, nil, nil, nil}
+	return &FakeClient{client, t, nil, nil, nil, nil}
 }
 
 type FakeClient struct {
 	client.Client
-	T          *testing.T
-	MockCreate func(obj runtime.Object) error
-	MockUpdate func(obj runtime.Object) error
-	MockDelete func(obj runtime.Object, opts ...client.DeleteOptionFunc) error
+	T                *testing.T
+	MockCreate       func(obj runtime.Object) error
+	MockUpdate       func(obj runtime.Object) error
+	MockStatusUpdate func(obj runtime.Object) error
+	MockDelete       func(obj runtime.Object, opts ...client.DeleteOptionFunc) error
+}
+
+type mockStatusUpdate struct {
+	mockUpdate func(obj runtime.Object) error
+}
+
+func (m *mockStatusUpdate) Update(ctx context.Context, obj runtime.Object) error {
+	return m.mockUpdate(obj)
 }
 
 func (c *FakeClient) Create(ctx context.Context, obj runtime.Object) error {
@@ -29,6 +38,13 @@ func (c *FakeClient) Create(ctx context.Context, obj runtime.Object) error {
 		return c.MockCreate(obj)
 	}
 	return c.Client.Create(ctx, obj)
+}
+
+func (c *FakeClient) Status() client.StatusWriter {
+	if c.MockStatusUpdate != nil {
+		return &mockStatusUpdate{mockUpdate: c.MockStatusUpdate}
+	}
+	return c.Client.Status()
 }
 
 func (c *FakeClient) Update(ctx context.Context, obj runtime.Object) error {
