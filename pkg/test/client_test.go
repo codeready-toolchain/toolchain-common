@@ -26,7 +26,7 @@ func TestNewClient(t *testing.T) {
 	assert.Nil(t, fclient.MockCreate)
 	assert.Nil(t, fclient.MockStatusUpdate)
 
-	key := types.NamespacedName{"somenamespace", "somename"}
+	key := types.NamespacedName{Namespace: "somenamespace", Name: "somename"}
 
 	t.Run("default methods OK", func(t *testing.T) {
 		data := make(map[string]string)
