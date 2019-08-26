@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/kubefed/pkg/controller/util"
 )
 
-func StartCachingController(mgr manager.Manager, stopChan <-chan struct{}) error {
+func StartCachingController(mgr manager.Manager, namespace string, stopChan <-chan struct{}) error {
 	cntrlName := "controller_kubefedcluster_with_cache"
 	clusterCacheService := cluster.KubeFedClusterService{
 		Client: mgr.GetClient(),
@@ -18,7 +18,7 @@ func StartCachingController(mgr manager.Manager, stopChan <-chan struct{}) error
 
 	_, clusterController, err := util.NewGenericInformerWithEventHandler(
 		mgr.GetConfig(),
-		"",
+		namespace,
 		&v1beta1.KubeFedCluster{},
 		util.NoResyncPeriod,
 		&cache.ResourceEventHandlerFuncs{
