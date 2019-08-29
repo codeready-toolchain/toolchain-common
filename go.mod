@@ -17,7 +17,8 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.0.0 // indirect
-	github.com/sergi/go-diff v1.0.0 // indirect
+	github.com/redhat-cop/operator-utils v0.0.0-20190827162636-51e6b0c32776
+	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.3.0
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
