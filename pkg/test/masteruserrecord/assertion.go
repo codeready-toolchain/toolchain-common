@@ -12,14 +12,14 @@ import (
 	"testing"
 )
 
-type MurAssertion struct {
+type Assertion struct {
 	masterUserRecord *toolchainv1alpha1.MasterUserRecord
 	client           client.Client
 	namespacedName   types.NamespacedName
 	t                *testing.T
 }
 
-func (a *MurAssertion) loadUaAssertion() error {
+func (a *Assertion) loadUaAssertion() error {
 	if a.masterUserRecord != nil {
 		return nil
 	}
@@ -29,22 +29,22 @@ func (a *MurAssertion) loadUaAssertion() error {
 	return err
 }
 
-func AssertThatMasterUserRecord(t *testing.T, name string, client client.Client) *MurAssertion {
-	return &MurAssertion{
+func AssertThatMasterUserRecord(t *testing.T, name string, client client.Client) *Assertion {
+	return &Assertion{
 		client:         client,
 		namespacedName: test.NamespacedName(test.HostOperatorNs, name),
 		t:              t,
 	}
 }
 
-func (a *MurAssertion) HasConditions(expected ...toolchainv1alpha1.Condition) *MurAssertion {
+func (a *Assertion) HasConditions(expected ...toolchainv1alpha1.Condition) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	test.AssertConditionsMatch(a.t, a.masterUserRecord.Status.Conditions, expected...)
 	return a
 }
 
-func (a *MurAssertion) HasStatusUserAccounts(targetClusters ...string) *MurAssertion {
+func (a *Assertion) HasStatusUserAccounts(targetClusters ...string) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	require.Len(a.t, a.masterUserRecord.Status.UserAccounts, len(targetClusters))
@@ -54,7 +54,7 @@ func (a *MurAssertion) HasStatusUserAccounts(targetClusters ...string) *MurAsser
 	return a
 }
 
-func (a *MurAssertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.UserAccountStatusEmbedded {
+func (a *Assertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.UserAccountStatusEmbedded {
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
 		if ua.TargetCluster == targetCluster {
 			return &ua
@@ -64,7 +64,7 @@ func (a *MurAssertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.U
 	return nil
 }
 
-func (a *MurAssertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *MurAssertion {
+func (a *Assertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
@@ -73,7 +73,7 @@ func (a *MurAssertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *Mur
 	return a
 }
 
-func (a *MurAssertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Condition) *MurAssertion {
+func (a *Assertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Condition) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
@@ -82,7 +82,7 @@ func (a *MurAssertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.C
 	return a
 }
 
-func (a *MurAssertion) HasFinalizer() *MurAssertion {
+func (a *Assertion) HasFinalizer() *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	assert.Len(a.t, a.masterUserRecord.Finalizers, 1)
@@ -90,7 +90,7 @@ func (a *MurAssertion) HasFinalizer() *MurAssertion {
 	return a
 }
 
-func (a *MurAssertion) DoesNotHaveFinalizer() *MurAssertion {
+func (a *Assertion) DoesNotHaveFinalizer() *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	assert.Len(a.t, a.masterUserRecord.Finalizers, 0)
