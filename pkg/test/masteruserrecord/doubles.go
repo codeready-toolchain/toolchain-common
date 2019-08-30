@@ -1,4 +1,4 @@
-package murtest
+package masteruserrecord
 
 import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"

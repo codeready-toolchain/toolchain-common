@@ -1,4 +1,4 @@
-package murtest
+package masteruserrecord
 
 import (
 	"context"
