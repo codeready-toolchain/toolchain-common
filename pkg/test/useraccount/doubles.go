@@ -17,11 +17,11 @@ func NewUserAccountFromMur(mur *toolchainv1alpha1.MasterUserRecord, modifiers ..
 		},
 		Spec: mur.Spec.UserAccounts[0].Spec,
 	}
-	ModifyUa(ua, modifiers...)
+	Modify(ua, modifiers...)
 	return ua
 }
 
-func ModifyUa(ua *toolchainv1alpha1.UserAccount, modifiers ...UaModifier) {
+func Modify(ua *toolchainv1alpha1.UserAccount, modifiers ...UaModifier) {
 	for _, modify := range modifiers {
 		modify(ua)
 	}

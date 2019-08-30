@@ -25,7 +25,7 @@ func NewMasterUserRecord(userName string, modifiers ...MurModifier) *toolchainv1
 			UserAccounts: []toolchainv1alpha1.UserAccountEmbedded{newEmbeddedUa(test.MemberClusterName, userId)},
 		},
 	}
-	ModifyMur(mur, modifiers...)
+	Modify(mur, modifiers...)
 	return mur
 }
 
@@ -60,7 +60,7 @@ func newEmbeddedUa(targetCluster, userId string) toolchainv1alpha1.UserAccountEm
 	}
 }
 
-func ModifyMur(mur *toolchainv1alpha1.MasterUserRecord, modifiers ...MurModifier) {
+func Modify(mur *toolchainv1alpha1.MasterUserRecord, modifiers ...MurModifier) {
 	for _, modify := range modifiers {
 		modify(mur)
 	}
