@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	apiv1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -93,6 +94,27 @@ func TestAddOrUpdateStatusConditions(t *testing.T) {
 				assert.True(t, c.LastTransitionTime.Before(&result[i].LastTransitionTime))
 			}
 		}
+	})
+}
+
+func TestFindConditionByType(t *testing.T) {
+	conditions := []toolchainv1alpha1.Condition{
+		toolchainv1alpha1.Condition{
+			Type:   toolchainv1alpha1.ConditionReady,
+			Status: corev1.ConditionTrue,
+		},
+	}
+
+	t.Run("found", func(t *testing.T) {
+		got, found := condition.FindConditionByType(conditions, toolchainv1alpha1.ConditionReady)
+		assert.True(t, found)
+		assert.Equal(t, toolchainv1alpha1.ConditionReady, got.Type)
+	})
+
+	t.Run("not_found", func(t *testing.T) {
+		got, found := condition.FindConditionByType(conditions, toolchainv1alpha1.ConditionType("Completed"))
+		assert.False(t, found)
+		assert.Equal(t, toolchainv1alpha1.Condition{}, got)
 	})
 }
 

@@ -20,13 +20,15 @@ func AddOrUpdateStatusConditions(conditions []toolchainv1alpha1.Condition, newCo
 	return conditions, atLeastOneUpdated
 }
 
-func FindConditionByType(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType) toolchainv1alpha1.Condition {
+// FindConditionByType returns first Condition with given conditionType
+// along with bool flag which indicates if the Condition is found or not
+func FindConditionByType(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType) (toolchainv1alpha1.Condition, bool) {
 	for _, condition := range conditions {
 		if condition.Type == conditionType {
-			return condition
+			return condition, true
 		}
 	}
-	return toolchainv1alpha1.Condition{}
+	return toolchainv1alpha1.Condition{}, false
 }
 
 func addOrUpdateStatusCondition(conditions []toolchainv1alpha1.Condition, newCondition toolchainv1alpha1.Condition) ([]toolchainv1alpha1.Condition, bool) {
