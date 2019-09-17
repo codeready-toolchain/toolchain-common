@@ -4,7 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/kubefed/pkg/apis/core/common"
 	"sigs.k8s.io/kubefed/pkg/apis/core/v1beta1"
@@ -44,6 +45,37 @@ func TestGetCluster(t *testing.T) {
 	}
 }
 
+func TestHostCluster(t *testing.T) {
+	// given
+	defer resetClusterCache()
+	host := newTestFedCluster("host-cluster", Host, v1.ConditionTrue)
+	clusterCache.addFedCluster(host)
+
+	// when
+	returnedFedCluster, ok := HostCluster()
+
+	// then
+	assert.True(t, ok)
+	assert.Equal(t, host, returnedFedCluster)
+}
+
+func TestMemberClusters(t *testing.T) {
+	// given
+	defer resetClusterCache()
+	member1 := newTestFedCluster("member-cluster-1", Member, v1.ConditionTrue)
+	clusterCache.addFedCluster(member1)
+	member2 := newTestFedCluster("member-cluster-2", Member, v1.ConditionTrue)
+	clusterCache.addFedCluster(member2)
+
+	// when
+	returnedFedClusters := MemberClusters()
+
+	// then
+	require.Len(t, returnedFedClusters, 2)
+	assert.Equal(t, returnedFedClusters[0], member1)
+	assert.Equal(t, returnedFedClusters[1], member2)
+}
+
 func TestGetClusterWhenIsEmpty(t *testing.T) {
 	// given
 	resetClusterCache()
@@ -60,6 +92,7 @@ func TestGetClusterWhenIsEmpty(t *testing.T) {
 }
 
 func TestGetClustersByType(t *testing.T) {
+
 	t.Run("get clusters by type", func(t *testing.T) {
 
 		t.Run("not found", func(t *testing.T) {

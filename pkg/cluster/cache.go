@@ -1,9 +1,10 @@
 package cluster
 
 import (
+	"sync"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kubefed/pkg/apis/core/v1beta1"
-	"sync"
 )
 
 var clusterCache = kubeFedClusterClients{clusters: map[string]*FedCluster{}}
@@ -68,6 +69,13 @@ func GetFedCluster(name string) (*FedCluster, bool) {
 	return clusterCache.getFedCluster(name)
 }
 
+// GetHostClusterFunc a func that returns the Host cluster from the cache,
+// along with a bool to indicate if there was a match or not
+type GetHostClusterFunc func() (*FedCluster, bool)
+
+// HostCluster the func to retrieve the host cluster
+var HostCluster GetHostClusterFunc = GetHostCluster
+
 // GetHostCluster returns the kube client for the host cluster from the cache of the clusters
 // and info if such a client exists
 func GetHostCluster() (*FedCluster, bool) {
@@ -77,6 +85,12 @@ func GetHostCluster() (*FedCluster, bool) {
 	}
 	return clusters[0], true
 }
+
+// GetMemberClustersFunc a func that returns the member clusters from the cache
+type GetMemberClustersFunc func() []*FedCluster
+
+// MemberClusters the func to retrieve the member clusters
+var MemberClusters GetMemberClustersFunc = GetMemberClusters
 
 // GetMemberClusters returns the kube clients for the host clusters from the cache of the clusters
 func GetMemberClusters() []*FedCluster {
