@@ -72,8 +72,8 @@ func TestMemberClusters(t *testing.T) {
 
 	// then
 	require.Len(t, returnedFedClusters, 2)
-	assert.Equal(t, returnedFedClusters[0], member1)
-	assert.Equal(t, returnedFedClusters[1], member2)
+	assert.Contains(t, returnedFedClusters, member1)
+	assert.Contains(t, returnedFedClusters, member2)
 }
 
 func TestGetClusterWhenIsEmpty(t *testing.T) {
