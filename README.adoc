@@ -70,6 +70,8 @@ spec:
           revision: abcdef
         - type: code
           revision: abcdef
+        - type: stage
+          revision: abcdef
 ```
 
 **Example useraccount.yaml:**
@@ -88,6 +90,8 @@ spec:
     - type: dev
       revision: abcdef
     - type: code
+      revision: abcdef
+    - type: stage
       revision: abcdef
 ```
 
