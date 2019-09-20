@@ -66,9 +66,9 @@ spec:
       nsTemplateSet:
         tierName: basic
         namespaces:
-        - type: ide
+        - type: dev
           revision: abcdef
-        - type: cicd
+        - type: code
           revision: abcdef
 ```
 
@@ -85,9 +85,9 @@ spec:
   nsTemplateSet:
     tierName: basic
     namespaces:
-    - type: ide
+    - type: dev
       revision: abcdef
-    - type: cicd
+    - type: code
       revision: abcdef
 ```
 
