@@ -39,7 +39,7 @@ func newEmbeddedUa(targetCluster, userId string) toolchainv1alpha1.UserAccountEm
 			NSLimit: "basic",
 			NSTemplateSet: toolchainv1alpha1.NSTemplateSetSpec{
 				TierName: "basic",
-				Namespaces: []toolchainv1alpha1.Namespace{
+				Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
 					{
 						Type:     "dev",
 						Revision: "123abc",
