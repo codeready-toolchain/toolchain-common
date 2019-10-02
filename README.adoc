@@ -6,6 +6,12 @@ image:https://codecov.io/gh/codeready-toolchain/toolchain-common/branch/master/g
 
 This repo is for controllers, libs, scripts, make files, etc to be shared between host and member operators.
 
+== Build
+
+Requires Go version 1.13 - download for your development environment https://golang.org/dl/[here].
+
+This repository uses https://github.com/golang/go/wiki/Modules[Go modules]. You may need to `export GO111MODULE=on` to turn modules support "on".
+
 == Setting Up and Connecting Host and Member Clusters
 
 In a new terminal, execute the following commands
