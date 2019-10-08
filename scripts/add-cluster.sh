@@ -78,7 +78,7 @@ fi
 
 echo "Getting ${JOINING_CLUSTER_TYPE} SA token"
 SA_SECRET=`oc get sa ${SA_NAME} -n ${OPERATOR_NS} -o json | jq -r .secrets[].name | grep token`
-SA_TOKEN=`oc get secret ${SA_SECRET} -n ${OPERATOR_NS}  -o json | jq -r '.data["token"]' | base64 -d`
+SA_TOKEN=`oc get secret ${SA_SECRET} -n ${OPERATOR_NS}  -o json | jq -r '.data["token"]' | base64 --decode`
 SA_CA_CRT=`oc get secret ${SA_SECRET} -n ${OPERATOR_NS} -o json | jq -r '.data["ca.crt"]'`
 
 # this env variable is set in openshift-ci environment.
