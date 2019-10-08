@@ -18,6 +18,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
+	github.com/magiconair/properties v1.8.0
 	github.com/mailru/easyjson v0.7.0 // indirect
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
@@ -45,7 +46,7 @@ require (
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/h2non/gock.v1 v1.0.14
 	k8s.io/api v0.0.0-20190925180651-d58b53da08f5
-	k8s.io/apiextensions-apiserver v0.0.0-20190926001031-c01ad8f0b402 // indirect
+	k8s.io/apiextensions-apiserver v0.0.0-20190926001031-c01ad8f0b402
 	k8s.io/apimachinery v0.0.0-20190925235427-62598f38f24e
 	k8s.io/client-go v2.0.0-alpha.0.0.20181126152608-d082d5923d3c+incompatible
 	k8s.io/klog v1.0.0 // indirect
@@ -54,6 +55,8 @@ require (
 	sigs.k8s.io/kubefed v0.1.0-rc2
 	sigs.k8s.io/testing_frameworks v0.1.0 // indirect
 )
+
+replace github.com/codeready-toolchain/api => github.com/MatousJobanek/api v0.0.0-20191008135136-1338bbea618f
 
 // Pinned to kubernetes-1.13.1
 replace (
