@@ -2,7 +2,7 @@ module github.com/codeready-toolchain/toolchain-common
 
 require (
 	github.com/appscode/jsonpatch v0.0.0-20190108182946-7c0e3b262f30 // indirect
-	github.com/codeready-toolchain/api v0.0.0-20190926105251-44ed4423e3bf
+	github.com/codeready-toolchain/api v0.0.0-20191009081803-8f4e395353de
 	github.com/emicklei/go-restful v2.10.0+incompatible // indirect
 	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
 	github.com/go-logr/logr v0.1.0
@@ -10,6 +10,7 @@ require (
 	github.com/go-openapi/jsonreference v0.19.3 // indirect
 	github.com/go-openapi/spec v0.19.3 // indirect
 	github.com/gogo/protobuf v1.3.0 // indirect
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6 // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
@@ -55,8 +56,6 @@ require (
 	sigs.k8s.io/kubefed v0.1.0-rc2
 	sigs.k8s.io/testing_frameworks v0.1.0 // indirect
 )
-
-replace github.com/codeready-toolchain/api => github.com/MatousJobanek/api v0.0.0-20191008135136-1338bbea618f
 
 // Pinned to kubernetes-1.13.1
 replace (
