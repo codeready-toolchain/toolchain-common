@@ -99,7 +99,7 @@ func TestAddOrUpdateStatusConditions(t *testing.T) {
 
 func TestFindConditionByType(t *testing.T) {
 	conditions := []toolchainv1alpha1.Condition{
-		toolchainv1alpha1.Condition{
+		{
 			Type:   toolchainv1alpha1.ConditionReady,
 			Status: corev1.ConditionTrue,
 		},

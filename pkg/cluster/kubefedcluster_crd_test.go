@@ -32,7 +32,7 @@ func TestEnsureKubeFedClusterCrd(t *testing.T) {
 			cl := test.NewFakeClient(t)
 
 			// when
-			err = ensureKubeFedClusterCrd(s, cl)
+			err = EnsureKubeFedClusterCrd(s, cl)
 
 			// then
 			require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestEnsureKubeFedClusterCrd(t *testing.T) {
 			cl := test.NewFakeClient(t, expectedCrd)
 
 			// when
-			err = ensureKubeFedClusterCrd(s, cl)
+			err = EnsureKubeFedClusterCrd(s, cl)
 
 			// then
 			require.NoError(t, err)
@@ -52,36 +52,19 @@ func TestEnsureKubeFedClusterCrd(t *testing.T) {
 		})
 	})
 
-	t.Run("failed", func(t *testing.T) {
-		t.Run("should fail when getting CRD", func(t *testing.T) {
-			// given
-			cl := test.NewFakeClient(t)
-			cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
-				return fmt.Errorf("error")
-			}
+	t.Run("should fail when creating CRD", func(t *testing.T) {
+		// given
+		cl := test.NewFakeClient(t)
+		cl.MockCreate = func(ctx context.Context, obj runtime.Object) error {
+			return fmt.Errorf("error")
+		}
 
-			// when
-			err = ensureKubeFedClusterCrd(s, cl)
+		// when
+		err = EnsureKubeFedClusterCrd(s, cl)
 
-			// then
-			require.Error(t, err)
-			assert.Equal(t, "unable to get the KubeFedCluster CRD: error", err.Error())
-		})
-
-		t.Run("should fail when creating CRD", func(t *testing.T) {
-			// given
-			cl := test.NewFakeClient(t)
-			cl.MockCreate = func(ctx context.Context, obj runtime.Object) error {
-				return fmt.Errorf("error")
-			}
-
-			// when
-			err = ensureKubeFedClusterCrd(s, cl)
-
-			// then
-			require.Error(t, err)
-			assert.Equal(t, "unable to create the KubeFedCluster CRD: error", err.Error())
-		})
+		// then
+		require.Error(t, err)
+		assert.Equal(t, "unable to create the KubeFedCluster CRD: error", err.Error())
 	})
 }
 

@@ -2,51 +2,27 @@ package cluster
 
 import (
 	"context"
-	"fmt"
-	"github.com/go-logr/logr"
 	errs "github.com/pkg/errors"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/types"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func EnsureKubeFedClusterCrd(log logr.Logger, mgr manager.Manager, stopChan <-chan struct{}) {
-	go func() {
-		if ok := mgr.GetCache().WaitForCacheSync(stopChan); !ok {
-			log.Error(fmt.Errorf("failed to wait for cache to be synced"), "")
-			os.Exit(1)
-		}
-		// create or update all NSTemplateTiers on the cluster at startup
-		if err := ensureKubeFedClusterCrd(mgr.GetScheme(), mgr.GetClient()); err != nil {
-			log.Error(err, "unable to ensure KubeFedCluster CRD")
-			os.Exit(1)
-		}
-	}()
-}
-
-func ensureKubeFedClusterCrd(scheme *runtime.Scheme, client client.Client) error {
-	crd := &v1beta1.CustomResourceDefinition{}
-	err := client.Get(context.TODO(), types.NamespacedName{Name: "kubefedclusters.core.kubefed.k8s.io"}, crd)
+// EnsureKubeFedClusterCrd creates a KubeFedCluster CRD in the cluster.
+// If the creation returns an error that is of the type "AlreadyExists" then the error is ignored,
+// if the error is of another type then it is returned
+func EnsureKubeFedClusterCrd(scheme *runtime.Scheme, client client.Client) error {
+	decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
+	kubeFedCrd := &v1beta1.CustomResourceDefinition{}
+	_, _, err := decoder.Decode([]byte(kubeFedClusterCrd), nil, kubeFedCrd)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
-			kubeFedCrd := &v1beta1.CustomResourceDefinition{}
-			_, _, err := decoder.Decode([]byte(kubeFedClusterCrd), nil, kubeFedCrd)
-			if err != nil {
-				return errs.Wrap(err, "unable to decode the KubeFedCluster CRD")
-			}
-			err = client.Create(context.TODO(), kubeFedCrd)
-			if err != nil && !errors.IsAlreadyExists(err) {
-				return errs.Wrap(err, "unable to create the KubeFedCluster CRD")
-			}
-			return nil
-		}
-		return errs.Wrap(err, "unable to get the KubeFedCluster CRD")
+		return errs.Wrap(err, "unable to decode the KubeFedCluster CRD")
+	}
+	err = client.Create(context.TODO(), kubeFedCrd)
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return errs.Wrap(err, "unable to create the KubeFedCluster CRD")
 	}
 	return nil
 }
