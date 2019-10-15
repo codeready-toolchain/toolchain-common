@@ -118,6 +118,55 @@ func TestFindConditionByType(t *testing.T) {
 	})
 }
 
+func TestIsTrue(t *testing.T) {
+	conditions := []toolchainv1alpha1.Condition{
+		{
+			Type:   toolchainv1alpha1.ConditionReady,
+			Status: corev1.ConditionTrue,
+		},
+		{
+			Type:   "custom_bool",
+			Status: corev1.ConditionTrue,
+		},
+		{
+			Type:   "false_cond",
+			Status: corev1.ConditionFalse,
+		},
+		{
+			Type:   "unknown_cond",
+			Status: corev1.ConditionUnknown,
+		},
+		{
+			Type:   "something_else",
+			Status: "someStatus",
+		},
+	}
+
+	t.Run("ready set to true", func(t *testing.T) {
+		assert.True(t, condition.IsTrue(conditions, toolchainv1alpha1.ConditionReady))
+	})
+
+	t.Run("custom bool set to true", func(t *testing.T) {
+		assert.True(t, condition.IsTrue(conditions, "custom_bool"))
+	})
+
+	t.Run("false", func(t *testing.T) {
+		assert.False(t, condition.IsTrue(conditions, "false_cond"))
+	})
+
+	t.Run("explicitly unknown", func(t *testing.T) {
+		assert.False(t, condition.IsTrue(conditions, "unknown_cond"))
+	})
+
+	t.Run("unknown", func(t *testing.T) {
+		assert.False(t, condition.IsTrue(conditions, "unknown"))
+	})
+
+	t.Run("status is not bool", func(t *testing.T) {
+		assert.False(t, condition.IsTrue(conditions, "something_else"))
+	})
+}
+
 func existingConditions(size int) []toolchainv1alpha1.Condition {
 	return conditions(size, "Existing")
 }
