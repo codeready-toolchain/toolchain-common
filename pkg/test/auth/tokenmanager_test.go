@@ -39,7 +39,7 @@ func TestTokenManagerKeys(t *testing.T) {
 		require.NoError(t, err)
 		key0Retrieved, err := tokenManager.Key(kid0)
 		require.NotNil(t, key0Retrieved)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		tokenManager.RemovePrivateKey(kid0)
 		_, err = tokenManager.Key(kid0)
 		require.Error(t, err)
