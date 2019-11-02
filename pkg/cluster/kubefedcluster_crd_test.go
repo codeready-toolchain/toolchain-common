@@ -55,7 +55,7 @@ func TestEnsureKubeFedClusterCrd(t *testing.T) {
 	t.Run("should fail when creating CRD", func(t *testing.T) {
 		// given
 		cl := test.NewFakeClient(t)
-		cl.MockCreate = func(ctx context.Context, obj runtime.Object) error {
+		cl.MockCreate = func(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
 			return fmt.Errorf("error")
 		}
 
