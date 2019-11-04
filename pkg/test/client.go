@@ -72,7 +72,7 @@ func (c *FakeClient) Status() client.StatusWriter {
 	if c.MockStatusUpdate != nil {
 		m.mockUpdate = c.MockStatusUpdate
 	}
-	if c.MockStatusUpdate != nil {
+	if c. MockStatusPatch != nil {
 		m.mockPatch = c.MockStatusPatch
 	}
 	return &m
