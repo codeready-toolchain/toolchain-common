@@ -150,6 +150,14 @@ func TestNewClient(t *testing.T) {
 		assert.EqualError(t, fclient.Update(context.TODO(), &v1.Secret{}), expectedErr.Error())
 	})
 
+	t.Run("mock Patch", func(t *testing.T) {
+		defer func() { fclient.MockPatch = nil }()
+		fclient.MockPatch = func(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+			return expectedErr
+		}
+		assert.EqualError(t, fclient.Patch(context.TODO(), &v1.Secret{}, client.ConstantPatch(types.MergePatchType, []byte{})), expectedErr.Error())
+	})
+
 	t.Run("mock Delete", func(t *testing.T) {
 		defer func() { fclient.MockDelete = nil }()
 		fclient.MockDelete = func(ctx context.Context, obj runtime.Object, opts ...client.DeleteOption) error {

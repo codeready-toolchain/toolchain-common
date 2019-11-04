@@ -13,7 +13,7 @@ import (
 // NewFakeClient creates a fake K8s client with ability to override specific Get/List/Create/Update/StatusUpdate/Delete functions
 func NewFakeClient(t *testing.T, initObjs ...runtime.Object) *FakeClient {
 	client := fake.NewFakeClientWithScheme(scheme.Scheme, initObjs...)
-	return &FakeClient{client, t, nil, nil, nil, nil, nil, nil, nil, nil, nil}
+	return &FakeClient{Client: client, T: t}
 }
 
 type FakeClient struct {
@@ -97,4 +97,11 @@ func (c *FakeClient) DeleteAllOf(ctx context.Context, obj runtime.Object, opts .
 		return c.MockDeleteAllOf(ctx, obj, opts...)
 	}
 	return c.Client.DeleteAllOf(ctx, obj, opts...)
+}
+
+func (c *FakeClient) Patch(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+	if c.MockPatch != nil {
+		return c.MockPatch(ctx, obj, patch, opts...)
+	}
+	return c.Client.Patch(ctx, obj, patch, opts...)
 }
