@@ -15,6 +15,7 @@ func TestConditionsMatch(t *testing.T) {
 
 	t.Run("conditions match", func(t *testing.T) {
 		t.Run("empty lists", func(t *testing.T) {
+			assert.True(t, ConditionsMatch(actual())) // actual conditions are ignored if no expectation is provided
 			assert.True(t, ConditionsMatch(nil))
 			assert.True(t, ConditionsMatch([]toolchainv1alpha1.Condition{}))
 		})
@@ -46,7 +47,6 @@ func TestConditionsMatch(t *testing.T) {
 		t.Run("different sizes of the lists", func(t *testing.T) {
 			assert.False(t, ConditionsMatch(nil, toolchainv1alpha1.Condition{}))
 			conditions := actual()
-			assert.False(t, ConditionsMatch(conditions))
 			assert.False(t, ConditionsMatch(conditions, conditions[0]))
 			assert.False(t, ConditionsMatch(conditions, conditions[0], conditions[1], conditions[2], conditions[0]))
 		})

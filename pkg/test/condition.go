@@ -38,6 +38,9 @@ func AssertContainsCondition(t *testing.T, conditions []toolchainv1alpha1.Condit
 // ConditionsMatch returns true if the specified list A of conditions is equal to specified
 // list B of conditions ignoring the order of the elements
 func ConditionsMatch(actual []toolchainv1alpha1.Condition, expected ...toolchainv1alpha1.Condition) bool {
+	if len(expected) == 0 {
+		return true // skip
+	}
 	if len(expected) != len(actual) {
 		return false
 	}
