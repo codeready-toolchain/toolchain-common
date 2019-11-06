@@ -3,8 +3,11 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/codeready-toolchain/api/pkg/apis"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+
 	"github.com/magiconair/properties/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -13,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestEnsureKubeFedClusterCrd(t *testing.T) {
@@ -23,7 +25,9 @@ func TestEnsureKubeFedClusterCrd(t *testing.T) {
 	require.NoError(t, err)
 	decoder := serializer.NewCodecFactory(s).UniversalDeserializer()
 	expectedCrd := &v1beta1.CustomResourceDefinition{}
-	_, _, err = decoder.Decode([]byte(kubeFedClusterCrd), nil, expectedCrd)
+	crd, err := Asset("core.kubefed.io_kubefedclusters.yaml")
+	require.NoError(t, err)
+	_, _, err = decoder.Decode([]byte(crd), nil, expectedCrd)
 	require.NoError(t, err)
 
 	t.Run("successful", func(t *testing.T) {
@@ -32,7 +36,7 @@ func TestEnsureKubeFedClusterCrd(t *testing.T) {
 			cl := test.NewFakeClient(t)
 
 			// when
-			err = EnsureKubeFedClusterCrd(s, cl)
+			err = EnsureKubeFedClusterCRD(s, cl)
 
 			// then
 			require.NoError(t, err)
@@ -44,7 +48,7 @@ func TestEnsureKubeFedClusterCrd(t *testing.T) {
 			cl := test.NewFakeClient(t, expectedCrd)
 
 			// when
-			err = EnsureKubeFedClusterCrd(s, cl)
+			err = EnsureKubeFedClusterCRD(s, cl)
 
 			// then
 			require.NoError(t, err)
@@ -60,7 +64,7 @@ func TestEnsureKubeFedClusterCrd(t *testing.T) {
 		}
 
 		// when
-		err = EnsureKubeFedClusterCrd(s, cl)
+		err = EnsureKubeFedClusterCRD(s, cl)
 
 		// then
 		require.Error(t, err)
@@ -70,7 +74,7 @@ func TestEnsureKubeFedClusterCrd(t *testing.T) {
 
 func assertThatKubeFedClusterCrdExists(t *testing.T, client client.Client, expectedCrd *v1beta1.CustomResourceDefinition) {
 	crd := &v1beta1.CustomResourceDefinition{}
-	err := client.Get(context.TODO(), types.NamespacedName{Name: "kubefedclusters.core.kubefed.k8s.io"}, crd)
+	err := client.Get(context.TODO(), types.NamespacedName{Name: "kubefedclusters.core.kubefed.io"}, crd)
 	require.NoError(t, err)
 	assert.Equal(t, expectedCrd, crd)
 }
