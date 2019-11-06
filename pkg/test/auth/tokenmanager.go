@@ -84,10 +84,10 @@ func (tg *TokenManager) AddPrivateKey(kid string) (*rsa.PrivateKey, error) {
 }
 
 // AddE2EPrivateKey creates and stores a the e2e key with the given e2e kid.
-func (tg *TokenManager) AddE2EPrivateKey() (*rsa.PrivateKey, error) {
+func (tg *TokenManager) AddE2EPrivateKey() *rsa.PrivateKey {
 	key := getE2ETestPrivateKey()
 	tg.keyMap[e2eKid] = key
-	return key, nil
+	return key
 }
 
 // RemovePrivateKey removes a key from the list of known keys.
