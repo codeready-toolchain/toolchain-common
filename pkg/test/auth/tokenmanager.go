@@ -13,6 +13,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
+	jose "gopkg.in/square/go-jose.v2"
 )
 
 const (
@@ -162,4 +163,39 @@ func (tg *TokenManager) NewKeyServer() *httptest.Server {
 		}
 		fmt.Fprintln(w, string(jsonKeyData))
 	}))
+}
+
+// GetE2ETestKeys returns a hard-coded keys to be used for e2e tests
+func GetE2ETestKeys() string {
+	return `{"keys":[{"kid":"nBVBNiFNxSiX7Znyg4lUx89HQkV2gtJp11zTP6qLg-4","kty":"RSA","alg":"RS256","use":"sig","n":"i04yxaQb7e1-tfcDoXe8K2DZ-rJ2yVVjBoT9Tw0jOout5w84x2_r5t_4aCBQjo9IO7UVWTtvE0cOk1WtykXvso7iYh9ry9jsZtrJNS0QXykcOJZJLVxyh1uatrbpM5heKYNz5fs5hp-3Qh5XkyCkLigIkOoLMXO1tLkNvjiEdR1zslqEOXaqWsp6HlUcu1JOuEv1LsxFuCnKc9ZvZDm0mQQJiOAl1QRvSU3pgX3IjuoefY6-6NQAYm1MQjOzWSnNkQTTEIWgIRu8QVgxko50pR3fTC7LWj6AQCv5GkW1r5zIv9OSzjoiN8A_UHASWh0Z6oy0eLeY775EhVfrg_KjYw","e":"AQAB","x5c":["MIICoTCCAYkCBgFtIFN1nTANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAlkZW1vUmVhbG0wHhcNMTkwOTExMTIzNTAzWhcNMjkwOTExMTIzNjQzWjAUMRIwEAYDVQQDDAlkZW1vUmVhbG0wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCLTjLFpBvt7X619wOhd7wrYNn6snbJVWMGhP1PDSM6i63nDzjHb+vm3/hoIFCOj0g7tRVZO28TRw6TVa3KRe+yjuJiH2vL2Oxm2sk1LRBfKRw4lkktXHKHW5q2tukzmF4pg3Pl+zmGn7dCHleTIKQuKAiQ6gsxc7W0uQ2+OIR1HXOyWoQ5dqpaynoeVRy7Uk64S/UuzEW4Kcpz1m9kObSZBAmI4CXVBG9JTemBfciO6h59jr7o1ABibUxCM7NZKc2RBNMQhaAhG7xBWDGSjnSlHd9MLstaPoBAK/kaRbWvnMi/05LOOiI3wD9QcBJaHRnqjLR4t5jvvkSFV+uD8qNjAgMBAAEwDQYJKoZIhvcNAQELBQADggEBADGGFneSXwWrT4Yk4PMcY14gfc6ta91Qz5xZDWiPz0ZaX1ULLEOu4k/rIKwN7tCMxBxCgnxaMj372JvAPAUqwLmRhvDxtcJDYHQwM77NqU3ZQARchqyDsd5aYW6cYFMF8D60PdFOgMRKJiRGpRbJgPt7+hFdbEw2XnWN9lnzXmbeXxCn7GZKZiKmWZU3eBa/pQVCjTb4JICs+1uBJj0VfgLNYHUbZXdvg4ismSEqXnBKX/V3lPJQWXU/yyMS6G9lHGcAisxWIthcA8C6gWUaJe1FwJrCeqDIJDABw72VAYvUaIf0pBVyXtr8A2JrBD9jdb8KOyC//X+LLiXqD1fpltw="],"x5t":"l_5tiA15SUVfBXx18njAbbs3wds","x5t#S256":"T8ef_9jOHIlDQVYCJOXPtyOkoRF-e8eJtyh7pswQclg"}]}`
+}
+
+// GetE2ETestPublicKey extracts and returns a hard-coded rsa.public key
+func GetE2ETestPublicKey() *rsa.PublicKey {
+	webKeys := &jose.JSONWebKeySet{}
+	err := json.Unmarshal([]byte(GetE2ETestKeys()), &webKeys)
+	if err != nil {
+		return nil
+	}
+
+	webKey0 := webKeys.Key(GetE2ETestKeysKid())
+	publicKey, ok := webKey0[0].Key.(*rsa.PublicKey)
+	if !ok {
+		return nil
+	}
+
+	return publicKey
+}
+
+// GetE2ETestKeysKid returns the kid extracted from the e2e test keys
+func GetE2ETestKeysKid() string {
+	mp := make(map[string]interface{})
+	err := json.Unmarshal([]byte(GetE2ETestKeys()), &mp)
+	if err != nil {
+		return ""
+	}
+
+	key := mp["keys"].([]interface{})[0].(map[string]interface{})
+
+	return key["kid"].(string)
 }
