@@ -70,7 +70,7 @@ func TestEnsureKubeFedClusterCrd(t *testing.T) {
 
 func assertThatKubeFedClusterCrdExists(t *testing.T, client client.Client, expectedCrd *v1beta1.CustomResourceDefinition) {
 	crd := &v1beta1.CustomResourceDefinition{}
-	err := client.Get(context.TODO(), types.NamespacedName{Name: "kubefedclusters.core.kubefed.k8s.io"}, crd)
+	err := client.Get(context.TODO(), types.NamespacedName{Name: "kubefedclusters.core.kubefed.io"}, crd)
 	require.NoError(t, err)
 	assert.Equal(t, expectedCrd, crd)
 }
