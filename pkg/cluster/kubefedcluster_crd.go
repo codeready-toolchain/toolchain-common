@@ -1,57 +1,32 @@
 package cluster
 
-import (
-	"context"
-	errs "github.com/pkg/errors"
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-// EnsureKubeFedClusterCrd creates a KubeFedCluster CRD in the cluster.
-// If the creation returns an error that is of the type "AlreadyExists" then the error is ignored,
-// if the error is of another type then it is returned
-func EnsureKubeFedClusterCrd(scheme *runtime.Scheme, client client.Client) error {
-	decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
-	kubeFedCrd := &v1beta1.CustomResourceDefinition{}
-	_, _, err := decoder.Decode([]byte(kubeFedClusterCrd), nil, kubeFedCrd)
-	if err != nil {
-		return errs.Wrap(err, "unable to decode the KubeFedCluster CRD")
-	}
-	err = client.Create(context.TODO(), kubeFedCrd)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return errs.Wrap(err, "unable to create the KubeFedCluster CRD")
-	}
-	return nil
-}
-
 const kubeFedClusterCrd = `
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  labels:
-    controller-tools.k8s.io: "1.0"
-  name: kubefedclusters.core.kubefed.k8s.io
+  name: kubefedclusters.core.kubefed.io
 spec:
   additionalPrinterColumns:
-  - JSONPath: .status.conditions[?(@.type=='Ready')].status
-    name: ready
-    type: string
   - JSONPath: .metadata.creationTimestamp
     name: age
     type: date
-  group: core.kubefed.k8s.io
+  - JSONPath: .status.conditions[?(@.type=='Ready')].status
+    name: ready
+    type: string
+  group: core.kubefed.io
   names:
     kind: KubeFedCluster
+    listKind: KubeFedClusterList
     plural: kubefedclusters
+    singular: kubefedcluster
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
+      description: KubeFedCluster configures KubeFed to be aware of a Kubernetes cluster
+        and encapsulates the details necessary to communicate with the cluster.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -66,6 +41,7 @@ spec:
         metadata:
           type: object
         spec:
+          description: KubeFedClusterSpec defines the desired state of KubeFedCluster
           properties:
             apiEndpoint:
               description: The API endpoint of the member cluster. This can be a hostname,
@@ -75,6 +51,14 @@ spec:
               description: CABundle contains the certificate authority information.
               format: byte
               type: string
+            disabledTLSValidations:
+              description: DisabledTLSValidations defines a list of checks to ignore
+                when validating the TLS connection to the member cluster.  This can
+                be any of *, SubjectName, or ValidityPeriod. If * is specified, it
+                is expected to be the only option in list.
+              items:
+                type: string
+              type: array
             secretRef:
               description: Name of the secret containing the token required to access
                 the member cluster. The secret needs to exist in the same namespace
@@ -91,10 +75,13 @@ spec:
           - secretRef
           type: object
         status:
+          description: KubeFedClusterStatus contains information about the current
+            status of a cluster updated periodically by cluster controller.
           properties:
             conditions:
               description: Conditions is an array of current cluster conditions.
               items:
+                description: ClusterCondition describes current state of a cluster.
                 properties:
                   lastProbeTime:
                     description: Last time the condition was checked.
@@ -119,9 +106,9 @@ spec:
                     description: Type of cluster condition, Ready or Offline.
                     type: string
                 required:
-                - type
-                - status
                 - lastProbeTime
+                - status
+                - type
                 type: object
               type: array
             region:
@@ -137,7 +124,13 @@ spec:
           required:
           - conditions
           type: object
+      required:
+      - spec
   version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
 status:
   acceptedNames:
     kind: ""
