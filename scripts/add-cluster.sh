@@ -113,7 +113,7 @@ fi
 
 oc create secret generic ${SA_NAME}-${JOINING_CLUSTER_NAME} --from-literal=token="${SA_TOKEN}" --from-literal=ca.crt="${SA_CA_CRT}" -n ${CLUSTER_JOIN_TO_OPERATOR_NS}
 
-KUBEFEDCLUSTER_CRD="apiVersion: core.kubefed.k8s.io/v1beta1
+KUBEFEDCLUSTER_CRD="apiVersion: core.kubefed.io/v1beta1
 kind: KubeFedCluster
 metadata:
   name: ${JOINING_CLUSTER_TYPE}-${JOINING_CLUSTER_NAME}
