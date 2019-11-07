@@ -176,9 +176,12 @@ func TestTokenManagerKeyService(t *testing.T) {
 
 func TestTokenManagerE2ETestKeys(t *testing.T) {
 
-	t.Run("test kid", func(t *testing.T) {
-		kid := GetE2ETestKid()
-		require.Equal(t, "d5693c31-7016-46a4-bbe4-867e6d6a3b3a", kid)
+	t.Run("test get e2e token", func(t *testing.T) {
+		identity := NewIdentity()
+		emailClaim := WithEmailClaim(uuid.NewV4().String() + "@email.tld")
+		token, err := GenerateSignedE2ETestToken(*identity, emailClaim)
+		require.NoError(t, err)
+		require.NotNil(t, token)
 	})
 
 	t.Run("test rsa public key", func(t *testing.T) {

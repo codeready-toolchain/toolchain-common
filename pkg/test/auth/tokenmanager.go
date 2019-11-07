@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	bitSize = 2048
-	e2ePem  = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEApnQLIhfCVZPJKt5D5SCRUhJ/N5aCsRNlnowqMFzhUF7DF5kb\nYWoE8YWF6YcLuyfh/NChAVkixd4zOvyOtVuOjFao/1/2HmKlGxeJ4JhlF1PBXMZV\nL53aInEaP4A8J5kAghN74P+Uz1ax1/eF8FjV711ETZDiwYUYXvbPaIdb8WvCU7tG\nA5v63My+6PrrDia1xgOevOicV/qxKWdb3stFQ52x/hJKHuMbyGTjSJ6tXdnJZ3ND\nj04OBLI0Z1uNShHcGPqp9foAX02dGEJvmBorDg7O1egVNGRYEK7DJ8Y0T50EXGpr\ngJaSYjYMTL6u2Ds9vLzjircigD+F2ltJdbhSsQIDAQABAoIBADBsB6UWVlFA2b+f\nww6Pp9bBTMLmBQTwSJqT2d4R1vXja0udHar8BY4hMrCZuZ7rXkGGi5/xxzzag/q/\n59/4T4Kh3y3TQ6zZM4CrG0/75USg99o+VB+zAvcMAf/BFT7LsqskceAlWavrY3cZ\nKZyeqzWj4y/RWzXCuzE9CV82KVgUcccKofwK6ZauwXDke2xRruaOMeJ4mP62xgNp\nhVy0W/La5sqrq24EzJ/0hEMJYg+Z0udOzLofl5NqAoPrazgdZg1oVxbGY0sSUEax\nkA/nIlUskiNTgCYrRAeWrI1p6L0LtKMQ+KMs5ek5lI3k2K6EViHXO5kelOKeIas0\nhVo0tfECgYEA2NeYtkPIZDzGonu60/52FpJyLzoW9mxc8UBa9/p/CgMC/UzdyxbL\nys4Tw/BuXxwPx0shAI/txlfqd3Dl9z3HF+e84VOIph3VqYFh9cBkZQI9z55pP5kt\no8UW1SWUA799QTIZRhdFrPspaPISiWXgGAiHfaOy6SMM/ghTU22+Dm0CgYEAxIME\nlycBt7dsfvbb41OsVeH61mYeC7ZB6FNLhF7X2CqH9ybhMGqUnYvN+/EHMElWR/ky\nxe68Hcsvq3sSmEv1SHjAk6WottjpdwwCXvDKWu3LEjR6o3i2VRTCL1jJD9OlcJnk\ntSdI2gp/rTQrcm/ANY9KcmYfAyq/xe7DkOkUWtUCgYEAuAUXKy6Q5EgThhacsYXU\nL0mur1eL3yqNIYus559kqllt8wqFevFolz6V1YW4FOzakxW19yUt81Huv9hGwLBj\nwmy+hTZ/1AGjrksHmCfiyznAvO5BgWB8M+xxeQd/+kJKiMZ8XlgnoCoxtUch5gpX\nx+2NFlmS3nkJcJgeJsIONW0CgYAPW7YGIjROKXW/TofM8oMriyfRjdWXUL1B7RCf\n3dG8wUYzGMTMxeerkHuezy2ipnip014WfhwRsAmfu1SutnELIvTaFT5kW/uTJEsj\nJGqMRL10RMm48Pw/Fgo/LQ85v27UqBJp3hIhiGSGIueqX/WDuhk1a6nM05B9ZbW/\nI5hFqQKBgEktcozzuQL0EcyTJ+wFPSoma4qdAqbYf4sUWC9ebrzVd2/plhVRren7\nnmblwgPUKfdPKPe9ckWQOaHAIpNsq5Baxjq2wxFWZOvxH2qWmVmljEeoiTRdTHoF\nsMnQfhExyZp/T6uc3rgP0yyOFzSbZrnXpzZ9CZtfqbsfjGKwEbq7\n-----END RSA PRIVATE KEY-----\n"
-	e2eKid  = "d5693c31-7016-46a4-bbe4-867e6d6a3b3a"
+	bitSize       = 2048
+	e2ePrivatePEM = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEApnQLIhfCVZPJKt5D5SCRUhJ/N5aCsRNlnowqMFzhUF7DF5kb\nYWoE8YWF6YcLuyfh/NChAVkixd4zOvyOtVuOjFao/1/2HmKlGxeJ4JhlF1PBXMZV\nL53aInEaP4A8J5kAghN74P+Uz1ax1/eF8FjV711ETZDiwYUYXvbPaIdb8WvCU7tG\nA5v63My+6PrrDia1xgOevOicV/qxKWdb3stFQ52x/hJKHuMbyGTjSJ6tXdnJZ3ND\nj04OBLI0Z1uNShHcGPqp9foAX02dGEJvmBorDg7O1egVNGRYEK7DJ8Y0T50EXGpr\ngJaSYjYMTL6u2Ds9vLzjircigD+F2ltJdbhSsQIDAQABAoIBADBsB6UWVlFA2b+f\nww6Pp9bBTMLmBQTwSJqT2d4R1vXja0udHar8BY4hMrCZuZ7rXkGGi5/xxzzag/q/\n59/4T4Kh3y3TQ6zZM4CrG0/75USg99o+VB+zAvcMAf/BFT7LsqskceAlWavrY3cZ\nKZyeqzWj4y/RWzXCuzE9CV82KVgUcccKofwK6ZauwXDke2xRruaOMeJ4mP62xgNp\nhVy0W/La5sqrq24EzJ/0hEMJYg+Z0udOzLofl5NqAoPrazgdZg1oVxbGY0sSUEax\nkA/nIlUskiNTgCYrRAeWrI1p6L0LtKMQ+KMs5ek5lI3k2K6EViHXO5kelOKeIas0\nhVo0tfECgYEA2NeYtkPIZDzGonu60/52FpJyLzoW9mxc8UBa9/p/CgMC/UzdyxbL\nys4Tw/BuXxwPx0shAI/txlfqd3Dl9z3HF+e84VOIph3VqYFh9cBkZQI9z55pP5kt\no8UW1SWUA799QTIZRhdFrPspaPISiWXgGAiHfaOy6SMM/ghTU22+Dm0CgYEAxIME\nlycBt7dsfvbb41OsVeH61mYeC7ZB6FNLhF7X2CqH9ybhMGqUnYvN+/EHMElWR/ky\nxe68Hcsvq3sSmEv1SHjAk6WottjpdwwCXvDKWu3LEjR6o3i2VRTCL1jJD9OlcJnk\ntSdI2gp/rTQrcm/ANY9KcmYfAyq/xe7DkOkUWtUCgYEAuAUXKy6Q5EgThhacsYXU\nL0mur1eL3yqNIYus559kqllt8wqFevFolz6V1YW4FOzakxW19yUt81Huv9hGwLBj\nwmy+hTZ/1AGjrksHmCfiyznAvO5BgWB8M+xxeQd/+kJKiMZ8XlgnoCoxtUch5gpX\nx+2NFlmS3nkJcJgeJsIONW0CgYAPW7YGIjROKXW/TofM8oMriyfRjdWXUL1B7RCf\n3dG8wUYzGMTMxeerkHuezy2ipnip014WfhwRsAmfu1SutnELIvTaFT5kW/uTJEsj\nJGqMRL10RMm48Pw/Fgo/LQ85v27UqBJp3hIhiGSGIueqX/WDuhk1a6nM05B9ZbW/\nI5hFqQKBgEktcozzuQL0EcyTJ+wFPSoma4qdAqbYf4sUWC9ebrzVd2/plhVRren7\nnmblwgPUKfdPKPe9ckWQOaHAIpNsq5Baxjq2wxFWZOvxH2qWmVmljEeoiTRdTHoF\nsMnQfhExyZp/T6uc3rgP0yyOFzSbZrnXpzZ9CZtfqbsfjGKwEbq7\n-----END RSA PRIVATE KEY-----\n"
+	e2ePrivateKID = "d5693c31-7016-46a4-bbe4-867e6d6a3b3a"
 )
 
 // WebKeySet represents a JWK Set object.
@@ -83,11 +83,10 @@ func (tg *TokenManager) AddPrivateKey(kid string) (*rsa.PrivateKey, error) {
 	return key, nil
 }
 
-// AddE2EPrivateKey creates and stores a the e2e key with the given e2e kid.
-func (tg *TokenManager) AddE2EPrivateKey() *rsa.PrivateKey {
+// addE2ETestPrivateKey gets the private e2e key and stores the key with the e2e kid.
+func (tg *TokenManager) addE2ETestPrivateKey() {
 	key := getE2ETestPrivateKey()
-	tg.keyMap[e2eKid] = key
-	return key
+	tg.keyMap[e2ePrivateKID] = key
 }
 
 // RemovePrivateKey removes a key from the list of known keys.
@@ -149,6 +148,12 @@ func (tg *TokenManager) GenerateSignedToken(identity Identity, kid string, extra
 	return tg.SignToken(token, kid)
 }
 
+func GenerateSignedE2ETestToken(identity Identity, extraClaims ...ExtraClaim) (string, error) {
+	tm := NewTokenManager()
+	tm.addE2ETestPrivateKey()
+	return tm.GenerateSignedToken(identity, e2ePrivateKID, extraClaims...)
+}
+
 // NewKeyServer creates and starts an http key server
 func (tg *TokenManager) NewKeyServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -180,24 +185,18 @@ func (tg *TokenManager) NewKeyServer() *httptest.Server {
 // GetE2ETestPublicKey returns the public key and kid used for e2e tests
 func GetE2ETestPublicKey() []*PublicKey {
 	publicKeys := []*PublicKey{}
-
 	key := &PublicKey{
-		KeyID: e2eKid,
+		KeyID: e2ePrivateKID,
 		Key:   &getE2ETestPrivateKey().PublicKey,
 	}
-
 	publicKeys = append(publicKeys, key)
 
 	return publicKeys
 }
 
-// GetE2ETestKid returns the e2e kid
-func GetE2ETestKid() string {
-	return e2eKid
-}
-
+// getE2ETestPrivateKey returns the e2e private key from the PEM.
 func getE2ETestPrivateKey() *rsa.PrivateKey {
-	r := strings.NewReader(e2ePem)
+	r := strings.NewReader(e2ePrivatePEM)
 	pemBytes, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil
