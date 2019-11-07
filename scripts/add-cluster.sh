@@ -110,8 +110,11 @@ else
     CLUSTER_JOIN_TO_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}'`
 fi
 
-
-oc create secret generic ${SA_NAME}-${JOINING_CLUSTER_NAME} --from-literal=token="${SA_TOKEN}" --from-literal=ca.crt="${SA_CA_CRT}" -n ${CLUSTER_JOIN_TO_OPERATOR_NS}
+SECRET_NAME=${SA_NAME}-${JOINING_CLUSTER_NAME}
+if [[ -n `oc get secret -n ${CLUSTER_JOIN_TO_OPERATOR_NS} | grep ${SECRET_NAME}` ]]; then
+    oc delete secret ${SECRET_NAME} -n ${CLUSTER_JOIN_TO_OPERATOR_NS}
+fi
+oc create secret generic ${SECRET_NAME} --from-literal=token="${SA_TOKEN}" --from-literal=ca.crt="${SA_CA_CRT}" -n ${CLUSTER_JOIN_TO_OPERATOR_NS}
 
 KUBEFEDCLUSTER_CRD="apiVersion: core.kubefed.io/v1beta1
 kind: KubeFedCluster
