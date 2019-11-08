@@ -11,6 +11,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
 	jose "gopkg.in/square/go-jose.v2"
+	"gotest.tools/assert"
 )
 
 func TestTokenManagerKeys(t *testing.T) {
@@ -176,20 +177,39 @@ func TestTokenManagerKeyService(t *testing.T) {
 
 func TestTokenManagerE2ETestKeys(t *testing.T) {
 
-	t.Run("test get e2e token", func(t *testing.T) {
-		identity := NewIdentity()
-		emailClaim := WithEmailClaim(uuid.NewV4().String() + "@email.tld")
-		token, err := GenerateSignedE2ETestToken(*identity, emailClaim)
+	identity := NewIdentity()
+	emailClaim := WithEmailClaim(uuid.NewV4().String() + "@email.tld")
+	token, err := GenerateSignedE2ETestToken(*identity, emailClaim)
+	require.NoError(t, err)
+	require.NotNil(t, token)
+
+	t.Run("test valid token", func(t *testing.T) {
+		publicKeys := GetE2ETestPublicKey()
+		require.Len(t, publicKeys, 1)
+		publicKey := publicKeys[0]
+		parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+			kid := token.Header["kid"]
+
+			require.NotNil(t, kid)
+			kidStr, ok := kid.(string)
+			require.True(t, ok)
+			assert.Equal(t, publicKey.KeyID, kidStr)
+
+			// require.Equal(t, publicKey.Key, str)
+			return publicKey.Key, nil
+		})
+
 		require.NoError(t, err)
-		require.NotNil(t, token)
+		// parsedToken.Key.(*rsa.PublicKey)
+		require.True(t, parsedToken.Valid)
 	})
 
-	t.Run("test rsa public key", func(t *testing.T) {
-		publicKey := GetE2ETestPublicKey()[0]
-		require.NotNil(t, publicKey)
-		require.Equal(t, "d5693c31-7016-46a4-bbe4-867e6d6a3b3a", publicKey.KeyID)
-		require.Equal(t, int(65537), publicKey.Key.E)
-		bigIntStr := "21012781801511383044732859183821217007851293710821114895760198260232575745572557529024769148751664085753979348282860415904823461936756670234992900896172585883572839603850502208610282955261600579721486560601197293882543768559983830222520087477177038541810733627888647207786580943343041930725590581760179973525124655055856323394194878135685796010168280014803674316013445277393348892224743777084314411975807648692031098004605647403763360717917223808648474264424929342927778987767236679382264619474583832779556235912879279744180212616393049238365337349361442557516860490302890872095555342995498516268873312641767641207473"
-		require.Equal(t, bigIntStr, publicKey.Key.N.String())
-	})
+	// t.Run("test rsa public key", func(t *testing.T) {
+	// 	publicKey := GetE2ETestPublicKey()[0]
+	// 	require.NotNil(t, publicKey)
+	// 	require.Equal(t, "d5693c31-7016-46a4-bbe4-867e6d6a3b3a", publicKey.KeyID)
+	// 	require.Equal(t, int(65537), publicKey.Key.E)
+	// 	bigIntStr := `21012781801511383044732859183821217007851293710821114895760198260232575745572557529024769148751664085753979348282860415904823461936756670234992900896172585883572839603850502208610282955261600579721486560601197293882543768559983830222520087477177038541810733627888647207786580943343041930725590581760179973525124655055856323394194878135685796010168280014803674316013445277393348892224743777084314411975807648692031098004605647403763360717917223808648474264424929342927778987767236679382264619474583832779556235912879279744180212616393049238365337349361442557516860490302890872095555342995498516268873312641767641207473`
+	// 	require.Equal(t, bigIntStr, publicKey.Key.N.String())
+	// })
 }
