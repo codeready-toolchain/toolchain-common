@@ -1,7 +1,7 @@
 module github.com/codeready-toolchain/toolchain-common
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20191101182303-0a050462a248
+	github.com/codeready-toolchain/api v0.0.0-20191106003206-a7c89ec224a0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/emicklei/go-restful v2.10.0+incompatible // indirect
 	github.com/go-logr/logr v0.1.0
