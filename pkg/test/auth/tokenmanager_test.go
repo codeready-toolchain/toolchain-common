@@ -11,6 +11,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
 	jose "gopkg.in/square/go-jose.v2"
+	"gotest.tools/assert"
 )
 
 func TestTokenManagerKeys(t *testing.T) {
@@ -171,5 +172,30 @@ func TestTokenManagerKeyService(t *testing.T) {
 		require.True(t, ok)
 		// check key equality by comparing the modulus
 		require.Equal(t, key1.N, rsaKey1.N)
+	})
+}
+
+func TestTokenManagerE2ETestKeys(t *testing.T) {
+	identity := NewIdentity()
+	emailClaim := WithEmailClaim(uuid.NewV4().String() + "@email.tld")
+	token, err := GenerateSignedE2ETestToken(*identity, emailClaim)
+	require.NoError(t, err)
+	require.NotNil(t, token)
+
+	t.Run("test valid token", func(t *testing.T) {
+		publicKeys := GetE2ETestPublicKey()
+		require.Len(t, publicKeys, 1)
+		publicKey := publicKeys[0]
+		parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+			kid := token.Header["kid"]
+			require.NotNil(t, kid)
+			kidStr, ok := kid.(string)
+			require.True(t, ok)
+			assert.Equal(t, publicKey.KeyID, kidStr)
+
+			return publicKey.Key, nil
+		})
+		require.NoError(t, err)
+		require.True(t, parsedToken.Valid)
 	})
 }

@@ -3,10 +3,14 @@ package auth
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -16,7 +20,36 @@ import (
 )
 
 const (
-	bitSize = 2048
+	bitSize       = 2048
+	e2ePrivatePEM = `-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEApnQLIhfCVZPJKt5D5SCRUhJ/N5aCsRNlnowqMFzhUF7DF5kb
+YWoE8YWF6YcLuyfh/NChAVkixd4zOvyOtVuOjFao/1/2HmKlGxeJ4JhlF1PBXMZV
+L53aInEaP4A8J5kAghN74P+Uz1ax1/eF8FjV711ETZDiwYUYXvbPaIdb8WvCU7tG
+A5v63My+6PrrDia1xgOevOicV/qxKWdb3stFQ52x/hJKHuMbyGTjSJ6tXdnJZ3ND
+j04OBLI0Z1uNShHcGPqp9foAX02dGEJvmBorDg7O1egVNGRYEK7DJ8Y0T50EXGpr
+gJaSYjYMTL6u2Ds9vLzjircigD+F2ltJdbhSsQIDAQABAoIBADBsB6UWVlFA2b+f
+ww6Pp9bBTMLmBQTwSJqT2d4R1vXja0udHar8BY4hMrCZuZ7rXkGGi5/xxzzag/q/
+59/4T4Kh3y3TQ6zZM4CrG0/75USg99o+VB+zAvcMAf/BFT7LsqskceAlWavrY3cZ
+KZyeqzWj4y/RWzXCuzE9CV82KVgUcccKofwK6ZauwXDke2xRruaOMeJ4mP62xgNp
+hVy0W/La5sqrq24EzJ/0hEMJYg+Z0udOzLofl5NqAoPrazgdZg1oVxbGY0sSUEax
+kA/nIlUskiNTgCYrRAeWrI1p6L0LtKMQ+KMs5ek5lI3k2K6EViHXO5kelOKeIas0
+hVo0tfECgYEA2NeYtkPIZDzGonu60/52FpJyLzoW9mxc8UBa9/p/CgMC/UzdyxbL
+ys4Tw/BuXxwPx0shAI/txlfqd3Dl9z3HF+e84VOIph3VqYFh9cBkZQI9z55pP5kt
+o8UW1SWUA799QTIZRhdFrPspaPISiWXgGAiHfaOy6SMM/ghTU22+Dm0CgYEAxIME
+lycBt7dsfvbb41OsVeH61mYeC7ZB6FNLhF7X2CqH9ybhMGqUnYvN+/EHMElWR/ky
+xe68Hcsvq3sSmEv1SHjAk6WottjpdwwCXvDKWu3LEjR6o3i2VRTCL1jJD9OlcJnk
+tSdI2gp/rTQrcm/ANY9KcmYfAyq/xe7DkOkUWtUCgYEAuAUXKy6Q5EgThhacsYXU
+L0mur1eL3yqNIYus559kqllt8wqFevFolz6V1YW4FOzakxW19yUt81Huv9hGwLBj
+wmy+hTZ/1AGjrksHmCfiyznAvO5BgWB8M+xxeQd/+kJKiMZ8XlgnoCoxtUch5gpX
+x+2NFlmS3nkJcJgeJsIONW0CgYAPW7YGIjROKXW/TofM8oMriyfRjdWXUL1B7RCf
+3dG8wUYzGMTMxeerkHuezy2ipnip014WfhwRsAmfu1SutnELIvTaFT5kW/uTJEsj
+JGqMRL10RMm48Pw/Fgo/LQ85v27UqBJp3hIhiGSGIueqX/WDuhk1a6nM05B9ZbW/
+I5hFqQKBgEktcozzuQL0EcyTJ+wFPSoma4qdAqbYf4sUWC9ebrzVd2/plhVRren7
+nmblwgPUKfdPKPe9ckWQOaHAIpNsq5Baxjq2wxFWZOvxH2qWmVmljEeoiTRdTHoF
+sMnQfhExyZp/T6uc3rgP0yyOFzSbZrnXpzZ9CZtfqbsfjGKwEbq7
+-----END RSA PRIVATE KEY-----
+`
+	e2ePrivateKID = "d5693c31-7016-46a4-bbe4-867e6d6a3b3a"
 )
 
 // WebKeySet represents a JWK Set object.
@@ -75,6 +108,12 @@ func (tg *TokenManager) AddPrivateKey(kid string) (*rsa.PrivateKey, error) {
 	}
 	tg.keyMap[kid] = key
 	return key, nil
+}
+
+// addE2ETestPrivateKey gets the private e2e key and stores the key with the e2e kid.
+func (tg *TokenManager) addE2ETestPrivateKey() {
+	key := getE2ETestPrivateKey()
+	tg.keyMap[e2ePrivateKID] = key
 }
 
 // RemovePrivateKey removes a key from the list of known keys.
@@ -136,6 +175,12 @@ func (tg *TokenManager) GenerateSignedToken(identity Identity, kid string, extra
 	return tg.SignToken(token, kid)
 }
 
+func GenerateSignedE2ETestToken(identity Identity, extraClaims ...ExtraClaim) (string, error) {
+	tm := NewTokenManager()
+	tm.addE2ETestPrivateKey()
+	return tm.GenerateSignedToken(identity, e2ePrivateKID, extraClaims...)
+}
+
 // NewKeyServer creates and starts an http key server
 func (tg *TokenManager) NewKeyServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -162,4 +207,37 @@ func (tg *TokenManager) NewKeyServer() *httptest.Server {
 		}
 		fmt.Fprintln(w, string(jsonKeyData))
 	}))
+}
+
+// GetE2ETestPublicKey returns the public key and kid used for e2e tests
+func GetE2ETestPublicKey() []*PublicKey {
+	publicKeys := []*PublicKey{}
+	key := &PublicKey{
+		KeyID: e2ePrivateKID,
+		Key:   &getE2ETestPrivateKey().PublicKey,
+	}
+	publicKeys = append(publicKeys, key)
+
+	return publicKeys
+}
+
+// getE2ETestPrivateKey returns the e2e private key from the PEM.
+func getE2ETestPrivateKey() *rsa.PrivateKey {
+	r := strings.NewReader(e2ePrivatePEM)
+	pemBytes, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil
+	}
+
+	block, _ := pem.Decode(pemBytes)
+	if block == nil {
+		return nil
+	}
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil
+	}
+
+	return privateKey
 }
