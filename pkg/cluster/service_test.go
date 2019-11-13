@@ -85,6 +85,7 @@ func TestAddKubeFedClusterAsMember(t *testing.T) {
 			}
 			assert.Equal(t, status, *fedCluster.ClusterStatus)
 			assert.Equal(t, nameHost, fedCluster.OwnerClusterName)
+			assert.Equal(t, "http://cluster.com", fedCluster.APIEndpoint)
 		})
 	}
 }
@@ -118,6 +119,7 @@ func TestAddKubeFedClusterAsHost(t *testing.T) {
 			}
 			assert.Equal(t, status, *fedCluster.ClusterStatus)
 			assert.Equal(t, nameMember, fedCluster.OwnerClusterName)
+			assert.Equal(t, "http://cluster.com", fedCluster.APIEndpoint)
 		})
 	}
 }
@@ -186,6 +188,7 @@ func TestUpdateKubeFedCluster(t *testing.T) {
 	assert.Equal(t, "toolchain-host-operator", fedCluster.OperatorNamespace)
 	assert.Equal(t, statusFalse, *fedCluster.ClusterStatus)
 	assert.Equal(t, nameMember, fedCluster.OwnerClusterName)
+	assert.Equal(t, "http://cluster.com", fedCluster.APIEndpoint)
 }
 
 func TestDeleteKubeFedCluster(t *testing.T) {

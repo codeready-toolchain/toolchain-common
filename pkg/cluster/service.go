@@ -3,6 +3,7 @@ package cluster
 import (
 	"context"
 	"fmt"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
@@ -60,6 +61,7 @@ func (s *KubeFedClusterService) addKubeFedCluster(fedCluster *v1beta1.KubeFedClu
 
 	cluster := &FedCluster{
 		Name:              fedCluster.Name,
+		APIEndpoint:       fedCluster.Spec.APIEndpoint,
 		Client:            cl,
 		ClusterStatus:     &fedCluster.Status,
 		Type:              Type(fedCluster.Labels[labelType]),
