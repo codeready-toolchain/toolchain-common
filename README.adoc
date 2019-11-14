@@ -124,7 +124,7 @@ $ oc apply -f deploy/user.yaml
 === add-cluster.sh
 
 The CodeReady Toolchain architecture contains two types of clusters `host` and `member`.
-To connect these two clusters together it is necessary to run a script link:scripts/add-cluster.sh[] that takes multiple flags like, `--type`, `--member-ns`, `--host-ns`, `--single-cluster`. However you can see all these options by using `./scripts/add-cluster.sh -h`
+To connect these two clusters together it is necessary to run a script link:scripts/add-cluster.sh[] that takes multiple flags like, `--type`, `--member-ns`, `--host-ns`, `--single-cluster`, `--minishift`. However you can see all these options by using `./scripts/add-cluster.sh -h`
 
 ==== host and member clusters using host and member profiles on minishift
 Make sure that you have started minishift as different profiles. You can use following commands for it.
