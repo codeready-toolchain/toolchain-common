@@ -73,6 +73,13 @@ func WithEmailClaim(email string) ExtraClaim {
 	}
 }
 
+// WithEmailClaim sets the `iat` claim in the token to generate
+func WithIATClaim(iatSeconds int) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(jwt.MapClaims)["iat"] = iatSeconds
+	}
+}
+
 // Identity is a user identity
 type Identity struct {
 	ID       uuid.UUID
