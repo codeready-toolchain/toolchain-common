@@ -74,9 +74,9 @@ func WithEmailClaim(email string) ExtraClaim {
 }
 
 // WithEmailClaim sets the `iat` claim in the token to generate
-func WithIATClaim(iatSeconds int) ExtraClaim {
+func WithIATClaim(iatSeconds time.Duration) ExtraClaim {
 	return func(token *jwt.Token) {
-		token.Claims.(jwt.MapClaims)["iat"] = iatSeconds
+		token.Claims.(jwt.MapClaims)["iat"] = time.Now().Add(iatSeconds * time.Second).Unix()
 	}
 }
 
@@ -145,7 +145,7 @@ func (tg *TokenManager) GenerateToken(identity Identity, kid string, extraClaims
 	token.Claims.(jwt.MapClaims)["sub"] = identity.ID
 	token.Claims.(jwt.MapClaims)["jti"] = uuid.NewV4().String()
 	token.Claims.(jwt.MapClaims)["session_state"] = uuid.NewV4().String()
-	token.Claims.(jwt.MapClaims)["iat"] = time.Now().Add(-60 * time.Second).Unix()
+	token.Claims.(jwt.MapClaims)["iat"] = time.Now().Unix()
 	token.Claims.(jwt.MapClaims)["exp"] = time.Now().Unix() + 60*60*24*30
 	token.Claims.(jwt.MapClaims)["nbf"] = 0
 	token.Claims.(jwt.MapClaims)["iss"] = "codeready-toolchain"
