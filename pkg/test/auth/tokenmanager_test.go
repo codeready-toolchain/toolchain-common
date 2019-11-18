@@ -124,7 +124,8 @@ func TestTokenManagerTokens(t *testing.T) {
 			Username: username,
 		}
 		// generate the token
-		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithIATClaim(time.Now().Add(-60*time.Second)))
+		iatTime := time.Now().Add(-60 * time.Second)
+		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithIATClaim(iatTime))
 		require.NoError(t, err)
 		// unmarshall it again
 		decodedToken, err := jwt.ParseWithClaims(encodedToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -135,6 +136,7 @@ func TestTokenManagerTokens(t *testing.T) {
 		claims, ok := decodedToken.Claims.(*jwt.StandardClaims)
 		require.True(t, ok)
 		require.Equal(t, identity0.ID.String(), claims.Subject)
+		require.Equal(t, iatTime.Unix(), claims.IssuedAt)
 	})
 }
 
