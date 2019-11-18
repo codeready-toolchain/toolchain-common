@@ -7,7 +7,25 @@ user_help () {
     echo "-mn, --member-ns      namespace where member-operator is running"
     echo "-hn, --host-ns        namespace where host-operator is running"
     echo "-s,  --single-cluster running both operators on single cluster"
+    echo "-m,  --minishift      in case of using minishift"
     exit 0
+}
+
+login_to_cluster() {
+    if [[ ${SINGLE_CLUSTER} != "true" ]]; then
+        if [[ ${MINISHIFT} != "true" ]]; then
+            echo "Write the server url for the cluster type: $1:"
+            read -p '> ' CLUSTER_URL
+            echo "Provide the token to log in to the cluster ${CLUSTER_URL}:"
+            read -sp '> ' CLUSTER_TOKEN
+            echo ""
+            oc login --token=${CLUSTER_TOKEN} --server=${CLUSTER_URL}
+        else
+            echo "Switching to profile $1"
+            minishift profile set $1
+            oc login -u=system:admin
+        fi
+    fi
 }
 
 if [[ $# -lt 2 ]]
@@ -37,6 +55,10 @@ while test $# -gt 0; do
                 ;;
             -s|--single-cluster)
                 SINGLE_CLUSTER=true
+                shift
+                ;;
+            -m|--minishift)
+                MINISHIFT=true
                 shift
                 ;;
             *)
@@ -69,12 +91,7 @@ SA_NAME=${JOINING_CLUSTER_TYPE}"-operator"
 echo ${OPERATOR_NS}
 echo ${CLUSTER_JOIN_TO_OPERATOR_NS}
 
-# This is to work with multiple profiles of minishift. By default profile is true
-if [[ ${SINGLE_CLUSTER} != "true" ]]; then
-  echo "Switching to profile ${JOINING_CLUSTER_TYPE}"
-  minishift profile set ${JOINING_CLUSTER_TYPE}
-  oc login -u=system:admin
-fi
+login_to_cluster ${JOINING_CLUSTER_TYPE}
 
 echo "Getting ${JOINING_CLUSTER_TYPE} SA token"
 SA_SECRET=`oc get sa ${SA_NAME} -n ${OPERATOR_NS} -o json | jq -r .secrets[].name | grep token`
@@ -93,12 +110,7 @@ else
     JOINING_CLUSTER_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}'`
 fi
 
-# This is to work with multiple profiles of minishift. By default profile is true
-if [[ ${SINGLE_CLUSTER} != "true" ]]; then
-  echo "Switching to profile ${CLUSTER_JOIN_TO}"
-  minishift profile set ${CLUSTER_JOIN_TO}
-  oc login -u=system:admin
-fi
+login_to_cluster ${CLUSTER_JOIN_TO}
 
 # this env variable is set in openshift-ci environment.
 # openshift ci has long name for cluster i.e.> 63 characters if read from config which is not allowed by k8s/openshift

@@ -18,8 +18,11 @@ type kubeFedClusterClients struct {
 type FedCluster struct {
 	// Client is the kube client for the cluster.
 	Client client.Client
-	// Name is a name of the cluster. Has to be unique - is used as a key in a map.
+	// Name is the name of the cluster. Has to be unique - is used as a key in a map.
 	Name string
+	// APIEndpoint is the API endpoint of the corresponding FedKubeCluster. This can be a hostname,
+	// hostname:port, IP or IP:port.
+	APIEndpoint string
 	// Type is a type of the cluster (either host or member)
 	Type Type
 	// OperatorNamespace is a name of a namespace (in the cluster) the operator is running in
