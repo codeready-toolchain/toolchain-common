@@ -73,7 +73,7 @@ func WithEmailClaim(email string) ExtraClaim {
 	}
 }
 
-// WithEmailClaim sets the `iat` claim in the token to generate
+// WithIATClaim sets the `iat` claim in the token to generate
 func WithIATClaim(iatSeconds time.Duration) ExtraClaim {
 	return func(token *jwt.Token) {
 		token.Claims.(jwt.MapClaims)["iat"] = time.Now().Add(iatSeconds * time.Second).Unix()
