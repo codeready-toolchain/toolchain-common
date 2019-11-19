@@ -80,7 +80,7 @@ func WithIATClaim(iat time.Time) ExtraClaim {
 	}
 }
 
-// WithExoClaim sets the `iat` claim in the token to generate
+// WithExpClaim sets the `exp` claim in the token to generate
 func WithExpClaim(iat time.Time) ExtraClaim {
 	return func(token *jwt.Token) {
 		token.Claims.(jwt.MapClaims)["exp"] = iat.Unix()
