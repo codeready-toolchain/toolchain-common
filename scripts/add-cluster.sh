@@ -7,19 +7,23 @@ user_help () {
     echo "-mn, --member-ns      namespace where member-operator is running"
     echo "-hn, --host-ns        namespace where host-operator is running"
     echo "-s,  --single-cluster running both operators on single cluster"
-    echo "-m,  --minishift      in case of using minishift"
+    echo "-kc,  --kube-config   kubeconfig for managing multiple clusters"
     exit 0
 }
 
 login_to_cluster() {
     if [[ ${SINGLE_CLUSTER} != "true" ]]; then
-        if [[ ${MINISHIFT} != "true" ]]; then
+        if [[ -z "${IS_MINISHIFT}" ]]; then
+          if [[ -z ${KUBECONFIG} ]]; then
             echo "Write the server url for the cluster type: $1:"
             read -p '> ' CLUSTER_URL
             echo "Provide the token to log in to the cluster ${CLUSTER_URL}:"
             read -sp '> ' CLUSTER_TOKEN
             echo ""
             oc login --token=${CLUSTER_TOKEN} --server=${CLUSTER_URL}
+          else
+            oc config use-context "$1-admin"
+          fi
         else
             echo "Switching to profile $1"
             minishift profile set $1
@@ -53,12 +57,13 @@ while test $# -gt 0; do
                 HOST_OPERATOR_NS=$1
                 shift
                 ;;
-            -s|--single-cluster)
-                SINGLE_CLUSTER=true
+            -kc|--kube-config)
+                shift
+                KUBECONFIG=$1
                 shift
                 ;;
-            -m|--minishift)
-                MINISHIFT=true
+            -s|--single-cluster)
+                SINGLE_CLUSTER=true
                 shift
                 ;;
             *)
@@ -69,6 +74,7 @@ while test $# -gt 0; do
       esac
 done
 
+IS_MINISHIFT=$(curl -k -XGET -H "Authorization: Bearer $(oc whoami -t 2>/dev/null)" $(oc whoami --show-server)/version/openshift 2>/dev/null | grep paths)
 CLUSTER_JOIN_TO="host"
 
 # We need this to configurable to work with dynamic namespaces from end to end tests
@@ -98,27 +104,25 @@ SA_SECRET=`oc get sa ${SA_NAME} -n ${OPERATOR_NS} -o json | jq -r .secrets[].nam
 SA_TOKEN=`oc get secret ${SA_SECRET} -n ${OPERATOR_NS}  -o json | jq -r '.data["token"]' | base64 --decode`
 SA_CA_CRT=`oc get secret ${SA_SECRET} -n ${OPERATOR_NS} -o json | jq -r '.data["ca.crt"]'`
 
-# this env variable is set in openshift-ci environment.
-# openshift ci has long name for cluster i.e.> 63 characters if read from config which is not allowed by k8s/openshift
-if [[ -z ${OPENSHIFT_BUILD_NAMESPACE} ]]; then
+# the api endpoint and name retrieve from kubeconfig only for minishift, in case of OS4 use the oc infrastructure cluster command
+if [[ -n "${IS_MINISHIFT}" ]]; then
     echo "Running locally in minishift environment"
     API_ENDPOINT=`oc config view --raw --minify -o json | jq -r '.clusters[0].cluster["server"]'`
     JOINING_CLUSTER_NAME=`oc config view --raw --minify -o json | jq -r '.clusters[0].name' | sed 's/[^[:alnum:]._-]/-/g'`
 else
-    echo "Running in openshift-ci environment with openshift 4.x cluster"
+    echo "Running in openshift 4.x cluster"
     API_ENDPOINT=`oc get infrastructure cluster -o jsonpath='{.status.apiServerURL}'`
     JOINING_CLUSTER_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}'`
 fi
 
 login_to_cluster ${CLUSTER_JOIN_TO}
 
-# this env variable is set in openshift-ci environment.
-# openshift ci has long name for cluster i.e.> 63 characters if read from config which is not allowed by k8s/openshift
-if [[ -z ${OPENSHIFT_BUILD_NAMESPACE} ]]; then
+# the api endpoint and name retrieve from kubeconfig only for minishift, in case of OS4 use the oc infrastructure cluster command
+if [[ -n "${IS_MINISHIFT}" ]]; then
     echo "Running locally in minishift environment"
     CLUSTER_JOIN_TO_NAME=`oc config view --raw --minify -o json | jq -r '.clusters[0].name' | sed 's/[^[:alnum:]._-]/-/g'`
 else
-    echo "Running in openshift-ci environment with openshift 4.x cluster"
+    echo "Running in openshift 4.x cluster"
     CLUSTER_JOIN_TO_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}'`
 fi
 

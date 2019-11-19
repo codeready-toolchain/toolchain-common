@@ -124,7 +124,7 @@ $ oc apply -f deploy/user.yaml
 === add-cluster.sh
 
 The CodeReady Toolchain architecture contains two types of clusters `host` and `member`.
-To connect these two clusters together it is necessary to run a script link:scripts/add-cluster.sh[] that takes multiple flags like, `--type`, `--member-ns`, `--host-ns`, `--single-cluster`, `--minishift`. However you can see all these options by using `./scripts/add-cluster.sh -h`
+To connect these two clusters together it is necessary to run a script link:scripts/add-cluster.sh[] that takes multiple flags like, `--type`, `--member-ns`, `--host-ns`, `--single-cluster`, `--kube-config`. However you can see all these options by using `./scripts/add-cluster.sh -h`
 
 ==== host and member clusters using host and member profiles on minishift
 Make sure that you have started minishift as different profiles. You can use following commands for it.
@@ -217,6 +217,54 @@ in respective namespace with all requires resources like Service Account, (Clust
     . takes cluster name of the `member` cluster from Kube config
     . creates a secret in `toolchain-member-operator` namespace with the SA token taken from the `toolchain-host-operator` ns
     . creates `KubeFedCluster` in `toolchain-member-operator` namespace CR representing the added `host`
+
+==== Using different clusters for host and member operators
+Make sure you have two different clusters ready and available where the `host-operator` should be running in the host cluster and `member-operator` in the member cluster.
+
+To do either you can pass kube-config using `-kc` flag with kubeconfig having `host-admin` and `member-admin` contexts or if you don't have kubeconfig you can provide required detail of cluster when promted for cluster URL and token.
+
+===== Sample Kubeconfig
+[source,bash]
+----
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: REDACTED
+    server: https://api.host-1573997449.devcluster.openshift.com:6443
+  name: host-1573997449
+- cluster:
+    certificate-authority-data: REDACTED
+    server: https://api.member-1573997449.devcluster.openshift.com:6443
+  name: member-1573997449
+contexts:
+- context:
+    cluster: host-1573997449
+    user: host-admin
+  name: host-admin
+- context:
+    cluster: member-1573997449
+    user: member-admin
+  name: member-admin
+current-context: host-admin
+kind: Config
+preferences: {}
+users:
+- name: host-admin
+  user:
+    client-certificate-data: REDACTED
+    client-key-data: REDACTED
+- name: member-admin
+  user:
+    client-certificate-data: REDACTED
+    client-key-data: REDACTED
+----
+
+[source,bash]
+----
+export KUBECONFIG=kubeconfig
+./scripts/add-cluster.sh -t host -s  -t member -mn ${MEMBER_OPERATOR_NS} -hn ${HOST_OPERATOR_NS} -kc ${KUBECONFIG}
+./scripts/add-cluster.sh -t member -s  -t member -mn ${MEMBER_OPERATOR_NS} -hn ${HOST_OPERATOR_NS} -kc ${KUBECONFIG}
+----
 
 ==== overwriting default namespaces for member-operator and host-operator
 
