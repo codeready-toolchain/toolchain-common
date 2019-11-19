@@ -80,6 +80,13 @@ func WithIATClaim(iat time.Time) ExtraClaim {
 	}
 }
 
+// WithExoClaim sets the `iat` claim in the token to generate
+func WithExpClaim(iat time.Time) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(jwt.MapClaims)["exp"] = iat.Unix()
+	}
+}
+
 // Identity is a user identity
 type Identity struct {
 	ID       uuid.UUID
