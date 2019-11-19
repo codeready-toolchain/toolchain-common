@@ -153,6 +153,7 @@ func TestTokenManagerTokens(t *testing.T) {
 			return &(key0.PublicKey), nil
 		})
 		require.Error(t, err)
+		require.Contains(t, err.Error(), "token is expired by ")
 		require.False(t, decodedToken.Valid)
 		claims, ok := decodedToken.Claims.(*jwt.StandardClaims)
 		require.True(t, ok)
