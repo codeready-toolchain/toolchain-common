@@ -56,7 +56,7 @@ func (a *Assertion) HasStatusUserAccounts(targetClusters ...string) *Assertion {
 
 func (a *Assertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.UserAccountStatusEmbedded {
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
-		if ua.Cluster.Name == targetCluster {
+		if ua.Cluster.Name == targetCluster || ua.TargetCluster == targetCluster { // TODO ua.TargetCluster is deprecated. Will remove it when https://github.com/codeready-toolchain/host-operator/pull/103 is merged
 			return &ua
 		}
 	}
