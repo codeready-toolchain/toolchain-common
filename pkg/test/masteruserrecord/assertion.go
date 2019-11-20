@@ -73,6 +73,15 @@ func (a *Assertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *Assert
 	return a
 }
 
+func (a *Assertion) AllUserAccountsHaveCluster(expected toolchainv1alpha1.Cluster) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	for _, ua := range a.masterUserRecord.Status.UserAccounts {
+		assert.Equal(a.t, expected, ua.Cluster)
+	}
+	return a
+}
+
 func (a *Assertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Condition) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
