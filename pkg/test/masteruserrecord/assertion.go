@@ -56,7 +56,7 @@ func (a *Assertion) HasStatusUserAccounts(targetClusters ...string) *Assertion {
 
 func (a *Assertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.UserAccountStatusEmbedded {
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
-		if ua.TargetCluster == targetCluster {
+		if ua.Cluster.Name == targetCluster {
 			return &ua
 		}
 	}
