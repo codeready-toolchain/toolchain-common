@@ -11,10 +11,7 @@ import (
 
 func StartCachingController(mgr manager.Manager, namespace string, stopChan <-chan struct{}) error {
 	cntrlName := "controller_kubefedcluster_with_cache"
-	clusterCacheService := cluster.KubeFedClusterService{
-		Client: mgr.GetClient(),
-		Log:    logf.Log.WithName(cntrlName),
-	}
+	clusterCacheService := cluster.NewKubeFedClusterService(mgr.GetClient(), logf.Log.WithName(cntrlName), namespace)
 
 	_, clusterController, err := util.NewGenericInformerWithEventHandler(
 		mgr.GetConfig(),

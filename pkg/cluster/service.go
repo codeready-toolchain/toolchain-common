@@ -27,8 +27,20 @@ const (
 // KubeFedClusterService manages cached cluster kube clients and related KubeFedCluster CRDs
 // it's used for adding/updating/deleting
 type KubeFedClusterService struct {
-	Client client.Client
-	Log    logr.Logger
+	client    client.Client
+	log       logr.Logger
+	namespace string
+}
+
+// NewKubeFedClusterService creates a new instance of KubeFedClusterService object and assigns the refreshCache function to the cache instance
+func NewKubeFedClusterService(client client.Client, log logr.Logger, namespace string) KubeFedClusterService {
+	service := KubeFedClusterService{
+		client:    client,
+		log:       log,
+		namespace: namespace,
+	}
+	clusterCache.refreshCache = service.refreshCache
+	return service
 }
 
 // AddKubeFedCluster takes the KubeFedCluster CR object,
@@ -36,7 +48,7 @@ type KubeFedClusterService struct {
 func (s *KubeFedClusterService) AddKubeFedCluster(obj interface{}) {
 	cluster, err := castToKubeFedCluster(obj)
 	if err != nil {
-		s.Log.Error(err, "cluster not added")
+		s.log.Error(err, "cluster not added")
 		return
 	}
 	log := s.enrichLogger(cluster)
@@ -88,7 +100,7 @@ func (s *KubeFedClusterService) addKubeFedCluster(fedCluster *v1beta1.KubeFedClu
 func (s *KubeFedClusterService) DeleteKubeFedCluster(obj interface{}) {
 	cluster, err := castToKubeFedCluster(obj)
 	if err != nil {
-		s.Log.Error(err, "cluster not deleted")
+		s.log.Error(err, "cluster not deleted")
 		return
 	}
 	log := s.enrichLogger(cluster)
@@ -102,7 +114,7 @@ func (s *KubeFedClusterService) DeleteKubeFedCluster(obj interface{}) {
 func (s *KubeFedClusterService) UpdateKubeFedCluster(_, newObj interface{}) {
 	newCluster, err := castToKubeFedCluster(newObj)
 	if err != nil {
-		s.Log.Error(err, "cluster not updated")
+		s.log.Error(err, "cluster not updated")
 		return
 	}
 	log := s.enrichLogger(newCluster)
@@ -114,8 +126,22 @@ func (s *KubeFedClusterService) UpdateKubeFedCluster(_, newObj interface{}) {
 	}
 }
 
+func (s *KubeFedClusterService) refreshCache() {
+	kubeFedClusters := &v1beta1.KubeFedClusterList{}
+	if err := s.client.List(context.TODO(), kubeFedClusters, &client.ListOptions{Namespace: s.namespace}); err != nil {
+		s.log.Error(err, "the cluster cache was not refreshed")
+	}
+	for _, cluster := range kubeFedClusters.Items {
+		log := s.enrichLogger(&cluster)
+		err := s.addKubeFedCluster(&cluster)
+		if err != nil {
+			log.Error(err, "the cluster was not added", "cluster", cluster)
+		}
+	}
+}
+
 func (s *KubeFedClusterService) enrichLogger(cluster *v1beta1.KubeFedCluster) logr.Logger {
-	return s.Log.
+	return s.log.
 		WithValues("Request.Namespace", cluster.Namespace, "Request.Name", cluster.Name)
 }
 
@@ -133,7 +159,7 @@ func (s *KubeFedClusterService) buildClusterConfig(fedCluster *v1beta1.KubeFedCl
 	}
 	secret := &v1.Secret{}
 	name := types.NamespacedName{Namespace: fedNamespace, Name: secretName}
-	err := s.Client.Get(context.TODO(), name, secret)
+	err := s.client.Get(context.TODO(), name, secret)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to get secret %s for cluster %s", name, clusterName)
 	}

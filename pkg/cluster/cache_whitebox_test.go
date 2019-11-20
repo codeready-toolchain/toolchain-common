@@ -256,6 +256,39 @@ func TestDeleteCluster(t *testing.T) {
 	assert.Equal(t, fedCluster, clusterCache.clusters["testCluster"])
 }
 
+func TestRefreshCache(t *testing.T) {
+	// given
+	defer resetClusterCache()
+	testCluster := newTestFedCluster("testCluster", Member, v1.ConditionTrue)
+	newCluster := newTestFedCluster("newCluster", Member, v1.ConditionTrue)
+	clusterCache.addFedCluster(testCluster)
+	clusterCache.refreshCache = func() {
+		clusterCache.addFedCluster(newCluster)
+	}
+
+	t.Run("refresh and get existing cluster", func(t *testing.T) {
+		// when
+		returnedNewCluster, ok := clusterCache.getFedCluster("newCluster")
+
+		// then
+		assert.True(t, ok)
+		assert.Equal(t, newCluster, returnedNewCluster)
+
+		returnedTestCluster, ok := clusterCache.getFedCluster("testCluster")
+		assert.True(t, ok)
+		assert.Equal(t, testCluster, returnedTestCluster)
+	})
+
+	t.Run("refresh and get non-existing cluster", func(t *testing.T) {
+		// when
+		cluster, ok := clusterCache.getFedCluster("anotherCluster")
+
+		// then
+		assert.False(t, ok)
+		assert.Nil(t, cluster)
+	})
+}
+
 func newTestFedCluster(name string, clusterType Type, status v1.ConditionStatus) *FedCluster {
 	cl := fake.NewFakeClient()
 	fedCluster := &FedCluster{
