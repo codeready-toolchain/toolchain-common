@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/kubefed/pkg/apis/core/common"
 	"sigs.k8s.io/kubefed/pkg/apis/core/v1beta1"
 	"testing"
