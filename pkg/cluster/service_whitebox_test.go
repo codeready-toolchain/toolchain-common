@@ -49,7 +49,6 @@ func TestRefreshCacheInService(t *testing.T) {
 		assertMemberCluster(t, fedCluster, status)
 	})
 
-
 	t.Run("the host cluster should not be retrieved", func(t *testing.T) {
 		// given
 		_, ok := clusterCache.clusters["east"]
@@ -64,7 +63,6 @@ func TestRefreshCacheInService(t *testing.T) {
 		assert.Nil(t, fedCluster)
 	})
 }
-
 
 func assertMemberCluster(t *testing.T, fedCluster *FedCluster, status v1beta1.KubeFedClusterStatus) {
 	assert.Equal(t, Member, fedCluster.Type)

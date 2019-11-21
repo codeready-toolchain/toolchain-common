@@ -87,7 +87,7 @@ func TestAddKubeFedClusterFailsBecauseOfMissingSecret(t *testing.T) {
 	defer gock.Off()
 	status := test.NewClusterStatus(common.ClusterReady, corev1.ConditionTrue)
 	kubeFedCluster, _ := test.NewKubeFedCluster("east", "secret", status, labels("", "", test.NameHost))
-	cl := test.NewFakeClient(t, )
+	cl := test.NewFakeClient(t)
 	service := cluster.NewKubeFedClusterService(cl, logf.Log, "test-namespace")
 
 	// when

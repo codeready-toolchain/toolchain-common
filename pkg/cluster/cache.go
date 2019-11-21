@@ -11,7 +11,7 @@ var clusterCache = kubeFedClusterClients{clusters: map[string]*FedCluster{}}
 
 type kubeFedClusterClients struct {
 	sync.RWMutex
-	clusters map[string]*FedCluster
+	clusters     map[string]*FedCluster
 	refreshCache func()
 }
 

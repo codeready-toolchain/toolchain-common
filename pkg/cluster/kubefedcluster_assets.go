@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 )
+
 type asset struct {
 	bytes []byte
 	info  os.FileInfo
@@ -302,7 +303,7 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"core.kubefed.io_kubefedclusters.yaml": &bintree{coreKubefedIo_kubefedclustersYaml, map[string]*bintree{}},
+	"core.kubefed.io_kubefedclusters.yaml": {coreKubefedIo_kubefedclustersYaml, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

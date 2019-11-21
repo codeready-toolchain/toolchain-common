@@ -58,5 +58,3 @@ func NewClusterStatus(conType common.ClusterConditionType, conStatus corev1.Cond
 		}},
 	}
 }
-
-
