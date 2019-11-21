@@ -56,7 +56,7 @@ func (a *Assertion) HasStatusUserAccounts(targetClusters ...string) *Assertion {
 
 func (a *Assertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.UserAccountStatusEmbedded {
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
-		if ua.TargetCluster == targetCluster {
+		if ua.Cluster.Name == targetCluster || ua.TargetCluster == targetCluster { // TODO ua.TargetCluster is deprecated. Will remove it when https://github.com/codeready-toolchain/host-operator/pull/103 is merged
 			return &ua
 		}
 	}
@@ -69,6 +69,15 @@ func (a *Assertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *Assert
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
 		assert.Equal(a.t, syncIndex, ua.SyncIndex)
+	}
+	return a
+}
+
+func (a *Assertion) AllUserAccountsHaveCluster(expected toolchainv1alpha1.Cluster) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	for _, ua := range a.masterUserRecord.Status.UserAccounts {
+		assert.Equal(a.t, expected, ua.Cluster)
 	}
 	return a
 }
