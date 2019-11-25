@@ -2,8 +2,8 @@ package test
 
 import (
 	"context"
+	"github.com/codeready-toolchain/api/pkg/apis"
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/kubefed/pkg/apis"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/runtime"
