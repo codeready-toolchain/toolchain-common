@@ -144,9 +144,30 @@ func (tg *TokenManager) Key(kid string) (*rsa.PrivateKey, error) {
 	return key, nil
 }
 
+
+/****************************************************
+
+  This section is a temporary fix until formal leeway support is available in the next jwt-go release
+
+ *****************************************************/
+
+const leeway = 5
+
+type MyClaims struct {
+	*jwt.StandardClaims
+}
+
+func (c *MyClaims) Valid() error {
+	c.StandardClaims.ExpiresAt += leeway
+	err := c.StandardClaims.Valid()
+	c.StandardClaims.ExpiresAt -= leeway
+	return err
+}
+
 // GenerateToken generates a default token.
 func (tg *TokenManager) GenerateToken(identity Identity, kid string, extraClaims ...ExtraClaim) *jwt.Token {
 	token := jwt.New(jwt.SigningMethodRS256)
+	token.Claims = &MyClaims{&jwt.StandardClaims{ExpiresAt: time.Now().Unix() - 1}}
 	token.Claims.(jwt.MapClaims)["uuid"] = identity.ID
 	token.Claims.(jwt.MapClaims)["preferred_username"] = identity.Username
 	token.Claims.(jwt.MapClaims)["sub"] = identity.ID
