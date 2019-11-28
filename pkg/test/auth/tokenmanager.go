@@ -69,21 +69,21 @@ type ExtraClaim func(token *jwt.Token)
 // WithEmailClaim sets the `email` claim in the token to generate
 func WithEmailClaim(email string) ExtraClaim {
 	return func(token *jwt.Token) {
-		token.Claims.(jwt.MapClaims)["email"] = email
+		token.Claims.(*MyClaims).MapClaims["email"] = email
 	}
 }
 
 // WithIATClaim sets the `iat` claim in the token to generate
 func WithIATClaim(iat time.Time) ExtraClaim {
 	return func(token *jwt.Token) {
-		token.Claims.(jwt.MapClaims)["iat"] = iat.Unix()
+		token.Claims.(*MyClaims).IssuedAt = iat.Unix()
 	}
 }
 
 // WithExpClaim sets the `exp` claim in the token to generate
 func WithExpClaim(iat time.Time) ExtraClaim {
 	return func(token *jwt.Token) {
-		token.Claims.(jwt.MapClaims)["exp"] = iat.Unix()
+		token.Claims.(*MyClaims).ExpiresAt = iat.Unix()
 	}
 }
 
@@ -150,13 +150,25 @@ func (tg *TokenManager) Key(kid string) (*rsa.PrivateKey, error) {
 
  *****************************************************/
 
-const leeway = 5
+const leeway = 500
 
 type MyClaims struct {
-	*jwt.StandardClaims
+	jwt.StandardClaims
+	jwt.MapClaims
+	IdentityID  string `json:"uuid,omitempty"`
+	PreferredUsername string `json:"preferred_username,omitempty"`
+	SessionState string `json:"session_state,omitempty"`
+	Type string `json:"typ,omitempty"`
+	Approved bool `json:"approved,omitempty"`
+	Name string `json:"name,omitempty"`
+	Company string `json:"company,omitempty"`
+	GivenName string `json:"given_name,omitempty"`
+	FamilyName string `json:"family_name,omitempty"`
+	EmailVerified bool `json:"email_verified,omitempty"`
+
 }
 
-func (c *MyClaims) Valid() error {
+func (c MyClaims) Valid() error {
 	c.StandardClaims.ExpiresAt += leeway
 	err := c.StandardClaims.Valid()
 	c.StandardClaims.ExpiresAt -= leeway
@@ -166,27 +178,33 @@ func (c *MyClaims) Valid() error {
 // GenerateToken generates a default token.
 func (tg *TokenManager) GenerateToken(identity Identity, kid string, extraClaims ...ExtraClaim) *jwt.Token {
 	token := jwt.New(jwt.SigningMethodRS256)
-	token.Claims = &MyClaims{&jwt.StandardClaims{ExpiresAt: time.Now().Unix() - 1}}
-	token.Claims.(jwt.MapClaims)["uuid"] = identity.ID
-	token.Claims.(jwt.MapClaims)["preferred_username"] = identity.Username
-	token.Claims.(jwt.MapClaims)["sub"] = identity.ID
-	token.Claims.(jwt.MapClaims)["jti"] = uuid.NewV4().String()
-	token.Claims.(jwt.MapClaims)["session_state"] = uuid.NewV4().String()
-	token.Claims.(jwt.MapClaims)["iat"] = time.Now().Unix()
-	token.Claims.(jwt.MapClaims)["exp"] = time.Now().Unix() + 60*60*24*30
-	token.Claims.(jwt.MapClaims)["nbf"] = 0
-	token.Claims.(jwt.MapClaims)["iss"] = "codeready-toolchain"
-	token.Claims.(jwt.MapClaims)["typ"] = "Bearer"
-	token.Claims.(jwt.MapClaims)["approved"] = true
-	token.Claims.(jwt.MapClaims)["name"] = "Test User"
-	token.Claims.(jwt.MapClaims)["company"] = "Company Inc."
-	token.Claims.(jwt.MapClaims)["given_name"] = "Test"
-	token.Claims.(jwt.MapClaims)["family_name"] = "User"
-	token.Claims.(jwt.MapClaims)["email_verified"] = true
+
+	token.Claims = &MyClaims{StandardClaims: jwt.StandardClaims{
+			Id:        uuid.NewV4().String(),
+			IssuedAt:  time.Now().Unix(),
+			Issuer:    "codeready-toolchain",
+			NotBefore: 0,
+			Subject:   identity.ID.String(),
+		},
+		MapClaims: jwt.MapClaims{},
+		IdentityID: identity.ID.String(),
+		PreferredUsername: identity.Username,
+		SessionState: uuid.NewV4().String(),
+		Type: "Bearer",
+		Approved: true,
+		Name: "Test User",
+		Company: "Company Inc.",
+		GivenName: "Test",
+		FamilyName: "User",
+		EmailVerified: true,
+	}
+
 	for _, extra := range extraClaims {
 		extra(token)
 	}
+
 	token.Header["kid"] = kid
+
 	return token
 }
 
