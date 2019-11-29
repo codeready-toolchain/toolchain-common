@@ -170,10 +170,10 @@ type MyClaims struct {
 
 func (c MyClaims) Valid() error {
 	c.StandardClaims.ExpiresAt += leeway
-	c.StandardClaims.IssuedAt += leeway
+	c.StandardClaims.IssuedAt -= leeway
 	err := c.StandardClaims.Valid()
 	c.StandardClaims.ExpiresAt -= leeway
-	c.StandardClaims.IssuedAt -= leeway
+	c.StandardClaims.IssuedAt += leeway
 	return err
 }
 
