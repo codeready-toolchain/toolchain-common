@@ -69,7 +69,7 @@ type ExtraClaim func(token *jwt.Token)
 // WithEmailClaim sets the `email` claim in the token to generate
 func WithEmailClaim(email string) ExtraClaim {
 	return func(token *jwt.Token) {
-		token.Claims.(*MyClaims).MapClaims["email"] = email
+		token.Claims.(*MyClaims).Email = email
 	}
 }
 
@@ -154,7 +154,6 @@ const leeway = 500
 
 type MyClaims struct {
 	jwt.StandardClaims
-	jwt.MapClaims
 	IdentityID  string `json:"uuid,omitempty"`
 	PreferredUsername string `json:"preferred_username,omitempty"`
 	SessionState string `json:"session_state,omitempty"`
@@ -164,14 +163,17 @@ type MyClaims struct {
 	Company string `json:"company,omitempty"`
 	GivenName string `json:"given_name,omitempty"`
 	FamilyName string `json:"family_name,omitempty"`
+	Email string `json:"email,omitempty"`
 	EmailVerified bool `json:"email_verified,omitempty"`
 
 }
 
 func (c MyClaims) Valid() error {
 	c.StandardClaims.ExpiresAt += leeway
+	c.StandardClaims.IssuedAt += leeway
 	err := c.StandardClaims.Valid()
 	c.StandardClaims.ExpiresAt -= leeway
+	c.StandardClaims.IssuedAt -= leeway
 	return err
 }
 
@@ -186,7 +188,6 @@ func (tg *TokenManager) GenerateToken(identity Identity, kid string, extraClaims
 			NotBefore: 0,
 			Subject:   identity.ID.String(),
 		},
-		MapClaims: jwt.MapClaims{},
 		IdentityID: identity.ID.String(),
 		PreferredUsername: identity.Username,
 		SessionState: uuid.NewV4().String(),
