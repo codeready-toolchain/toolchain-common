@@ -409,16 +409,16 @@ func TestProcessAndApply(t *testing.T) {
 
 		// when adding labels and an owner reference
 		obj := objs[0]
-		nsObj, ok := obj.Object.(*unstructured.Unstructured)
-		require.True(t, ok)
-		nsObj.SetOwnerReferences([]metav1.OwnerReference{
+		meta, err := meta.Accessor(obj.Object)
+		require.NoError(t, err)
+		meta.SetOwnerReferences([]metav1.OwnerReference{
 			{
 				APIVersion: "crt/v1",
 				Kind:       "NSTemplateSet",
 				Name:       "foo",
 			},
 		})
-		nsObj.SetLabels(map[string]string{
+		meta.SetLabels(map[string]string{
 			"provider": "codeready-toolchain",
 			"version":  commit,
 			"extra":    "foo",
