@@ -306,13 +306,11 @@ func TestProcessAndApply(t *testing.T) {
 			return cl.Client.Create(ctx, obj, opts...)
 		}
 		cl.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
-			if u, ok := obj.(runtime.Unstructured); ok {
-				meta, err := meta.Accessor(obj)
-				require.NoError(t, err)
-				t.Logf("updating resource of kind %s with version %s\n", u.GetObjectKind().GroupVersionKind().Kind, meta.GetResourceVersion())
-				if u.GetObjectKind().GroupVersionKind().Kind == "RoleBinding" && meta.GetResourceVersion() != "1" {
-					return fmt.Errorf("invalid resource version: %q", meta.GetResourceVersion())
-				}
+			meta, err := meta.Accessor(obj)
+			require.NoError(t, err)
+			t.Logf("updating resource of kind %s with version %s\n", obj.GetObjectKind().GroupVersionKind().Kind, meta.GetResourceVersion())
+			if obj.GetObjectKind().GroupVersionKind().Kind == "RoleBinding" && meta.GetResourceVersion() != "1" {
+				return fmt.Errorf("invalid resource version: %q", meta.GetResourceVersion())
 			}
 			return cl.Client.Update(ctx, obj, opts...)
 		}
