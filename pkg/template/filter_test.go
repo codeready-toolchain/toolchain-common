@@ -1,8 +1,9 @@
 package template_test
 
 import (
-	"github.com/codeready-toolchain/toolchain-common/pkg/template"
 	"testing"
+
+	"github.com/codeready-toolchain/toolchain-common/pkg/template"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
