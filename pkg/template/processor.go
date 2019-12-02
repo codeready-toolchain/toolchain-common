@@ -11,7 +11,6 @@ import (
 	"github.com/openshift/library-go/pkg/template/generator"
 	"github.com/openshift/library-go/pkg/template/templateprocessing"
 	"github.com/pkg/errors"
-	errs "github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,11 +52,11 @@ func (p Processor) Process(tmpl *templatev1.Template, values map[string]string, 
 		"expression": generator.NewExpressionValueGenerator(rand.New(rand.NewSource(time.Now().UnixNano()))),
 	})
 	if err := tmplProcessor.Process(tmpl); len(err) > 0 {
-		return nil, errs.Wrap(err.ToAggregate(), "unable to process template")
+		return nil, errors.Wrap(err.ToAggregate(), "unable to process template")
 	}
 	var result templatev1.Template
 	if err := p.scheme.Convert(tmpl, &result, nil); err != nil {
-		return nil, errs.Wrap(err, "failed to convert template to external template object")
+		return nil, errors.Wrap(err, "failed to convert template to external template object")
 	}
 	return Filter(result.Objects, filters...), nil
 }
@@ -72,7 +71,7 @@ func (p Processor) Apply(objs []runtime.RawExtension) error {
 		gvk := obj.GetObjectKind().GroupVersionKind()
 		_, err := p.ApplySingle(obj, true, nil)
 		if err != nil {
-			return errs.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
+			return errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
 		}
 	}
 	return nil
