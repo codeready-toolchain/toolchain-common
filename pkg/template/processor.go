@@ -84,7 +84,7 @@ func (p Processor) ApplySingle(obj runtime.Object, forceUpdate bool, owner v1.Ob
 	gvk := obj.GetObjectKind().GroupVersionKind()
 	createdOrUpdated, err := p.createOrUpdateObj(obj, forceUpdate, owner)
 	if err != nil {
-		return createdOrUpdated, errs.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
+		return createdOrUpdated, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
 	}
 	return createdOrUpdated, nil
 }
@@ -111,11 +111,10 @@ func (p Processor) createOrUpdateObj(newResource runtime.Object, forceUpdate boo
 	// gets current object (if exists)
 	namespacedName := types.NamespacedName{Namespace: metaNew.GetNamespace(), Name: metaNew.GetName()}
 	if err := p.cl.Get(context.TODO(), namespacedName, existing); err != nil {
-		creationErr := p.createObj(newResource, metaNew, owner)
-		if apierrors.IsNotFound(err) || creationErr == nil {
-			return true, creationErr
+		if apierrors.IsNotFound(err) {
+			return true, p.createObj(newResource, metaNew, owner)
 		}
-		return false, errors.Wrapf(creationErr, "unable to get the resource '%v' and creation failed too: %s", existing, creationErr.Error())
+		return false, errors.Wrapf(err, "unable to get the resource '%v'", existing)
 	}
 
 	// gets the meta accessor to the existing resource
@@ -174,7 +173,7 @@ func (p Processor) createObj(newResource runtime.Object, metaNew v1.Object, owne
 	if owner != nil {
 		err := controllerutil.SetControllerReference(owner, metaNew, p.scheme)
 		if err != nil {
-			return errs.Wrap(err, "unable to set controller references")
+			return errors.Wrap(err, "unable to set controller references")
 		}
 	}
 	return p.cl.Create(context.TODO(), newResource)

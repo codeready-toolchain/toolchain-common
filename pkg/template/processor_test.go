@@ -543,6 +543,24 @@ func TestApplySingle(t *testing.T) {
 			assert.Equal(t, "all-services", service.Spec.Selector["run"])
 			assert.NotEmpty(t, service.OwnerReferences)
 		})
+
+		t.Run("when object cannot be retrieved because of any error, then it should fail", func(t *testing.T) {
+			// given
+			cli := test.NewFakeClient(t)
+			cli.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
+				return fmt.Errorf("unable to get")
+			}
+			processor := template.NewProcessor(cli, s)
+			require.NoError(t, err)
+
+			// when
+			createdOrChanged, err := processor.ApplySingle(modifiedObjs[0].Object, false, nil)
+
+			// then
+			require.Error(t, err)
+			assert.False(t, createdOrChanged)
+			assert.Contains(t, err.Error(), "unable to get the resource")
+		})
 	})
 
 	t.Run("when using forceUpdate=false, it should update ConfigMap when data field is different", func(t *testing.T) {
