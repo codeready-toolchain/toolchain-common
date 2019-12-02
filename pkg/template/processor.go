@@ -155,12 +155,12 @@ func (p Processor) createOrUpdateObj(newResource runtime.Object, forceUpdate boo
 }
 
 func getNewConfiguration(newResource runtime.Object) string {
-	newYaml := marshalObjectContent(newResource)
+	newJson := marshalObjectContent(newResource)
 
-	if len(newYaml) == 0 {
+	if len(newJson) == 0 {
 		return fmt.Sprintf("%v", newResource)
 	}
-	return string(newYaml)
+	return string(newJson)
 }
 
 func marshalObjectContent(newResource runtime.Object) []byte {
