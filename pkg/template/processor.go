@@ -101,7 +101,6 @@ func (p Processor) createOrUpdateObj(newResource runtime.Object, forceUpdate boo
 	existing := newResource.DeepCopyObject()
 
 	// set current object as annotation
-	//newWithoutAnnotation := newResource.DeepCopyObject()
 	annotations := metaNew.GetAnnotations()
 	newConfiguration := getNewConfiguration(newResource)
 	if annotations == nil {
