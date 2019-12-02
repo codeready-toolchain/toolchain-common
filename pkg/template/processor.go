@@ -155,29 +155,20 @@ func (p Processor) createOrUpdateObj(newResource runtime.Object, forceUpdate boo
 }
 
 func getNewConfiguration(newResource runtime.Object) string {
-	newJson := marshalObjectContent(newResource)
-
-	if len(newJson) == 0 {
+	newJson, err := marshalObjectContent(newResource)
+	if err != nil {
+		log.Error(err, "unable to marshal the object", "object", newResource)
 		return fmt.Sprintf("%v", newResource)
 	}
 	return string(newJson)
 }
 
-func marshalObjectContent(newResource runtime.Object) []byte {
-	var newJson []byte
-	var err error
+func marshalObjectContent(newResource runtime.Object) ([]byte, error) {
 	if newRes, ok := newResource.(runtime.Unstructured); ok {
-		newJson, err = json.Marshal(newRes.UnstructuredContent())
-		if err != nil {
-			log.Error(err, "unable to marshal the object", "object", newRes.UnstructuredContent())
-		}
+		return json.Marshal(newRes.UnstructuredContent())
 	} else {
-		newJson, err = json.Marshal(newResource)
-		if err != nil {
-			log.Error(err, "unable to marshal the object", "object", newResource)
-		}
+		return json.Marshal(newResource)
 	}
-	return newJson
 }
 
 func (p Processor) createObj(newResource runtime.Object, metaNew v1.Object, owner v1.Object) error {
