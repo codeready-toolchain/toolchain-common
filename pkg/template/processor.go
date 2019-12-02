@@ -2,8 +2,8 @@ package template
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/rand"
@@ -165,21 +165,21 @@ func getNewConfiguration(newResource runtime.Object) string {
 }
 
 func marshalObjectContent(newResource runtime.Object) []byte {
-	var newYaml []byte
+	var newJson []byte
 	var err error
 	newRes, ok := newResource.(runtime.Unstructured)
 	if ok {
-		newYaml, err = yaml.Marshal(newRes.UnstructuredContent())
+		newJson, err = json.Marshal(newRes.UnstructuredContent())
 		if err != nil {
 			log.Error(err, "unable to marshal the object", "object", newRes.UnstructuredContent())
 		}
 	} else {
-		newYaml, err = yaml.Marshal(newResource)
+		newJson, err = json.Marshal(newResource)
 		if err != nil {
 			log.Error(err, "unable to marshal the object", "object", newResource)
 		}
 	}
-	return newYaml
+	return newJson
 }
 
 func (p Processor) createObj(newResource runtime.Object, metaNew v1.Object, owner v1.Object) error {
