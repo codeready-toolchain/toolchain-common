@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"testing"
 	texttemplate "text/template"
 	"time"
@@ -299,17 +300,18 @@ func TestProcessAndApply(t *testing.T) {
 		// given
 		cl := test.NewFakeClient(t)
 		cl.MockCreate = func(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
-			if rb, ok := obj.(*unstructured.Unstructured); ok {
-				rb.SetResourceVersion("1")
-				return cl.Client.Create(ctx, obj, opts...)
-			}
+			meta, err := meta.Accessor(obj)
+			require.NoError(t, err)
+			meta.SetResourceVersion("1")
 			return cl.Client.Create(ctx, obj, opts...)
 		}
 		cl.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
-			if u, ok := obj.(*unstructured.Unstructured); ok {
-				t.Logf("updating resource of kind %s with version %s\n", u.GetKind(), u.GetResourceVersion())
-				if u.GetKind() == "RoleBinding" && u.GetResourceVersion() != "1" {
-					return fmt.Errorf("invalid resource version: %q", u.GetResourceVersion())
+			if u, ok := obj.(runtime.Unstructured); ok {
+				meta, err := meta.Accessor(obj)
+				require.NoError(t, err)
+				t.Logf("updating resource of kind %s with version %s\n", u.GetObjectKind().GroupVersionKind().Kind, meta.GetResourceVersion())
+				if u.GetObjectKind().GroupVersionKind().Kind == "RoleBinding" && meta.GetResourceVersion() != "1" {
+					return fmt.Errorf("invalid resource version: %q", meta.GetResourceVersion())
 				}
 			}
 			return cl.Client.Update(ctx, obj, opts...)
@@ -593,7 +595,7 @@ type expectedObj struct {
 	commit   string
 }
 
-func newObject(template, username, commit string) (*unstructured.Unstructured, error) {
+func newObject(template, username, commit string) (runtime.Unstructured, error) {
 	tmpl := texttemplate.New("")
 	tmpl, err := tmpl.Parse(template)
 	if err != nil {
