@@ -166,8 +166,7 @@ func getNewConfiguration(newResource runtime.Object) string {
 func marshalObjectContent(newResource runtime.Object) []byte {
 	var newJson []byte
 	var err error
-	newRes, ok := newResource.(runtime.Unstructured)
-	if ok {
+	if newRes, ok := newResource.(runtime.Unstructured); ok {
 		newJson, err = json.Marshal(newRes.UnstructuredContent())
 		if err != nil {
 			log.Error(err, "unable to marshal the object", "object", newRes.UnstructuredContent())
