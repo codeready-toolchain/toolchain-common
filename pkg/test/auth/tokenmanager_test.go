@@ -160,6 +160,27 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.Equal(t, identity0.ID.String(), claims.Subject)
 		require.Equal(t, expTime.Unix(), claims.ExpiresAt)
 	})
+	t.Run("create token with near future iat claim to test validation workaround", func(t *testing.T) {
+		username := uuid.NewV4().String()
+		identity0 := &Identity{
+			ID:       uuid.NewV4(),
+			Username: username,
+		}
+		// generate the token
+		iatTime := time.Now().Add(10 * time.Second)
+		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithIATClaim(iatTime))
+		require.NoError(t, err)
+		// unmarshall it again
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return &(key0.PublicKey), nil
+		})
+		require.NoError(t, err)
+		require.True(t, decodedToken.Valid)
+		claims, ok := decodedToken.Claims.(*MyClaims)
+		require.True(t, ok)
+		require.Equal(t, identity0.ID.String(), claims.Subject)
+		require.Equal(t, iatTime.Unix(), claims.IssuedAt)
+	})
 }
 
 func TestTokenManagerKeyService(t *testing.T) {

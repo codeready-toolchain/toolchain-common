@@ -150,7 +150,7 @@ func (tg *TokenManager) Key(kid string) (*rsa.PrivateKey, error) {
 
  *****************************************************/
 
-const leeway = 500
+const leeway = 5000
 
 type MyClaims struct {
 	jwt.StandardClaims
@@ -168,7 +168,7 @@ type MyClaims struct {
 
 }
 
-func (c MyClaims) Valid() error {
+func (c *MyClaims) Valid() error {
 	c.StandardClaims.ExpiresAt += leeway
 	c.StandardClaims.IssuedAt -= leeway
 	err := c.StandardClaims.Valid()
@@ -185,6 +185,7 @@ func (tg *TokenManager) GenerateToken(identity Identity, kid string, extraClaims
 			Id:        uuid.NewV4().String(),
 			IssuedAt:  time.Now().Unix(),
 			Issuer:    "codeready-toolchain",
+			ExpiresAt: time.Now().Unix() + 60*60*24*30,
 			NotBefore: 0,
 			Subject:   identity.ID.String(),
 		},
