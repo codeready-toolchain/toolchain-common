@@ -59,4 +59,6 @@ replace (
 	k8s.io/kubernetes => k8s.io/kubernetes v1.14.1
 )
 
+replace github.com/codeready-toolchain/api => github.com/alexeykazakov/api v0.0.0-20191203022256-57871e5e6c39
+
 go 1.13
