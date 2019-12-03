@@ -1,7 +1,7 @@
 module github.com/codeready-toolchain/toolchain-common
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20191115062940-693a0063cf16
+	github.com/codeready-toolchain/api v0.0.0-20191203182149-f994640853b0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/emicklei/go-restful v2.10.0+incompatible // indirect
 	github.com/go-logr/logr v0.1.0
@@ -58,7 +58,5 @@ replace (
 	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20190510232812-a01b7d5d6c22
 	k8s.io/kubernetes => k8s.io/kubernetes v1.14.1
 )
-
-replace github.com/codeready-toolchain/api => github.com/alexeykazakov/api v0.0.0-20191203022256-57871e5e6c39
 
 go 1.13
