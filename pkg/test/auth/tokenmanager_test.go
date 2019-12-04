@@ -88,12 +88,12 @@ func TestTokenManagerTokens(t *testing.T) {
 		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0)
 		require.NoError(t, err)
 		// unmarshall it again
-		decodedToken, err := jwt.ParseWithClaims(encodedToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return &(key0.PublicKey), nil
 		})
 		require.NoError(t, err)
 		require.True(t, decodedToken.Valid)
-		claims, ok := decodedToken.Claims.(*jwt.StandardClaims)
+		claims, ok := decodedToken.Claims.(*MyClaims)
 		require.True(t, ok)
 		require.Equal(t, identity0.ID.String(), claims.Subject)
 	})
@@ -108,12 +108,12 @@ func TestTokenManagerTokens(t *testing.T) {
 		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithEmailClaim(identity0.Username+"@email.tld"))
 		require.NoError(t, err)
 		// unmarshall it again
-		decodedToken, err := jwt.ParseWithClaims(encodedToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return &(key0.PublicKey), nil
 		})
 		require.NoError(t, err)
 		require.True(t, decodedToken.Valid)
-		claims, ok := decodedToken.Claims.(*jwt.StandardClaims)
+		claims, ok := decodedToken.Claims.(*MyClaims)
 		require.True(t, ok)
 		require.Equal(t, identity0.ID.String(), claims.Subject)
 	})
@@ -128,12 +128,12 @@ func TestTokenManagerTokens(t *testing.T) {
 		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithIATClaim(iatTime))
 		require.NoError(t, err)
 		// unmarshall it again
-		decodedToken, err := jwt.ParseWithClaims(encodedToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return &(key0.PublicKey), nil
 		})
 		require.NoError(t, err)
 		require.True(t, decodedToken.Valid)
-		claims, ok := decodedToken.Claims.(*jwt.StandardClaims)
+		claims, ok := decodedToken.Claims.(*MyClaims)
 		require.True(t, ok)
 		require.Equal(t, identity0.ID.String(), claims.Subject)
 		require.Equal(t, iatTime.Unix(), claims.IssuedAt)
@@ -149,13 +149,13 @@ func TestTokenManagerTokens(t *testing.T) {
 		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithExpClaim(expTime))
 		require.NoError(t, err)
 		// unmarshall it again
-		decodedToken, err := jwt.ParseWithClaims(encodedToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return &(key0.PublicKey), nil
 		})
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "token is expired by ")
 		require.False(t, decodedToken.Valid)
-		claims, ok := decodedToken.Claims.(*jwt.StandardClaims)
+		claims, ok := decodedToken.Claims.(*MyClaims)
 		require.True(t, ok)
 		require.Equal(t, identity0.ID.String(), claims.Subject)
 		require.Equal(t, expTime.Unix(), claims.ExpiresAt)

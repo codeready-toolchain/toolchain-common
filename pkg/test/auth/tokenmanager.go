@@ -81,9 +81,9 @@ func WithIATClaim(iat time.Time) ExtraClaim {
 }
 
 // WithExpClaim sets the `exp` claim in the token to generate
-func WithExpClaim(iat time.Time) ExtraClaim {
+func WithExpClaim(exp time.Time) ExtraClaim {
 	return func(token *jwt.Token) {
-		token.Claims.(*MyClaims).ExpiresAt = iat.Unix()
+		token.Claims.(*MyClaims).ExpiresAt = exp.Unix()
 	}
 }
 
@@ -169,10 +169,8 @@ type MyClaims struct {
 }
 
 func (c *MyClaims) Valid() error {
-	c.StandardClaims.ExpiresAt += leeway
 	c.StandardClaims.IssuedAt -= leeway
 	err := c.StandardClaims.Valid()
-	c.StandardClaims.ExpiresAt -= leeway
 	c.StandardClaims.IssuedAt += leeway
 	return err
 }
