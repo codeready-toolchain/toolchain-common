@@ -154,18 +154,17 @@ const leeway = 5000
 
 type MyClaims struct {
 	jwt.StandardClaims
-	IdentityID  string `json:"uuid,omitempty"`
+	IdentityID        string `json:"uuid,omitempty"`
 	PreferredUsername string `json:"preferred_username,omitempty"`
-	SessionState string `json:"session_state,omitempty"`
-	Type string `json:"typ,omitempty"`
-	Approved bool `json:"approved,omitempty"`
-	Name string `json:"name,omitempty"`
-	Company string `json:"company,omitempty"`
-	GivenName string `json:"given_name,omitempty"`
-	FamilyName string `json:"family_name,omitempty"`
-	Email string `json:"email,omitempty"`
-	EmailVerified bool `json:"email_verified,omitempty"`
-
+	SessionState      string `json:"session_state,omitempty"`
+	Type              string `json:"typ,omitempty"`
+	Approved          bool   `json:"approved,omitempty"`
+	Name              string `json:"name,omitempty"`
+	Company           string `json:"company,omitempty"`
+	GivenName         string `json:"given_name,omitempty"`
+	FamilyName        string `json:"family_name,omitempty"`
+	Email             string `json:"email,omitempty"`
+	EmailVerified     bool   `json:"email_verified,omitempty"`
 }
 
 func (c *MyClaims) Valid() error {
@@ -180,23 +179,23 @@ func (tg *TokenManager) GenerateToken(identity Identity, kid string, extraClaims
 	token := jwt.New(jwt.SigningMethodRS256)
 
 	token.Claims = &MyClaims{StandardClaims: jwt.StandardClaims{
-			Id:        uuid.NewV4().String(),
-			IssuedAt:  time.Now().Unix(),
-			Issuer:    "codeready-toolchain",
-			ExpiresAt: time.Now().Unix() + 60*60*24*30,
-			NotBefore: 0,
-			Subject:   identity.ID.String(),
-		},
-		IdentityID: identity.ID.String(),
+		Id:        uuid.NewV4().String(),
+		IssuedAt:  time.Now().Unix(),
+		Issuer:    "codeready-toolchain",
+		ExpiresAt: time.Now().Unix() + 60*60*24*30,
+		NotBefore: 0,
+		Subject:   identity.ID.String(),
+	},
+		IdentityID:        identity.ID.String(),
 		PreferredUsername: identity.Username,
-		SessionState: uuid.NewV4().String(),
-		Type: "Bearer",
-		Approved: true,
-		Name: "Test User",
-		Company: "Company Inc.",
-		GivenName: "Test",
-		FamilyName: "User",
-		EmailVerified: true,
+		SessionState:      uuid.NewV4().String(),
+		Type:              "Bearer",
+		Approved:          true,
+		Name:              "Test User",
+		Company:           "Company Inc.",
+		GivenName:         "Test",
+		FamilyName:        "User",
+		EmailVerified:     true,
 	}
 
 	for _, extra := range extraClaims {
