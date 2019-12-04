@@ -3,13 +3,14 @@ package masteruserrecord
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 type Assertion struct {
@@ -56,7 +57,7 @@ func (a *Assertion) HasStatusUserAccounts(targetClusters ...string) *Assertion {
 
 func (a *Assertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.UserAccountStatusEmbedded {
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
-		if ua.Cluster.Name == targetCluster || ua.TargetCluster == targetCluster { // TODO ua.TargetCluster is deprecated. Will remove it when https://github.com/codeready-toolchain/host-operator/pull/103 is merged
+		if ua.Cluster.Name == targetCluster {
 			return &ua
 		}
 	}
