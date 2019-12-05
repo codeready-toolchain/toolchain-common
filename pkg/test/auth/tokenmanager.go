@@ -87,6 +87,20 @@ func WithExpClaim(exp time.Time) ExtraClaim {
 	}
 }
 
+// WithSubClaim sets the `sub` claim in the token to generate
+func WithSubClaim(sub string) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(*MyClaims).Subject = sub
+	}
+}
+
+// WithNotBeforeClaim sets the `nbf` claim in the token to generate
+func WithNotBeforeClaim(nbf time.Time) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(*MyClaims).NotBefore = nbf.Unix()
+	}
+}
+
 // Identity is a user identity
 type Identity struct {
 	ID       uuid.UUID
