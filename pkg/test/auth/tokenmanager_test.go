@@ -160,6 +160,46 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.Equal(t, identity0.ID.String(), claims.Subject)
 		require.Equal(t, expTime.Unix(), claims.ExpiresAt)
 	})
+	t.Run("create token with sub extra claim", func(t *testing.T) {
+		username := uuid.NewV4().String()
+		identity0 := &Identity{
+			ID:       uuid.NewV4(),
+			Username: username,
+		}
+		// generate the token
+		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithSubClaim("test"))
+		require.NoError(t, err)
+		// unmarshall it again
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return &(key0.PublicKey), nil
+		})
+		require.True(t, decodedToken.Valid)
+		claims, ok := decodedToken.Claims.(*MyClaims)
+		require.True(t, ok)
+		require.Equal(t, "test", claims.Subject)
+	})
+	t.Run("create token with nbf extra claim", func(t *testing.T) {
+		username := uuid.NewV4().String()
+		identity0 := &Identity{
+			ID:       uuid.NewV4(),
+			Username: username,
+		}
+		// generate the token
+		nbfTime := time.Now().Add(60 * time.Second)
+		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithNotBeforeClaim(nbfTime))
+		require.NoError(t, err)
+		// unmarshall it again
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return &(key0.PublicKey), nil
+		})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "token is not valid yet")
+		require.False(t, decodedToken.Valid)
+		claims, ok := decodedToken.Claims.(*MyClaims)
+		require.True(t, ok)
+		require.Equal(t, identity0.ID.String(), claims.Subject)
+		require.Equal(t, nbfTime.Unix(), claims.NotBefore)
+	})
 	t.Run("create token with near future iat claim to test validation workaround", func(t *testing.T) {
 		username := uuid.NewV4().String()
 		identity0 := &Identity{
