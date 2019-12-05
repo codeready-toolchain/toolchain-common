@@ -173,6 +173,7 @@ func TestTokenManagerTokens(t *testing.T) {
 		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return &(key0.PublicKey), nil
 		})
+		require.NoError(t, err)
 		require.True(t, decodedToken.Valid)
 		claims, ok := decodedToken.Claims.(*MyClaims)
 		require.True(t, ok)
