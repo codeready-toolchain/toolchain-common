@@ -4,6 +4,7 @@ require (
 	github.com/codeready-toolchain/api v0.0.0-20191203182149-f994640853b0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-logr/logr v0.1.0
+	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/lestrrat-go/jwx v0.9.0
 	github.com/magiconair/properties v1.8.0
 	github.com/openshift/api v3.9.1-0.20190730142803-0922aa5a655b+incompatible
