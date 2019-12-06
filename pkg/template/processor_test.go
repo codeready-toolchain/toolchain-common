@@ -11,10 +11,9 @@ import (
 
 	"github.com/codeready-toolchain/api/pkg/apis"
 	"github.com/codeready-toolchain/toolchain-common/pkg/template"
-	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+	. "github.com/codeready-toolchain/toolchain-common/pkg/test"
 
 	authv1 "github.com/openshift/api/authorization/v1"
-	templatev1 "github.com/openshift/api/template/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/api/apps/v1"
@@ -39,7 +38,7 @@ func TestProcess(t *testing.T) {
 	codecFactory := serializer.NewCodecFactory(s)
 	decoder := codecFactory.UniversalDeserializer()
 
-	cl := test.NewFakeClient(t)
+	cl := NewFakeClient(t)
 	p := template.NewProcessor(cl, s)
 
 	t.Run("should process template successfully", func(t *testing.T) {
@@ -48,8 +47,8 @@ func TestProcess(t *testing.T) {
 			"USERNAME": user,
 			"COMMIT":   commit,
 		}
-		tmpl, err := decodeTemplate(decoder,
-			createTemplate(withObjects(namespace, rolebinding), withParams(usernameParam, commitParam)))
+		tmpl, err := DecodeTemplate(decoder,
+			CreateTemplate(WithObjects(Namespace, RoleBinding), WithParams(UsernameParam, CommitParam)))
 		require.NoError(t, err)
 
 		// when
@@ -60,13 +59,13 @@ func TestProcess(t *testing.T) {
 		require.Len(t, objs, 2)
 		// assert namespace
 		assertObject(t, expectedObj{
-			template: namespaceObj,
+			template: NamespaceObj,
 			username: user,
 			commit:   commit,
 		}, objs[0])
 		// assert rolebinding
 		assertObject(t, expectedObj{
-			template: rolebindingObj,
+			template: RolebindingObj,
 			username: user,
 			commit:   commit,
 		}, objs[1])
@@ -79,8 +78,8 @@ func TestProcess(t *testing.T) {
 			"USERNAME": user,
 			"COMMIT":   commit,
 		}
-		tmpl, err := decodeTemplate(decoder,
-			createTemplate(withObjects(namespace, rolebinding), withParams(usernameParam, commitParam)))
+		tmpl, err := DecodeTemplate(decoder,
+			CreateTemplate(WithObjects(Namespace, RoleBinding), WithParams(UsernameParam, CommitParam)))
 		require.NoError(t, err)
 
 		// when
@@ -92,13 +91,13 @@ func TestProcess(t *testing.T) {
 
 		// assert namespace
 		assertObject(t, expectedObj{
-			template: namespaceObj,
+			template: NamespaceObj,
 			username: user,
 			commit:   commit,
 		}, objs[0])
 		// assert rolebinding
 		assertObject(t, expectedObj{
-			template: rolebindingObj,
+			template: RolebindingObj,
 			username: user,
 			commit:   commit,
 		}, objs[1])
@@ -112,8 +111,8 @@ func TestProcess(t *testing.T) {
 			"COMMIT":   commit,
 			"random":   random, // extra, unused param
 		}
-		tmpl, err := decodeTemplate(decoder,
-			createTemplate(withObjects(namespace), withParams(usernameParam, commitParam)))
+		tmpl, err := DecodeTemplate(decoder,
+			CreateTemplate(WithObjects(Namespace), WithParams(UsernameParam, CommitParam)))
 		require.NoError(t, err)
 
 		// when
@@ -124,7 +123,7 @@ func TestProcess(t *testing.T) {
 		require.Len(t, objs, 1)
 		// assert namespace
 		assertObject(t, expectedObj{
-			template: namespaceObj,
+			template: NamespaceObj,
 			username: user,
 			commit:   commit,
 		}, objs[0])
@@ -135,8 +134,8 @@ func TestProcess(t *testing.T) {
 		values := map[string]string{
 			"USERNAME": user,
 		}
-		tmpl, err := decodeTemplate(decoder,
-			createTemplate(withObjects(namespace, rolebinding), withParams(usernameParam, commitParam)))
+		tmpl, err := DecodeTemplate(decoder,
+			CreateTemplate(WithObjects(Namespace, RoleBinding), WithParams(UsernameParam, CommitParam)))
 		require.NoError(t, err)
 
 		// when
@@ -147,13 +146,13 @@ func TestProcess(t *testing.T) {
 		require.Len(t, objs, 2)
 		// assert namespace
 		assertObject(t, expectedObj{
-			template: namespaceObj,
+			template: NamespaceObj,
 			username: user,
 			commit:   defaultCommit,
 		}, objs[0])
 		// assert rolebinding
 		assertObject(t, expectedObj{
-			template: rolebindingObj,
+			template: RolebindingObj,
 			username: user,
 			commit:   defaultCommit,
 		}, objs[1])
@@ -162,8 +161,8 @@ func TestProcess(t *testing.T) {
 	t.Run("should fail because of missing required parameter", func(t *testing.T) {
 		// given
 		values := make(map[string]string)
-		tmpl, err := decodeTemplate(decoder,
-			createTemplate(withObjects(namespace, rolebinding), withParams(usernameParamWithoutValue, commitParam)))
+		tmpl, err := DecodeTemplate(decoder,
+			CreateTemplate(WithObjects(Namespace, RoleBinding), WithParams(UsernameParamWithoutValue, CommitParam)))
 		require.NoError(t, err)
 
 		// when
@@ -181,8 +180,8 @@ func TestProcess(t *testing.T) {
 			values := map[string]string{
 				"USERNAME": user,
 			}
-			tmpl, err := decodeTemplate(decoder,
-				createTemplate(withObjects(namespace, rolebinding), withParams(usernameParam, commitParam)))
+			tmpl, err := DecodeTemplate(decoder,
+				CreateTemplate(WithObjects(Namespace, RoleBinding), WithParams(UsernameParam, CommitParam)))
 			require.NoError(t, err)
 
 			// when
@@ -193,7 +192,7 @@ func TestProcess(t *testing.T) {
 			require.Len(t, objs, 1)
 			// assert rolebinding
 			assertObject(t, expectedObj{
-				template: namespaceObj,
+				template: NamespaceObj,
 				username: user,
 				commit:   defaultCommit,
 			}, objs[0])
@@ -205,8 +204,8 @@ func TestProcess(t *testing.T) {
 				"USERNAME": user,
 				"COMMIT":   commit,
 			}
-			tmpl, err := decodeTemplate(decoder,
-				createTemplate(withObjects(namespace, rolebinding), withParams(usernameParam, commitParam)))
+			tmpl, err := DecodeTemplate(decoder,
+				CreateTemplate(WithObjects(Namespace, RoleBinding), WithParams(UsernameParam, CommitParam)))
 			require.NoError(t, err)
 
 			// when
@@ -217,7 +216,7 @@ func TestProcess(t *testing.T) {
 			require.Len(t, objs, 1)
 			// assert namespace
 			assertObject(t, expectedObj{
-				template: rolebindingObj,
+				template: RolebindingObj,
 				username: user,
 				commit:   commit,
 			}, objs[0])
@@ -242,10 +241,10 @@ func TestProcessAndApply(t *testing.T) {
 
 	t.Run("should create namespace alone", func(t *testing.T) {
 		// given
-		cl := test.NewFakeClient(t)
+		cl := NewFakeClient(t)
 		p := template.NewProcessor(cl, s)
-		tmpl, err := decodeTemplate(decoder,
-			createTemplate(withObjects(namespace), withParams(usernameParam, commitParam)))
+		tmpl, err := DecodeTemplate(decoder,
+			CreateTemplate(WithObjects(Namespace), WithParams(UsernameParam, CommitParam)))
 		require.NoError(t, err)
 		objs, err := p.Process(tmpl, values)
 		require.NoError(t, err)
@@ -260,10 +259,10 @@ func TestProcessAndApply(t *testing.T) {
 
 	t.Run("should create role binding alone", func(t *testing.T) {
 		// given
-		cl := test.NewFakeClient(t)
+		cl := NewFakeClient(t)
 		p := template.NewProcessor(cl, s)
-		tmpl, err := decodeTemplate(decoder,
-			createTemplate(withObjects(rolebinding), withParams(usernameParam, commitParam)))
+		tmpl, err := DecodeTemplate(decoder,
+			CreateTemplate(WithObjects(RoleBinding), WithParams(UsernameParam, CommitParam)))
 		require.NoError(t, err)
 		objs, err := p.Process(tmpl, values)
 		require.NoError(t, err)
@@ -278,10 +277,10 @@ func TestProcessAndApply(t *testing.T) {
 
 	t.Run("should create namespace and role binding", func(t *testing.T) {
 		// given
-		cl := test.NewFakeClient(t)
+		cl := NewFakeClient(t)
 		p := template.NewProcessor(cl, s)
-		tmpl, err := decodeTemplate(decoder,
-			createTemplate(withObjects(namespace, rolebinding), withParams(usernameParam, commitParam)))
+		tmpl, err := DecodeTemplate(decoder,
+			CreateTemplate(WithObjects(Namespace, RoleBinding), WithParams(UsernameParam, CommitParam)))
 		require.NoError(t, err)
 		objs, err := p.Process(tmpl, values)
 		require.NoError(t, err)
@@ -298,7 +297,7 @@ func TestProcessAndApply(t *testing.T) {
 
 	t.Run("should update existing role binding", func(t *testing.T) {
 		// given
-		cl := test.NewFakeClient(t)
+		cl := NewFakeClient(t)
 		cl.MockCreate = func(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
 			meta, err := meta.Accessor(obj)
 			require.NoError(t, err)
@@ -315,8 +314,8 @@ func TestProcessAndApply(t *testing.T) {
 			return cl.Client.Update(ctx, obj, opts...)
 		}
 		p := template.NewProcessor(cl, s)
-		tmpl, err := decodeTemplate(decoder,
-			createTemplate(withObjects(rolebinding), withParams(usernameParam, commitParam)))
+		tmpl, err := DecodeTemplate(decoder,
+			CreateTemplate(WithObjects(RoleBinding), WithParams(UsernameParam, CommitParam)))
 		require.NoError(t, err)
 		objs, err := p.Process(tmpl, values)
 		require.NoError(t, err)
@@ -325,8 +324,8 @@ func TestProcessAndApply(t *testing.T) {
 		assertRoleBindingExists(t, cl, user)
 
 		// when rolebinding changes
-		tmpl, err = decodeTemplate(decoder,
-			createTemplate(withObjects(namespace, rolebindingWithExtraUser), withParams(usernameParam, commitParam)))
+		tmpl, err = DecodeTemplate(decoder,
+			CreateTemplate(WithObjects(Namespace, RoleBindingWithExtraUser), WithParams(UsernameParam, CommitParam)))
 		require.NoError(t, err)
 		objs, err = p.Process(tmpl, values)
 		require.NoError(t, err)
@@ -346,13 +345,13 @@ func TestProcessAndApply(t *testing.T) {
 
 		t.Run("should fail to create template object", func(t *testing.T) {
 			// given
-			cl := test.NewFakeClient(t)
+			cl := NewFakeClient(t)
 			p := template.NewProcessor(cl, s)
 			cl.MockCreate = func(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
 				return errors.New("failed to create resource")
 			}
-			tmpl, err := decodeTemplate(decoder,
-				createTemplate(withObjects(rolebinding), withParams(usernameParam, commitParam)))
+			tmpl, err := DecodeTemplate(decoder,
+				CreateTemplate(WithObjects(RoleBinding), WithParams(UsernameParam, CommitParam)))
 			require.NoError(t, err)
 
 			// when
@@ -366,13 +365,13 @@ func TestProcessAndApply(t *testing.T) {
 
 		t.Run("should fail to update template object", func(t *testing.T) {
 			// given
-			cl := test.NewFakeClient(t)
+			cl := NewFakeClient(t)
 			p := template.NewProcessor(cl, s)
 			cl.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
 				return errors.New("failed to update resource")
 			}
-			tmpl, err := decodeTemplate(decoder,
-				createTemplate(withObjects(rolebinding), withParams(usernameParam, commitParam)))
+			tmpl, err := DecodeTemplate(decoder,
+				CreateTemplate(WithObjects(RoleBinding), WithParams(UsernameParam, CommitParam)))
 			require.NoError(t, err)
 			objs, err := p.Process(tmpl, values)
 			require.NoError(t, err)
@@ -380,8 +379,8 @@ func TestProcessAndApply(t *testing.T) {
 			require.NoError(t, err)
 
 			// when
-			tmpl, err = decodeTemplate(decoder,
-				createTemplate(withObjects(rolebindingWithExtraUser), withParams(usernameParam, commitParam)))
+			tmpl, err = DecodeTemplate(decoder,
+				CreateTemplate(WithObjects(RoleBindingWithExtraUser), WithParams(UsernameParam, CommitParam)))
 			require.NoError(t, err)
 			objs, err = p.Process(tmpl, values)
 			require.NoError(t, err)
@@ -399,10 +398,10 @@ func TestProcessAndApply(t *testing.T) {
 			"USERNAME": user,
 			"COMMIT":   commit,
 		}
-		cl := test.NewFakeClient(t)
+		cl := NewFakeClient(t)
 		p := template.NewProcessor(cl, s)
-		tmpl, err := decodeTemplate(decoder,
-			createTemplate(withObjects(namespace, rolebinding), withParams(usernameParam, commitParam)))
+		tmpl, err := DecodeTemplate(decoder,
+			CreateTemplate(WithObjects(Namespace, RoleBinding), WithParams(UsernameParam, CommitParam)))
 		require.NoError(t, err)
 		objs, err := p.Process(tmpl, values)
 		require.NoError(t, err)
@@ -452,18 +451,18 @@ func TestApplySingle(t *testing.T) {
 	decoder := codecFactory.UniversalDeserializer()
 
 	// create default objects with default params
-	cl := test.NewFakeClient(t)
+	cl := NewFakeClient(t)
 	p := template.NewProcessor(cl, s)
-	tmpl, err := decodeTemplate(decoder,
-		createTemplate(withObjects(service, configMap), withParams(namespaceParam, servSelectorParam)))
+	tmpl, err := DecodeTemplate(decoder,
+		CreateTemplate(WithObjects(Service, ConfigMap), WithParams(NamespaceParam, ServSelectorParam)))
 	require.NoError(t, err)
 	defaultObjs, err := p.Process(tmpl, map[string]string{})
 	require.NoError(t, err)
 	defaultObject := defaultObjs[0].Object
 
 	// create objects containing modified params
-	tmpl, err = decodeTemplate(decoder,
-		createTemplate(withObjects(service, configMap), withParams(namespaceParam, servSelectorParam)))
+	tmpl, err = DecodeTemplate(decoder,
+		CreateTemplate(WithObjects(Service, ConfigMap), WithParams(NamespaceParam, ServSelectorParam)))
 	require.NoError(t, err)
 	values := map[string]string{
 		"NAMESPACE":        "toolchain-host-operator",
@@ -477,7 +476,7 @@ func TestApplySingle(t *testing.T) {
 
 		t.Run("when using forceUpdate=true, it should update even when spec is same", func(t *testing.T) {
 			// given
-			cli := test.NewFakeClient(t)
+			cli := NewFakeClient(t)
 			processor := template.NewProcessor(cli, s)
 			_, err := processor.ApplySingle(defaultObject.DeepCopyObject(), true, nil)
 			require.NoError(t, err)
@@ -492,7 +491,7 @@ func TestApplySingle(t *testing.T) {
 
 		t.Run("when using forceUpdate=false, it should update when spec is different", func(t *testing.T) {
 			// given
-			cli := test.NewFakeClient(t)
+			cli := NewFakeClient(t)
 			processor := template.NewProcessor(cli, s)
 			_, err := processor.ApplySingle(defaultObject.DeepCopyObject(), true, nil)
 			require.NoError(t, err)
@@ -511,7 +510,7 @@ func TestApplySingle(t *testing.T) {
 
 		t.Run("when using forceUpdate=false, it should NOT update when using same object", func(t *testing.T) {
 			// given
-			cli := test.NewFakeClient(t)
+			cli := NewFakeClient(t)
 			processor := template.NewProcessor(cli, s)
 			_, err := processor.ApplySingle(defaultObject.DeepCopyObject(), true, nil)
 			require.NoError(t, err)
@@ -526,7 +525,7 @@ func TestApplySingle(t *testing.T) {
 
 		t.Run("when object is missing, it should create it no matter what is set as forceUpdate", func(t *testing.T) {
 			// given
-			cli := test.NewFakeClient(t)
+			cli := NewFakeClient(t)
 			processor := template.NewProcessor(cli, s)
 			require.NoError(t, err)
 			deployment := &v1.Deployment{}
@@ -546,7 +545,7 @@ func TestApplySingle(t *testing.T) {
 
 		t.Run("when object cannot be retrieved because of any error, then it should fail", func(t *testing.T) {
 			// given
-			cli := test.NewFakeClient(t)
+			cli := NewFakeClient(t)
 			cli.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 				return fmt.Errorf("unable to get")
 			}
@@ -565,7 +564,7 @@ func TestApplySingle(t *testing.T) {
 
 	t.Run("when using forceUpdate=false, it should update ConfigMap when data field is different", func(t *testing.T) {
 		// given
-		cli := test.NewFakeClient(t)
+		cli := NewFakeClient(t)
 		processor := template.NewProcessor(cli, s)
 		_, err := processor.ApplySingle(defaultObjs[1].Object, true, nil)
 		require.NoError(t, err)
@@ -600,13 +599,13 @@ func getNameWithTimestamp(prefix string) string {
 func assertObject(t *testing.T, expectedObj expectedObj, actual runtime.RawExtension) {
 	// objJson, err := actual.Marshal()
 	// require.NoError(t, err, "failed to marshal json from unstructured object")
-	expected, err := newObject(expectedObj.template, expectedObj.username, expectedObj.commit)
+	expected, err := newObject(string(expectedObj.template), expectedObj.username, expectedObj.commit)
 	require.NoError(t, err, "failed to create object from template")
 	assert.Equal(t, expected, actual.Object)
 }
 
 type expectedObj struct {
-	template string
+	template TemplateObject
 	username string
 	commit   string
 }
@@ -653,173 +652,3 @@ func assertRoleBindingExists(t *testing.T, c client.Client, ns string) authv1.Ro
 	require.NoError(t, err)
 	return rb
 }
-
-func decodeTemplate(decoder runtime.Decoder, tmplContent string) (*templatev1.Template, error) {
-	tmpl := &templatev1.Template{}
-	_, _, err := decoder.Decode([]byte(tmplContent), nil, tmpl)
-	if err != nil {
-		return nil, err
-	}
-	return tmpl, err
-}
-
-func createTemplate(innerObjects templateObject, params templateParams) string {
-	return fmt.Sprintf(templateSkeleton, innerObjects, params)
-}
-
-type templateParams string
-type templateObject string
-
-func withParams(parameters ...string) templateParams {
-	params := ""
-	for _, param := range parameters {
-		params += param
-	}
-	return templateParams(params)
-}
-
-func withObjects(innerObjects ...string) templateObject {
-	objects := ""
-	for _, object := range innerObjects {
-		objects += object
-	}
-	return templateObject(objects)
-}
-
-const (
-	templateSkeleton = `apiVersion: template.openshift.io/v1
-kind: Template
-metadata:
-  labels:
-    provider: codeready-toolchain
-    version: ${COMMIT}
-  name: basic-tier-template
-objects:
-%s
-parameters:
-%s
-`
-	usernameParam = `
-- name: USERNAME
-  value: toolchain-dev
-  required: true`
-
-	usernameParamWithoutValue = `
-- name: USERNAME
-  required: true`
-
-	commitParam = `
-- name: COMMIT
-  value: 123abc
-  required: true`
-
-	namespaceParam = `
-- name: NAMESPACE
-  value: toolchain-host-operator`
-
-	servSelectorParam = `
-- name: SERVICE_SELECTOR
-  value: registration-service`
-
-	namespace = `
-- apiVersion: v1
-  kind: Namespace
-  metadata:
-    annotations:
-      openshift.io/description: ${USERNAME}-user
-      openshift.io/display-name: ${USERNAME}
-      openshift.io/requester: ${USERNAME}
-    labels:
-      provider: codeready-toolchain
-      version: ${COMMIT}
-    name: ${USERNAME}`
-
-	rolebinding = `
-- apiVersion: authorization.openshift.io/v1
-  kind: RoleBinding
-  metadata:
-    name: ${USERNAME}-edit
-    namespace: ${USERNAME}
-  roleRef:
-    kind: ClusterRole
-    name: edit
-  subjects:
-  - kind: User
-    name: ${USERNAME}`
-
-	rolebindingWithExtraUser = `
-- apiVersion: authorization.openshift.io/v1
-  kind: RoleBinding
-  metadata:
-    name: ${USERNAME}-edit
-    namespace: ${USERNAME}
-  roleRef:
-    kind: ClusterRole
-    name: edit
-  subjects:
-  - kind: User
-    name: ${USERNAME}
-  - kind: User
-    name: extraUser`
-
-	service = `
-- kind: Service
-  apiVersion: v1
-  metadata:
-    name: registration-service
-    namespace: ${NAMESPACE}
-    labels:
-      provider: codeready-toolchain
-      run: registration-service
-  spec:
-    selector:
-      run: ${SERVICE_SELECTOR}`
-
-	configMap = `
-- kind: ConfigMap
-  apiVersion: v1
-  metadata:
-    labels:
-      provider: codeready-toolchain
-    name: registration-service
-    namespace: ${NAMESPACE}
-  type: Opaque
-  data:
-    service-selector: ${SERVICE_SELECTOR}`
-
-	namespaceObj = `{ 
-	"apiVersion": "v1",
-	"kind": "Namespace",
-	"metadata": {
-		"annotations": {
-			"openshift.io/description": "{{ .Username }}-user",
-			"openshift.io/display-name": "{{ .Username }}",
-			"openshift.io/requester": "{{ .Username }}"
-		},
-		"labels": {
-			"provider": "codeready-toolchain",
-			"version": "{{ .Commit }}"
-		},
-		"name": "{{ .Username }}"
-	}
-}`
-
-	rolebindingObj = `{
-	"apiVersion": "authorization.openshift.io/v1",
-	"kind": "RoleBinding",
-	"metadata": {
-		"name": "{{ .Username }}-edit",
-    	"namespace": "{{ .Username }}"
-	},
-	"roleRef": {
-		"kind": "ClusterRole",
-		"name": "edit"
-	},
-	"subjects": [
-		{
-			"kind": "User",
-			"name": "{{ .Username }}"
-		}
-	]
-}`
-)
