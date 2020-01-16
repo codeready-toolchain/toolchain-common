@@ -203,7 +203,7 @@ func TestGetClustersByType(t *testing.T) {
 			assert.Contains(t, clusters, member4)
 		})
 
-		t.Run("get only available member clusters", func(t *testing.T) {
+		t.Run("get only member clusters with free capacity", func(t *testing.T) {
 			//when
 			clusters := GetMemberClusters(CapacityNotExhausted)
 
