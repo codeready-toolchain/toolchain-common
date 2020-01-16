@@ -3,10 +3,11 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -16,9 +17,10 @@ import (
 )
 
 const (
-	labelType             = "type"
-	labelNamespace        = "namespace"
-	labelOwnerClusterName = "ownerClusterName"
+	labelType              = "type"
+	labelNamespace         = "namespace"
+	labelOwnerClusterName  = "ownerClusterName"
+	labelCapacityExhausted = "toolchain.dev.openshift.com/capacity-exhausted"
 
 	defaultHostOperatorNamespace   = "toolchain-host-operator"
 	defaultMemberOperatorNamespace = "toolchain-member-operator"
@@ -71,6 +73,13 @@ func (s *KubeFedClusterService) addKubeFedCluster(fedCluster *v1beta1.KubeFedClu
 		return errors.Wrap(err, "cannot create KubeFedCluster client")
 	}
 
+	capacityExhausted := false
+	if c, exists := fedCluster.Labels[labelCapacityExhausted]; exists {
+		capacityExhausted, err = strconv.ParseBool(c)
+		if err != nil {
+			return errors.Wrap(err, "cannot create KubeFedCluster client")
+		}
+	}
 	cluster := &FedCluster{
 		Name:              fedCluster.Name,
 		APIEndpoint:       fedCluster.Spec.APIEndpoint,
@@ -79,6 +88,7 @@ func (s *KubeFedClusterService) addKubeFedCluster(fedCluster *v1beta1.KubeFedClu
 		Type:              Type(fedCluster.Labels[labelType]),
 		OperatorNamespace: fedCluster.Labels[labelNamespace],
 		OwnerClusterName:  fedCluster.Labels[labelOwnerClusterName],
+		CapacityExhausted: capacityExhausted,
 	}
 	if cluster.Type == "" {
 		cluster.Type = Member
