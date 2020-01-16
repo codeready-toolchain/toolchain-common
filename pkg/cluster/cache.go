@@ -7,6 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kubefed/pkg/apis/core/common"
 	"sigs.k8s.io/kubefed/pkg/apis/core/v1beta1"
+	"sigs.k8s.io/kubefed/pkg/controller/util"
 )
 
 var clusterCache = kubeFedClusterClients{clusters: map[string]*FedCluster{}}
@@ -72,12 +73,7 @@ type Condition func(cluster *FedCluster) bool
 
 // Ready checks that the cluster is in a 'Ready' status condition
 var Ready Condition = func(cluster *FedCluster) bool {
-	for _, condition := range cluster.ClusterStatus.Conditions {
-		if condition.Type == common.ClusterReady && condition.Status == apiv1.ConditionTrue {
-			return true
-		}
-	}
-	return false
+	return util.IsClusterReady(cluster.ClusterStatus)
 }
 
 // CapacityNotExhausted checks that the cluster capacity has not exhausted
