@@ -144,3 +144,9 @@ func ToBeDeleted() MurModifier {
 		mur.DeletionTimestamp = &metav1.Time{Time: time.Now()}
 	}
 }
+
+func DisabledMur(disabled bool) MurModifier {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) {
+		mur.Spec.Disabled = disabled
+	}
+}
