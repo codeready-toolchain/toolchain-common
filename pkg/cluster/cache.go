@@ -5,6 +5,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kubefed/pkg/apis/core/v1beta1"
+	"sigs.k8s.io/kubefed/pkg/controller/util"
 )
 
 var clusterCache = kubeFedClusterClients{clusters: map[string]*FedCluster{}}
@@ -35,6 +36,9 @@ type FedCluster struct {
 	// then the OwnerClusterName has a name of the member - it has to be same name as the name
 	// that is used for identifying the member in a Host cluster
 	OwnerClusterName string
+	// CapacityExhausted a flag to indicate that the cluster capacity has exhausted
+	// and it cannot be used to provision new user accounts.
+	CapacityExhausted bool
 }
 
 func (c *kubeFedClusterClients) addFedCluster(cluster *FedCluster) {
@@ -62,12 +66,31 @@ func (c *kubeFedClusterClients) getFedCluster(name string) (*FedCluster, bool) {
 	return cluster, ok
 }
 
-func (c *kubeFedClusterClients) getFedClustersByType(clusterType Type) []*FedCluster {
+// Condition an expected cluster condition
+type Condition func(cluster *FedCluster) bool
+
+// Ready checks that the cluster is in a 'Ready' status condition
+var Ready Condition = func(cluster *FedCluster) bool {
+	return util.IsClusterReady(cluster.ClusterStatus)
+}
+
+// CapacityNotExhausted checks that the cluster capacity has not exhausted
+var CapacityNotExhausted Condition = func(cluster *FedCluster) bool {
+	return !cluster.CapacityExhausted
+}
+
+func (c *kubeFedClusterClients) getFedClustersByType(clusterType Type, conditions ...Condition) []*FedCluster {
 	c.RLock()
 	defer c.RUnlock()
 	clusters := make([]*FedCluster, 0, len(c.clusters))
+clusters:
 	for _, cluster := range c.clusters {
 		if cluster.Type == clusterType {
+			for _, match := range conditions {
+				if !match(cluster) {
+					continue clusters
+				}
+			}
 			clusters = append(clusters, cluster)
 		}
 	}
@@ -97,14 +120,14 @@ func GetHostCluster() (*FedCluster, bool) {
 }
 
 // GetMemberClustersFunc a func that returns the member clusters from the cache
-type GetMemberClustersFunc func() []*FedCluster
+type GetMemberClustersFunc func(conditions ...Condition) []*FedCluster
 
 // MemberClusters the func to retrieve the member clusters
 var MemberClusters GetMemberClustersFunc = GetMemberClusters
 
 // GetMemberClusters returns the kube clients for the host clusters from the cache of the clusters
-func GetMemberClusters() []*FedCluster {
-	return clusterCache.getFedClustersByType(Member)
+func GetMemberClusters(conditions ...Condition) []*FedCluster {
+	return clusterCache.getFedClustersByType(Member, conditions...)
 }
 
 // Type is a cluster type (either host or member)
