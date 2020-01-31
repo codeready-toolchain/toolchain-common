@@ -1,9 +1,7 @@
-package controller_test
+package controller
 
 import (
 	"testing"
-
-	"github.com/codeready-toolchain/toolchain-common/pkg/controller"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +26,7 @@ func TestLabelMapper(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := controller.EnqueueRequestForOwnerByLabel{Namespace: "ns", Label: "owner"}.Map(handler.MapObject{
+		result := eventToOwnerByLabelMapper{namespace: "ns", label: "owner"}.Map(handler.MapObject{
 			Meta:   &objMeta,
 			Object: &obj,
 		})
@@ -54,7 +52,7 @@ func TestLabelMapper(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := controller.EnqueueRequestForOwnerByLabel{Namespace: "ns", Label: "owner"}.Map(handler.MapObject{
+		result := eventToOwnerByLabelMapper{namespace: "ns", label: "owner"}.Map(handler.MapObject{
 			Meta:   &objMeta,
 			Object: &obj,
 		})
