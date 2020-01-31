@@ -19,7 +19,9 @@ func TestLabelMapper(t *testing.T) {
 		objMeta := metav1.ObjectMeta{
 			Name: "bar",
 			Labels: map[string]string{
+				"type": "che",
 				"owner": "foo",
+				"revision": "123",
 			},
 		}
 		obj := corev1.Namespace{
