@@ -6,9 +6,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// NewEnqueueRequestForOwnerByLabel returns an event handler will convert events on a resource to requests on
+// MapToOwnerByLabel returns an event handler will convert events on a resource to requests on
 // another resource whose name if found in a given label
-func NewEnqueueRequestForOwnerByLabel(namespace, label string) handler.EventHandler {
+func MapToOwnerByLabel(namespace, label string) handler.EventHandler {
 	return &handler.EnqueueRequestsFromMapFunc{
 		ToRequests: &eventToOwnerByLabelMapper{
 			label:     label,
