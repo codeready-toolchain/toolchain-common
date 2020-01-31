@@ -28,7 +28,7 @@ func TestLabelMapper(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := controller.NewLabelMapper("ns", "owner").Map(handler.MapObject{
+		result := controller.EnqueueRequestForOwnerByLabel{Namespace: "ns", Label: "owner"}.Map(handler.MapObject{
 			Meta:   &objMeta,
 			Object: &obj,
 		})
@@ -54,7 +54,7 @@ func TestLabelMapper(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := controller.NewLabelMapper("ns", "owner").Map(handler.MapObject{
+		result := controller.EnqueueRequestForOwnerByLabel{Namespace: "ns", Label: "owner"}.Map(handler.MapObject{
 			Meta:   &objMeta,
 			Object: &obj,
 		})
