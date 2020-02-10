@@ -51,10 +51,12 @@ func (a *Assertion) Exists() *Assertion {
 	return a
 }
 
-func (a *Assertion) HasSpec(spec toolchainv1alpha1.UserAccountSpec) *Assertion {
+func (a *Assertion) HasSpec(spec toolchainv1alpha1.UserAccountSpecEmbedded, disabled bool, userID string) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
-	assert.EqualValues(a.t, spec, a.userAccount.Spec)
+	assert.EqualValues(a.t, spec.UserAccountSpecBase, a.userAccount.Spec.UserAccountSpecBase)
+	assert.EqualValues(a.t, disabled, a.userAccount.Spec.Disabled)
+	assert.EqualValues(a.t, userID, a.userAccount.Spec.UserID)
 	return a
 }
 
