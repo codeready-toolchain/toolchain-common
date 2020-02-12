@@ -34,26 +34,28 @@ func newEmbeddedUa(targetCluster, userId string) toolchainv1alpha1.UserAccountEm
 	return toolchainv1alpha1.UserAccountEmbedded{
 		TargetCluster: targetCluster,
 		SyncIndex:     "123abc",
-		Spec: toolchainv1alpha1.UserAccountSpec{
-			UserID:  userId,
-			NSLimit: "basic",
-			NSTemplateSet: toolchainv1alpha1.NSTemplateSetSpec{
-				TierName: "basic",
-				Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
-					{
-						Type:     "dev",
-						Revision: "123abc",
-						Template: "",
-					},
-					{
-						Type:     "code",
-						Revision: "123abc",
-						Template: "",
-					},
-					{
-						Type:     "stage",
-						Revision: "123abc",
-						Template: "",
+		Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
+			UserID: userId,
+			UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
+				NSLimit: "basic",
+				NSTemplateSet: toolchainv1alpha1.NSTemplateSetSpec{
+					TierName: "basic",
+					Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
+						{
+							Type:     "dev",
+							Revision: "123abc",
+							Template: "",
+						},
+						{
+							Type:     "code",
+							Revision: "123abc",
+							Template: "",
+						},
+						{
+							Type:     "stage",
+							Revision: "123abc",
+							Template: "",
+						},
 					},
 				},
 			},
