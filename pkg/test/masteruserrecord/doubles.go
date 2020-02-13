@@ -107,7 +107,7 @@ func NsLimit(limit string) UaInMurModifier {
 	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
 		for i, ua := range mur.Spec.UserAccounts {
 			if ua.TargetCluster == targetCluster {
-				mur.Spec.UserAccounts[i].Spec.UserAccountSpecBase.NSLimit = limit
+				mur.Spec.UserAccounts[i].Spec.NSLimit = limit
 				return
 			}
 		}
@@ -118,7 +118,7 @@ func TierName(tierName string) UaInMurModifier {
 	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
 		for i, ua := range mur.Spec.UserAccounts {
 			if ua.TargetCluster == targetCluster {
-				mur.Spec.UserAccounts[i].Spec.UserAccountSpecBase.NSTemplateSet.TierName = tierName
+				mur.Spec.UserAccounts[i].Spec.NSTemplateSet.TierName = tierName
 				return
 			}
 		}
@@ -129,9 +129,9 @@ func Namespace(nsType, revision string) UaInMurModifier {
 	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
 		for uaIndex, ua := range mur.Spec.UserAccounts {
 			if ua.TargetCluster == targetCluster {
-				for nsIndex, ns := range mur.Spec.UserAccounts[uaIndex].Spec.UserAccountSpecBase.NSTemplateSet.Namespaces {
+				for nsIndex, ns := range mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces {
 					if ns.Type == nsType {
-						mur.Spec.UserAccounts[uaIndex].Spec.UserAccountSpecBase.NSTemplateSet.Namespaces[nsIndex].Revision = revision
+						mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces[nsIndex].Revision = revision
 					}
 				}
 				return
