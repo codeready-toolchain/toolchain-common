@@ -54,7 +54,7 @@ func (a *Assertion) Exists() *Assertion {
 func (a *Assertion) HasEmbeddedSpec(spec toolchainv1alpha1.UserAccountSpecEmbedded) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
-	assert.Equal(a.t, spec.UserAccountSpecBase, a.userAccount.Spec)
+	assert.Equal(a.t, spec.UserAccountSpecBase, a.userAccount.Spec.UserAccountSpecBase)
 	return a
 }
 
