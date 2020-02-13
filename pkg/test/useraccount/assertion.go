@@ -52,7 +52,7 @@ func (a *Assertion) Exists() *Assertion {
 	return a
 }
 
-func (a *Assertion) HasEmbeddedSpec(spec toolchainv1alpha1.UserAccountSpecEmbedded, disabled bool, userID string) *Assertion {
+func (a *Assertion) HasEmbeddedSpec(spec toolchainv1alpha1.UserAccountSpecEmbedded) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	reflect.DeepEqual(spec.UserAccountSpecBase, a.userAccount.Spec)
