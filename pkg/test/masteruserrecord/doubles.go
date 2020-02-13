@@ -35,7 +35,7 @@ func newEmbeddedUa(targetCluster, userId string) toolchainv1alpha1.UserAccountEm
 		TargetCluster: targetCluster,
 		SyncIndex:     "123abc",
 		Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
-			UserID:  userId,
+			UserID: userId,
 			UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
 				NSLimit: "basic",
 				NSTemplateSet: toolchainv1alpha1.NSTemplateSetSpec{
