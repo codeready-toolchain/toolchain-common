@@ -94,3 +94,11 @@ func addToScheme(t *testing.T) *runtime.Scheme {
 	require.NoError(t, err)
 	return s
 }
+
+func addToScheme(t *testing.T) *runtime.Scheme {
+	s := scheme.Scheme
+	addToSchemes := append(apis.AddToSchemes, v1beta1.SchemeBuilder.AddToScheme)
+	err := addToSchemes.AddToScheme(s)
+	require.NoError(t, err)
+	return s
+}
