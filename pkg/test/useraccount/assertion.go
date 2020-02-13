@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 )
@@ -54,18 +55,14 @@ func (a *Assertion) Exists() *Assertion {
 func (a *Assertion) HasEmbeddedSpec(spec toolchainv1alpha1.UserAccountSpecEmbedded, disabled bool, userID string) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
-	assert.EqualValues(a.t, spec.UserAccountSpecBase, a.userAccount.Spec.UserAccountSpecBase)
-	assert.EqualValues(a.t, disabled, a.userAccount.Spec.Disabled)
-	assert.EqualValues(a.t, userID, a.userAccount.Spec.UserID)
+	reflect.DeepEqual(spec.UserAccountSpecBase, a.userAccount.Spec)
 	return a
 }
 
 func (a *Assertion) HasSpec(spec toolchainv1alpha1.UserAccountSpec) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
-	assert.EqualValues(a.t, spec.UserAccountSpecBase, a.userAccount.Spec.UserAccountSpecBase)
-	assert.EqualValues(a.t, spec.Disabled, a.userAccount.Spec.Disabled)
-	assert.EqualValues(a.t, spec.UserID, a.userAccount.Spec.UserID)
+	reflect.DeepEqual(spec, a.userAccount.Spec)
 	return a
 }
 
