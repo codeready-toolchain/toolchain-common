@@ -16,7 +16,7 @@ func NewUserAccountFromMur(mur *toolchainv1alpha1.MasterUserRecord, modifiers ..
 			Namespace: test.MemberOperatorNs,
 		},
 		Spec: toolchainv1alpha1.UserAccountSpec{
-			UserID:              mur.Spec.UserAccounts[0].Spec.UserID,
+			UserID:              mur.Spec.UserID,
 			Disabled:            mur.Spec.Disabled,
 			UserAccountSpecBase: mur.Spec.UserAccounts[0].Spec.UserAccountSpecBase,
 		},
