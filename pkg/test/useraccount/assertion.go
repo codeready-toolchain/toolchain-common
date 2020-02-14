@@ -62,11 +62,7 @@ func (a *Assertion) MatchMasterUserRecord(mur *toolchainv1alpha1.MasterUserRecor
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	a.MatchEmbeddedSpec(spec)
-	if mur.Spec.UserID == "" {
-		assert.Equal(a.t, spec.UserID, a.userAccount.Spec.UserID)
-	} else {
-		assert.Equal(a.t, mur.Spec.UserID, a.userAccount.Spec.UserID)
-	}
+	assert.Equal(a.t, mur.Spec.UserID, a.userAccount.Spec.UserID)
 	assert.Equal(a.t, mur.Spec.Disabled, a.userAccount.Spec.Disabled)
 	return a
 }
