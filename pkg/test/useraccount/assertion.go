@@ -58,7 +58,7 @@ func (a *Assertion) MatchEmbeddedSpec(spec toolchainv1alpha1.UserAccountSpecEmbe
 	return a
 }
 
-func (a *Assertion) MatchesMasterUserRecord(mur *toolchainv1alpha1.MasterUserRecord, spec toolchainv1alpha1.UserAccountSpecEmbedded) *Assertion {
+func (a *Assertion) MatchMasterUserRecord(mur *toolchainv1alpha1.MasterUserRecord, spec toolchainv1alpha1.UserAccountSpecEmbedded) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	a.MatchEmbeddedSpec(spec)
