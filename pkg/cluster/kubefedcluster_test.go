@@ -20,9 +20,7 @@ import (
 
 func TestEnsureKubeFedClusterCrd(t *testing.T) {
 	// given
-	s := scheme.Scheme
-	err := apis.AddToScheme(s)
-	require.NoError(t, err)
+	s := addToScheme(t)
 	decoder := serializer.NewCodecFactory(s).UniversalDeserializer()
 	expectedCrd := &v1beta1.CustomResourceDefinition{}
 	crd, err := Asset("core.kubefed.io_kubefedclusters.yaml")
@@ -77,4 +75,12 @@ func assertThatKubeFedClusterCrdExists(t *testing.T, client client.Client, expec
 	err := client.Get(context.TODO(), types.NamespacedName{Name: "kubefedclusters.core.kubefed.io"}, crd)
 	require.NoError(t, err)
 	assert.Equal(t, expectedCrd, crd)
+}
+
+func addToScheme(t *testing.T) *runtime.Scheme {
+	s := scheme.Scheme
+	addToSchemes := append(apis.AddToSchemes, v1beta1.SchemeBuilder.AddToScheme)
+	err := addToSchemes.AddToScheme(s)
+	require.NoError(t, err)
+	return s
 }

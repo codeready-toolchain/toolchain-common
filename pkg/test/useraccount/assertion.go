@@ -51,10 +51,26 @@ func (a *Assertion) Exists() *Assertion {
 	return a
 }
 
+func (a *Assertion) MatchEmbeddedSpec(spec toolchainv1alpha1.UserAccountSpecEmbedded) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	assert.Equal(a.t, spec.UserAccountSpecBase, a.userAccount.Spec.UserAccountSpecBase)
+	return a
+}
+
+func (a *Assertion) MatchMasterUserRecord(mur *toolchainv1alpha1.MasterUserRecord, spec toolchainv1alpha1.UserAccountSpecEmbedded) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	a.MatchEmbeddedSpec(spec)
+	assert.Equal(a.t, mur.Spec.UserID, a.userAccount.Spec.UserID)
+	assert.Equal(a.t, mur.Spec.Disabled, a.userAccount.Spec.Disabled)
+	return a
+}
+
 func (a *Assertion) HasSpec(spec toolchainv1alpha1.UserAccountSpec) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
-	assert.EqualValues(a.t, spec, a.userAccount.Spec)
+	assert.Equal(a.t, spec, a.userAccount.Spec)
 	return a
 }
 

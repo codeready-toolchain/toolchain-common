@@ -23,37 +23,38 @@ func NewMasterUserRecord(userName string, modifiers ...MurModifier) *toolchainv1
 		},
 		Spec: toolchainv1alpha1.MasterUserRecordSpec{
 			UserID:       userId,
-			UserAccounts: []toolchainv1alpha1.UserAccountEmbedded{newEmbeddedUa(test.MemberClusterName, userId)},
+			UserAccounts: []toolchainv1alpha1.UserAccountEmbedded{newEmbeddedUa(test.MemberClusterName)},
 		},
 	}
 	Modify(mur, modifiers...)
 	return mur
 }
 
-func newEmbeddedUa(targetCluster, userId string) toolchainv1alpha1.UserAccountEmbedded {
+func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
 	return toolchainv1alpha1.UserAccountEmbedded{
 		TargetCluster: targetCluster,
 		SyncIndex:     "123abc",
-		Spec: toolchainv1alpha1.UserAccountSpec{
-			UserID:  userId,
-			NSLimit: "basic",
-			NSTemplateSet: toolchainv1alpha1.NSTemplateSetSpec{
-				TierName: "basic",
-				Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
-					{
-						Type:     "dev",
-						Revision: "123abc",
-						Template: "",
-					},
-					{
-						Type:     "code",
-						Revision: "123abc",
-						Template: "",
-					},
-					{
-						Type:     "stage",
-						Revision: "123abc",
-						Template: "",
+		Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
+			UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
+				NSLimit: "basic",
+				NSTemplateSet: toolchainv1alpha1.NSTemplateSetSpec{
+					TierName: "basic",
+					Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
+						{
+							Type:     "dev",
+							Revision: "123abc",
+							Template: "",
+						},
+						{
+							Type:     "code",
+							Revision: "123abc",
+							Template: "",
+						},
+						{
+							Type:     "stage",
+							Revision: "123abc",
+							Template: "",
+						},
 					},
 				},
 			},
@@ -96,7 +97,7 @@ func TargetCluster(targetCluster string) MurModifier {
 func AdditionalAccounts(clusters ...string) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) {
 		for _, cluster := range clusters {
-			mur.Spec.UserAccounts = append(mur.Spec.UserAccounts, newEmbeddedUa(cluster, mur.Spec.UserID))
+			mur.Spec.UserAccounts = append(mur.Spec.UserAccounts, newEmbeddedUa(cluster))
 		}
 	}
 }
