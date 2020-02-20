@@ -1,7 +1,7 @@
 module github.com/codeready-toolchain/toolchain-common
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20200212082237-859fa2e44edd
+	github.com/codeready-toolchain/api v0.0.0-20200220052945-b24517fc619f
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-logr/logr v0.1.0
 	github.com/gofrs/uuid v3.2.0+incompatible
@@ -27,9 +27,6 @@ require (
 
 // Pinned to kubernetes-1.14.1
 replace (
-	//TODO: Update to master once merged
-	github.com/codeready-toolchain/api v0.0.0-20200212082237-859fa2e44edd => github.com/tinakurian/api v0.0.0-20200219143838-d7c2cb78b67a
-
 	k8s.io/api => k8s.io/api v0.0.0-20190409021203-6e4e0e4f393b
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190409022649-727a075fdec8
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190404173353-6a84e37a896d
