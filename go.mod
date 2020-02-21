@@ -9,7 +9,7 @@ require (
 	github.com/magiconair/properties v1.8.1
 	github.com/openshift/api v3.9.1-0.20190924102528-32369d4db2ad+incompatible
 	github.com/openshift/library-go v0.0.0-20191121124438-7c776f7cc17a
-	github.com/operator-framework/operator-sdk v0.15.1
+	github.com/operator-framework/operator-sdk v0.15.2
 	github.com/pkg/errors v0.8.1
 	github.com/redhat-cop/operator-utils v0.0.0-20190827162636-51e6b0c32776
 	github.com/satori/go.uuid v1.2.0
@@ -52,9 +52,9 @@ replace (
 
 replace (
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309 // Required by Helm (inderectly by operator-sdk)
-	github.com/openshift/api => github.com/openshift/api v0.0.0-20190927182313-d4a64ec2cbd8 // Using openshift/api 4.3
+	github.com/openshift/api => github.com/openshift/api v0.0.0-20200205145930-e9d93e317dd1 // Using 'github.com/openshift/api@release-4.3'
 )
 
-replace github.com/codeready-toolchain/api => github.com/alexeykazakov/api v0.0.0-20200212203303-23cdc65bb3a3
+replace github.com/codeready-toolchain/api => github.com/alexeykazakov/api v0.0.0-20200221000202-e6c8d72a4f26
 
 go 1.13
