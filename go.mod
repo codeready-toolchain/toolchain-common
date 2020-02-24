@@ -55,6 +55,6 @@ replace (
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20200205145930-e9d93e317dd1 // Using 'github.com/openshift/api@release-4.3'
 )
 
-replace github.com/codeready-toolchain/api => github.com/alexeykazakov/api v0.0.0-20200221000202-e6c8d72a4f26
+replace github.com/codeready-toolchain/api => github.com/alexeykazakov/api v0.0.0-20200224221537-a7747a36a9d2
 
 go 1.13
