@@ -1,7 +1,7 @@
 module github.com/codeready-toolchain/toolchain-common
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20200220052945-b24517fc619f
+	github.com/codeready-toolchain/api v0.0.0-20200224173120-61614082a545
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-logr/logr v0.1.0
 	github.com/gofrs/uuid v3.2.0+incompatible
@@ -54,7 +54,5 @@ replace (
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309 // Required by Helm (inderectly by operator-sdk)
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20200205145930-e9d93e317dd1 // Using 'github.com/openshift/api@release-4.3'
 )
-
-replace github.com/codeready-toolchain/api => github.com/alexeykazakov/api v0.0.0-20200224221537-a7747a36a9d2
 
 go 1.13
