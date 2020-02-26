@@ -71,3 +71,9 @@ func addOrUpdateStatusCondition(conditions []toolchainv1alpha1.Condition, newCon
 	}
 	return append(conditions, newCondition), true
 }
+
+// HasConditionReason returns true if the first Condition with given conditionType from the given slice has the specified reason
+func HasConditionReason(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType, reason string) bool {
+	con, found := FindConditionByType(conditions, conditionType)
+	return found && con.Reason == reason
+}
