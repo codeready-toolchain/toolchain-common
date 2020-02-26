@@ -167,6 +167,29 @@ func TestIsTrue(t *testing.T) {
 	})
 }
 
+func TestHasConditionReason(t *testing.T) {
+	conditions := []toolchainv1alpha1.Condition{
+		{
+			Type:   toolchainv1alpha1.ConditionReady,
+			Status: corev1.ConditionFalse,
+			Reason: "Disabled",
+		},
+		{
+			Type:   toolchainv1alpha1.ConditionReady,
+			Status: corev1.ConditionFalse,
+			Reason: "Unknown",
+		},
+	}
+
+	t.Run("found", func(t *testing.T) {
+		assert.True(t, condition.HasConditionReason(conditions, toolchainv1alpha1.ConditionReady, "Disabled"))
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		assert.False(t, condition.HasConditionReason(conditions, toolchainv1alpha1.ConditionReady, "Testing"))
+	})
+}
+
 func existingConditions(size int) []toolchainv1alpha1.Condition {
 	return conditions(size, "Existing")
 }
