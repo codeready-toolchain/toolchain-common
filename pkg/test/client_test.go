@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,6 +41,10 @@ func TestNewClient(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "somename",
 				Namespace: "somenamespace",
+			},
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Secret",
+				APIVersion: "v1",
 			},
 			StringData: data,
 		}
