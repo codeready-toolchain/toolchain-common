@@ -74,7 +74,17 @@ func assertThatKubeFedClusterCrdExists(t *testing.T, client client.Client, expec
 	crd := &v1beta1.CustomResourceDefinition{}
 	err := client.Get(context.TODO(), types.NamespacedName{Name: "kubefedclusters.core.kubefed.io"}, crd)
 	require.NoError(t, err)
-	assert.Equal(t, expectedCrd, crd)
+	assert.Equal(t, expectedCrd.TypeMeta, crd.TypeMeta)
+	assert.Equal(t, expectedCrd.ObjectMeta.Name, crd.ObjectMeta.Name)
+	assert.Equal(t, expectedCrd.ObjectMeta.Annotations, crd.ObjectMeta.Annotations)
+	assert.Equal(t, expectedCrd.ObjectMeta.Labels, crd.ObjectMeta.Labels)
+	assert.Equal(t, expectedCrd.Spec.AdditionalPrinterColumns, crd.Spec.AdditionalPrinterColumns)
+	assert.Equal(t, expectedCrd.Spec.Group, crd.Spec.Group)
+	assert.Equal(t, expectedCrd.Spec.Versions, crd.Spec.Versions)
+	assert.Equal(t, expectedCrd.Spec.Names, crd.Spec.Names)
+	assert.Equal(t, expectedCrd.Spec.Scope, crd.Spec.Scope)
+	assert.Equal(t, expectedCrd.Spec.Subresources, crd.Spec.Subresources)
+	assert.Equal(t, expectedCrd.Spec.Validation, crd.Spec.Validation)
 }
 
 func addToScheme(t *testing.T) *runtime.Scheme {
