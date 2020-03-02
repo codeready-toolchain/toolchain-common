@@ -146,6 +146,7 @@ func ToBeDeleted() MurModifier {
 	}
 }
 
+// DisabledMur creates a MurModifier to change the disabled spec value
 func DisabledMur(disabled bool) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) {
 		mur.Spec.Disabled = disabled

@@ -42,3 +42,10 @@ func ResourceVersion(resVer string) UaModifier {
 		ua.ResourceVersion = resVer
 	}
 }
+
+// DisabledUa creates a UaModifier to change the disabled spec value
+func DisabledUa(disabled bool) UaModifier {
+	return func(ua *toolchainv1alpha1.UserAccount) {
+		ua.Spec.Disabled = disabled
+	}
+}
