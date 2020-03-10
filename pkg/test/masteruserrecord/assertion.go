@@ -92,32 +92,32 @@ func (a *Assertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Cond
 	return a
 }
 
-func (a *Assertion) AllUserAccountsHaveTier(tierName string, namespaces []toolchainv1alpha1.NSTemplateTierNamespace) *Assertion {
+func (a *Assertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTier) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
-		a.userAccountHasTier(ua, tierName, namespaces)
+		a.userAccountHasTier(ua, tier)
 	}
 	return a
 }
 
-func (a *Assertion) UserAccountHasTier(targetCluster, tierName string, namespaces []toolchainv1alpha1.NSTemplateTierNamespace) *Assertion {
+func (a *Assertion) UserAccountHasTier(targetCluster string, tier toolchainv1alpha1.NSTemplateTier) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
 		if ua.TargetCluster == targetCluster {
-			a.userAccountHasTier(ua, tierName, namespaces)
+			a.userAccountHasTier(ua, tier)
 		}
 	}
 	return a
 }
 
-func (a *Assertion) userAccountHasTier(userAccount toolchainv1alpha1.UserAccountEmbedded, tierName string, namespaces []toolchainv1alpha1.NSTemplateTierNamespace) {
-	assert.Equal(a.t, tierName, userAccount.Spec.NSTemplateSet.TierName)
-	assert.Len(a.t, userAccount.Spec.NSTemplateSet.Namespaces, len(namespaces))
+func (a *Assertion) userAccountHasTier(userAccount toolchainv1alpha1.UserAccountEmbedded, tier toolchainv1alpha1.NSTemplateTier) {
+	assert.Equal(a.t, tier.Name, userAccount.Spec.NSTemplateSet.TierName)
+	assert.Len(a.t, userAccount.Spec.NSTemplateSet.Namespaces, len(tier.Spec.Namespaces))
 
 TierNamespaces:
-	for _, ns := range namespaces {
+	for _, ns := range tier.Spec.Namespaces {
 		for _, uaNs := range userAccount.Spec.NSTemplateSet.Namespaces {
 			if ns.Type == uaNs.Type {
 				assert.Equal(a.t, ns.Revision, uaNs.Revision)
