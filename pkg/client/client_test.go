@@ -16,8 +16,8 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -189,9 +189,11 @@ func newClient(t *testing.T, s *runtime.Scheme) (*applyCl.ApplyClient, *test.Fak
 	cli := NewFakeClient(t)
 	cli.MockCreate = func(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
 		// force the Generation to `1` for newly created objects
-		if obj, ok := obj.(*unstructured.Unstructured); ok {
-			obj.SetGeneration(1)
+		m, err := meta.Accessor(obj)
+		if err != nil {
+			return err
 		}
+		m.SetGeneration(1)
 		return cli.Client.Create(ctx, obj, opts...)
 	}
 	cli.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
