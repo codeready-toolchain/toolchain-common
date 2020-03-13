@@ -63,10 +63,10 @@ func TestApplySingle(t *testing.T) {
 		t.Run("when using forceUpdate=true, it should not update when specs are same", func(t *testing.T) {
 			// given
 			cl, _ := newClient(t, s)
-			obj := defaultService.DeepCopyObject()
+			obj := defaultService.DeepCopy()
 			_, err := cl.CreateOrUpdateObject(obj, true, nil)
 			require.NoError(t, err)
-			originalGeneration := obj.(*corev1.Service).GetGeneration()
+			originalGeneration := obj.GetGeneration()
 
 			// when updating with the same obj again
 			createdOrChanged, err := cl.CreateOrUpdateObject(obj, true, nil)
@@ -74,27 +74,44 @@ func TestApplySingle(t *testing.T) {
 			// then
 			require.NoError(t, err)
 			assert.False(t, createdOrChanged) // resource was not updated on the server, so returned value is `false`
-			updateGeneration := obj.(*corev1.Service).GetGeneration()
+			updateGeneration := obj.GetGeneration()
 			assert.Equal(t, originalGeneration, updateGeneration)
 		})
 
 		t.Run("when using forceUpdate=true, it should update when specs are different", func(t *testing.T) {
 			// given
 			cl, _ := newClient(t, s)
-			obj := defaultService.DeepCopyObject()
+			obj := defaultService.DeepCopy()
 			_, err := cl.CreateOrUpdateObject(obj, true, nil)
 			require.NoError(t, err)
-			originalGeneration := obj.(*corev1.Service).GetGeneration()
+			originalGeneration := obj.GetGeneration()
 
 			// when updating with the modified obj
-			modifiedObj := modifiedService.DeepCopyObject()
-			modifiedObj.(*corev1.Service).ObjectMeta.Generation = obj.(*corev1.Service).GetGeneration()
+			modifiedObj := modifiedService.DeepCopy()
+			modifiedObj.ObjectMeta.Generation = obj.GetGeneration()
 			createdOrChanged, err := cl.CreateOrUpdateObject(modifiedObj, true, nil)
 
 			// then
 			require.NoError(t, err)
 			assert.True(t, createdOrChanged) // resource was updated on the server, so returned value if `true`
-			updateGeneration := modifiedObj.(*corev1.Service).GetGeneration()
+			updateGeneration := modifiedObj.GetGeneration()
+			assert.Equal(t, originalGeneration+1, updateGeneration)
+		})
+
+		t.Run("when using forceUpdate=true, it will update even when specs are same and return true as labels have changed", func(t *testing.T) {
+			// given
+			cl, _ := newClient(t, s)
+			service := defaultService.DeepCopy()
+			_, err := cl.CreateOrUpdateObject(service, true, nil)
+			require.NoError(t, err)
+			originalGeneration := service.GetGeneration()
+			service.SetLabels(map[string]string{"new": "label"})
+			// when updating with changed labels
+			createdOrChanged, err := cl.CreateOrUpdateObject(service, true, nil)
+			// then
+			require.NoError(t, err)
+			assert.True(t, createdOrChanged) // resource was updated on the server, so returned value is `true`
+			updateGeneration := service.GetGeneration()
 			assert.Equal(t, originalGeneration+1, updateGeneration)
 		})
 
