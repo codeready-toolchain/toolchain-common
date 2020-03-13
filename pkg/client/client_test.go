@@ -98,23 +98,6 @@ func TestApplySingle(t *testing.T) {
 			assert.Equal(t, originalGeneration+1, updateGeneration)
 		})
 
-		t.Run("when using forceUpdate=true, it will update even when specs are same and return true as labels have changed", func(t *testing.T) {
-			// given
-			cl, _ := newClient(t, s)
-			service := defaultService.DeepCopy()
-			_, err := cl.CreateOrUpdateObject(service, true, nil)
-			require.NoError(t, err)
-			originalGeneration := service.GetGeneration()
-			service.SetLabels(map[string]string{"new": "label"})
-			// when updating with changed labels
-			createdOrChanged, err := cl.CreateOrUpdateObject(service, true, nil)
-			// then
-			require.NoError(t, err)
-			assert.True(t, createdOrChanged) // resource was updated on the server, so returned value is `true`
-			updateGeneration := service.GetGeneration()
-			assert.Equal(t, originalGeneration+1, updateGeneration)
-		})
-
 		t.Run("when using forceUpdate=false, it should update when spec is different", func(t *testing.T) {
 			// given
 			cl, cli := newClient(t, s)
