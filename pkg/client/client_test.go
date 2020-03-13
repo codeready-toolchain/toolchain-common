@@ -3,10 +3,12 @@ package client_test
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/codeready-toolchain/api/pkg/apis"
 	applyCl "github.com/codeready-toolchain/toolchain-common/pkg/client"
+	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	. "github.com/codeready-toolchain/toolchain-common/pkg/test"
 
 	authv1 "github.com/openshift/api/authorization/v1"
@@ -15,6 +17,7 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -57,24 +60,31 @@ func TestApplySingle(t *testing.T) {
 		// given
 		namespacedName := types.NamespacedName{Namespace: "toolchain-host-operator", Name: "registration-service"}
 
-		t.Run("when using forceUpdate=true, it should update even when spec is same", func(t *testing.T) {
+		t.Run("when using forceUpdate=true, it should not update when specs are same", func(t *testing.T) {
 			// given
-			cli := NewFakeClient(t)
-			cl := applyCl.NewApplyClient(cli, s)
-			cli.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
-				err := cli.Client.Update(ctx, obj)
-				if err != nil {
-					return err
-				}
-				if obj, ok := obj.(*corev1.Service); ok {
-					obj.ObjectMeta.Generation = obj.ObjectMeta.Generation + 1
-				}
-				return nil
-			}
+			cl, _ := newClient(t, s)
 			obj := defaultService.DeepCopyObject()
-			originalGeneration := obj.(*corev1.Service).GetGeneration()
 			_, err := cl.CreateOrUpdateObject(obj, true, nil)
 			require.NoError(t, err)
+			originalGeneration := obj.(*corev1.Service).GetGeneration()
+
+			// when updating with the same obj again
+			createdOrChanged, err := cl.CreateOrUpdateObject(obj, true, nil)
+
+			// then
+			require.NoError(t, err)
+			assert.False(t, createdOrChanged) // resource was not updated on the server, so returned value is `false`
+			updateGeneration := obj.(*corev1.Service).GetGeneration()
+			assert.Equal(t, updateGeneration, originalGeneration)
+		})
+
+		t.Run("when using forceUpdate=true, it should update when specs are different", func(t *testing.T) {
+			// given
+			cl, _ := newClient(t, s)
+			obj := defaultService.DeepCopyObject()
+			_, err := cl.CreateOrUpdateObject(obj, true, nil)
+			require.NoError(t, err)
+			originalGeneration := obj.(*corev1.Service).GetGeneration()
 
 			// when updating with the modified obj
 			modifiedObj := modifiedService.DeepCopyObject()
@@ -83,15 +93,14 @@ func TestApplySingle(t *testing.T) {
 
 			// then
 			require.NoError(t, err)
-			assert.False(t, createdOrChanged) // resource was changed, so returned value if `false`
+			assert.True(t, createdOrChanged) // resource was updated on the server, so returned value if `true`
 			updateGeneration := modifiedObj.(*corev1.Service).GetGeneration()
 			assert.Equal(t, updateGeneration, originalGeneration+1)
 		})
 
 		t.Run("when using forceUpdate=false, it should update when spec is different", func(t *testing.T) {
 			// given
-			cli := NewFakeClient(t)
-			cl := applyCl.NewApplyClient(cli, s)
+			cl, cli := newClient(t, s)
 			_, err := cl.CreateOrUpdateObject(defaultService.DeepCopyObject(), true, nil)
 			require.NoError(t, err)
 
@@ -109,8 +118,7 @@ func TestApplySingle(t *testing.T) {
 
 		t.Run("when using forceUpdate=false, it should NOT update when using same object", func(t *testing.T) {
 			// given
-			cli := NewFakeClient(t)
-			cl := applyCl.NewApplyClient(cli, s)
+			cl, _ := newClient(t, s)
 			_, err := cl.CreateOrUpdateObject(defaultService.DeepCopyObject(), true, nil)
 			require.NoError(t, err)
 
@@ -124,8 +132,7 @@ func TestApplySingle(t *testing.T) {
 
 		t.Run("when object is missing, it should create it no matter what is set as forceUpdate", func(t *testing.T) {
 			// given
-			cli := NewFakeClient(t)
-			cl := applyCl.NewApplyClient(cli, s)
+			cl, cli := newClient(t, s)
 			deployment := &v1.Deployment{}
 
 			// when
@@ -143,8 +150,7 @@ func TestApplySingle(t *testing.T) {
 
 		t.Run("when object cannot be retrieved because of any error, then it should fail", func(t *testing.T) {
 			// given
-			cli := NewFakeClient(t)
-			cl := applyCl.NewApplyClient(cli, s)
+			cl, cli := newClient(t, s)
 			cli.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 				return fmt.Errorf("unable to get")
 			}
@@ -161,8 +167,7 @@ func TestApplySingle(t *testing.T) {
 
 	t.Run("when using forceUpdate=false, it should update ConfigMap when data field is different", func(t *testing.T) {
 		// given
-		cli := NewFakeClient(t)
-		cl := applyCl.NewApplyClient(cli, s)
+		cl, cli := newClient(t, s)
 		_, err := cl.CreateOrUpdateObject(defaultCm.DeepCopyObject(), true, nil)
 		require.NoError(t, err)
 
@@ -178,6 +183,40 @@ func TestApplySingle(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "second-value", configMap.Data["first-param"])
 	})
+}
+
+func newClient(t *testing.T, s *runtime.Scheme) (*applyCl.ApplyClient, *test.FakeClient) {
+	cli := NewFakeClient(t)
+	cli.MockCreate = func(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
+		// force the Generation to `1` for newly created objects
+		if obj, ok := obj.(*unstructured.Unstructured); ok {
+			obj.SetGeneration(1)
+		}
+		return cli.Client.Create(ctx, obj, opts...)
+	}
+	cli.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+		// compare the specs (only) and only increment the generation if something changed
+		// (the server will check the object metadata, but we're skipping this here)
+		if svc, ok := obj.(*corev1.Service); ok {
+			existing := corev1.Service{}
+			if err := cli.Get(ctx, types.NamespacedName{Namespace: svc.GetNamespace(), Name: svc.GetName()}, &existing); err != nil {
+				return err
+			}
+			if !reflect.DeepEqual(existing.Spec, svc.Spec) { // Service has a `spec` field
+				svc.SetGeneration(existing.GetGeneration() + 1)
+			}
+		} else if cm, ok := obj.(*corev1.ConfigMap); ok {
+			existing := corev1.ConfigMap{}
+			if err := cli.Get(ctx, types.NamespacedName{Namespace: cm.GetNamespace(), Name: cm.GetName()}, &existing); err != nil {
+				return err
+			}
+			if !reflect.DeepEqual(existing.Data, cm.Data) { // ConfigMap has a `data` field
+				cm.SetGeneration(existing.GetGeneration() + 1)
+			}
+		}
+		return cli.Client.Update(ctx, obj)
+	}
+	return applyCl.NewApplyClient(cli, s), cli
 }
 
 func addToScheme(t *testing.T) *runtime.Scheme {

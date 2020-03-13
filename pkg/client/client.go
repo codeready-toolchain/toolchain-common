@@ -12,7 +12,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -34,7 +34,8 @@ func NewApplyClient(cl client.Client, scheme *runtime.Scheme) *ApplyClient {
 // CreateOrUpdateObject creates the object if is missing and if the owner object is provided, then it's set as a controller reference.
 // If the objects exists then when the spec content has changed (based on the content of the annotation in the original object) then it
 // is automatically updated. If it looks to be same then based on the value of forceUpdate param it updates the object or not.
-// The return boolean says if the object was either created or updated
+// The return boolean says if the object was either created or updated (`true`). If nothing changed (ie, the generation was not
+// incremented by the server), then it returns `false`.
 func (p ApplyClient) CreateOrUpdateObject(obj runtime.Object, forceUpdate bool, owner v1.Object) (bool, error) {
 	gvk := obj.GetObjectKind().GroupVersionKind()
 	createdOrUpdated, err := p.createOrUpdateObj(obj, forceUpdate, owner)
@@ -104,7 +105,7 @@ func (p ApplyClient) createOrUpdateObj(newResource runtime.Object, forceUpdate b
 	}
 
 	// check if it was changed or not
-	return originalGeneration == metaNewAfterUpdate.GetGeneration(), nil
+	return originalGeneration != metaNewAfterUpdate.GetGeneration(), nil
 }
 
 func getNewConfiguration(newResource runtime.Object) string {
