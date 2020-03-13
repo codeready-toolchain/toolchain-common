@@ -12,7 +12,7 @@ import (
 	authv1 "github.com/openshift/api/authorization/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -61,15 +61,29 @@ func TestApplySingle(t *testing.T) {
 			// given
 			cli := NewFakeClient(t)
 			cl := applyCl.NewApplyClient(cli, s)
-			_, err := cl.CreateOrUpdateObject(defaultService.DeepCopyObject(), true, nil)
+			cli.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+				err := cli.Client.Update(ctx, obj)
+				if err != nil {
+					return err
+				}
+				if obj, ok := obj.(*corev1.Service); ok {
+					obj.ObjectMeta.Generation = obj.ObjectMeta.Generation + 1
+				}
+				return nil
+			}
+			obj := defaultService.DeepCopyObject()
+			originalGeneration := obj.(*corev1.Service).GetGeneration()
+			_, err := cl.CreateOrUpdateObject(obj, true, nil)
 			require.NoError(t, err)
 
 			// when
-			createdOrChanged, err := cl.CreateOrUpdateObject(modifiedService.DeepCopyObject(), true, nil)
+			createdOrChanged, err := cl.CreateOrUpdateObject(obj, true, nil)
 
 			// then
 			require.NoError(t, err)
-			assert.True(t, createdOrChanged)
+			assert.False(t, createdOrChanged) // resource was changed, so returned value if `false`
+			updateGeneration := obj.(*corev1.Service).GetGeneration()
+			assert.Equal(t, updateGeneration, originalGeneration+1)
 		})
 
 		t.Run("when using forceUpdate=false, it should update when spec is different", func(t *testing.T) {
