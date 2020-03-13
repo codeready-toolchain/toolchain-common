@@ -76,13 +76,15 @@ func TestApplySingle(t *testing.T) {
 			_, err := cl.CreateOrUpdateObject(obj, true, nil)
 			require.NoError(t, err)
 
-			// when
-			createdOrChanged, err := cl.CreateOrUpdateObject(obj, true, nil)
+			// when updating with the modified obj
+			modifiedObj := modifiedService.DeepCopyObject()
+			modifiedObj.(*corev1.Service).ObjectMeta.Generation = obj.(*corev1.Service).GetGeneration()
+			createdOrChanged, err := cl.CreateOrUpdateObject(modifiedObj, true, nil)
 
 			// then
 			require.NoError(t, err)
 			assert.False(t, createdOrChanged) // resource was changed, so returned value if `false`
-			updateGeneration := obj.(*corev1.Service).GetGeneration()
+			updateGeneration := modifiedObj.(*corev1.Service).GetGeneration()
 			assert.Equal(t, updateGeneration, originalGeneration+1)
 		})
 
