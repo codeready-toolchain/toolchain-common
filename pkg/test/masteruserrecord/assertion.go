@@ -92,6 +92,42 @@ func (a *Assertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Cond
 	return a
 }
 
+func (a *Assertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTier) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
+		a.userAccountHasTier(ua, tier)
+	}
+	return a
+}
+
+func (a *Assertion) UserAccountHasTier(targetCluster string, tier toolchainv1alpha1.NSTemplateTier) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
+		if ua.TargetCluster == targetCluster {
+			a.userAccountHasTier(ua, tier)
+		}
+	}
+	return a
+}
+
+func (a *Assertion) userAccountHasTier(userAccount toolchainv1alpha1.UserAccountEmbedded, tier toolchainv1alpha1.NSTemplateTier) {
+	assert.Equal(a.t, tier.Name, userAccount.Spec.NSTemplateSet.TierName)
+	assert.Len(a.t, userAccount.Spec.NSTemplateSet.Namespaces, len(tier.Spec.Namespaces))
+
+TierNamespaces:
+	for _, ns := range tier.Spec.Namespaces {
+		for _, uaNs := range userAccount.Spec.NSTemplateSet.Namespaces {
+			if ns.Type == uaNs.Type {
+				assert.Equal(a.t, ns.Revision, uaNs.Revision)
+				continue TierNamespaces
+			}
+		}
+		assert.Failf(a.t, "unable to find namespace of type %s in UserAccount %v", ns.Type, userAccount)
+	}
+}
+
 func (a *Assertion) HasFinalizer() *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
