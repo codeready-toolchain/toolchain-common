@@ -95,7 +95,7 @@ func TestApplySingle(t *testing.T) {
 			require.NoError(t, err)
 			assert.True(t, createdOrChanged) // resource was updated on the server, so returned value if `true`
 			updateGeneration := modifiedObj.(*corev1.Service).GetGeneration()
-			assert.Equal(t, updateGeneration, originalGeneration+1)
+			assert.Equal(t, originalGeneration+1, updateGeneration)
 		})
 
 		t.Run("when using forceUpdate=false, it should update when spec is different", func(t *testing.T) {
