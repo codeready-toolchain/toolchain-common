@@ -3,7 +3,6 @@ package client_test
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/codeready-toolchain/api/pkg/apis"
@@ -16,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -187,37 +185,6 @@ func TestApplySingle(t *testing.T) {
 
 func newClient(t *testing.T, s *runtime.Scheme) (*applyCl.ApplyClient, *test.FakeClient) {
 	cli := NewFakeClient(t)
-	cli.MockCreate = func(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
-		// force the Generation to `1` for newly created objects
-		m, err := meta.Accessor(obj)
-		if err != nil {
-			return err
-		}
-		m.SetGeneration(1)
-		return cli.Client.Create(ctx, obj, opts...)
-	}
-	cli.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
-		// compare the specs (only) and only increment the generation if something changed
-		// (the server will check the object metadata, but we're skipping this here)
-		if svc, ok := obj.(*corev1.Service); ok {
-			existing := corev1.Service{}
-			if err := cli.Get(ctx, types.NamespacedName{Namespace: svc.GetNamespace(), Name: svc.GetName()}, &existing); err != nil {
-				return err
-			}
-			if !reflect.DeepEqual(existing.Spec, svc.Spec) { // Service has a `spec` field
-				svc.SetGeneration(existing.GetGeneration() + 1)
-			}
-		} else if cm, ok := obj.(*corev1.ConfigMap); ok {
-			existing := corev1.ConfigMap{}
-			if err := cli.Get(ctx, types.NamespacedName{Namespace: cm.GetNamespace(), Name: cm.GetName()}, &existing); err != nil {
-				return err
-			}
-			if !reflect.DeepEqual(existing.Data, cm.Data) { // ConfigMap has a `data` field
-				cm.SetGeneration(existing.GetGeneration() + 1)
-			}
-		}
-		return cli.Client.Update(ctx, obj)
-	}
 	return applyCl.NewApplyClient(cli, s), cli
 }
 

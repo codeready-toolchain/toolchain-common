@@ -2,14 +2,18 @@ package test
 
 import (
 	"context"
-	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/kubefed/pkg/apis"
+	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/kubefed/pkg/apis"
 )
 
 // NewFakeClient creates a fake K8s client with ability to override specific Get/List/Create/Update/StatusUpdate/Delete functions
@@ -66,6 +70,13 @@ func (c *FakeClient) Create(ctx context.Context, obj runtime.Object, opts ...cli
 	if c.MockCreate != nil {
 		return c.MockCreate(ctx, obj, opts...)
 	}
+
+	// Set Generation to `1` for newly created objects since the kube fake client doesn't set it
+	mt, err := meta.Accessor(obj)
+	if err != nil {
+		return err
+	}
+	mt.SetGeneration(1)
 	return c.Client.Create(ctx, obj, opts...)
 }
 
@@ -86,6 +97,27 @@ func (c *FakeClient) Status() client.StatusWriter {
 func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
 	if c.MockUpdate != nil {
 		return c.MockUpdate(ctx, obj, opts...)
+	}
+
+	// Update Generation if needed since the kube fake client doesn't update generations.
+	// Compare the specs (only) and only increment the generation if something changed
+	// (the server will check the object metadata, but we're skipping this here)
+	if svc, ok := obj.(*corev1.Service); ok {
+		existing := corev1.Service{}
+		if err := c.Client.Get(ctx, types.NamespacedName{Namespace: svc.GetNamespace(), Name: svc.GetName()}, &existing); err != nil {
+			return err
+		}
+		if !reflect.DeepEqual(existing.Spec, svc.Spec) { // Service has a `spec` field
+			svc.SetGeneration(existing.GetGeneration() + 1)
+		}
+	} else if cm, ok := obj.(*corev1.ConfigMap); ok {
+		existing := corev1.ConfigMap{}
+		if err := c.Client.Get(ctx, types.NamespacedName{Namespace: cm.GetNamespace(), Name: cm.GetName()}, &existing); err != nil {
+			return err
+		}
+		if !reflect.DeepEqual(existing.Data, cm.Data) { // ConfigMap has a `data` field
+			cm.SetGeneration(existing.GetGeneration() + 1)
+		}
 	}
 	return c.Client.Update(ctx, obj, opts...)
 }
