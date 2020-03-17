@@ -2,11 +2,11 @@ package test
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -100,23 +100,49 @@ func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...cli
 	}
 
 	// Update Generation if needed since the kube fake client doesn't update generations.
-	// Compare the specs (only) and only increment the generation if something changed
-	// (the server will check the object metadata, but we're skipping this here)
-	if svc, ok := obj.(*corev1.Service); ok {
-		existing := corev1.Service{}
-		if err := c.Client.Get(ctx, types.NamespacedName{Namespace: svc.GetNamespace(), Name: svc.GetName()}, &existing); err != nil {
-			return err
+	// Increment the generation if spec (for objects with Spec) or data/stringData (for objects like CM and Secrets) is changed.
+	updatingMeta, err := meta.Accessor(obj)
+	if err != nil {
+		return err
+	}
+
+	current := obj.DeepCopyObject()
+	if err := c.Client.Get(ctx, types.NamespacedName{Namespace: updatingMeta.GetNamespace(), Name: updatingMeta.GetName()}, current); err != nil {
+		return err
+	}
+	currentMeta, err := meta.Accessor(current)
+	if err != nil {
+		return err
+	}
+
+	updatingContent, err := json.Marshal(obj)
+	if err != nil {
+		return err
+	}
+	updatingMap := map[string]interface{}{}
+	if err := json.Unmarshal(updatingContent, &updatingMap); err != nil {
+		return err
+	}
+	currentContent, err := json.Marshal(current)
+	if err != nil {
+		return err
+	}
+	currentMap := map[string]interface{}{}
+	if err := json.Unmarshal(currentContent, &currentMap); err != nil {
+		return err
+	}
+
+	if updatingMap["spec"] != nil {
+		if !reflect.DeepEqual(updatingMap["spec"], currentMap["spec"]) {
+			updatingMeta.SetGeneration(currentMeta.GetGeneration() + 1)
 		}
-		if !reflect.DeepEqual(existing.Spec, svc.Spec) { // Service has a `spec` field
-			svc.SetGeneration(existing.GetGeneration() + 1)
+	} else if updatingMap["data"] != nil {
+		if !reflect.DeepEqual(updatingMap["data"], currentMap["data"]) {
+			updatingMeta.SetGeneration(currentMeta.GetGeneration() + 1)
 		}
-	} else if cm, ok := obj.(*corev1.ConfigMap); ok {
-		existing := corev1.ConfigMap{}
-		if err := c.Client.Get(ctx, types.NamespacedName{Namespace: cm.GetNamespace(), Name: cm.GetName()}, &existing); err != nil {
-			return err
-		}
-		if !reflect.DeepEqual(existing.Data, cm.Data) { // ConfigMap has a `data` field
-			cm.SetGeneration(existing.GetGeneration() + 1)
+	} else if updatingMap["stringData"] != nil {
+		if !reflect.DeepEqual(updatingMap["stringData"], currentMap["stringData"]) {
+			updatingMeta.SetGeneration(currentMeta.GetGeneration() + 1)
 		}
 	}
 	return c.Client.Update(ctx, obj, opts...)
