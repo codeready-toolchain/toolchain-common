@@ -148,7 +148,7 @@ func cleanObject(obj runtime.Object) (runtime.Object, error) {
 		return nil, err
 	}
 
-	for k, _ := range m {
+	for k := range m {
 		if k != "metadata" && k != "kind" && k != "apiVersion" {
 			m[k] = nil
 		}
