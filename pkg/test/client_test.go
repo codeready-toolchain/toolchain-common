@@ -75,11 +75,12 @@ func TestNewClient(t *testing.T) {
 			assert.EqualValues(t, 1, secret.Generation)
 
 			data = make(map[string][]byte)
-			data["key"] = []byte("updated")
+			data["newkey"] = []byte("newvalue")
 			created.Data = data
 			assert.NoError(t, fclient.Update(context.TODO(), created))
 			assert.NoError(t, fclient.Get(context.TODO(), types.NamespacedName{Namespace: "somenamespace", Name: created.Name}, secret))
-			assert.Equal(t, []byte("updated"), secret.Data["key"])
+			assert.Equal(t, []byte("value"), secret.Data["key"])
+			assert.Equal(t, []byte("newvalue"), secret.Data["newkey"])
 			assert.EqualValues(t, 2, secret.Generation) // Generation updated
 		})
 

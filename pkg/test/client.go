@@ -105,8 +105,19 @@ func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...cli
 	if err != nil {
 		return err
 	}
+	updatingMap, err := toMap(obj)
+	if err != nil {
+		return err
+	}
+	updatingMap["metadata"] = nil
+	updatingMap["status"] = nil
+	updatingMap["kind"] = nil
+	updatingMap["apiVersion"] = nil
 
-	current := obj.DeepCopyObject()
+	current, err := cleanObject(obj)
+	if err != nil {
+		return err
+	}
 	if err := c.Client.Get(ctx, types.NamespacedName{Namespace: updatingMeta.GetNamespace(), Name: updatingMeta.GetName()}, current); err != nil {
 		return err
 	}
@@ -114,38 +125,49 @@ func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...cli
 	if err != nil {
 		return err
 	}
-
-	updatingContent, err := json.Marshal(obj)
+	currentMap, err := toMap(current)
 	if err != nil {
 		return err
 	}
-	updatingMap := map[string]interface{}{}
-	if err := json.Unmarshal(updatingContent, &updatingMap); err != nil {
-		return err
-	}
-	currentContent, err := json.Marshal(current)
-	if err != nil {
-		return err
-	}
-	currentMap := map[string]interface{}{}
-	if err := json.Unmarshal(currentContent, &currentMap); err != nil {
-		return err
-	}
+	currentMap["metadata"] = nil
+	currentMap["status"] = nil
+	currentMap["kind"] = nil
+	currentMap["apiVersion"] = nil
 
-	if updatingMap["spec"] != nil {
-		if !reflect.DeepEqual(updatingMap["spec"], currentMap["spec"]) {
-			updatingMeta.SetGeneration(currentMeta.GetGeneration() + 1)
-		}
-	} else if updatingMap["data"] != nil {
-		if !reflect.DeepEqual(updatingMap["data"], currentMap["data"]) {
-			updatingMeta.SetGeneration(currentMeta.GetGeneration() + 1)
-		}
-	} else if updatingMap["stringData"] != nil {
-		if !reflect.DeepEqual(updatingMap["stringData"], currentMap["stringData"]) {
-			updatingMeta.SetGeneration(currentMeta.GetGeneration() + 1)
-		}
+	if !reflect.DeepEqual(updatingMap, currentMap) {
+		updatingMeta.SetGeneration(currentMeta.GetGeneration() + 1)
 	}
 	return c.Client.Update(ctx, obj, opts...)
+}
+
+func cleanObject(obj runtime.Object) (runtime.Object, error) {
+	newObj := obj.DeepCopyObject()
+
+	m, err := toMap(newObj)
+	if err != nil {
+		return nil, err
+	}
+
+	for k, _ := range m {
+		if k != "metadata" && k != "kind" && k != "apiVersion" {
+			m[k] = nil
+		}
+	}
+
+	return newObj, nil
+}
+
+func toMap(obj runtime.Object) (map[string]interface{}, error) {
+	content, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+	m := map[string]interface{}{}
+	if err := json.Unmarshal(content, &m); err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }
 
 func (c *FakeClient) Delete(ctx context.Context, obj runtime.Object, opts ...client.DeleteOption) error {
