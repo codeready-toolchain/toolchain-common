@@ -2,9 +2,9 @@ package test
 
 import (
 	"context"
+
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/kubefed/pkg/apis"
-	"testing"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -13,7 +13,7 @@ import (
 )
 
 // NewFakeClient creates a fake K8s client with ability to override specific Get/List/Create/Update/StatusUpdate/Delete functions
-func NewFakeClient(t *testing.T, initObjs ...runtime.Object) *FakeClient {
+func NewFakeClient(t T, initObjs ...runtime.Object) *FakeClient {
 	s := scheme.Scheme
 	err := apis.AddToScheme(s)
 	require.NoError(t, err)
@@ -23,7 +23,7 @@ func NewFakeClient(t *testing.T, initObjs ...runtime.Object) *FakeClient {
 
 type FakeClient struct {
 	client.Client
-	T                *testing.T
+	T                T
 	MockGet          func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error
 	MockList         func(ctx context.Context, list runtime.Object, opts ...client.ListOption) error
 	MockCreate       func(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error

@@ -3,7 +3,6 @@ package masteruserrecord
 import (
 	"context"
 	"fmt"
-	"testing"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
@@ -17,7 +16,7 @@ type Assertion struct {
 	masterUserRecord *toolchainv1alpha1.MasterUserRecord
 	client           client.Client
 	namespacedName   types.NamespacedName
-	t                *testing.T
+	t                test.T
 }
 
 func (a *Assertion) loadUaAssertion() error {
@@ -30,12 +29,26 @@ func (a *Assertion) loadUaAssertion() error {
 	return err
 }
 
-func AssertThatMasterUserRecord(t *testing.T, name string, client client.Client) *Assertion {
+func AssertThatMasterUserRecord(t test.T, name string, client client.Client) *Assertion {
 	return &Assertion{
 		client:         client,
 		namespacedName: test.NamespacedName(test.HostOperatorNs, name),
 		t:              t,
 	}
+}
+
+// HasNSTemplateSet verifies that the MUR has the expected NSTemplateSet
+func (a *Assertion) HasNSTemplateSet(targetCluster string, expectedTmplSet toolchainv1alpha1.NSTemplateSetSpec) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
+		if ua.TargetCluster == targetCluster {
+			assert.Equal(a.t, expectedTmplSet, ua.Spec.NSTemplateSet)
+			return a
+		}
+	}
+	a.t.Fatalf("unable to find an NSTemplateSet for the '%s' target cluster", targetCluster)
+	return a
 }
 
 func (a *Assertion) HasConditions(expected ...toolchainv1alpha1.Condition) *Assertion {
