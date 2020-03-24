@@ -2,14 +2,17 @@ package test
 
 import (
 	"context"
+	"encoding/json"
+	"reflect"
 
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/kubefed/pkg/apis"
-
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/kubefed/pkg/apis"
 )
 
 // NewFakeClient creates a fake K8s client with ability to override specific Get/List/Create/Update/StatusUpdate/Delete functions
@@ -66,6 +69,13 @@ func (c *FakeClient) Create(ctx context.Context, obj runtime.Object, opts ...cli
 	if c.MockCreate != nil {
 		return c.MockCreate(ctx, obj, opts...)
 	}
+
+	// Set Generation to `1` for newly created objects since the kube fake client doesn't set it
+	mt, err := meta.Accessor(obj)
+	if err != nil {
+		return err
+	}
+	mt.SetGeneration(1)
 	return c.Client.Create(ctx, obj, opts...)
 }
 
@@ -87,7 +97,76 @@ func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...cli
 	if c.MockUpdate != nil {
 		return c.MockUpdate(ctx, obj, opts...)
 	}
+
+	// Update Generation if needed since the kube fake client doesn't update generations.
+	// Increment the generation if spec (for objects with Spec) or data/stringData (for objects like CM and Secrets) is changed.
+	updatingMeta, err := meta.Accessor(obj)
+	if err != nil {
+		return err
+	}
+	updatingMap, err := toMap(obj)
+	if err != nil {
+		return err
+	}
+	updatingMap["metadata"] = nil
+	updatingMap["status"] = nil
+	updatingMap["kind"] = nil
+	updatingMap["apiVersion"] = nil
+
+	current, err := cleanObject(obj)
+	if err != nil {
+		return err
+	}
+	if err := c.Client.Get(ctx, types.NamespacedName{Namespace: updatingMeta.GetNamespace(), Name: updatingMeta.GetName()}, current); err != nil {
+		return err
+	}
+	currentMeta, err := meta.Accessor(current)
+	if err != nil {
+		return err
+	}
+	currentMap, err := toMap(current)
+	if err != nil {
+		return err
+	}
+	currentMap["metadata"] = nil
+	currentMap["status"] = nil
+	currentMap["kind"] = nil
+	currentMap["apiVersion"] = nil
+
+	if !reflect.DeepEqual(updatingMap, currentMap) {
+		updatingMeta.SetGeneration(currentMeta.GetGeneration() + 1)
+	}
 	return c.Client.Update(ctx, obj, opts...)
+}
+
+func cleanObject(obj runtime.Object) (runtime.Object, error) {
+	newObj := obj.DeepCopyObject()
+
+	m, err := toMap(newObj)
+	if err != nil {
+		return nil, err
+	}
+
+	for k := range m {
+		if k != "metadata" && k != "kind" && k != "apiVersion" {
+			m[k] = nil
+		}
+	}
+
+	return newObj, nil
+}
+
+func toMap(obj runtime.Object) (map[string]interface{}, error) {
+	content, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+	m := map[string]interface{}{}
+	if err := json.Unmarshal(content, &m); err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }
 
 func (c *FakeClient) Delete(ctx context.Context, obj runtime.Object, opts ...client.DeleteOption) error {
