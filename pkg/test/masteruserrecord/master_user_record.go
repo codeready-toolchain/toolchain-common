@@ -89,6 +89,12 @@ func MetaNamespace(namespace string) MurModifier {
 	}
 }
 
+func Finalizer(finalizer string) MurModifier {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) {
+		mur.Finalizers = append(mur.Finalizers, finalizer)
+	}
+}
+
 func TargetCluster(targetCluster string) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) {
 		for i := range mur.Spec.UserAccounts {

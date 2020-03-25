@@ -51,6 +51,13 @@ func (a *Assertion) HasNSTemplateSet(targetCluster string, expectedTmplSet toolc
 	return a
 }
 
+func (a *Assertion) HasNoConditions() *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	require.Empty(a.t, a.masterUserRecord.Status.Conditions)
+	return a
+}
+
 func (a *Assertion) HasConditions(expected ...toolchainv1alpha1.Condition) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)

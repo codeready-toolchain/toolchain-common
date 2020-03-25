@@ -203,7 +203,7 @@ func coreKubefedIo_kubefedclustersYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "core.kubefed.io_kubefedclusters.yaml", size: 5406, mode: os.FileMode(420), modTime: time.Unix(1584614885, 0)}
+	info := bindataFileInfo{name: "core.kubefed.io_kubefedclusters.yaml", size: 5406, mode: os.FileMode(420), modTime: time.Unix(1585147668, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
