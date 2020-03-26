@@ -37,13 +37,43 @@ func AssertThatMasterUserRecord(t test.T, name string, client client.Client) *As
 	}
 }
 
-// HasNSTemplateSet verifies that the MUR has the expected NSTemplateSet
-func (a *Assertion) HasNSTemplateSet(targetCluster string, expectedTmplSet toolchainv1alpha1.NSTemplateSetSpec) *Assertion {
+type NsTemplateSetSpecExp func(*toolchainv1alpha1.NSTemplateSetSpec)
+
+func WithTier(tier string) NsTemplateSetSpecExp {
+	return func(set *toolchainv1alpha1.NSTemplateSetSpec) {
+		set.TierName = tier
+	}
+}
+
+func WithNs(nsType, revision string) NsTemplateSetSpecExp {
+	return func(set *toolchainv1alpha1.NSTemplateSetSpec) {
+		set.Namespaces = append(set.Namespaces, toolchainv1alpha1.NSTemplateSetNamespace{
+			Type:     nsType,
+			Revision: revision,
+		})
+	}
+}
+
+func WithClusterRes(revision string) NsTemplateSetSpecExp {
+	return func(set *toolchainv1alpha1.NSTemplateSetSpec) {
+		if set.ClusterResources == nil {
+			set.ClusterResources = &toolchainv1alpha1.NSTemplateSetClusterResources{}
+		}
+		set.ClusterResources.Revision = revision
+	}
+}
+
+// HasNSTemplateSet verifies that the MUR has NSTemplateSetSpec with the expected values
+func (a *Assertion) HasNSTemplateSet(targetCluster string, expectations ...NsTemplateSetSpecExp) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
+	expectedTmplSetSpec := &toolchainv1alpha1.NSTemplateSetSpec{}
+	for _, modify := range expectations {
+		modify(expectedTmplSetSpec)
+	}
 	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
 		if ua.TargetCluster == targetCluster {
-			assert.Equal(a.t, expectedTmplSet, ua.Spec.NSTemplateSet)
+			assert.Equal(a.t, *expectedTmplSetSpec, ua.Spec.NSTemplateSet)
 			return a
 		}
 	}

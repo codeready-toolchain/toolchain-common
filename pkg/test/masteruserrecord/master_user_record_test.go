@@ -8,7 +8,7 @@ import (
 	"github.com/codeready-toolchain/api/pkg/apis"
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
-	"github.com/codeready-toolchain/toolchain-common/pkg/test/masteruserrecord"
+	murtest "github.com/codeready-toolchain/toolchain-common/pkg/test/masteruserrecord"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,7 +25,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 
 	t.Run("HasNSTemplateSet assertion", func(t *testing.T) {
 
-		mur := masteruserrecord.NewMasterUserRecord("foo", masteruserrecord.TargetCluster("cluster-1"))
+		mur := murtest.NewMasterUserRecord("foo", murtest.TargetCluster("cluster-1"))
 
 		t.Run("ok", func(t *testing.T) {
 			// given
@@ -40,32 +40,14 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 				}
 				return fmt.Errorf("unexpected object key: %v", key)
 			}
-			a := masteruserrecord.AssertThatMasterUserRecord(mockT, "foo", client)
-			expectedTmplSet := toolchainv1alpha1.NSTemplateSetSpec{
-				TierName: "basic",
-				Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
-					{
-						Type:     "dev",
-						Revision: "123abc",
-						Template: "",
-					},
-					{
-						Type:     "code",
-						Revision: "123abc",
-						Template: "",
-					},
-					{
-						Type:     "stage",
-						Revision: "123abc",
-						Template: "",
-					},
-				},
-				ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
-					Revision: "654321a",
-				},
-			}
 			// when
-			a.HasNSTemplateSet("cluster-1", expectedTmplSet)
+			murtest.AssertThatMasterUserRecord(mockT, "foo", client).
+				HasNSTemplateSet("cluster-1",
+					murtest.WithTier("basic"),
+					murtest.WithNs("dev", "123abc"),
+					murtest.WithNs("code", "123abc"),
+					murtest.WithNs("stage", "123abc"),
+					murtest.WithClusterRes("654321a"))
 			// then: all good
 			assert.False(t, mockT.CalledFailNow())
 			assert.False(t, mockT.CalledFatalf())
@@ -87,32 +69,14 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 					}
 					return fmt.Errorf("unexpected object key: %v", key)
 				}
-				a := masteruserrecord.AssertThatMasterUserRecord(mockT, "foo", client)
-				expectedTmplSet := toolchainv1alpha1.NSTemplateSetSpec{
-					TierName: "basic",
-					Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
-						{
-							Type:     "dev",
-							Revision: "123abc",
-							Template: "",
-						},
-						{
-							Type:     "code",
-							Revision: "123abc",
-							Template: "",
-						},
-						{
-							Type:     "stage",
-							Revision: "123abc",
-							Template: "",
-						},
-					},
-					ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
-						Revision: "654321a",
-					},
-				}
 				// when
-				a.HasNSTemplateSet("cluster-unknown", expectedTmplSet)
+				murtest.AssertThatMasterUserRecord(mockT, "foo", client).
+					HasNSTemplateSet("cluster-unknown",
+						murtest.WithTier("basic"),
+						murtest.WithNs("dev", "123abc"),
+						murtest.WithNs("code", "123abc"),
+						murtest.WithNs("stage", "123abc"),
+						murtest.WithClusterRes("654321a"))
 				// then
 				assert.False(t, mockT.CalledFailNow())
 				assert.False(t, mockT.CalledErrorf())
@@ -132,14 +96,9 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 					}
 					return fmt.Errorf("unexpected object key: %v", key)
 				}
-				a := masteruserrecord.AssertThatMasterUserRecord(mockT, "foo", client)
-				expectedTmplSet := toolchainv1alpha1.NSTemplateSetSpec{
-					TierName:         "basic",
-					Namespaces:       []toolchainv1alpha1.NSTemplateSetNamespace{},
-					ClusterResources: nil,
-				}
 				// when
-				a.HasNSTemplateSet("cluster-1", expectedTmplSet)
+				murtest.AssertThatMasterUserRecord(mockT, "foo", client).
+					HasNSTemplateSet("cluster-1", murtest.WithTier("basic"))
 				// then
 				assert.False(t, mockT.CalledFailNow())
 				assert.False(t, mockT.CalledFatalf())
