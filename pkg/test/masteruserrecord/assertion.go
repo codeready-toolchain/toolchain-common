@@ -12,27 +12,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type Assertion struct {
+type MasterUserRecordAssertion struct {
 	masterUserRecord *toolchainv1alpha1.MasterUserRecord
 	client           client.Client
 	namespacedName   types.NamespacedName
 	t                test.T
 }
 
-func (a *Assertion) loadMasterUserRecord() error {
-	if a.masterUserRecord != nil {
-		return nil
-	}
+func (a *MasterUserRecordAssertion) loadMasterUserRecord() error {
 	mur := &toolchainv1alpha1.MasterUserRecord{}
 	err := a.client.Get(context.TODO(), a.namespacedName, mur)
 	a.masterUserRecord = mur
 	return err
 }
 
-func AssertThatMasterUserRecord(t test.T, name string, client client.Client) *Assertion {
-	return &Assertion{
+func AssertThatMasterUserRecord(t test.T, name string, client client.Client) *MasterUserRecordAssertion {
+	return &MasterUserRecordAssertion{
 		client:         client,
-		namespacedName: test.NamespacedName(test.HostOperatorNs, name),
+		namespacedName: types.NamespacedName{Namespace: test.HostOperatorNs, Name: name},
 		t:              t,
 	}
 }
@@ -64,7 +61,7 @@ func WithClusterRes(revision string) NsTemplateSetSpecExp {
 }
 
 // HasNSTemplateSet verifies that the MUR has NSTemplateSetSpec with the expected values
-func (a *Assertion) HasNSTemplateSet(targetCluster string, expectations ...NsTemplateSetSpecExp) *Assertion {
+func (a *MasterUserRecordAssertion) HasNSTemplateSet(targetCluster string, expectations ...NsTemplateSetSpecExp) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	expectedTmplSetSpec := &toolchainv1alpha1.NSTemplateSetSpec{}
@@ -81,21 +78,21 @@ func (a *Assertion) HasNSTemplateSet(targetCluster string, expectations ...NsTem
 	return a
 }
 
-func (a *Assertion) HasNoConditions() *Assertion {
+func (a *MasterUserRecordAssertion) HasNoConditions() *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	require.Empty(a.t, a.masterUserRecord.Status.Conditions)
 	return a
 }
 
-func (a *Assertion) HasConditions(expected ...toolchainv1alpha1.Condition) *Assertion {
+func (a *MasterUserRecordAssertion) HasConditions(expected ...toolchainv1alpha1.Condition) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	test.AssertConditionsMatch(a.t, a.masterUserRecord.Status.Conditions, expected...)
 	return a
 }
 
-func (a *Assertion) HasStatusUserAccounts(targetClusters ...string) *Assertion {
+func (a *MasterUserRecordAssertion) HasStatusUserAccounts(targetClusters ...string) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	require.Len(a.t, a.masterUserRecord.Status.UserAccounts, len(targetClusters))
@@ -105,7 +102,7 @@ func (a *Assertion) HasStatusUserAccounts(targetClusters ...string) *Assertion {
 	return a
 }
 
-func (a *Assertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.UserAccountStatusEmbedded {
+func (a *MasterUserRecordAssertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.UserAccountStatusEmbedded {
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
 		if ua.Cluster.Name == targetCluster {
 			return &ua
@@ -115,7 +112,7 @@ func (a *Assertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.User
 	return nil
 }
 
-func (a *Assertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *Assertion {
+func (a *MasterUserRecordAssertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
@@ -124,7 +121,7 @@ func (a *Assertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *Assert
 	return a
 }
 
-func (a *Assertion) AllUserAccountsHaveCluster(expected toolchainv1alpha1.Cluster) *Assertion {
+func (a *MasterUserRecordAssertion) AllUserAccountsHaveCluster(expected toolchainv1alpha1.Cluster) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
@@ -133,7 +130,7 @@ func (a *Assertion) AllUserAccountsHaveCluster(expected toolchainv1alpha1.Cluste
 	return a
 }
 
-func (a *Assertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Condition) *Assertion {
+func (a *MasterUserRecordAssertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Condition) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
@@ -142,7 +139,7 @@ func (a *Assertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Cond
 	return a
 }
 
-func (a *Assertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTier) *Assertion {
+func (a *MasterUserRecordAssertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTier) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
@@ -151,7 +148,7 @@ func (a *Assertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTie
 	return a
 }
 
-func (a *Assertion) UserAccountHasTier(targetCluster string, tier toolchainv1alpha1.NSTemplateTier) *Assertion {
+func (a *MasterUserRecordAssertion) UserAccountHasTier(targetCluster string, tier toolchainv1alpha1.NSTemplateTier) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
@@ -162,7 +159,7 @@ func (a *Assertion) UserAccountHasTier(targetCluster string, tier toolchainv1alp
 	return a
 }
 
-func (a *Assertion) userAccountHasTier(userAccount toolchainv1alpha1.UserAccountEmbedded, tier toolchainv1alpha1.NSTemplateTier) {
+func (a *MasterUserRecordAssertion) userAccountHasTier(userAccount toolchainv1alpha1.UserAccountEmbedded, tier toolchainv1alpha1.NSTemplateTier) {
 	assert.Equal(a.t, tier.Name, userAccount.Spec.NSTemplateSet.TierName)
 	assert.Len(a.t, userAccount.Spec.NSTemplateSet.Namespaces, len(tier.Spec.Namespaces))
 
@@ -178,7 +175,7 @@ TierNamespaces:
 	}
 }
 
-func (a *Assertion) HasFinalizer() *Assertion {
+func (a *MasterUserRecordAssertion) HasFinalizer() *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	assert.Len(a.t, a.masterUserRecord.Finalizers, 1)
@@ -186,7 +183,7 @@ func (a *Assertion) HasFinalizer() *Assertion {
 	return a
 }
 
-func (a *Assertion) DoesNotHaveFinalizer() *Assertion {
+func (a *MasterUserRecordAssertion) DoesNotHaveFinalizer() *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	assert.Len(a.t, a.masterUserRecord.Finalizers, 0)

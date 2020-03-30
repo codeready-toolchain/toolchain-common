@@ -13,39 +13,36 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type Assertion struct {
+type NSTemplateSetAssertion struct {
 	nsTmplSet      *toolchainv1alpha1.NSTemplateSet
 	client         client.Client
 	namespacedName types.NamespacedName
 	t              test.T
 }
 
-func (a *Assertion) loadNSTemplateSet() error {
-	if a.nsTmplSet != nil {
-		return nil
-	}
+func (a *NSTemplateSetAssertion) loadNSTemplateSet() error {
 	nsTmplSet := &toolchainv1alpha1.NSTemplateSet{}
 	err := a.client.Get(context.TODO(), a.namespacedName, nsTmplSet)
 	a.nsTmplSet = nsTmplSet
 	return err
 }
 
-func AssertThatNSTemplateSet(t test.T, namespace, name string, client client.Client) *Assertion {
-	return &Assertion{
+func AssertThatNSTemplateSet(t test.T, namespace, name string, client client.Client) *NSTemplateSetAssertion {
+	return &NSTemplateSetAssertion{
 		client:         client,
 		namespacedName: test.NamespacedName(namespace, name),
 		t:              t,
 	}
 }
 
-func (a *Assertion) HasNoConditions() *Assertion {
+func (a *NSTemplateSetAssertion) HasNoConditions() *NSTemplateSetAssertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	require.Empty(a.t, a.nsTmplSet.Status.Conditions)
 	return a
 }
 
-func (a *Assertion) HasConditions(expected ...toolchainv1alpha1.Condition) *Assertion {
+func (a *NSTemplateSetAssertion) HasConditions(expected ...toolchainv1alpha1.Condition) *NSTemplateSetAssertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	test.AssertConditionsMatch(a.t, a.nsTmplSet.Status.Conditions, expected...)
@@ -111,7 +108,7 @@ func Terminating() toolchainv1alpha1.Condition {
 	}
 }
 
-func (a *Assertion) HasFinalizer() *Assertion {
+func (a *NSTemplateSetAssertion) HasFinalizer() *NSTemplateSetAssertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	assert.Len(a.t, a.nsTmplSet.Finalizers, 1)
@@ -119,7 +116,7 @@ func (a *Assertion) HasFinalizer() *Assertion {
 	return a
 }
 
-func (a *Assertion) DoesNotHaveFinalizer() *Assertion {
+func (a *NSTemplateSetAssertion) DoesNotHaveFinalizer() *NSTemplateSetAssertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	assert.Len(a.t, a.nsTmplSet.Finalizers, 0)

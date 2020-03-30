@@ -2,6 +2,8 @@ package useraccount
 
 import (
 	"context"
+	"testing"
+
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/assert"
@@ -10,55 +12,51 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
-type Assertion struct {
+type UserAccountAssertion struct {
 	userAccount    *toolchainv1alpha1.UserAccount
 	client         client.Client
 	namespacedName types.NamespacedName
 	t              *testing.T
 }
 
-func (a *Assertion) loadUaAssertion() error {
-	if a.userAccount != nil {
-		return nil
-	}
+func (a *UserAccountAssertion) loadUaAssertion() error {
 	ua := &toolchainv1alpha1.UserAccount{}
 	err := a.client.Get(context.TODO(), a.namespacedName, ua)
 	a.userAccount = ua
 	return err
 }
 
-func AssertThatUserAccount(t *testing.T, name string, client client.Client) *Assertion {
-	return &Assertion{
+func AssertThatUserAccount(t *testing.T, name string, client client.Client) *UserAccountAssertion {
+	return &UserAccountAssertion{
 		client:         client,
 		namespacedName: test.NamespacedName(test.MemberOperatorNs, name),
 		t:              t,
 	}
 }
 
-func (a *Assertion) DoesNotExist() *Assertion {
+func (a *UserAccountAssertion) DoesNotExist() *UserAccountAssertion {
 	err := a.loadUaAssertion()
 	require.Error(a.t, err)
 	assert.IsType(a.t, metav1.StatusReasonNotFound, errors.ReasonForError(err))
 	return a
 }
 
-func (a *Assertion) Exists() *Assertion {
+func (a *UserAccountAssertion) Exists() *UserAccountAssertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	return a
 }
 
-func (a *Assertion) MatchEmbeddedSpec(spec toolchainv1alpha1.UserAccountSpecEmbedded) *Assertion {
+func (a *UserAccountAssertion) MatchEmbeddedSpec(spec toolchainv1alpha1.UserAccountSpecEmbedded) *UserAccountAssertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	assert.Equal(a.t, spec.UserAccountSpecBase, a.userAccount.Spec.UserAccountSpecBase)
 	return a
 }
 
-func (a *Assertion) MatchMasterUserRecord(mur *toolchainv1alpha1.MasterUserRecord, spec toolchainv1alpha1.UserAccountSpecEmbedded) *Assertion {
+func (a *UserAccountAssertion) MatchMasterUserRecord(mur *toolchainv1alpha1.MasterUserRecord, spec toolchainv1alpha1.UserAccountSpecEmbedded) *UserAccountAssertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	a.MatchEmbeddedSpec(spec)
@@ -67,14 +65,14 @@ func (a *Assertion) MatchMasterUserRecord(mur *toolchainv1alpha1.MasterUserRecor
 	return a
 }
 
-func (a *Assertion) HasSpec(spec toolchainv1alpha1.UserAccountSpec) *Assertion {
+func (a *UserAccountAssertion) HasSpec(spec toolchainv1alpha1.UserAccountSpec) *UserAccountAssertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	assert.Equal(a.t, spec, a.userAccount.Spec)
 	return a
 }
 
-func (a *Assertion) HasConditions(expected ...toolchainv1alpha1.Condition) *Assertion {
+func (a *UserAccountAssertion) HasConditions(expected ...toolchainv1alpha1.Condition) *UserAccountAssertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	test.AssertConditionsMatch(a.t, a.userAccount.Status.Conditions, expected...)
