@@ -19,7 +19,7 @@ type Assertion struct {
 	t                test.T
 }
 
-func (a *Assertion) loadUaAssertion() error {
+func (a *Assertion) loadMasterUserRecord() error {
 	if a.masterUserRecord != nil {
 		return nil
 	}
@@ -65,7 +65,7 @@ func WithClusterRes(revision string) NsTemplateSetSpecExp {
 
 // HasNSTemplateSet verifies that the MUR has NSTemplateSetSpec with the expected values
 func (a *Assertion) HasNSTemplateSet(targetCluster string, expectations ...NsTemplateSetSpecExp) *Assertion {
-	err := a.loadUaAssertion()
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	expectedTmplSetSpec := &toolchainv1alpha1.NSTemplateSetSpec{}
 	for _, modify := range expectations {
@@ -82,21 +82,21 @@ func (a *Assertion) HasNSTemplateSet(targetCluster string, expectations ...NsTem
 }
 
 func (a *Assertion) HasNoConditions() *Assertion {
-	err := a.loadUaAssertion()
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	require.Empty(a.t, a.masterUserRecord.Status.Conditions)
 	return a
 }
 
 func (a *Assertion) HasConditions(expected ...toolchainv1alpha1.Condition) *Assertion {
-	err := a.loadUaAssertion()
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	test.AssertConditionsMatch(a.t, a.masterUserRecord.Status.Conditions, expected...)
 	return a
 }
 
 func (a *Assertion) HasStatusUserAccounts(targetClusters ...string) *Assertion {
-	err := a.loadUaAssertion()
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	require.Len(a.t, a.masterUserRecord.Status.UserAccounts, len(targetClusters))
 	for _, cluster := range targetClusters {
@@ -116,7 +116,7 @@ func (a *Assertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.User
 }
 
 func (a *Assertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *Assertion {
-	err := a.loadUaAssertion()
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
 		assert.Equal(a.t, syncIndex, ua.SyncIndex)
@@ -125,7 +125,7 @@ func (a *Assertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *Assert
 }
 
 func (a *Assertion) AllUserAccountsHaveCluster(expected toolchainv1alpha1.Cluster) *Assertion {
-	err := a.loadUaAssertion()
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
 		assert.Equal(a.t, expected, ua.Cluster)
@@ -134,7 +134,7 @@ func (a *Assertion) AllUserAccountsHaveCluster(expected toolchainv1alpha1.Cluste
 }
 
 func (a *Assertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Condition) *Assertion {
-	err := a.loadUaAssertion()
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Status.UserAccounts {
 		test.AssertConditionsMatch(a.t, ua.Conditions, expected)
@@ -143,7 +143,7 @@ func (a *Assertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Cond
 }
 
 func (a *Assertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTier) *Assertion {
-	err := a.loadUaAssertion()
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
 		a.userAccountHasTier(ua, tier)
@@ -152,7 +152,7 @@ func (a *Assertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTie
 }
 
 func (a *Assertion) UserAccountHasTier(targetCluster string, tier toolchainv1alpha1.NSTemplateTier) *Assertion {
-	err := a.loadUaAssertion()
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
 		if ua.TargetCluster == targetCluster {
@@ -179,7 +179,7 @@ TierNamespaces:
 }
 
 func (a *Assertion) HasFinalizer() *Assertion {
-	err := a.loadUaAssertion()
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	assert.Len(a.t, a.masterUserRecord.Finalizers, 1)
 	assert.Contains(a.t, a.masterUserRecord.Finalizers, "finalizer.toolchain.dev.openshift.com")
@@ -187,7 +187,7 @@ func (a *Assertion) HasFinalizer() *Assertion {
 }
 
 func (a *Assertion) DoesNotHaveFinalizer() *Assertion {
-	err := a.loadUaAssertion()
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	assert.Len(a.t, a.masterUserRecord.Finalizers, 0)
 	return a
