@@ -112,11 +112,18 @@ func NewMockT() *MockT {
 	return &MockT{}
 }
 
+var _ test.T = &MockT{}
+
 type MockT struct {
 	logfCount    int
 	errorfCount  int
 	fatalfCount  int
 	failnowCount int
+	failCount    int
+}
+
+func (t *MockT) Log(args ...interface{}) {
+	t.logfCount++
 }
 
 func (t *MockT) Logf(format string, args ...interface{}) {
@@ -134,6 +141,10 @@ func (t *MockT) Fatalf(format string, args ...interface{}) {
 
 func (t *MockT) FailNow() {
 	t.failnowCount++
+}
+
+func (t *MockT) Fail() {
+	t.failCount++
 }
 
 func (t *MockT) CalledLogf() bool {
