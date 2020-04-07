@@ -53,17 +53,21 @@ func (p Processor) Process(tmpl *templatev1.Template, values map[string]string, 
 }
 
 // Apply applies the objects, ie, creates or updates them on the cluster
-func (p Processor) Apply(objs []runtime.RawExtension) error {
+// returns `true, nil` if at least one of the objects was created or modified,
+// `false, nil` if nothing changed, and `false, err` if an error occurred
+func (p Processor) Apply(objs []runtime.RawExtension) (bool, error) {
+	createdOrUpdated := false
 	for _, rawObj := range objs {
 		obj := rawObj.Object
 		if obj == nil {
 			continue
 		}
 		gvk := obj.GetObjectKind().GroupVersionKind()
-		_, err := p.cl.CreateOrUpdateObject(obj, true, nil)
+		result, err := p.cl.CreateOrUpdateObject(obj, true, nil)
 		if err != nil {
-			return errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
+			return false, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
 		}
+		createdOrUpdated = createdOrUpdated || result
 	}
-	return nil
+	return createdOrUpdated, nil
 }

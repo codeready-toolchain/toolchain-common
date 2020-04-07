@@ -249,10 +249,11 @@ func TestProcessAndApply(t *testing.T) {
 		require.NoError(t, err)
 
 		// when
-		err = p.Apply(objs)
+		createdOrUpdated, err := p.Apply(objs)
 
 		// then
 		require.NoError(t, err)
+		assert.True(t, createdOrUpdated)
 		assertNamespaceExists(t, cl, user)
 	})
 
@@ -267,10 +268,11 @@ func TestProcessAndApply(t *testing.T) {
 		require.NoError(t, err)
 
 		// when
-		err = p.Apply(objs)
+		createdOrUpdated, err := p.Apply(objs)
 
 		// then
 		require.NoError(t, err)
+		assert.True(t, createdOrUpdated)
 		assertRoleBindingExists(t, cl, user)
 	})
 
@@ -285,13 +287,13 @@ func TestProcessAndApply(t *testing.T) {
 		require.NoError(t, err)
 
 		// when
-		err = p.Apply(objs)
+		createdOrUpdated, err := p.Apply(objs)
 
 		// then
 		require.NoError(t, err)
+		assert.True(t, createdOrUpdated)
 		assertNamespaceExists(t, cl, user)
 		assertRoleBindingExists(t, cl, user)
-
 	})
 
 	t.Run("should update existing role binding", func(t *testing.T) {
@@ -318,8 +320,9 @@ func TestProcessAndApply(t *testing.T) {
 		require.NoError(t, err)
 		objs, err := p.Process(tmpl, values)
 		require.NoError(t, err)
-		err = p.Apply(objs)
+		createdOrUpdated, err := p.Apply(objs)
 		require.NoError(t, err)
+		assert.True(t, createdOrUpdated)
 		assertRoleBindingExists(t, cl, user)
 
 		// when rolebinding changes
@@ -328,16 +331,38 @@ func TestProcessAndApply(t *testing.T) {
 		require.NoError(t, err)
 		objs, err = p.Process(tmpl, values)
 		require.NoError(t, err)
-		err = p.Apply(objs)
+		createdOrUpdated, err = p.Apply(objs)
 
 		// then
 		require.NoError(t, err)
+		assert.True(t, createdOrUpdated)
 		binding := assertRoleBindingExists(t, cl, user)
 		require.Len(t, binding.Subjects, 2)
 		assert.Equal(t, "User", binding.Subjects[0].Kind)
 		assert.Equal(t, user, binding.Subjects[0].Name)
 		assert.Equal(t, "User", binding.Subjects[1].Kind)
 		assert.Equal(t, "extraUser", binding.Subjects[1].Name)
+	})
+
+	t.Run("should not create or update existing namespace and role binding", func(t *testing.T) {
+		// given
+		cl := NewFakeClient(t)
+		p := template.NewProcessor(cl, s)
+		tmpl, err := DecodeTemplate(decoder,
+			CreateTemplate(WithObjects(Namespace, RoleBinding), WithParams(UsernameParam, CommitParam)))
+		require.NoError(t, err)
+		objs, err := p.Process(tmpl, values)
+		require.NoError(t, err)
+		created, err := p.Apply(objs)
+		require.NoError(t, err)
+		assert.True(t, created)
+		assertNamespaceExists(t, cl, user)
+		assertRoleBindingExists(t, cl, user)
+
+		// when apply the same template again
+		updated, err := p.Apply(objs)
+		require.NoError(t, err)
+		assert.False(t, updated)
 	})
 
 	t.Run("failures", func(t *testing.T) {
@@ -356,10 +381,11 @@ func TestProcessAndApply(t *testing.T) {
 			// when
 			objs, err := p.Process(tmpl, values)
 			require.NoError(t, err)
-			err = p.Apply(objs)
+			createdOrUpdated, err := p.Apply(objs)
 
 			// then
 			require.Error(t, err)
+			assert.False(t, createdOrUpdated)
 		})
 
 		t.Run("should fail to update template object", func(t *testing.T) {
@@ -374,8 +400,9 @@ func TestProcessAndApply(t *testing.T) {
 			require.NoError(t, err)
 			objs, err := p.Process(tmpl, values)
 			require.NoError(t, err)
-			err = p.Apply(objs)
+			createdOrUpdated, err := p.Apply(objs)
 			require.NoError(t, err)
+			assert.True(t, createdOrUpdated)
 
 			// when
 			tmpl, err = DecodeTemplate(decoder,
@@ -383,10 +410,11 @@ func TestProcessAndApply(t *testing.T) {
 			require.NoError(t, err)
 			objs, err = p.Process(tmpl, values)
 			require.NoError(t, err)
-			err = p.Apply(objs)
+			createdOrUpdated, err = p.Apply(objs)
 
 			// then
 			assert.Error(t, err)
+			assert.False(t, createdOrUpdated)
 		})
 	})
 
@@ -421,10 +449,11 @@ func TestProcessAndApply(t *testing.T) {
 			"version":  commit,
 			"extra":    "foo",
 		})
-		err = p.Apply(objs)
+		createdOrUpdated, err := p.Apply(objs)
 
 		// then
 		require.NoError(t, err)
+		assert.True(t, createdOrUpdated)
 		ns := assertNamespaceExists(t, cl, user)
 		// verify labels
 		assert.Equal(t, map[string]string{
