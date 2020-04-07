@@ -361,6 +361,8 @@ func TestProcessAndApply(t *testing.T) {
 
 		// when apply the same template again
 		updated, err := p.Apply(objs)
+
+		// then
 		require.NoError(t, err)
 		assert.False(t, updated)
 	})
