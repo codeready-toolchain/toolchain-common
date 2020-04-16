@@ -73,6 +73,27 @@ func WithEmailClaim(email string) ExtraClaim {
 	}
 }
 
+// WithCompanyClaim sets the `company` claim in the token to generate
+func WithCompanyClaim(company string) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(*MyClaims).Company = company
+	}
+}
+
+// WithGivenNameClaim sets the `givenName` claim in the token to generate
+func WithGivenNameClaim(givenName string) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(*MyClaims).GivenName = givenName
+	}
+}
+
+// WithFamilyNameClaim sets the `familyName` claim in the token to generate
+func WithFamilyNameClaim(familyName string) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(*MyClaims).FamilyName = familyName
+	}
+}
+
 // WithIATClaim sets the `iat` claim in the token to generate
 func WithIATClaim(iat time.Time) ExtraClaim {
 	return func(token *jwt.Token) {

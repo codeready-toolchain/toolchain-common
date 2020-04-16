@@ -201,6 +201,64 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.Equal(t, identity0.ID.String(), claims.Subject)
 		require.Equal(t, nbfTime.Unix(), claims.NotBefore)
 	})
+	t.Run("create token with given name extra claim", func(t *testing.T) {
+		username := uuid.NewV4().String()
+		identity0 := &Identity{
+			ID:       uuid.NewV4(),
+			Username: username,
+		}
+		// generate the token
+		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithGivenNameClaim("jane"))
+		require.NoError(t, err)
+		// unmarshall it again
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return &(key0.PublicKey), nil
+		})
+		require.NoError(t, err)
+		require.True(t, decodedToken.Valid)
+		claims, ok := decodedToken.Claims.(*MyClaims)
+		require.True(t, ok)
+		require.Equal(t, "jane", claims.GivenName)
+
+	})
+	t.Run("create token with family name extra claim", func(t *testing.T) {
+		username := uuid.NewV4().String()
+		identity0 := &Identity{
+			ID:       uuid.NewV4(),
+			Username: username,
+		}
+		// generate the token
+		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithFamilyNameClaim("doe"))
+		require.NoError(t, err)
+		// unmarshall it again
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return &(key0.PublicKey), nil
+		})
+		require.NoError(t, err)
+		require.True(t, decodedToken.Valid)
+		claims, ok := decodedToken.Claims.(*MyClaims)
+		require.True(t, ok)
+		require.Equal(t, "doe", claims.FamilyName)
+	})
+	t.Run("create token with company extra claim", func(t *testing.T) {
+		username := uuid.NewV4().String()
+		identity0 := &Identity{
+			ID:       uuid.NewV4(),
+			Username: username,
+		}
+		// generate the token
+		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithCompanyClaim("red hat"))
+		require.NoError(t, err)
+		// unmarshall it again
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return &(key0.PublicKey), nil
+		})
+		require.NoError(t, err)
+		require.True(t, decodedToken.Valid)
+		claims, ok := decodedToken.Claims.(*MyClaims)
+		require.True(t, ok)
+		require.Equal(t, "red hat", claims.Company)
+	})
 	t.Run("create token with near future iat claim to test validation workaround", func(t *testing.T) {
 		username := uuid.NewV4().String()
 		identity0 := &Identity{
