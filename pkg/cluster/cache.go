@@ -114,7 +114,13 @@ var HostCluster GetHostClusterFunc = GetHostCluster
 func GetHostCluster() (*FedCluster, bool) {
 	clusters := clusterCache.getFedClustersByType(Host)
 	if len(clusters) == 0 {
-		return nil, false
+		if clusterCache.refreshCache != nil {
+			clusterCache.refreshCache()
+		}
+		clusters = clusterCache.getFedClustersByType(Host)
+		if len(clusters) == 0 {
+			return nil, false
+		}
 	}
 	return clusters[0], true
 }
@@ -127,7 +133,14 @@ var MemberClusters GetMemberClustersFunc = GetMemberClusters
 
 // GetMemberClusters returns the kube clients for the host clusters from the cache of the clusters
 func GetMemberClusters(conditions ...Condition) []*FedCluster {
-	return clusterCache.getFedClustersByType(Member, conditions...)
+	clusters := clusterCache.getFedClustersByType(Member, conditions...)
+	if len(clusters) == 0 {
+		if clusterCache.refreshCache != nil {
+			clusterCache.refreshCache()
+		}
+		clusters = clusterCache.getFedClustersByType(Member, conditions...)
+	}
+	return clusters
 }
 
 // Type is a cluster type (either host or member)

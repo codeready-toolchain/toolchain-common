@@ -142,14 +142,13 @@ func TestGetClustersByType(t *testing.T) {
 	})
 
 	t.Run("get member clusters", func(t *testing.T) {
-		defer resetClusterCache()
-
 		// noise
 		host := newTestFedCluster("cluster-host", Host, ready)
 		clusterCache.addFedCluster(host)
 
 		t.Run("not found", func(t *testing.T) {
 			// given
+			defer resetClusterCache()
 			// no members
 
 			//when
@@ -161,6 +160,7 @@ func TestGetClustersByType(t *testing.T) {
 
 		t.Run("all clusters", func(t *testing.T) {
 			// given
+			defer resetClusterCache()
 			member1 := newTestFedCluster("cluster-1", Member, ready)
 			clusterCache.addFedCluster(member1)
 			member2 := newTestFedCluster("cluster-2", Member, ready)
@@ -173,6 +173,25 @@ func TestGetClustersByType(t *testing.T) {
 			assert.Len(t, clusters, 2)
 			assert.Contains(t, clusters, member1)
 			assert.Contains(t, clusters, member2)
+		})
+
+		t.Run("found after refreshing the cache", func(t *testing.T) {
+			// given
+			defer resetClusterCache()
+			member := newTestFedCluster("member", Member, ready)
+			called := false
+			clusterCache.refreshCache = func() {
+				called = true
+				clusterCache.addFedCluster(member)
+			}
+
+			//when
+			clusters := GetMemberClusters()
+
+			//then
+			assert.Len(t, clusters, 1)
+			assert.Contains(t, clusters, member)
+			assert.True(t, called)
 		})
 
 	})
@@ -226,7 +245,6 @@ func TestGetClustersByType(t *testing.T) {
 	})
 
 	t.Run("get host cluster", func(t *testing.T) {
-		defer resetClusterCache()
 
 		// noise
 		member1 := newTestFedCluster("cluster-member-1", Member, ready)
@@ -234,6 +252,7 @@ func TestGetClustersByType(t *testing.T) {
 
 		t.Run("not found", func(t *testing.T) {
 			// given
+			defer resetClusterCache()
 			// no host
 
 			//when
@@ -245,6 +264,7 @@ func TestGetClustersByType(t *testing.T) {
 
 		t.Run("found", func(t *testing.T) {
 			// given
+			defer resetClusterCache()
 			host := newTestFedCluster("cluster-host", Host, ready)
 			clusterCache.addFedCluster(host)
 
@@ -254,6 +274,25 @@ func TestGetClustersByType(t *testing.T) {
 			//then
 			assert.True(t, ok)
 			assert.Equal(t, host, cluster)
+		})
+
+		t.Run("found after refreshing the cache", func(t *testing.T) {
+			// given
+			defer resetClusterCache()
+			host := newTestFedCluster("cluster-host", Host, ready)
+			called := false
+			clusterCache.refreshCache = func() {
+				called = true
+				clusterCache.addFedCluster(host)
+			}
+
+			//when
+			cluster, ok := GetHostCluster()
+
+			//then
+			assert.True(t, ok)
+			assert.Equal(t, host, cluster)
+			assert.True(t, called)
 		})
 	})
 }
