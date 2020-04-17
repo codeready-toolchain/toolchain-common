@@ -176,6 +176,12 @@ TierNamespaces:
 		}
 		assert.Failf(a.t, "unable to find namespace of type %s in UserAccount %v", ns.Type, userAccount)
 	}
+
+	if tier.Spec.ClusterResources == nil {
+		assert.Nil(a.t, userAccount.Spec.NSTemplateSet.ClusterResources)
+	} else {
+		assert.Equal(a.t, tier.Spec.ClusterResources.Revision, userAccount.Spec.NSTemplateSet.ClusterResources.Revision)
+	}
 }
 
 func (a *Assertion) HasFinalizer() *Assertion {
