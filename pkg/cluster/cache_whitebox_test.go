@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -375,6 +376,71 @@ func TestRefreshCache(t *testing.T) {
 		assert.False(t, ok)
 		assert.Nil(t, cluster)
 	})
+}
+
+func TestMultipleActionsInParallel(t *testing.T) {
+	// given
+	defer resetClusterCache()
+	var latch sync.WaitGroup
+	latch.Add(1)
+	var waitForFinished sync.WaitGroup
+
+	memberCluster := newTestFedCluster("memberCluster", Member, ready)
+	hostCluster := newTestFedCluster("hostCluster", Host, ready)
+	clusterCache.refreshCache = func() {
+		clusterCache.addFedCluster(memberCluster)
+		clusterCache.addFedCluster(hostCluster)
+	}
+
+	for _, clusterToTest := range []*FedCluster{memberCluster, hostCluster} {
+		for i := 0; i < 10000; i++ {
+			waitForFinished.Add(4)
+			go func() {
+				defer waitForFinished.Done()
+				latch.Wait()
+				clusterCache.addFedCluster(clusterToTest)
+			}()
+			go func() {
+				defer waitForFinished.Done()
+				latch.Wait()
+				cluster, ok := clusterCache.getFedCluster(clusterToTest.Name)
+				if ok {
+					assert.Equal(t, clusterToTest, cluster)
+				} else {
+					assert.Nil(t, cluster)
+				}
+			}()
+			go func() {
+				defer waitForFinished.Done()
+				latch.Wait()
+				clusters := clusterCache.getFedClustersByType(clusterToTest.Type)
+				if len(clusters) == 1 {
+					assert.Equal(t, clusterToTest, clusters[0])
+				} else {
+					assert.Empty(t, clusters)
+				}
+			}()
+			go func() {
+				defer waitForFinished.Done()
+				latch.Wait()
+				clusterCache.deleteFedCluster(clusterToTest.Name)
+			}()
+		}
+	}
+
+	// when
+	latch.Done()
+
+	// then
+	waitForFinished.Wait()
+
+	member, ok := clusterCache.getFedCluster("memberCluster")
+	assert.True(t, ok)
+	assert.Equal(t, memberCluster, member)
+
+	host, ok := clusterCache.getFedCluster("hostCluster")
+	assert.True(t, ok)
+	assert.Equal(t, hostCluster, host)
 }
 
 // clusterOption an option to configure the cluster to use in the tests
