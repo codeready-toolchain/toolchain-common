@@ -94,7 +94,7 @@ const (
       openshift.io/display-name: ${USERNAME}
       openshift.io/requester: ${USERNAME}
     labels:
-      provider: codeready-toolchain
+      extra: something-extra
       version: ${COMMIT}
     name: ${USERNAME}`
 
@@ -103,7 +103,7 @@ const (
   kind: ServiceAccount
   metadata:
     labels:
-      provider: codeready-toolchain
+      extra: something-extra
     name: registration-service
     namespace: ${NAMESPACE}`
 
@@ -113,6 +113,8 @@ const (
   metadata:
     name: ${USERNAME}-edit
     namespace: ${USERNAME}
+    labels:
+      extra: something-extra
   roleRef:
     kind: ClusterRole
     name: edit
@@ -126,6 +128,8 @@ const (
   metadata:
     name: ${USERNAME}-edit
     namespace: ${USERNAME}
+    labels:
+      extra: something-extra
   roleRef:
     kind: ClusterRole
     name: edit
@@ -142,7 +146,7 @@ const (
     name: registration-service
     namespace: ${NAMESPACE}
     labels:
-      provider: codeready-toolchain
+      extra: something-extra
       run: registration-service
   spec:
     selector:
@@ -153,7 +157,7 @@ const (
   apiVersion: v1
   metadata:
     labels:
-      provider: codeready-toolchain
+      extra: something-extra
     name: registration-service
     namespace: ${NAMESPACE}
   type: Opaque
@@ -170,7 +174,7 @@ const (
 			"openshift.io/requester": "{{ .Username }}"
 		},
 		"labels": {
-			"provider": "codeready-toolchain",
+			"extra": "something-extra",
 			"version": "{{ .Commit }}"
 		},
 		"name": "{{ .Username }}"
@@ -182,7 +186,10 @@ const (
 	"kind": "RoleBinding",
 	"metadata": {
 		"name": "{{ .Username }}-edit",
-    	"namespace": "{{ .Username }}"
+    	"namespace": "{{ .Username }}",
+		"labels": {
+			"extra": "something-extra"
+		}
 	},
 	"roleRef": {
 		"kind": "ClusterRole",

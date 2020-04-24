@@ -393,7 +393,7 @@ func TestMultipleActionsInParallel(t *testing.T) {
 	}
 
 	for _, clusterToTest := range []*FedCluster{memberCluster, hostCluster} {
-		for i := 0; i < 10000; i++ {
+		for i := 0; i < 1000; i++ {
 			waitForFinished.Add(4)
 			go func() {
 				defer waitForFinished.Done()

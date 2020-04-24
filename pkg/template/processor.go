@@ -4,25 +4,21 @@ import (
 	"math/rand"
 	"time"
 
-	apply "github.com/codeready-toolchain/toolchain-common/pkg/client"
 	templatev1 "github.com/openshift/api/template/v1"
 	"github.com/openshift/library-go/pkg/template/generator"
 	"github.com/openshift/library-go/pkg/template/templateprocessing"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Processor the tool that will process and apply a template with variables
 type Processor struct {
-	cl     *apply.ApplyClient
 	scheme *runtime.Scheme
 }
 
 // NewProcessor returns a new Processor
-func NewProcessor(cl client.Client, scheme *runtime.Scheme) Processor {
+func NewProcessor(scheme *runtime.Scheme) Processor {
 	return Processor{
-		cl:     apply.NewApplyClient(cl, scheme),
 		scheme: scheme,
 	}
 }
@@ -50,24 +46,4 @@ func (p Processor) Process(tmpl *templatev1.Template, values map[string]string, 
 		return nil, errors.Wrap(err, "failed to convert template to external template object")
 	}
 	return Filter(result.Objects, filters...), nil
-}
-
-// Apply applies the objects, ie, creates or updates them on the cluster
-// returns `true, nil` if at least one of the objects was created or modified,
-// `false, nil` if nothing changed, and `false, err` if an error occurred
-func (p Processor) Apply(objs []runtime.RawExtension) (bool, error) {
-	createdOrUpdated := false
-	for _, rawObj := range objs {
-		obj := rawObj.Object
-		if obj == nil {
-			continue
-		}
-		gvk := obj.GetObjectKind().GroupVersionKind()
-		result, err := p.cl.CreateOrUpdateObject(obj, true, nil)
-		if err != nil {
-			return false, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
-		}
-		createdOrUpdated = createdOrUpdated || result
-	}
-	return createdOrUpdated, nil
 }
