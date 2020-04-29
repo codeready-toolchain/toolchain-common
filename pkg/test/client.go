@@ -135,6 +135,8 @@ func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...cli
 
 	if !reflect.DeepEqual(updatingMap, currentMap) {
 		updatingMeta.SetGeneration(currentMeta.GetGeneration() + 1)
+	} else {
+		updatingMeta.SetGeneration(currentMeta.GetGeneration())
 	}
 	return c.Client.Update(ctx, obj, opts...)
 }

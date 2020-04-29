@@ -51,6 +51,14 @@ func TestNewClient(t *testing.T) {
 			assert.EqualValues(t, 2, retrieved.Generation) // Generation updated
 		})
 
+		t.Run("update object with the same stringData", func(t *testing.T) {
+			created, retrieved := createAndGetSecret(t, fclient)
+			assert.NoError(t, fclient.Update(context.TODO(), created))
+			assert.NoError(t, fclient.Get(context.TODO(), types.NamespacedName{Namespace: "somenamespace", Name: created.Name}, retrieved))
+			assert.Equal(t, "value", retrieved.StringData["key"])
+			assert.EqualValues(t, 1, retrieved.Generation) // Generation updated
+		})
+
 		t.Run("update object with data", func(t *testing.T) {
 			key := types.NamespacedName{Namespace: "somenamespace", Name: "somename" + uuid.NewV4().String()}
 			data := make(map[string][]byte)
@@ -93,6 +101,15 @@ func TestNewClient(t *testing.T) {
 			require.NotNil(t, retrieved.Spec.Replicas)
 			assert.EqualValues(t, 10, *retrieved.Spec.Replicas)
 			assert.EqualValues(t, 2, retrieved.Generation) // Generation updated
+		})
+
+		t.Run("update object with same spec", func(t *testing.T) {
+			created, retrieved := createAndGetDeployment(t, fclient)
+			assert.NoError(t, fclient.Update(context.TODO(), created))
+			assert.NoError(t, fclient.Get(context.TODO(), types.NamespacedName{Namespace: "somenamespace", Name: created.Name}, retrieved))
+			require.NotNil(t, retrieved.Spec.Replicas)
+			assert.EqualValues(t, 1, *retrieved.Spec.Replicas)
+			assert.EqualValues(t, 1, retrieved.Generation) // Generation updated
 		})
 
 		t.Run("status update", func(t *testing.T) {
