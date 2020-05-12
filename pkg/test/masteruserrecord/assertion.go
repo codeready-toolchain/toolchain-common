@@ -3,6 +3,7 @@ package masteruserrecord
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
@@ -171,6 +172,7 @@ TierNamespaces:
 		for _, uaNs := range userAccount.Spec.NSTemplateSet.Namespaces {
 			if ns.Type == uaNs.Type {
 				assert.Equal(a.t, ns.Revision, uaNs.Revision)
+				assert.Equal(a.t, strings.ToLower(fmt.Sprintf("%s-%s-%s", tier.Name, ns.Type, ns.Revision)), uaNs.TemplateRef)
 				continue TierNamespaces
 			}
 		}
@@ -181,6 +183,7 @@ TierNamespaces:
 		assert.Nil(a.t, userAccount.Spec.NSTemplateSet.ClusterResources)
 	} else {
 		assert.Equal(a.t, tier.Spec.ClusterResources.Revision, userAccount.Spec.NSTemplateSet.ClusterResources.Revision)
+		assert.Equal(a.t, strings.ToLower(fmt.Sprintf("%s-clusterresources-%s", tier.Name, tier.Spec.ClusterResources.Revision)), tier.Spec.ClusterResources.TemplateRef)
 	}
 }
 
