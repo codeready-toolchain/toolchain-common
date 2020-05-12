@@ -41,6 +41,12 @@ func IsTrue(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1a
 	return found && condition.Status == apiv1.ConditionTrue
 }
 
+// IsNotTrue returns true if the condition with the given condition type has an Unknown or False status
+func IsNotTrue(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType) bool {
+	condition, found := FindConditionByType(conditions, conditionType)
+	return !found || condition.Status != apiv1.ConditionTrue
+}
+
 func addOrUpdateStatusCondition(conditions []toolchainv1alpha1.Condition, newCondition toolchainv1alpha1.Condition) ([]toolchainv1alpha1.Condition, bool) {
 	newCondition.LastTransitionTime = metav1.Now()
 
