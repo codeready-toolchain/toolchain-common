@@ -172,7 +172,7 @@ TierNamespaces:
 		for _, uaNs := range userAccount.Spec.NSTemplateSet.Namespaces {
 			if ns.Type == uaNs.Type {
 				assert.Equal(a.t, ns.Revision, uaNs.Revision)
-				assert.Equal(a.t, strings.ToLower(fmt.Sprintf("%s-%s-%s", tier.Name, ns.Type, ns.Revision)), uaNs.TemplateRef)
+				assert.Equal(a.t, ns.TemplateRef, uaNs.TemplateRef)
 				continue TierNamespaces
 			}
 		}
