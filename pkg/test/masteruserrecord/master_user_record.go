@@ -61,7 +61,7 @@ func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
 					},
 					ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
 						Revision:    "654321a",
-						TemplateRef: "basic-clusterresouces-654321a",
+						TemplateRef: "basic-clusterresources-654321a",
 					},
 				},
 			},

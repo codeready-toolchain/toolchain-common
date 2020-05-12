@@ -48,8 +48,9 @@ func WithTier(tier string) NsTemplateSetSpecExp {
 func WithNs(nsType, revision string) NsTemplateSetSpecExp {
 	return func(set *toolchainv1alpha1.NSTemplateSetSpec) {
 		set.Namespaces = append(set.Namespaces, toolchainv1alpha1.NSTemplateSetNamespace{
-			Type:     nsType,
-			Revision: revision,
+			Type:        nsType,
+			Revision:    revision,
+			TemplateRef: set.TierName + "-" + nsType + "-" + revision,
 		})
 	}
 }
@@ -60,6 +61,7 @@ func WithClusterRes(revision string) NsTemplateSetSpecExp {
 			set.ClusterResources = &toolchainv1alpha1.NSTemplateSetClusterResources{}
 		}
 		set.ClusterResources.Revision = revision
+		set.ClusterResources.TemplateRef = set.TierName + "-" + "clusterresources" + "-" + revision
 	}
 }
 
