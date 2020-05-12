@@ -183,7 +183,7 @@ TierNamespaces:
 		assert.Nil(a.t, userAccount.Spec.NSTemplateSet.ClusterResources)
 	} else {
 		assert.Equal(a.t, tier.Spec.ClusterResources.Revision, userAccount.Spec.NSTemplateSet.ClusterResources.Revision)
-		assert.Equal(a.t, strings.ToLower(fmt.Sprintf("%s-clusterresources-%s", tier.Name, tier.Spec.ClusterResources.Revision)), tier.Spec.ClusterResources.TemplateRef)
+		assert.Equal(a.t, tier.Spec.ClusterResources.TemplateRef, userAccount.Spec.NSTemplateSet.ClusterResources.TemplateRef)
 	}
 }
 
