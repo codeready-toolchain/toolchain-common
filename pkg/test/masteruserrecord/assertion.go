@@ -3,7 +3,6 @@ package masteruserrecord
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
