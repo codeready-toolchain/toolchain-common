@@ -69,14 +69,17 @@ func (c *FakeClient) Create(ctx context.Context, obj runtime.Object, opts ...cli
 	if c.MockCreate != nil {
 		return c.MockCreate(ctx, obj, opts...)
 	}
+	return Create(c, ctx, obj, opts...)
+}
 
+func Create(cl *FakeClient, ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
 	// Set Generation to `1` for newly created objects since the kube fake client doesn't set it
 	mt, err := meta.Accessor(obj)
 	if err != nil {
 		return err
 	}
 	mt.SetGeneration(1)
-	return c.Client.Create(ctx, obj, opts...)
+	return cl.Client.Create(ctx, obj, opts...)
 }
 
 func (c *FakeClient) Status() client.StatusWriter {
@@ -97,7 +100,10 @@ func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...cli
 	if c.MockUpdate != nil {
 		return c.MockUpdate(ctx, obj, opts...)
 	}
+	return Update(c, ctx, obj, opts...)
+}
 
+func Update(cl *FakeClient, ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
 	// Update Generation if needed since the kube fake client doesn't update generations.
 	// Increment the generation if spec (for objects with Spec) or data/stringData (for objects like CM and Secrets) is changed.
 	updatingMeta, err := meta.Accessor(obj)
@@ -117,7 +123,7 @@ func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...cli
 	if err != nil {
 		return err
 	}
-	if err := c.Client.Get(ctx, types.NamespacedName{Namespace: updatingMeta.GetNamespace(), Name: updatingMeta.GetName()}, current); err != nil {
+	if err := cl.Client.Get(ctx, types.NamespacedName{Namespace: updatingMeta.GetNamespace(), Name: updatingMeta.GetName()}, current); err != nil {
 		return err
 	}
 	currentMeta, err := meta.Accessor(current)
@@ -138,7 +144,7 @@ func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...cli
 	} else {
 		updatingMeta.SetGeneration(currentMeta.GetGeneration())
 	}
-	return c.Client.Update(ctx, obj, opts...)
+	return cl.Client.Update(ctx, obj, opts...)
 }
 
 func cleanObject(obj runtime.Object) (runtime.Object, error) {
