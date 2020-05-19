@@ -43,19 +43,16 @@ func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
 						{
 							Type:        "dev",
 							Revision:    "123abc",
-							Template:    "",
 							TemplateRef: "basic-dev-123abc",
 						},
 						{
 							Type:        "code",
 							Revision:    "123abc",
-							Template:    "",
 							TemplateRef: "basic-code-123abc",
 						},
 						{
 							Type:        "stage",
 							Revision:    "123abc",
-							Template:    "",
 							TemplateRef: "basic-stage-123abc",
 						},
 					},
