@@ -156,32 +156,31 @@ func (a *Assertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTie
 func (a *Assertion) UserAccountHasTier(targetCluster string, tier toolchainv1alpha1.NSTemplateTier) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
-
 	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
 		if ua.TargetCluster == targetCluster {
-			assert.Equal(a.t, tier.Name, ua.Spec.NSTemplateSet.TierName)
-			actualTemplateRefs := []string{}
-			for _, ns := range ua.Spec.NSTemplateSet.Namespaces {
-				actualTemplateRefs = append(actualTemplateRefs, ns.TemplateRef)
-			}
-			expectedTemplateRefs := []string{}
-			for _, ns := range tier.Spec.Namespaces {
-				expectedTemplateRefs = append(expectedTemplateRefs, ns.TemplateRef)
-			}
-			a.t.Logf("expected templateRefs: %v vs actual: %v", expectedTemplateRefs, actualTemplateRefs)
-			assert.ElementsMatch(a.t, expectedTemplateRefs, actualTemplateRefs)
-			if tier.Spec.ClusterResources == nil {
-				assert.Nil(a.t, ua.Spec.NSTemplateSet.ClusterResources)
-			} else {
-				assert.Equal(a.t, tier.Spec.ClusterResources.TemplateRef, ua.Spec.NSTemplateSet.ClusterResources.TemplateRef)
-			}
+			a.userAccountHasTier(ua, tier)
 		}
 	}
 	return a
 }
 
-func (a *Assertion) userAccountHasTier(userAccount toolchainv1alpha1.UserAccountEmbedded, tier toolchainv1alpha1.NSTemplateTier) {
-
+func (a *Assertion) userAccountHasTier(ua toolchainv1alpha1.UserAccountEmbedded, tier toolchainv1alpha1.NSTemplateTier) {
+	assert.Equal(a.t, tier.Name, ua.Spec.NSTemplateSet.TierName)
+	actualTemplateRefs := []string{}
+	for _, ns := range ua.Spec.NSTemplateSet.Namespaces {
+		actualTemplateRefs = append(actualTemplateRefs, ns.TemplateRef)
+	}
+	expectedTemplateRefs := []string{}
+	for _, ns := range tier.Spec.Namespaces {
+		expectedTemplateRefs = append(expectedTemplateRefs, ns.TemplateRef)
+	}
+	a.t.Logf("expected templateRefs: %v vs actual: %v", expectedTemplateRefs, actualTemplateRefs)
+	assert.ElementsMatch(a.t, expectedTemplateRefs, actualTemplateRefs)
+	if tier.Spec.ClusterResources == nil {
+		assert.Nil(a.t, ua.Spec.NSTemplateSet.ClusterResources)
+	} else {
+		assert.Equal(a.t, tier.Spec.ClusterResources.TemplateRef, ua.Spec.NSTemplateSet.ClusterResources.TemplateRef)
+	}
 }
 
 func (a *Assertion) HasFinalizer() *Assertion {
