@@ -48,8 +48,6 @@ func WithTier(tier string) NsTemplateSetSpecExp {
 func WithNs(nsType, revision string) NsTemplateSetSpecExp {
 	return func(set *toolchainv1alpha1.NSTemplateSetSpec) {
 		set.Namespaces = append(set.Namespaces, toolchainv1alpha1.NSTemplateSetNamespace{
-			Type:        nsType,
-			Revision:    revision,
 			TemplateRef: set.TierName + "-" + nsType + "-" + revision,
 		})
 	}
@@ -60,7 +58,6 @@ func WithClusterRes(revision string) NsTemplateSetSpecExp {
 		if set.ClusterResources == nil {
 			set.ClusterResources = &toolchainv1alpha1.NSTemplateSetClusterResources{}
 		}
-		set.ClusterResources.Revision = revision
 		set.ClusterResources.TemplateRef = set.TierName + "-" + "clusterresources" + "-" + revision
 	}
 }
@@ -177,13 +174,12 @@ TierNamespaces:
 				continue TierNamespaces
 			}
 		}
-		assert.Failf(a.t, "unable to find namespace of type %s in UserAccount %v", ns.Type, userAccount)
+		assert.Failf(a.t, "unable to find namespace of templateRef %s in UserAccount %v", ns.TemplateRef, userAccount)
 	}
 
 	if tier.Spec.ClusterResources == nil {
 		assert.Nil(a.t, userAccount.Spec.NSTemplateSet.ClusterResources)
 	} else {
-		assert.Equal(a.t, tier.Spec.ClusterResources.Revision, userAccount.Spec.NSTemplateSet.ClusterResources.Revision)
 		assert.Equal(a.t, tier.Spec.ClusterResources.TemplateRef, userAccount.Spec.NSTemplateSet.ClusterResources.TemplateRef)
 	}
 }
