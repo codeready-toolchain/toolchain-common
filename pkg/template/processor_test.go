@@ -8,8 +8,10 @@ import (
 	"time"
 
 	"github.com/codeready-toolchain/api/pkg/apis"
+	"github.com/codeready-toolchain/toolchain-common/pkg/client"
 	"github.com/codeready-toolchain/toolchain-common/pkg/template"
 	. "github.com/codeready-toolchain/toolchain-common/pkg/test"
+	"k8s.io/apimachinery/pkg/api/meta"
 
 	authv1 "github.com/openshift/api/authorization/v1"
 	"github.com/stretchr/testify/assert"
@@ -229,12 +231,16 @@ func getNameWithTimestamp(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
 }
 
-func assertObject(t *testing.T, expectedObj expectedObj, actual runtime.RawExtension) {
-	// objJson, err := actual.Marshal()
-	// require.NoError(t, err, "failed to marshal json from unstructured object")
+func assertObject(t *testing.T, expectedObj expectedObj, actual client.ToolchainObject) {
 	expected, err := newObject(string(expectedObj.template), expectedObj.username, expectedObj.commit)
 	require.NoError(t, err, "failed to create object from template")
-	assert.Equal(t, expected, actual.Object)
+	expMeta, err := meta.Accessor(expected)
+	require.NoError(t, err)
+
+	assert.Equal(t, expected, actual.GetObject())
+	assert.Equal(t, expected.GetObjectKind().GroupVersionKind(), actual.GetGvk())
+	assert.Equal(t, expMeta.GetName(), actual.GetName())
+	assert.Equal(t, expMeta.GetNamespace(), actual.GetNamespace())
 }
 
 type expectedObj struct {

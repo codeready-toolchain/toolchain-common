@@ -408,10 +408,7 @@ func TestProcessAndApply(t *testing.T) {
 		require.NoError(t, err)
 
 		// when adding newLabels and an owner reference
-		obj := objs[0]
-		meta, err := meta.Accessor(obj.Object)
-		require.NoError(t, err)
-		meta.SetOwnerReferences([]metav1.OwnerReference{
+		objs[0].SetOwnerReferences([]metav1.OwnerReference{
 			{
 				APIVersion: "crt/v1",
 				Kind:       "NSTemplateSet",
