@@ -161,26 +161,22 @@ func (a *Assertion) UserAccountHasTier(targetCluster string, tier toolchainv1alp
 	return a
 }
 
-func (a *Assertion) userAccountHasTier(userAccount toolchainv1alpha1.UserAccountEmbedded, tier toolchainv1alpha1.NSTemplateTier) {
-	assert.Equal(a.t, tier.Name, userAccount.Spec.NSTemplateSet.TierName)
-	assert.Len(a.t, userAccount.Spec.NSTemplateSet.Namespaces, len(tier.Spec.Namespaces))
-
-TierNamespaces:
-	for _, ns := range tier.Spec.Namespaces {
-		for _, uaNs := range userAccount.Spec.NSTemplateSet.Namespaces {
-			if ns.Type == uaNs.Type {
-				assert.Equal(a.t, ns.Revision, uaNs.Revision)
-				assert.Equal(a.t, ns.TemplateRef, uaNs.TemplateRef)
-				continue TierNamespaces
-			}
-		}
-		assert.Failf(a.t, "unable to find namespace of templateRef %s in UserAccount %v", ns.TemplateRef, userAccount)
+func (a *Assertion) userAccountHasTier(ua toolchainv1alpha1.UserAccountEmbedded, tier toolchainv1alpha1.NSTemplateTier) {
+	assert.Equal(a.t, tier.Name, ua.Spec.NSTemplateSet.TierName)
+	actualTemplateRefs := []string{}
+	for _, ns := range ua.Spec.NSTemplateSet.Namespaces {
+		actualTemplateRefs = append(actualTemplateRefs, ns.TemplateRef)
 	}
-
+	expectedTemplateRefs := []string{}
+	for _, ns := range tier.Spec.Namespaces {
+		expectedTemplateRefs = append(expectedTemplateRefs, ns.TemplateRef)
+	}
+	a.t.Logf("expected templateRefs: %v vs actual: %v", expectedTemplateRefs, actualTemplateRefs)
+	assert.ElementsMatch(a.t, expectedTemplateRefs, actualTemplateRefs)
 	if tier.Spec.ClusterResources == nil {
-		assert.Nil(a.t, userAccount.Spec.NSTemplateSet.ClusterResources)
+		assert.Nil(a.t, ua.Spec.NSTemplateSet.ClusterResources)
 	} else {
-		assert.Equal(a.t, tier.Spec.ClusterResources.TemplateRef, userAccount.Spec.NSTemplateSet.ClusterResources.TemplateRef)
+		assert.Equal(a.t, tier.Spec.ClusterResources.TemplateRef, ua.Spec.NSTemplateSet.ClusterResources.TemplateRef)
 	}
 }
 

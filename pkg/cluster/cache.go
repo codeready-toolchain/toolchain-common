@@ -56,13 +56,13 @@ func (c *kubeFedClusterClients) deleteFedCluster(name string) {
 func (c *kubeFedClusterClients) getFedCluster(name string) (*FedCluster, bool) {
 	c.RLock()
 	defer c.RUnlock()
-	cluster, ok := c.clusters[name]
+	_, ok := c.clusters[name]
 	if !ok && c.refreshCache != nil {
 		c.RUnlock()
 		c.refreshCache()
 		c.RLock()
 	}
-	cluster, ok = c.clusters[name]
+	cluster, ok := c.clusters[name]
 	return cluster, ok
 }
 
