@@ -41,23 +41,16 @@ func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
 					TierName: "basic",
 					Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
 						{
-							Type:        "dev",
-							Revision:    "123abc",
 							TemplateRef: "basic-dev-123abc",
 						},
 						{
-							Type:        "code",
-							Revision:    "123abc",
 							TemplateRef: "basic-code-123abc",
 						},
 						{
-							Type:        "stage",
-							Revision:    "123abc",
 							TemplateRef: "basic-stage-123abc",
 						},
 					},
 					ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
-						Revision:    "654321a",
 						TemplateRef: "basic-clusterresources-654321a",
 					},
 				},
@@ -134,17 +127,16 @@ func TierName(tierName string) UaInMurModifier {
 	}
 }
 
-func Namespace(nsType, revision string) UaInMurModifier {
+func Namespace(oldTemplateRef, newTemplateRef string) UaInMurModifier {
 	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
 		for uaIndex, ua := range mur.Spec.UserAccounts {
 			if ua.TargetCluster == targetCluster {
 				for nsIndex, ns := range mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces {
-					if ns.Type == nsType {
-						mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces[nsIndex].Revision = revision
-						mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces[nsIndex].TemplateRef = mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.TierName + "-" + nsType + "-" + revision
+					if ns.TemplateRef == oldTemplateRef {
+						mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces[nsIndex].TemplateRef = newTemplateRef
+						return
 					}
 				}
-				return
 			}
 		}
 	}
