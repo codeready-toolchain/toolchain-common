@@ -1,6 +1,7 @@
 package masteruserrecord
 
 import (
+	"strings"
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
@@ -127,13 +128,13 @@ func TierName(tierName string) UaInMurModifier {
 	}
 }
 
-func Namespace(oldTemplateRef, newTemplateRef string) UaInMurModifier {
+func Namespace(nsType, revision string) UaInMurModifier {
 	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
 		for uaIndex, ua := range mur.Spec.UserAccounts {
 			if ua.TargetCluster == targetCluster {
 				for nsIndex, ns := range mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces {
-					if ns.TemplateRef == oldTemplateRef {
-						mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces[nsIndex].TemplateRef = newTemplateRef
+					if strings.Contains(ns.TemplateRef, nsType) {
+						mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces[nsIndex].TemplateRef = mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.TierName + "-" + nsType + "-" + revision
 						return
 					}
 				}
