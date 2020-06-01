@@ -1,6 +1,8 @@
 package client
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,6 +37,9 @@ type toolchainObjectImpl struct {
 
 // NewToolchainObject returns an instance of ToolchainObject for the given runtime.Object
 func NewToolchainObject(ob runtime.Object) (ToolchainObject, error) {
+	if ob == nil {
+		return nil, fmt.Errorf("the provided object is nil, so the constructor cannot create an instance of ToolchainObject")
+	}
 	accessor, err := meta.Accessor(ob)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to get accessor of object %v", ob)

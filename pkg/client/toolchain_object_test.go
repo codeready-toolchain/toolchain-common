@@ -22,6 +22,16 @@ func TestNewToolchainObject(t *testing.T) {
 	verifyRoleBining(t, rb, toolchainObject)
 }
 
+func TestNewToolchainObjectWithNilObject(t *testing.T) {
+	// when
+	toolchainObject, err := NewToolchainObject(nil)
+
+	// then
+	require.Error(t, err)
+	assert.Equal(t, "the provided object is nil, so the constructor cannot create an instance of ToolchainObject", err.Error())
+	assert.Nil(t, toolchainObject)
+}
+
 func TestToolchainObjectHasSameFunctions(t *testing.T) {
 	// given
 	roleBindingTest, err := NewToolchainObject(newRoleBinding("rb-test"))

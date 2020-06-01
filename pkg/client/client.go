@@ -141,10 +141,6 @@ func (p ApplyClient) createObj(newResource runtime.Object, metaNew v1.Object, ow
 func (p ApplyClient) Apply(toolchainObjects []ToolchainObject, newLabels map[string]string) (bool, error) {
 	createdOrUpdated := false
 	for _, toolchainObject := range toolchainObjects {
-		if toolchainObject.GetObject() == nil {
-			continue
-		}
-
 		// set newLabels
 		labels := toolchainObject.GetLabels()
 		if labels == nil {
