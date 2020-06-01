@@ -237,7 +237,7 @@ func assertObject(t *testing.T, expectedObj expectedObj, actual client.Toolchain
 	expMeta, err := meta.Accessor(expected)
 	require.NoError(t, err)
 
-	assert.Equal(t, expected, actual.GetObject())
+	assert.Equal(t, expected, actual.GetRuntimeObject())
 	assert.Equal(t, expected.GetObjectKind().GroupVersionKind(), actual.GetGvk())
 	assert.Equal(t, expMeta.GetName(), actual.GetName())
 	assert.Equal(t, expMeta.GetNamespace(), actual.GetNamespace())

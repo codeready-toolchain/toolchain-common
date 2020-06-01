@@ -163,7 +163,7 @@ func verifyRoleBining(t *testing.T, rb *rbacv1.RoleBinding, toolchainObject Tool
 	assert.Equal(t, "first-value", toolchainObject.GetLabels()["firstlabel"])
 	assert.Equal(t, "second-value", toolchainObject.GetLabels()["secondlabel"])
 	assert.Equal(t, rbacv1.SchemeGroupVersion.WithKind("RoleBinding"), toolchainObject.GetGvk())
-	assert.Equal(t, rb, toolchainObject.GetObject())
+	assert.Equal(t, rb, toolchainObject.GetRuntimeObject())
 }
 
 func newRole(name string) *rbacv1.Role {

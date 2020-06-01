@@ -152,7 +152,7 @@ func (p ApplyClient) Apply(toolchainObjects []ToolchainObject, newLabels map[str
 		toolchainObject.SetLabels(labels)
 
 		gvk := toolchainObject.GetGvk()
-		result, err := p.CreateOrUpdateObject(toolchainObject.GetObject(), true, nil)
+		result, err := p.CreateOrUpdateObject(toolchainObject.GetRuntimeObject(), true, nil)
 		if err != nil {
 			return false, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
 		}

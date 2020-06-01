@@ -17,7 +17,7 @@ type CompareToolchainObjects func(firstObject, secondObject ToolchainObject) (bo
 type ToolchainObject interface {
 	v1.Object
 	GetGvk() schema.GroupVersionKind
-	GetObject() runtime.Object
+	GetRuntimeObject() runtime.Object
 	HasSameGvk(otherObject ToolchainObject) bool
 	HasSameName(otherObject ToolchainObject) bool
 	HasSameGvkAndName(otherObject ToolchainObject) bool
@@ -57,8 +57,8 @@ func (o *toolchainObjectImpl) GetGvk() schema.GroupVersionKind {
 	return o.gvk
 }
 
-// GetObject returns the runtime.Object stored in ToolchainObject
-func (o *toolchainObjectImpl) GetObject() runtime.Object {
+// GetRuntimeObject returns the runtime.Object stored in ToolchainObject
+func (o *toolchainObjectImpl) GetRuntimeObject() runtime.Object {
 	return o.runtimeObject
 }
 
