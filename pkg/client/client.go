@@ -138,31 +138,21 @@ func (p ApplyClient) createObj(newResource runtime.Object, metaNew v1.Object, ow
 // Apply applies the objects, ie, creates or updates them on the cluster
 // returns `true, nil` if at least one of the objects was created or modified,
 // `false, nil` if nothing changed, and `false, err` if an error occurred
-func (p ApplyClient) Apply(objs []runtime.RawExtension, newLabels map[string]string) (bool, error) {
+func (p ApplyClient) Apply(toolchainObjects []ToolchainObject, newLabels map[string]string) (bool, error) {
 	createdOrUpdated := false
-	for _, rawObj := range objs {
-		obj := rawObj.Object
-		if obj == nil {
-			continue
-		}
-
-		acc, err := meta.Accessor(obj)
-		if err != nil {
-			return false, errors.Wrapf(err, "unable to get the accessor interface of the object '%v'", rawObj.Object)
-		}
-
+	for _, toolchainObject := range toolchainObjects {
 		// set newLabels
-		labels := acc.GetLabels()
+		labels := toolchainObject.GetLabels()
 		if labels == nil {
 			labels = make(map[string]string)
 		}
 		for key, value := range newLabels {
 			labels[key] = value
 		}
-		acc.SetLabels(labels)
+		toolchainObject.SetLabels(labels)
 
-		gvk := obj.GetObjectKind().GroupVersionKind()
-		result, err := p.CreateOrUpdateObject(obj, true, nil)
+		gvk := toolchainObject.GetGvk()
+		result, err := p.CreateOrUpdateObject(toolchainObject.GetRuntimeObject(), true, nil)
 		if err != nil {
 			return false, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
 		}
