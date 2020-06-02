@@ -1,6 +1,7 @@
 package masteruserrecord
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -134,7 +135,8 @@ func Namespace(nsType, revision string) UaInMurModifier {
 			if ua.TargetCluster == targetCluster {
 				for nsIndex, ns := range mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces {
 					if strings.Contains(ns.TemplateRef, nsType) {
-						mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces[nsIndex].TemplateRef = mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.TierName + "-" + nsType + "-" + revision
+						templateRef := strings.ToLower(fmt.Sprintf("%s-%s-%s", mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.TierName, nsType, revision))
+						mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces[nsIndex].TemplateRef = templateRef
 						return
 					}
 				}
