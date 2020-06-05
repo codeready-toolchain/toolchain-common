@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/codeready-toolchain/toolchain-common/pkg/client"
 	templatev1 "github.com/openshift/api/template/v1"
 	"github.com/openshift/library-go/pkg/template/generator"
 	"github.com/openshift/library-go/pkg/template/templateprocessing"
@@ -25,7 +26,7 @@ func NewProcessor(scheme *runtime.Scheme) Processor {
 
 // Process processes the template (ie, replaces the variables with their actual values) and optionally filters the result
 // to return a subset of the template objects
-func (p Processor) Process(tmpl *templatev1.Template, values map[string]string, filters ...FilterFunc) ([]runtime.RawExtension, error) {
+func (p Processor) Process(tmpl *templatev1.Template, values map[string]string, filters ...FilterFunc) ([]client.ToolchainObject, error) {
 	// inject variables in the twmplate
 	for param, val := range values {
 		v := templateprocessing.GetParameterByName(tmpl, param)
@@ -45,5 +46,14 @@ func (p Processor) Process(tmpl *templatev1.Template, values map[string]string, 
 	if err := p.scheme.Convert(tmpl, &result, nil); err != nil {
 		return nil, errors.Wrap(err, "failed to convert template to external template object")
 	}
-	return Filter(result.Objects, filters...), nil
+	filtered := Filter(result.Objects, filters...)
+	objects := make([]client.ToolchainObject, len(filtered))
+	for i, rawObject := range filtered {
+		toolchainObject, err := client.NewToolchainObject(rawObject.Object)
+		if err != nil {
+			return nil, err
+		}
+		objects[i] = toolchainObject
+	}
+	return objects, nil
 }

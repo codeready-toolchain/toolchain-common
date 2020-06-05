@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -25,7 +26,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 
 	t.Run("HasNSTemplateSet assertion", func(t *testing.T) {
 
-		mur := murtest.NewMasterUserRecord("foo", murtest.TargetCluster("cluster-1"))
+		mur := murtest.NewMasterUserRecord("foo", murtest.TargetCluster(test.MemberClusterName))
 
 		t.Run("ok", func(t *testing.T) {
 			// given
@@ -42,7 +43,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 			}
 			// when
 			murtest.AssertThatMasterUserRecord(mockT, "foo", client).
-				HasNSTemplateSet("cluster-1",
+				HasNSTemplateSet(test.MemberClusterName,
 					murtest.WithTier("basic"),
 					murtest.WithNs("dev", "123abc"),
 					murtest.WithNs("code", "123abc"),
@@ -98,13 +99,225 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 				}
 				// when
 				murtest.AssertThatMasterUserRecord(mockT, "foo", client).
-					HasNSTemplateSet("cluster-1", murtest.WithTier("basic"))
+					HasNSTemplateSet(test.MemberClusterName, murtest.WithTier("basic"))
 				// then
 				assert.False(t, mockT.CalledFailNow())
 				assert.False(t, mockT.CalledFatalf())
 				assert.True(t, mockT.CalledErrorf()) // assert.Equal failed
 			})
 		})
+	})
+
+	t.Run("UserAccountHasTier assertion", func(t *testing.T) {
+
+		mur := murtest.NewMasterUserRecord("foo", murtest.TargetCluster(test.MemberClusterName))
+
+		t.Run("ok", func(t *testing.T) {
+			// given
+			tier := toolchainv1alpha1.NSTemplateTier{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "basic",
+				},
+				Spec: toolchainv1alpha1.NSTemplateTierSpec{
+					Namespaces: []toolchainv1alpha1.NSTemplateTierNamespace{
+						{
+							TemplateRef: "basic-dev-123abc",
+						},
+						{
+							TemplateRef: "basic-code-123abc",
+						},
+						{
+							TemplateRef: "basic-stage-123abc",
+						},
+					},
+					ClusterResources: &toolchainv1alpha1.NSTemplateTierClusterResources{
+						TemplateRef: "basic-clusterresources-654321a",
+					},
+				},
+			}
+			mockT := NewMockT()
+			client := test.NewFakeClient(mockT, mur)
+			client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+				if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
+					if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
+						*obj = *mur
+						return nil
+					}
+				}
+				return fmt.Errorf("unexpected object key: %v", key)
+			}
+			// when
+			murtest.AssertThatMasterUserRecord(mockT, "foo", client).
+				UserAccountHasTier(test.MemberClusterName, tier)
+			// then: all good
+			assert.False(t, mockT.CalledFailNow())
+			assert.False(t, mockT.CalledFatalf())
+			assert.False(t, mockT.CalledErrorf())
+		})
+
+		t.Run("failures", func(t *testing.T) {
+
+			t.Run("missing stage namespace", func(t *testing.T) {
+				// given
+				tier := toolchainv1alpha1.NSTemplateTier{
+					ObjectMeta: v1.ObjectMeta{
+						Name: "basic",
+					},
+					Spec: toolchainv1alpha1.NSTemplateTierSpec{
+						Namespaces: []toolchainv1alpha1.NSTemplateTierNamespace{
+							{
+								TemplateRef: "basic-dev-123abc",
+							},
+							{
+								TemplateRef: "basic-code-123abc",
+							},
+						},
+					},
+				}
+				mockT := NewMockT()
+				client := test.NewFakeClient(mockT, mur)
+				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
+						if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
+							*obj = *mur
+							return nil
+						}
+					}
+					return fmt.Errorf("unexpected object key: %v", key)
+				}
+				// when
+				murtest.AssertThatMasterUserRecord(mockT, "foo", client).
+					UserAccountHasTier(test.MemberClusterName, tier)
+				// then: all good
+				assert.False(t, mockT.CalledFailNow())
+				assert.False(t, mockT.CalledFatalf())
+				assert.True(t, mockT.CalledErrorf()) // assert.Equal failed
+			})
+
+			t.Run("invalid stage namespace", func(t *testing.T) {
+				// given
+				tier := toolchainv1alpha1.NSTemplateTier{
+					ObjectMeta: v1.ObjectMeta{
+						Name: "basic",
+					},
+					Spec: toolchainv1alpha1.NSTemplateTierSpec{
+						Namespaces: []toolchainv1alpha1.NSTemplateTierNamespace{
+							{
+								TemplateRef: "basic-dev-123abc",
+							},
+							{
+								TemplateRef: "basic-code-123abc",
+							},
+							{
+								TemplateRef: "basic-stage-invalid",
+							},
+						},
+					},
+				}
+				mockT := NewMockT()
+				client := test.NewFakeClient(mockT, mur)
+				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
+						if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
+							*obj = *mur
+							return nil
+						}
+					}
+					return fmt.Errorf("unexpected object key: %v", key)
+				}
+				// when
+				murtest.AssertThatMasterUserRecord(mockT, "foo", client).
+					UserAccountHasTier(test.MemberClusterName, tier)
+				// then: all good
+				assert.False(t, mockT.CalledFailNow())
+				assert.False(t, mockT.CalledFatalf())
+				assert.True(t, mockT.CalledErrorf()) // assert.Equal failed
+			})
+
+			t.Run("missing cluster resources", func(t *testing.T) {
+				// given
+				tier := toolchainv1alpha1.NSTemplateTier{
+					ObjectMeta: v1.ObjectMeta{
+						Name: "basic",
+					},
+					Spec: toolchainv1alpha1.NSTemplateTierSpec{
+						Namespaces: []toolchainv1alpha1.NSTemplateTierNamespace{
+							{
+								TemplateRef: "basic-dev-123abc",
+							},
+							{
+								TemplateRef: "basic-code-123abc",
+							},
+							{
+								TemplateRef: "basic-stage-123abc",
+							},
+						},
+					},
+				}
+				mockT := NewMockT()
+				client := test.NewFakeClient(mockT, mur)
+				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
+						if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
+							*obj = *mur
+							return nil
+						}
+					}
+					return fmt.Errorf("unexpected object key: %v", key)
+				}
+				// when
+				murtest.AssertThatMasterUserRecord(mockT, "foo", client).
+					UserAccountHasTier(test.MemberClusterName, tier)
+				// then: all good
+				assert.False(t, mockT.CalledFailNow())
+				assert.False(t, mockT.CalledFatalf())
+				assert.True(t, mockT.CalledErrorf()) // assert.Equal failed
+			})
+
+			t.Run("invalid cluster resources", func(t *testing.T) {
+				// given
+				tier := toolchainv1alpha1.NSTemplateTier{
+					ObjectMeta: v1.ObjectMeta{
+						Name: "basic",
+					},
+					Spec: toolchainv1alpha1.NSTemplateTierSpec{
+						Namespaces: []toolchainv1alpha1.NSTemplateTierNamespace{
+							{
+								TemplateRef: "basic-dev-123abc",
+							},
+							{
+								TemplateRef: "basic-code-123abc",
+							},
+							{
+								TemplateRef: "basic-stage-123abc",
+							},
+						},
+						ClusterResources: &toolchainv1alpha1.NSTemplateTierClusterResources{
+							TemplateRef: "invalid",
+						},
+					},
+				}
+				mockT := NewMockT()
+				client := test.NewFakeClient(mockT, mur)
+				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
+						if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
+							*obj = *mur
+							return nil
+						}
+					}
+					return fmt.Errorf("unexpected object key: %v", key)
+				}
+				// when
+				murtest.AssertThatMasterUserRecord(mockT, "foo", client).
+					UserAccountHasTier(test.MemberClusterName, tier)
+				// then: all good
+				assert.False(t, mockT.CalledFailNow())
+				assert.False(t, mockT.CalledFatalf())
+				assert.True(t, mockT.CalledErrorf()) // assert.Equal failed
+			})
+		})
+
 	})
 }
 
@@ -136,7 +349,6 @@ func (t *MockT) Errorf(format string, args ...interface{}) {
 
 func (t *MockT) Fatalf(format string, args ...interface{}) {
 	t.fatalfCount++
-
 }
 
 func (t *MockT) FailNow() {
