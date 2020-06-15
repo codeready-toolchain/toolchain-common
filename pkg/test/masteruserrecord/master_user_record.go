@@ -1,6 +1,9 @@
 package masteruserrecord
 
 import (
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -16,20 +19,96 @@ import (
 type MurModifier func(mur *toolchainv1alpha1.MasterUserRecord)
 type UaInMurModifier func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord)
 
+// DefaultNSTemplateTier the default NSTemplateTier used to initialize the MasterUserRecord
+var DefaultNSTemplateTier = toolchainv1alpha1.NSTemplateTier{
+	ObjectMeta: metav1.ObjectMeta{
+		Namespace: test.HostOperatorNs,
+		Name:      "basic",
+	},
+	Spec: toolchainv1alpha1.NSTemplateTierSpec{
+		Namespaces: []toolchainv1alpha1.NSTemplateTierNamespace{
+			{
+				TemplateRef: "basic-dev-123abc",
+			},
+			{
+				TemplateRef: "basic-code-123abc",
+			},
+			{
+				TemplateRef: "basic-stage-123abc",
+			},
+		},
+		ClusterResources: &toolchainv1alpha1.NSTemplateTierClusterResources{
+			TemplateRef: "basic-clusterresources-654321a",
+		},
+	},
+}
+
+// DefaultNSTemplateSet the default NSTemplateSet used to initialize the MasterUserRecord
+var DefaultNSTemplateSet = toolchainv1alpha1.NSTemplateSet{
+	ObjectMeta: metav1.ObjectMeta{
+		Namespace: test.HostOperatorNs,
+		Name:      DefaultNSTemplateTier.Name,
+	},
+	Spec: toolchainv1alpha1.NSTemplateSetSpec{
+		TierName: DefaultNSTemplateTier.Name,
+		Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
+			{
+				TemplateRef: "basic-dev-123abc",
+			},
+			{
+				TemplateRef: "basic-code-123abc",
+			},
+			{
+				TemplateRef: "basic-stage-123abc",
+			},
+		},
+		ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
+			TemplateRef: "basic-clusterresources-654321a",
+		},
+	},
+}
+
 func NewMasterUserRecord(userName string, modifiers ...MurModifier) *toolchainv1alpha1.MasterUserRecord {
-	userId := uuid.NewV4().String()
+	userID := uuid.NewV4().String()
+	hash, _ := computeTemplateRefsHash(DefaultNSTemplateTier) // we can assume the JSON marshalling will always work
 	mur := &toolchainv1alpha1.MasterUserRecord{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      userName,
 			Namespace: test.HostOperatorNs,
+			Name:      userName,
+			Labels: map[string]string{
+				templateTierNameLabel(test.MemberClusterName): DefaultNSTemplateTier.Name,
+				templateTierHashLabel(test.MemberClusterName): hash,
+			},
 		},
 		Spec: toolchainv1alpha1.MasterUserRecordSpec{
-			UserID:       userId,
+			UserID:       userID,
 			UserAccounts: []toolchainv1alpha1.UserAccountEmbedded{newEmbeddedUa(test.MemberClusterName)},
 		},
 	}
 	Modify(mur, modifiers...)
 	return mur
+}
+
+// templateTierNameLabel returns the label key to specify the tier templates in use on the given cluster
+func templateTierNameLabel(cluster string) string {
+	return toolchainv1alpha1.LabelKeyPrefix + cluster + "-templates-tier"
+}
+
+// templateTierHashLabel returns the label key to specify the version of the tier templates in use on the given cluster
+func templateTierHashLabel(cluster string) string {
+	return toolchainv1alpha1.LabelKeyPrefix + cluster + "-templates-tier-hash"
+}
+
+// ComputeTemplateRefsHash computes the hash of the `.spec.namespaces[].templateRef` + `.spec.clusteResource.TemplateRef`
+func computeTemplateRefsHash(tier toolchainv1alpha1.NSTemplateTier) (string, error) {
+	spec, err := json.Marshal(tier.Spec)
+	if err != nil {
+		return "", err
+	}
+	md5hash := md5.New()
+	// Ignore the error, as this implementation cannot return one
+	md5hash.Write([]byte(spec))
+	return hex.EncodeToString(md5hash.Sum(nil)), nil
 }
 
 func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
@@ -38,24 +117,8 @@ func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
 		SyncIndex:     "123abc",
 		Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
 			UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
-				NSLimit: "basic",
-				NSTemplateSet: toolchainv1alpha1.NSTemplateSetSpec{
-					TierName: "basic",
-					Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
-						{
-							TemplateRef: "basic-dev-123abc",
-						},
-						{
-							TemplateRef: "basic-code-123abc",
-						},
-						{
-							TemplateRef: "basic-stage-123abc",
-						},
-					},
-					ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
-						TemplateRef: "basic-clusterresources-654321a",
-					},
-				},
+				NSLimit:       "basic",
+				NSTemplateSet: DefaultNSTemplateSet.Spec,
 			},
 		},
 	}

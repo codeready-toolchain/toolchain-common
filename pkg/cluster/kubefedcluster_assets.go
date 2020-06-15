@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 )
-
 type asset struct {
 	bytes []byte
 	info  os.FileInfo
@@ -204,7 +203,7 @@ func coreKubefedIo_kubefedclustersYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "core.kubefed.io_kubefedclusters.yaml", size: 5406, mode: os.FileMode(436), modTime: time.Unix(1590539615, 0)}
+	info := bindataFileInfo{name: "core.kubefed.io_kubefedclusters.yaml", size: 5406, mode: os.FileMode(420), modTime: time.Unix(1591862012, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

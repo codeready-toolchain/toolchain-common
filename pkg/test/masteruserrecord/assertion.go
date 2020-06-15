@@ -178,6 +178,14 @@ func (a *Assertion) userAccountHasTier(ua toolchainv1alpha1.UserAccountEmbedded,
 	} else {
 		assert.Equal(a.t, tier.Spec.ClusterResources.TemplateRef, ua.Spec.NSTemplateSet.ClusterResources.TemplateRef)
 	}
+
+	// also verify the labels at the MUR resource level
+	hash, err := computeTemplateRefsHash(tier)
+	require.NoError(a.t, err)
+	require.Contains(a.t, a.masterUserRecord.Labels, templateTierNameLabel(ua.TargetCluster))
+	assert.Equal(a.t, a.masterUserRecord.Labels[templateTierNameLabel(ua.TargetCluster)], tier.Name)
+	require.Contains(a.t, a.masterUserRecord.Labels, templateTierHashLabel(ua.TargetCluster))
+	assert.Equal(a.t, a.masterUserRecord.Labels[templateTierHashLabel(ua.TargetCluster)], hash)
 }
 
 func (a *Assertion) HasFinalizer() *Assertion {
