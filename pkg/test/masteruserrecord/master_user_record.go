@@ -76,8 +76,7 @@ func NewMasterUserRecord(userName string, modifiers ...MurModifier) *toolchainv1
 			Namespace: test.HostOperatorNs,
 			Name:      userName,
 			Labels: map[string]string{
-				templateTierNameLabel(test.MemberClusterName): DefaultNSTemplateTier.Name,
-				templateTierHashLabel(test.MemberClusterName): hash,
+				templateTierHashLabelKey(DefaultNSTemplateTier.Name): hash,
 			},
 		},
 		Spec: toolchainv1alpha1.MasterUserRecordSpec{
@@ -89,26 +88,35 @@ func NewMasterUserRecord(userName string, modifiers ...MurModifier) *toolchainv1
 	return mur
 }
 
-// templateTierNameLabel returns the label key to specify the tier templates in use on the given cluster
-func templateTierNameLabel(cluster string) string {
-	return toolchainv1alpha1.LabelKeyPrefix + cluster + "-templates-tier"
+// templateTierHashLabel returns the label key to specify the version of the templates of the given tier
+func templateTierHashLabelKey(tierName string) string {
+	return toolchainv1alpha1.LabelKeyPrefix + tierName + "-tier-hash"
 }
 
-// templateTierHashLabel returns the label key to specify the version of the tier templates in use on the given cluster
-func templateTierHashLabel(cluster string) string {
-	return toolchainv1alpha1.LabelKeyPrefix + cluster + "-templates-tier-hash"
+type templateRefs struct {
+	Namespaces       []string `json:"namespaces"`
+	ClusterResources string   `json:"clusterresource,omitempty"`
 }
 
 // ComputeTemplateRefsHash computes the hash of the `.spec.namespaces[].templateRef` + `.spec.clusteResource.TemplateRef`
 func computeTemplateRefsHash(tier toolchainv1alpha1.NSTemplateTier) (string, error) {
-	spec, err := json.Marshal(tier.Spec)
+	refs := templateRefs{}
+	for _, ns := range tier.Spec.Namespaces {
+		refs.Namespaces = append(refs.Namespaces, ns.TemplateRef)
+	}
+	if tier.Spec.ClusterResources != nil {
+		refs.ClusterResources = tier.Spec.ClusterResources.TemplateRef
+	}
+	m, err := json.Marshal(refs)
 	if err != nil {
 		return "", err
 	}
 	md5hash := md5.New()
 	// Ignore the error, as this implementation cannot return one
-	_, _ = md5hash.Write([]byte(spec))
-	return hex.EncodeToString(md5hash.Sum(nil)), nil
+	_, _ = md5hash.Write(m)
+	hash := hex.EncodeToString(md5hash.Sum(nil))
+	fmt.Printf("[test] computing hash for '%v' -> '%s' -> '%s'\n", refs, m, hash)
+	return hash, nil
 }
 
 func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
