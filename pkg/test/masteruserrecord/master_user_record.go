@@ -115,7 +115,6 @@ func computeTemplateRefsHash(tier toolchainv1alpha1.NSTemplateTier) (string, err
 	// Ignore the error, as this implementation cannot return one
 	_, _ = md5hash.Write(m)
 	hash := hex.EncodeToString(md5hash.Sum(nil))
-	fmt.Printf("[test] computing hash for '%v' -> '%s' -> '%s'\n", refs, m, hash)
 	return hash, nil
 }
 
