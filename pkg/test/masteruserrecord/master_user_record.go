@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"testing"
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
@@ -13,6 +14,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/redhat-cop/operator-utils/pkg/util"
 	uuid "github.com/satori/go.uuid"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -69,19 +71,15 @@ var DefaultNSTemplateSet = toolchainv1alpha1.NSTemplateSet{
 	},
 }
 
-func NewMasterUserRecords(size int, nameFmt string, modifiers ...MurModifier) ([]runtime.Object, error) {
+func NewMasterUserRecords(t *testing.T, size int, nameFmt string, modifiers ...MurModifier) []runtime.Object {
 	murs := make([]runtime.Object, size)
 	for i := 0; i < size; i++ {
-		if mur, err := NewMasterUserRecord(fmt.Sprintf(nameFmt, i), modifiers...); err != nil {
-			return nil, err
-		} else {
-			murs[i] = mur
-		}
+		murs[i] = NewMasterUserRecord(t, fmt.Sprintf(nameFmt, i), modifiers...)
 	}
-	return murs, nil
+	return murs
 }
 
-func NewMasterUserRecord(userName string, modifiers ...MurModifier) (*toolchainv1alpha1.MasterUserRecord, error) {
+func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier) *toolchainv1alpha1.MasterUserRecord {
 	userID := uuid.NewV4().String()
 	hash, _ := computeTemplateRefsHash(DefaultNSTemplateTier) // we can assume the JSON marshalling will always work
 	mur := &toolchainv1alpha1.MasterUserRecord{
@@ -98,7 +96,8 @@ func NewMasterUserRecord(userName string, modifiers ...MurModifier) (*toolchainv
 		},
 	}
 	err := Modify(mur, modifiers...)
-	return mur, err
+	require.NoError(t, err)
+	return mur
 }
 
 // templateTierHashLabel returns the label key to specify the version of the templates of the given tier
