@@ -11,48 +11,44 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// NewTemplateUpdateRequest creates a specified number of TemplateRequestUpdate objects, with options
+func NewTemplateUpdateRequest(name string, options ...Option) *toolchainv1alpha1.TemplateUpdateRequest {
+	r := &toolchainv1alpha1.TemplateUpdateRequest{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: test.HostOperatorNs,
+			Labels: map[string]string{
+				toolchainv1alpha1.NSTemplateTierNameLabelKey: "basic",
+			},
+		},
+	}
+	for _, opt := range options {
+		opt.applyToTemplateUpdateRequest(r)
+	}
+	return r
+}
+
 // NewTemplateUpdateRequests creates a specified number of TemplateRequestUpdate objects, with options
-func NewTemplateUpdateRequests(size int, options ...Option) []runtime.Object {
+func NewTemplateUpdateRequests(size int, nameFmt string, options ...Option) []runtime.Object {
 	templateUpdateRequests := make([]runtime.Object, size)
 	for i := 0; i < size; i++ {
-		r := &toolchainv1alpha1.TemplateUpdateRequest{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("user-%d", i),
-				Namespace: test.HostOperatorNs,
-				Labels: map[string]string{
-					toolchainv1alpha1.NSTemplateTierNameLabelKey: "basic",
-				},
-			},
-		}
-		for _, opt := range options {
-			opt.applyToTemplateUpdateRequest(i, r)
-		}
-		templateUpdateRequests[i] = r
+		templateUpdateRequests[i] = NewTemplateUpdateRequest(fmt.Sprintf(nameFmt, i), options...)
 	}
 	return templateUpdateRequests
 }
 
 // Option an option to configure a TemplateUpdateRequest
 type Option interface {
-	applyToTemplateUpdateRequest(int, *toolchainv1alpha1.TemplateUpdateRequest)
+	applyToTemplateUpdateRequest(*toolchainv1alpha1.TemplateUpdateRequest)
 }
 
-// NameFormat defines the format of the resource name
-type NameFormat string
+// DeletionTimestamp sets a deletion timestamp on the TemplateUpdateRequest with the given name (when creating a set of resources, the n-th may be marked for deletion)
+type DeletionTimestamp string
 
-var _ Option = NameFormat("")
+var _ Option = DeletionTimestamp("")
 
-func (f NameFormat) applyToTemplateUpdateRequest(i int, mur *toolchainv1alpha1.TemplateUpdateRequest) {
-	mur.ObjectMeta.Name = fmt.Sprintf(string(f), i)
-}
-
-// DeletionTimestamp sets a deletion timestamp on the TemplateUpdateRequest with the given index (when creating a set of resources, the n-th may be marked for deletion)
-type DeletionTimestamp int
-
-var _ Option = DeletionTimestamp(0)
-
-func (d DeletionTimestamp) applyToTemplateUpdateRequest(i int, r *toolchainv1alpha1.TemplateUpdateRequest) {
-	if i == int(d) {
+func (d DeletionTimestamp) applyToTemplateUpdateRequest(r *toolchainv1alpha1.TemplateUpdateRequest) {
+	if r.Name == string(d) {
 		deletionTS := metav1.NewTime(time.Now())
 		r.DeletionTimestamp = &deletionTS
 	}
@@ -63,7 +59,7 @@ type TierName string
 
 var _ Option = TierName("")
 
-func (t TierName) applyToTemplateUpdateRequest(_ int, r *toolchainv1alpha1.TemplateUpdateRequest) {
+func (t TierName) applyToTemplateUpdateRequest(r *toolchainv1alpha1.TemplateUpdateRequest) {
 	r.Spec.TierName = string(t)
 	r.Labels = map[string]string{
 		toolchainv1alpha1.NSTemplateTierNameLabelKey: string(t),
