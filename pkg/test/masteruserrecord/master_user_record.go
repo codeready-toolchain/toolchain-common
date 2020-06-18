@@ -14,9 +14,10 @@ import (
 	"github.com/redhat-cop/operator-utils/pkg/util"
 	uuid "github.com/satori/go.uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type MurModifier func(mur *toolchainv1alpha1.MasterUserRecord)
+type MurModifier func(mur *toolchainv1alpha1.MasterUserRecord) error
 type UaInMurModifier func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord)
 
 // DefaultNSTemplateTier the default NSTemplateTier used to initialize the MasterUserRecord
@@ -68,7 +69,19 @@ var DefaultNSTemplateSet = toolchainv1alpha1.NSTemplateSet{
 	},
 }
 
-func NewMasterUserRecord(userName string, modifiers ...MurModifier) *toolchainv1alpha1.MasterUserRecord {
+func NewMasterUserRecords(size int, nameFmt string, modifiers ...MurModifier) ([]runtime.Object, error) {
+	murs := make([]runtime.Object, size)
+	for i := 0; i < size; i++ {
+		if mur, err := NewMasterUserRecord(fmt.Sprintf(nameFmt, i), modifiers...); err != nil {
+			return nil, err
+		} else {
+			murs[i] = mur
+		}
+	}
+	return murs, nil
+}
+
+func NewMasterUserRecord(userName string, modifiers ...MurModifier) (*toolchainv1alpha1.MasterUserRecord, error) {
 	userID := uuid.NewV4().String()
 	hash, _ := computeTemplateRefsHash(DefaultNSTemplateTier) // we can assume the JSON marshalling will always work
 	mur := &toolchainv1alpha1.MasterUserRecord{
@@ -84,8 +97,8 @@ func NewMasterUserRecord(userName string, modifiers ...MurModifier) *toolchainv1
 			UserAccounts: []toolchainv1alpha1.UserAccountEmbedded{newEmbeddedUa(test.MemberClusterName)},
 		},
 	}
-	Modify(mur, modifiers...)
-	return mur
+	err := Modify(mur, modifiers...)
+	return mur, err
 }
 
 // templateTierHashLabel returns the label key to specify the version of the templates of the given tier
@@ -131,10 +144,13 @@ func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
 	}
 }
 
-func Modify(mur *toolchainv1alpha1.MasterUserRecord, modifiers ...MurModifier) {
+func Modify(mur *toolchainv1alpha1.MasterUserRecord, modifiers ...MurModifier) error {
 	for _, modify := range modifiers {
-		modify(mur)
+		if err := modify(mur); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func ModifyUaInMur(mur *toolchainv1alpha1.MasterUserRecord, targetCluster string, modifiers ...UaInMurModifier) {
@@ -144,36 +160,89 @@ func ModifyUaInMur(mur *toolchainv1alpha1.MasterUserRecord, targetCluster string
 }
 
 func StatusCondition(con toolchainv1alpha1.Condition) MurModifier {
-	return func(mur *toolchainv1alpha1.MasterUserRecord) {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		mur.Status.Conditions, _ = condition.AddOrUpdateStatusConditions(mur.Status.Conditions, con)
+		return nil
 	}
 }
 
 func MetaNamespace(namespace string) MurModifier {
-	return func(mur *toolchainv1alpha1.MasterUserRecord) {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		mur.Namespace = namespace
+		return nil
 	}
 }
 
 func Finalizer(finalizer string) MurModifier {
-	return func(mur *toolchainv1alpha1.MasterUserRecord) {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		mur.Finalizers = append(mur.Finalizers, finalizer)
+		return nil
 	}
 }
 
 func TargetCluster(targetCluster string) MurModifier {
-	return func(mur *toolchainv1alpha1.MasterUserRecord) {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		for i := range mur.Spec.UserAccounts {
 			mur.Spec.UserAccounts[i].TargetCluster = targetCluster
 		}
+		return nil
 	}
 }
 
+func Account(cluster string, tier toolchainv1alpha1.NSTemplateTier) MurModifier {
+
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
+		// set the user account
+		templates := nstemplateSetFromTier(tier)
+		mur.Spec.UserAccounts = append(mur.Spec.UserAccounts, toolchainv1alpha1.UserAccountEmbedded{
+			TargetCluster: "member-cluster",
+			Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
+				UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
+					NSTemplateSet: templates,
+				},
+			},
+		})
+		// set the labels for the tier templates in use
+		hash, err := computeTemplateRefsHash(tier)
+		if err != nil {
+			return err
+		}
+		mur.ObjectMeta.Labels = map[string]string{
+			toolchainv1alpha1.LabelKeyPrefix + tier.Name + "-tier-hash": hash,
+		}
+		mur.Spec.UserAccounts = []toolchainv1alpha1.UserAccountEmbedded{
+			{
+				TargetCluster: cluster,
+				Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
+					UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
+						NSLimit:       "basic",
+						NSTemplateSet: templates,
+					},
+				},
+			},
+		}
+		return nil
+	}
+}
+
+func nstemplateSetFromTier(tier toolchainv1alpha1.NSTemplateTier) toolchainv1alpha1.NSTemplateSetSpec {
+	s := toolchainv1alpha1.NSTemplateSetSpec{}
+	s.TierName = tier.Name
+	s.Namespaces = make([]toolchainv1alpha1.NSTemplateSetNamespace, len(tier.Spec.Namespaces))
+	for i, ns := range tier.Spec.Namespaces {
+		s.Namespaces[i].TemplateRef = ns.TemplateRef
+	}
+	s.ClusterResources = &toolchainv1alpha1.NSTemplateSetClusterResources{}
+	s.ClusterResources.TemplateRef = tier.Spec.ClusterResources.TemplateRef
+	return s
+}
+
 func AdditionalAccounts(clusters ...string) MurModifier {
-	return func(mur *toolchainv1alpha1.MasterUserRecord) {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		for _, cluster := range clusters {
 			mur.Spec.UserAccounts = append(mur.Spec.UserAccounts, newEmbeddedUa(cluster))
 		}
+		return nil
 	}
 }
 
@@ -216,15 +285,17 @@ func Namespace(nsType, revision string) UaInMurModifier {
 }
 
 func ToBeDeleted() MurModifier {
-	return func(mur *toolchainv1alpha1.MasterUserRecord) {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		util.AddFinalizer(mur, "finalizer.toolchain.dev.openshift.com")
 		mur.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+		return nil
 	}
 }
 
 // DisabledMur creates a MurModifier to change the disabled spec value
 func DisabledMur(disabled bool) MurModifier {
-	return func(mur *toolchainv1alpha1.MasterUserRecord) {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		mur.Spec.Disabled = disabled
+		return nil
 	}
 }

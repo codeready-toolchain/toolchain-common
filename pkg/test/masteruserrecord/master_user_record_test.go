@@ -26,7 +26,8 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 
 	t.Run("HasNSTemplateSet assertion", func(t *testing.T) {
 
-		mur := murtest.NewMasterUserRecord("foo", murtest.TargetCluster(test.MemberClusterName))
+		mur, err := murtest.NewMasterUserRecord("foo", murtest.TargetCluster(test.MemberClusterName))
+		require.NoError(t, err)
 
 		t.Run("ok", func(t *testing.T) {
 			// given
@@ -110,7 +111,8 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 
 	t.Run("UserAccountHasTier assertion", func(t *testing.T) {
 
-		mur := murtest.NewMasterUserRecord("foo", murtest.TargetCluster(test.MemberClusterName))
+		mur, err := murtest.NewMasterUserRecord("foo", murtest.TargetCluster(test.MemberClusterName))
+		require.NoError(t, err)
 
 		t.Run("ok", func(t *testing.T) {
 			// given
