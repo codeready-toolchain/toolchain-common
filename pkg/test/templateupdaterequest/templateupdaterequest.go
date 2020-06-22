@@ -7,6 +7,7 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -42,7 +43,7 @@ type Option interface {
 	applyToTemplateUpdateRequest(*toolchainv1alpha1.TemplateUpdateRequest)
 }
 
-// DeletionTimestamp sets a deletion timestamp on the TemplateUpdateRequest with the given name (when creating a set of resources, the n-th may be marked for deletion)
+// DeletionTimestamp sets a deletion timestamp on the TemplateUpdateRequest with the given name
 type DeletionTimestamp string
 
 var _ Option = DeletionTimestamp("")
@@ -51,6 +52,22 @@ func (d DeletionTimestamp) applyToTemplateUpdateRequest(r *toolchainv1alpha1.Tem
 	if r.Name == string(d) {
 		deletionTS := metav1.NewTime(time.Now())
 		r.DeletionTimestamp = &deletionTS
+	}
+}
+
+// Complete sets the status condition to "complete" on the TemplateUpdateRequest with the given name
+type Complete string
+
+var _ Option = Complete("")
+
+func (c Complete) applyToTemplateUpdateRequest(r *toolchainv1alpha1.TemplateUpdateRequest) {
+	if r.Name == string(c) {
+		r.Status.Conditions = []toolchainv1alpha1.Condition{
+			{
+				Type:   toolchainv1alpha1.TemplateUpdateRequestComplete,
+				Status: corev1.ConditionTrue,
+			},
+		}
 	}
 }
 
