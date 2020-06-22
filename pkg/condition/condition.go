@@ -49,6 +49,7 @@ func IsNotTrue(conditions []toolchainv1alpha1.Condition, conditionType toolchain
 
 func addOrUpdateStatusCondition(conditions []toolchainv1alpha1.Condition, newCondition toolchainv1alpha1.Condition) ([]toolchainv1alpha1.Condition, bool) {
 	newCondition.LastTransitionTime = metav1.Now()
+	newCondition.LastUpdatedTime = newCondition.LastTransitionTime
 
 	if conditions == nil {
 		return []toolchainv1alpha1.Condition{newCondition}, true
