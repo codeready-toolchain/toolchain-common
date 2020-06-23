@@ -81,7 +81,8 @@ func NewMasterUserRecords(t *testing.T, size int, nameFmt string, modifiers ...M
 
 func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier) *toolchainv1alpha1.MasterUserRecord {
 	userID := uuid.NewV4().String()
-	hash, _ := computeTemplateRefsHash(DefaultNSTemplateTier) // we can assume the JSON marshalling will always work
+	hash, err := computeTemplateRefsHash(DefaultNSTemplateTier) // we can assume the JSON marshalling will always work
+	require.NoError(t, err)
 	mur := &toolchainv1alpha1.MasterUserRecord{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: test.HostOperatorNs,
@@ -95,7 +96,7 @@ func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier
 			UserAccounts: []toolchainv1alpha1.UserAccountEmbedded{newEmbeddedUa(test.MemberClusterName)},
 		},
 	}
-	err := Modify(mur, modifiers...)
+	err = Modify(mur, modifiers...)
 	require.NoError(t, err)
 	return mur
 }
