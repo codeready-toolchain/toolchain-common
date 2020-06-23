@@ -185,7 +185,7 @@ func (a *Assertion) userAccountHasTier(ua toolchainv1alpha1.UserAccountEmbedded,
 	hash, err := computeTemplateRefsHash(tier)
 	require.NoError(a.t, err)
 	require.Contains(a.t, a.masterUserRecord.Labels, templateTierHashLabelKey(tier.Name))
-	assert.Equal(a.t, a.masterUserRecord.Labels[templateTierHashLabelKey(tier.Name)], hash)
+	assert.Equal(a.t, hash, a.masterUserRecord.Labels[templateTierHashLabelKey(tier.Name)])
 }
 
 func (a *Assertion) HasFinalizer() *Assertion {
