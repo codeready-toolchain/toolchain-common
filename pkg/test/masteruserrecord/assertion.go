@@ -217,6 +217,7 @@ func (a *Assertion) DoesNotHaveLabel(key string) *Assertion {
 func (a *Assertion) HasLabel(key string) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
-	assert.Contains(a.t, a.masterUserRecord.Labels, key)
+	require.Contains(a.t, a.masterUserRecord.Labels, key)
+	assert.NotEmpty(a.t, a.masterUserRecord.Labels[key])
 	return a
 }
