@@ -111,7 +111,7 @@ type templateRefs struct {
 	ClusterResources string   `json:"clusterresource,omitempty"`
 }
 
-// ComputeTemplateRefsHash computes the hash of the `.spec.namespaces[].templateRef` + `.spec.clusteResource.TemplateRef`
+// computeTemplateRefsHash computes the hash of the `.spec.namespaces[].templateRef` + `.spec.clusteResource.TemplateRef`
 func computeTemplateRefsHash(tier toolchainv1alpha1.NSTemplateTier) (string, error) {
 	refs := templateRefs{}
 	for _, ns := range tier.Spec.Namespaces {
