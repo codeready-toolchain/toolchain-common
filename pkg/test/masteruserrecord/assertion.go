@@ -158,6 +158,8 @@ func (a *Assertion) UserAccountHasTier(targetCluster string, tier toolchainv1alp
 			a.userAccountHasTier(ua, tier)
 		}
 	}
+	// also verify the label on the master user record
+	assert.Contains(a.t, a.masterUserRecord.Labels, toolchainv1alpha1.LabelKeyPrefix+tier.Name+"-tier-hash")
 	return a
 }
 
