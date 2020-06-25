@@ -189,19 +189,41 @@ func TargetCluster(targetCluster string) MurModifier {
 	}
 }
 
-func Account(cluster string, tier toolchainv1alpha1.NSTemplateTier) MurModifier {
+type AccountOption func(ua *toolchainv1alpha1.UserAccountEmbedded)
 
+func SyncIndex(index string) AccountOption {
+	return func(ua *toolchainv1alpha1.UserAccountEmbedded) {
+		ua.SyncIndex = index
+	}
+}
+
+// Account sets the first account on the MasterUserRecord
+func Account(cluster string, tier toolchainv1alpha1.NSTemplateTier, options ...AccountOption) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
-		// set the user account
+		mur.Spec.UserAccounts = []toolchainv1alpha1.UserAccountEmbedded{}
+		return AdditionalAccount(cluster, tier, options...)(mur)
+	}
+}
+
+// AdditionalAccount sets an additional account on the MasterUserRecord
+func AdditionalAccount(cluster string, tier toolchainv1alpha1.NSTemplateTier, options ...AccountOption) MurModifier {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		templates := nstemplateSetFromTier(tier)
-		mur.Spec.UserAccounts = append(mur.Spec.UserAccounts, toolchainv1alpha1.UserAccountEmbedded{
-			TargetCluster: "member-cluster",
+		ua := toolchainv1alpha1.UserAccountEmbedded{
+			TargetCluster: cluster,
+			SyncIndex:     "1", // default value
 			Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
 				UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
+					NSLimit:       tier.Name,
 					NSTemplateSet: templates,
 				},
 			},
-		})
+		}
+		for _, set := range options {
+			set(&ua)
+		}
+		// set the user account
+		mur.Spec.UserAccounts = append(mur.Spec.UserAccounts, ua)
 		// set the labels for the tier templates in use
 		hash, err := computeTemplateRefsHash(tier)
 		if err != nil {
@@ -209,17 +231,6 @@ func Account(cluster string, tier toolchainv1alpha1.NSTemplateTier) MurModifier 
 		}
 		mur.ObjectMeta.Labels = map[string]string{
 			toolchainv1alpha1.LabelKeyPrefix + tier.Name + "-tier-hash": hash,
-		}
-		mur.Spec.UserAccounts = []toolchainv1alpha1.UserAccountEmbedded{
-			{
-				TargetCluster: cluster,
-				Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
-					UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
-						NSLimit:       "basic",
-						NSTemplateSet: templates,
-					},
-				},
-			},
 		}
 		return nil
 	}

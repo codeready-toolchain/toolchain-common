@@ -20,9 +20,6 @@ type Assertion struct {
 }
 
 func (a *Assertion) loadUaAssertion() error {
-	if a.masterUserRecord != nil {
-		return nil
-	}
 	mur := &toolchainv1alpha1.MasterUserRecord{}
 	err := a.client.Get(context.TODO(), a.namespacedName, mur)
 	a.masterUserRecord = mur
