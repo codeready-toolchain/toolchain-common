@@ -211,7 +211,7 @@ func AdditionalAccount(cluster string, tier toolchainv1alpha1.NSTemplateTier, op
 		templates := nstemplateSetFromTier(tier)
 		ua := toolchainv1alpha1.UserAccountEmbedded{
 			TargetCluster: cluster,
-			SyncIndex:     "1", // default value
+			SyncIndex:     "123abc", // default value
 			Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
 				UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
 					NSLimit:       tier.Name,
