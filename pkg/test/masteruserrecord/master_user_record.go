@@ -189,24 +189,16 @@ func TargetCluster(targetCluster string) MurModifier {
 	}
 }
 
-type AccountOption func(ua *toolchainv1alpha1.UserAccountEmbedded)
-
-func SyncIndex(index string) AccountOption {
-	return func(ua *toolchainv1alpha1.UserAccountEmbedded) {
-		ua.SyncIndex = index
-	}
-}
-
 // Account sets the first account on the MasterUserRecord
-func Account(cluster string, tier toolchainv1alpha1.NSTemplateTier, options ...AccountOption) MurModifier {
+func Account(cluster string, tier toolchainv1alpha1.NSTemplateTier, modifiers ...UaInMurModifier) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		mur.Spec.UserAccounts = []toolchainv1alpha1.UserAccountEmbedded{}
-		return AdditionalAccount(cluster, tier, options...)(mur)
+		return AdditionalAccount(cluster, tier, modifiers...)(mur)
 	}
 }
 
 // AdditionalAccount sets an additional account on the MasterUserRecord
-func AdditionalAccount(cluster string, tier toolchainv1alpha1.NSTemplateTier, options ...AccountOption) MurModifier {
+func AdditionalAccount(cluster string, tier toolchainv1alpha1.NSTemplateTier, modifiers ...UaInMurModifier) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		templates := nstemplateSetFromTier(tier)
 		ua := toolchainv1alpha1.UserAccountEmbedded{
@@ -219,11 +211,11 @@ func AdditionalAccount(cluster string, tier toolchainv1alpha1.NSTemplateTier, op
 				},
 			},
 		}
-		for _, set := range options {
-			set(&ua)
-		}
 		// set the user account
 		mur.Spec.UserAccounts = append(mur.Spec.UserAccounts, ua)
+		for _, modify := range modifiers {
+			modify(cluster, mur)
+		}
 		// set the labels for the tier templates in use
 		hash, err := computeTemplateRefsHash(tier)
 		if err != nil {
@@ -290,6 +282,17 @@ func Namespace(nsType, revision string) UaInMurModifier {
 						return
 					}
 				}
+			}
+		}
+	}
+}
+
+func SyncIndex(index string) UaInMurModifier {
+	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
+		for i, ua := range mur.Spec.UserAccounts {
+			if ua.TargetCluster == targetCluster {
+				mur.Spec.UserAccounts[i].SyncIndex = index
+				return
 			}
 		}
 	}
