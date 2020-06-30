@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -107,20 +108,20 @@ func templateTierHashLabelKey(tierName string) string {
 }
 
 type templateRefs struct {
-	Namespaces       []string `json:"namespaces"`
-	ClusterResources string   `json:"clusterresource,omitempty"`
+	Refs []string `json:"refs"`
 }
 
 // computeTemplateRefsHash computes the hash of the `.spec.namespaces[].templateRef` + `.spec.clusteResource.TemplateRef`
 func computeTemplateRefsHash(tier toolchainv1alpha1.NSTemplateTier) (string, error) {
-	refs := templateRefs{}
+	refs := []string{}
 	for _, ns := range tier.Spec.Namespaces {
-		refs.Namespaces = append(refs.Namespaces, ns.TemplateRef)
+		refs = append(refs, ns.TemplateRef)
 	}
 	if tier.Spec.ClusterResources != nil {
-		refs.ClusterResources = tier.Spec.ClusterResources.TemplateRef
+		refs = append(refs, tier.Spec.ClusterResources.TemplateRef)
 	}
-	m, err := json.Marshal(refs)
+	sort.Strings(refs)
+	m, err := json.Marshal(templateRefs{Refs: refs})
 	if err != nil {
 		return "", err
 	}
