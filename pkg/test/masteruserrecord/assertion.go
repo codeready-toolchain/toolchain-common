@@ -6,6 +6,7 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
@@ -173,7 +174,8 @@ func (a *Assertion) userAccountHasTier(ua toolchainv1alpha1.UserAccountEmbedded,
 	a.t.Logf("expected templateRefs: %v vs actual: %v", expectedTemplateRefs, actualTemplateRefs)
 	assert.ElementsMatch(a.t, expectedTemplateRefs, actualTemplateRefs)
 	if tier.Spec.ClusterResources == nil {
-		assert.Nil(a.t, ua.Spec.NSTemplateSet.ClusterResources)
+		// expect no ClusterResources or just a custom template (no template ref)
+		assert.True(a.t, ua.Spec.NSTemplateSet.ClusterResources == nil || ua.Spec.NSTemplateSet.ClusterResources.TemplateRef == "")
 	} else {
 		assert.Equal(a.t, tier.Spec.ClusterResources.TemplateRef, ua.Spec.NSTemplateSet.ClusterResources.TemplateRef)
 	}
@@ -216,5 +218,41 @@ func (a *Assertion) HasLabel(key string) *Assertion {
 	require.NoError(a.t, err)
 	require.Contains(a.t, a.masterUserRecord.Labels, key)
 	assert.NotEmpty(a.t, a.masterUserRecord.Labels[key])
+	return a
+}
+
+// HasCustomNamespaceTemplate verifies that for the given target cluster, there's a namespace with the given templateRef,
+// but the latter is "overriden" by the given template
+func (a *Assertion) HasCustomNamespaceTemplate(targetCluster, templateRef, template string) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
+		if ua.TargetCluster == targetCluster {
+			for _, ns := range ua.Spec.NSTemplateSet.Namespaces {
+				if ns.TemplateRef == templateRef {
+					assert.Equal(a.t, template, ns.Template)
+					return a
+				}
+			}
+		}
+	}
+	a.t.Fatalf("no match for the given target cluster '%s' and templateRef '%s'", targetCluster, templateRef)
+	return a
+}
+
+// HasCustomClusterResourcesTemplate verifies that for the given target cluster, there's a namespace with the given templateRef,
+// but the latter is "overriden" by the given template
+func (a *Assertion) HasCustomClusterResourcesTemplate(targetCluster, template string) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	spew.Dump(a.masterUserRecord.Spec.UserAccounts)
+	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
+		if ua.TargetCluster == targetCluster {
+			require.NotNil(a.t, ua.Spec.NSTemplateSet.ClusterResources)
+			assert.Equal(a.t, template, ua.Spec.NSTemplateSet.ClusterResources.Template)
+			return a
+		}
+	}
+	a.t.Fatalf("no match for the given target cluster and templateRef")
 	return a
 }

@@ -299,6 +299,36 @@ func SyncIndex(index string) UaInMurModifier {
 	}
 }
 
+// CustomNamespaceTemplate sets the given template for the namespace with the given templateRef
+// for the user account on the given cluster
+func CustomNamespaceTemplate(templateRef, template string) UaInMurModifier {
+	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
+		for i, ua := range mur.Spec.UserAccounts {
+			if ua.TargetCluster == targetCluster {
+				for j, ns := range ua.Spec.NSTemplateSet.Namespaces {
+					if ns.TemplateRef == templateRef {
+						mur.Spec.UserAccounts[i].Spec.NSTemplateSet.Namespaces[j].Template = template
+						return
+					}
+				}
+			}
+		}
+	}
+}
+
+// CustomClusterResourcesTemplate sets the given template for the namespace with the given templateRef
+// for the user account on the given cluster
+func CustomClusterResourcesTemplate(template string) UaInMurModifier {
+	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
+		for i, ua := range mur.Spec.UserAccounts {
+			if ua.TargetCluster == targetCluster {
+				mur.Spec.UserAccounts[i].Spec.NSTemplateSet.ClusterResources.Template = template
+				return
+			}
+		}
+	}
+}
+
 func ToBeDeleted() MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		util.AddFinalizer(mur, "finalizer.toolchain.dev.openshift.com")
