@@ -26,15 +26,16 @@ require (
 	gopkg.in/square/go-jose.v2 v2.3.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.17.4
-	k8s.io/apiextensions-apiserver v0.17.4
 	k8s.io/apimachinery v0.17.4
 	k8s.io/client-go v12.0.0+incompatible
+	k8s.io/klog v1.0.0
 	k8s.io/kube-openapi v0.0.0-20200427153329-656914f816f9 // indirect
 	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66 // indirect
 	sigs.k8s.io/controller-runtime v0.5.2
-	sigs.k8s.io/kubefed v0.3.0
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
+
+replace github.com/codeready-toolchain/api => github.com/MatousJobanek/api v0.0.0-20200803150704-20052fba4e3f
 
 replace (
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20200414152312-3e8f22fb0b56 // Using 'github.com/openshift/api@release-4.4'

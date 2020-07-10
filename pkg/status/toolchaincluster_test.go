@@ -11,22 +11,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/kubefed/pkg/apis/core/common"
-	kubefed_v1beta1 "sigs.k8s.io/kubefed/pkg/apis/core/v1beta1"
 )
 
-var fakeKubefedReason = "AKubefedReason"
-var fakeKubefedMsg = "AKubefedMsg"
+var fakeToolchainClusterReason = "AToolchainClusterReason"
+var fakeToolchainClusterMsg = "AToolchainClusterMsg"
 
-func TestGetKubefedConditions(t *testing.T) {
-	t.Run("test kubefed conditions", func(t *testing.T) {
+func TestGetToolchainClusterConditions(t *testing.T) {
+	t.Run("test ToolchainCluster conditions", func(t *testing.T) {
 		t.Run("condition ready", func(t *testing.T) {
 			// given
-			readyAttrs := KubefedAttributes{
+			readyAttrs := ToolchainClusterAttributes{
 				GetClusterFunc: newGetHostClusterReady(),
 				Period:         10 * time.Second,
 				Timeout:        3 * time.Second,
-				Threshold:      3,
 			}
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
@@ -36,7 +33,7 @@ func TestGetKubefedConditions(t *testing.T) {
 			}
 
 			// when
-			conditions := GetKubefedConditions(readyAttrs)
+			conditions := GetToolchainClusterConditions(readyAttrs)
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
@@ -47,21 +44,20 @@ func TestGetKubefedConditions(t *testing.T) {
 		t.Run("condition cluster not ok", func(t *testing.T) {
 			// given
 			msg := "the cluster connection was not found"
-			readyAttrs := KubefedAttributes{
+			readyAttrs := ToolchainClusterAttributes{
 				GetClusterFunc: newGetHostClusterNotOk(),
 				Period:         10 * time.Second,
 				Timeout:        3 * time.Second,
-				Threshold:      3,
 			}
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
 				Status:  corev1.ConditionFalse,
-				Reason:  "KubefedNotFound",
+				Reason:  "ToolchainClusterNotFound",
 				Message: msg,
 			}
 
 			// when
-			conditions := GetKubefedConditions(readyAttrs)
+			conditions := GetToolchainClusterConditions(readyAttrs)
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
@@ -72,37 +68,35 @@ func TestGetKubefedConditions(t *testing.T) {
 
 		t.Run("condition cluster ok but not ready", func(t *testing.T) {
 			// given
-			readyAttrs := KubefedAttributes{
-				GetClusterFunc: newGetHostClusterOkButNotReady(&fakeKubefedMsg),
+			readyAttrs := ToolchainClusterAttributes{
+				GetClusterFunc: newGetHostClusterOkButNotReady(fakeToolchainClusterMsg),
 				Period:         10 * time.Second,
 				Timeout:        3 * time.Second,
-				Threshold:      3,
 			}
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
 				Status:  corev1.ConditionFalse,
 				Reason:  "HostConnectionNotReady",
-				Message: fakeKubefedMsg,
+				Message: fakeToolchainClusterMsg,
 			}
 
 			// when
-			conditions := GetKubefedConditions(readyAttrs)
+			conditions := GetToolchainClusterConditions(readyAttrs)
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
 			assert.Error(t, err)
-			assert.Equal(t, fakeKubefedMsg, err.Error())
+			assert.Equal(t, fakeToolchainClusterMsg, err.Error())
 			test.AssertConditionsMatchAndRecentTimestamps(t, conditions, expected)
 		})
 
 		t.Run("condition cluster ok but not ready - no message", func(t *testing.T) {
 			// given
 			msg := "the cluster connection is not ready"
-			readyAttrs := KubefedAttributes{
-				GetClusterFunc: newGetHostClusterOkButNotReady(nil),
+			readyAttrs := ToolchainClusterAttributes{
+				GetClusterFunc: newGetHostClusterOkButNotReady(""),
 				Period:         10 * time.Second,
 				Timeout:        3 * time.Second,
-				Threshold:      3,
 			}
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
@@ -112,7 +106,7 @@ func TestGetKubefedConditions(t *testing.T) {
 			}
 
 			// when
-			conditions := GetKubefedConditions(readyAttrs)
+			conditions := GetToolchainClusterConditions(readyAttrs)
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
@@ -124,11 +118,10 @@ func TestGetKubefedConditions(t *testing.T) {
 		t.Run("condition cluster ok but no ready condition", func(t *testing.T) {
 			// given
 			msg := "the cluster connection is not ready"
-			readyAttrs := KubefedAttributes{
+			readyAttrs := ToolchainClusterAttributes{
 				GetClusterFunc: newGetHostClusterOkWithClusterOfflineCondition(),
 				Period:         10 * time.Second,
 				Timeout:        3 * time.Second,
-				Threshold:      3,
 			}
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
@@ -138,7 +131,7 @@ func TestGetKubefedConditions(t *testing.T) {
 			}
 
 			// when
-			conditions := GetKubefedConditions(readyAttrs)
+			conditions := GetToolchainClusterConditions(readyAttrs)
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
@@ -149,22 +142,21 @@ func TestGetKubefedConditions(t *testing.T) {
 
 		t.Run("condition last probe time exceeded", func(t *testing.T) {
 			// given
-			msg := "exceeded the maximum duration since the last probe: 39s"
-			readyAttrs := KubefedAttributes{
+			msg := "exceeded the maximum duration since the last probe: 13s"
+			readyAttrs := ToolchainClusterAttributes{
 				GetClusterFunc: newGetHostClusterLastProbeTimeExceeded(),
 				Period:         10 * time.Second,
 				Timeout:        3 * time.Second,
-				Threshold:      3,
 			}
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
 				Status:  corev1.ConditionFalse,
-				Reason:  "KubefedLastProbeTimeExceeded",
+				Reason:  "ToolchainClusterLastProbeTimeExceeded",
 				Message: msg,
 			}
 
 			// when
-			conditions := GetKubefedConditions(readyAttrs)
+			conditions := GetToolchainClusterConditions(readyAttrs)
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
@@ -176,42 +168,42 @@ func TestGetKubefedConditions(t *testing.T) {
 }
 
 func newGetHostClusterReady() cluster.GetHostClusterFunc {
-	return NewFakeGetHostCluster(true, common.ClusterReady, corev1.ConditionTrue, metav1.Now(), &fakeKubefedReason, nil)
+	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue, metav1.Now(), fakeToolchainClusterReason, "")
 }
 
 func newGetHostClusterNotOk() cluster.GetHostClusterFunc {
-	return NewFakeGetHostCluster(false, common.ClusterReady, corev1.ConditionFalse, metav1.Now(), &fakeKubefedReason, &fakeKubefedMsg)
+	return NewFakeGetHostCluster(false, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse, metav1.Now(), fakeToolchainClusterReason, fakeToolchainClusterMsg)
 }
 
-func newGetHostClusterOkButNotReady(message *string) cluster.GetHostClusterFunc {
-	return NewFakeGetHostCluster(true, common.ClusterReady, corev1.ConditionFalse, metav1.Now(), &fakeKubefedReason, message)
+func newGetHostClusterOkButNotReady(message string) cluster.GetHostClusterFunc {
+	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse, metav1.Now(), fakeToolchainClusterReason, message)
 }
 
 func newGetHostClusterOkWithClusterOfflineCondition() cluster.GetHostClusterFunc {
-	return NewFakeGetHostCluster(true, common.ClusterOffline, corev1.ConditionFalse, metav1.Now(), &fakeKubefedReason, &fakeKubefedMsg)
+	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterOffline, corev1.ConditionFalse, metav1.Now(), fakeToolchainClusterReason, fakeToolchainClusterMsg)
 }
 
 func newGetHostClusterLastProbeTimeExceeded() cluster.GetHostClusterFunc {
 	tenMinsAgo := metav1.Now().Add(time.Duration(-10) * time.Minute)
-	return NewFakeGetHostCluster(true, common.ClusterReady, corev1.ConditionTrue, metav1.NewTime(tenMinsAgo), &fakeKubefedReason, &fakeKubefedMsg)
+	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue, metav1.NewTime(tenMinsAgo), fakeToolchainClusterReason, fakeToolchainClusterMsg)
 }
 
-// NewGetHostCluster returns cluster.GetHostClusterFunc function. The cluster.FedCluster
+// NewGetHostCluster returns cluster.GetHostClusterFunc function. The cluster.CachedToolchainCluster
 // that is returned by the function then contains the given client and the given status and lastProbeTime.
 // If ok == false, then the function returns nil for the cluster.
-func NewFakeGetHostCluster(ok bool, conditionType common.ClusterConditionType, status corev1.ConditionStatus, lastProbeTime metav1.Time, reason, message *string) cluster.GetHostClusterFunc {
+func NewFakeGetHostCluster(ok bool, conditionType toolchainv1alpha1.ToolchainClusterConditionType, status corev1.ConditionStatus, lastProbeTime metav1.Time, reason, message string) cluster.GetHostClusterFunc {
 	if !ok {
-		return func() (*cluster.FedCluster, bool) {
+		return func() (*cluster.CachedToolchainCluster, bool) {
 			return nil, false
 		}
 	}
-	return func() (*cluster.FedCluster, bool) {
-		fedClusterValue := &cluster.FedCluster{
+	return func() (*cluster.CachedToolchainCluster, bool) {
+		toolchainClusterValue := &cluster.CachedToolchainCluster{
 			Type:              cluster.Host,
 			OperatorNamespace: test.HostOperatorNs,
 			OwnerClusterName:  test.MemberClusterName,
-			ClusterStatus: &kubefed_v1beta1.KubeFedClusterStatus{
-				Conditions: []kubefed_v1beta1.ClusterCondition{{
+			ClusterStatus: &toolchainv1alpha1.ToolchainClusterStatus{
+				Conditions: []toolchainv1alpha1.ToolchainClusterCondition{{
 					Type:          conditionType,
 					Reason:        reason,
 					Status:        status,
@@ -219,10 +211,10 @@ func NewFakeGetHostCluster(ok bool, conditionType common.ClusterConditionType, s
 				}},
 			},
 		}
-		if message != nil && *message != "" {
-			fedClusterValue.ClusterStatus.Conditions[0].Message = message
+		if message != "" {
+			toolchainClusterValue.ClusterStatus.Conditions[0].Message = message
 		}
 
-		return fedClusterValue, true
+		return toolchainClusterValue, true
 	}
 }
