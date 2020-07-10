@@ -156,7 +156,7 @@ make add-member-to-host
     . goes to `host` profile
     . takes cluster name of the `host` cluster from Kube config
     . creates a secret with the SA token taken from the `member`
-    . creates `KubeFedCluster` CR representing the added `member`
+    . creates `ToolchainCluster` CR representing the added `member`
 
 Note: We have make target available for this i.e. `make add-member-to-host` in member-operator, host-operator repository
 
@@ -178,7 +178,7 @@ make add-host-to-member
     . goes to `member` profile
     . takes cluster name of the `member` cluster from Kube config
     . creates a secret with the SA token taken from the `host`
-    . creates `KubeFedCluster` CR representing the added `host`
+    . creates `ToolchainCluster` CR representing the added `host`
 
 Note: We have make target available for this i.e. `make add-host-to-member` member-operator, host-operator repository
 
@@ -203,7 +203,7 @@ in respective namespace with all requires resources like Service Account, (Clust
     . takes API endpoint and cluster name of the `member` cluster from Kube config
     . takes cluster name of the `host` cluster from Kube config
     . creates a secret in `toolchain-host-operator` namespace with the SA token taken from the `toolchain-member-operator` ns
-    . creates `KubeFedCluster` in `toolchain-host-operator` namespace CR representing the added `member`
+    . creates `ToolchainCluster` in `toolchain-host-operator` namespace CR representing the added `member`
 
 *Scenario 2: Add Host to Member*
 ```bash
@@ -216,7 +216,7 @@ in respective namespace with all requires resources like Service Account, (Clust
     . takes API endpoint and cluster name of the `host` cluster from Kube config
     . takes cluster name of the `member` cluster from Kube config
     . creates a secret in `toolchain-member-operator` namespace with the SA token taken from the `toolchain-host-operator` ns
-    . creates `KubeFedCluster` in `toolchain-member-operator` namespace CR representing the added `host`
+    . creates `ToolchainCluster` in `toolchain-member-operator` namespace CR representing the added `host`
 
 ==== Using different clusters for host and member operators
 Make sure you have two different clusters ready and available where the `host-operator` should be running in the host cluster and `member-operator` in the member cluster.

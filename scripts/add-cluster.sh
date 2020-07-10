@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 user_help () {
-    echo "Creates KubeFedCluster"
+    echo "Creates ToolchainCluster"
     echo "options:"
     echo "-t, --type            joining cluster type (host or member)"
     echo "-mn, --member-ns      namespace where member-operator is running"
@@ -132,8 +132,8 @@ if [[ -n `oc get secret -n ${CLUSTER_JOIN_TO_OPERATOR_NS} | grep ${SECRET_NAME}`
 fi
 oc create secret generic ${SECRET_NAME} --from-literal=token="${SA_TOKEN}" --from-literal=ca.crt="${SA_CA_CRT}" -n ${CLUSTER_JOIN_TO_OPERATOR_NS}
 
-KUBEFEDCLUSTER_CRD="apiVersion: core.kubefed.io/v1beta1
-kind: KubeFedCluster
+TOOLCHAINCLUSTER_CRD="apiVersion: toolchain.dev.openshift.com/v1alpha1
+kind: ToolchainCluster
 metadata:
   name: ${JOINING_CLUSTER_TYPE}-${JOINING_CLUSTER_NAME}
   namespace: ${CLUSTER_JOIN_TO_OPERATOR_NS}
@@ -148,9 +148,9 @@ spec:
     name: ${SA_NAME}-${JOINING_CLUSTER_NAME}
 "
 
-echo "Creating KubeFedCluster representation of ${JOINING_CLUSTER_TYPE} in ${CLUSTER_JOIN_TO}:"
-echo ${KUBEFEDCLUSTER_CRD}
+echo "Creating ToolchainCluster representation of ${JOINING_CLUSTER_TYPE} in ${CLUSTER_JOIN_TO}:"
+echo ${TOOLCHAINCLUSTER_CRD}
 
 cat <<EOF | oc apply -f -
-${KUBEFEDCLUSTER_CRD}
+${TOOLCHAINCLUSTER_CRD}
 EOF
