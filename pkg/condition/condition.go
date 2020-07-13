@@ -54,6 +54,19 @@ func IsFalseWithReason(conditions []toolchainv1alpha1.Condition, conditionType t
 	return found && c.Status == apiv1.ConditionFalse && c.Reason == reason
 }
 
+// Count counts the conditions that match the given type/status/reason
+func Count(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType, status apiv1.ConditionStatus, reason string) int {
+	count := 0
+	for _, c := range conditions {
+		if c.Type == toolchainv1alpha1.TemplateUpdateRequestComplete &&
+			c.Status == status &&
+			c.Reason == reason {
+			count++
+		}
+	}
+	return count
+}
+
 func addOrUpdateStatusCondition(conditions []toolchainv1alpha1.Condition, newCondition toolchainv1alpha1.Condition) ([]toolchainv1alpha1.Condition, bool) {
 	newCondition.LastTransitionTime = metav1.Now()
 
