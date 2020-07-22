@@ -22,22 +22,13 @@ func AddOrUpdateStatusConditions(conditions []toolchainv1alpha1.Condition, newCo
 	return conditions, atLeastOneUpdated
 }
 
-// AddStatusConditions adds the given conditions *without* checking for duplicate types
-// Sets the `LastTransitionTime` to `metav1.Now()` for each given condition
+// AddStatusConditions adds the given conditions *without* checking for duplicate types (as opposed to `AddOrUpdateStatusConditions`)
+// Also, it sets the `LastTransitionTime` to `metav1.Now()` for each given condition if needed
 func AddStatusConditions(conditions []toolchainv1alpha1.Condition, newConditions ...toolchainv1alpha1.Condition) []toolchainv1alpha1.Condition {
 	for _, cond := range newConditions {
-		cond.LastTransitionTime = metav1.Now()
-		conditions = append(conditions, cond)
-	}
-	return conditions
-}
-
-// SetStatusConditions appends all the given conditions  without checking for duplicate types
-// Sets the `LastTransitionTime` to `metav1.Now()` for each given condition
-func SetStatusConditions(newConditions ...toolchainv1alpha1.Condition) []toolchainv1alpha1.Condition {
-	conditions := []toolchainv1alpha1.Condition{}
-	for _, cond := range newConditions {
-		cond.LastTransitionTime = metav1.Now()
+		if cond.LastTransitionTime.IsZero() {
+			cond.LastTransitionTime = metav1.Now()
+		}
 		conditions = append(conditions, cond)
 	}
 	return conditions

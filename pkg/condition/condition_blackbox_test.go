@@ -10,6 +10,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	apiv1 "k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -95,6 +96,83 @@ func TestAddOrUpdateStatusConditions(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestAddStatusConditions(t *testing.T) {
+
+	t.Run("without duplicate types", func(t *testing.T) {
+		// given
+		conditions := []toolchainv1alpha1.Condition{
+			{
+				Type:               "foo",
+				Message:            "message",
+				Reason:             "reason",
+				LastTransitionTime: metav1.Now(),
+			},
+		}
+		c := toolchainv1alpha1.Condition{
+			Type:    "bar",
+			Message: "message",
+			Reason:  "reason",
+		}
+		// when
+		result := condition.AddStatusConditions(conditions, c)
+		// then
+		require.Len(t, result, 2)
+		assert.Equal(t, toolchainv1alpha1.ConditionType("foo"), result[0].Type)
+		assert.Equal(t, toolchainv1alpha1.ConditionType("bar"), result[1].Type)
+		assert.False(t, result[1].LastTransitionTime.IsZero())
+	})
+
+	t.Run("without setting LastTransitionTime", func(t *testing.T) {
+		// given
+		conditions := []toolchainv1alpha1.Condition{
+			{
+				Type:               "foo",
+				Message:            "message",
+				Reason:             "reason",
+				LastTransitionTime: metav1.Now(),
+			},
+		}
+		oneMinuteAgo := time.Now().Add(-1 * time.Minute)
+		c := toolchainv1alpha1.Condition{
+			Type:               "bar",
+			Message:            "message",
+			Reason:             "reason",
+			LastTransitionTime: metav1.NewTime(oneMinuteAgo),
+		}
+		// when
+		result := condition.AddStatusConditions(conditions, c)
+		// then
+		require.Len(t, result, 2)
+		assert.Equal(t, toolchainv1alpha1.ConditionType("foo"), result[0].Type)
+		assert.Equal(t, toolchainv1alpha1.ConditionType("bar"), result[1].Type)
+		assert.Equal(t, metav1.NewTime(oneMinuteAgo), result[1].LastTransitionTime)
+	})
+
+	t.Run("with duplicate types", func(t *testing.T) {
+		// given
+		conditions := []toolchainv1alpha1.Condition{
+			{
+				Type:    "foo",
+				Message: "message",
+				Reason:  "reason",
+			},
+		}
+		c := toolchainv1alpha1.Condition{
+			Type:    "foo",
+			Message: "message",
+			Reason:  "reason",
+		}
+		// when
+		result := condition.AddStatusConditions(conditions, c)
+		// then
+		require.Len(t, result, 2)
+		assert.Equal(t, toolchainv1alpha1.ConditionType("foo"), result[0].Type)
+		assert.Equal(t, toolchainv1alpha1.ConditionType("foo"), result[1].Type)
+		assert.False(t, result[1].LastTransitionTime.IsZero())
+	})
+
 }
 
 func TestFindConditionByType(t *testing.T) {
