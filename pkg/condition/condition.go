@@ -70,7 +70,7 @@ func IsFalseWithReason(conditions []toolchainv1alpha1.Condition, conditionType t
 func Count(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType, status apiv1.ConditionStatus, reason string) int {
 	count := 0
 	for _, c := range conditions {
-		if c.Type == toolchainv1alpha1.TemplateUpdateRequestComplete &&
+		if c.Type == conditionType &&
 			c.Status == status &&
 			c.Reason == reason {
 			count++
