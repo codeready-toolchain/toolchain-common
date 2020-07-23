@@ -1,7 +1,7 @@
 module github.com/codeready-toolchain/toolchain-common
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20200715195555-28ba37e37ddd
+	github.com/codeready-toolchain/api v0.0.0-20200723153455-d67a817098f1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
@@ -41,7 +41,5 @@ replace (
 	k8s.io/client-go => k8s.io/client-go v0.17.4 // Required by prometheus-operator
 	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20200204173128-addea2498afe // avoids case-insensitive import collision: "github.com/googleapis/gnostic/openapiv2" and "github.com/googleapis/gnostic/OpenAPIv2"
 )
-
-replace github.com/codeready-toolchain/api => github.com/xcoulon/api v0.0.0-20200723081013-aa97e84b71b7
 
 go 1.13
