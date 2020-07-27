@@ -159,7 +159,7 @@ func TestLoadFromSecret(t *testing.T) {
 		testTest := os.Getenv("HOST_OPERATOR_SPECIAL_KEY")
 		assert.Equal(t, "", testTest)
 	})
-	t.Run("env overwrite", func(t *testing.T) {
+	t.Run("cannot get secret", func(t *testing.T) {
 		// given
 		restore := test.SetEnvVarAndRestore(t, "HOST_OPERATOR_SECRET_NAME", "test-secret")
 		defer restore()
