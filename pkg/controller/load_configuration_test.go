@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -25,7 +26,7 @@ func TestLoadFromConfigMap(t *testing.T) {
 				Namespace: "toolchain-member-operator",
 			},
 			Data: map[string]string{
-				"test-test": "test-test",
+				"test-key": "test-value",
 			},
 		}
 
@@ -38,8 +39,8 @@ func TestLoadFromConfigMap(t *testing.T) {
 		require.NoError(t, err)
 
 		// test env vars are parsed and created correctly
-		testTest := os.Getenv("MEMBER_OPERATOR_TEST_TEST")
-		assert.Equal(t, testTest, "test-test")
+		testTest := os.Getenv("MEMBER_OPERATOR_TEST_KEY")
+		assert.Equal(t, testTest, "test-value")
 	})
 
 	t.Run("configMap not found", func(t *testing.T) {
@@ -71,7 +72,7 @@ func TestLoadFromSecret(t *testing.T) {
 				Namespace: "toolchain-host-operator",
 			},
 			Data: map[string][]byte{
-				"test.test": []byte("test-test"),
+				"test.key": []byte("test-value"),
 			},
 		}
 
@@ -84,8 +85,8 @@ func TestLoadFromSecret(t *testing.T) {
 		require.NoError(t, err)
 
 		// test env vars are parsed and created correctly
-		testTest := os.Getenv("HOST_OPERATOR_TEST_TEST")
-		assert.Equal(t, testTest, "test-test")
+		testTest := os.Getenv("HOST_OPERATOR_TEST_KEY")
+		assert.Equal(t, testTest, "test-value")
 	})
 
 	t.Run("secret not found", func(t *testing.T) {
