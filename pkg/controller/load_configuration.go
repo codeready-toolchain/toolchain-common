@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	errs "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -12,7 +14,15 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-// LoadFromSecret retrieves an operator secret
+// LoadFromSecret retrieves an operator secret and sets environment
+// variables in order to override default configurations.
+// If no secret is found, then configuration will use defaults.
+// Returns error if WATCH_NAMESPACE is not set, if the resource GET request failed
+// (for other reasons apart from isNotFound) and if setting env vars fails.
+//
+// prefix: represents the operator prefix (HOST_OPERATOR/MEMBER_OPERATOR)
+// resourceKey: is the env var which contains the secret resource name.
+// cl: is the client that should be used to retrieve the configmap.
 func LoadFromSecret(prefix, resourceKey string, cl client.Client) error {
 	// get the secret name
 	secretName := getResourceName(resourceKey)
@@ -30,7 +40,10 @@ func LoadFromSecret(prefix, resourceKey string, cl client.Client) error {
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: secretName}
 	err = cl.Get(context.TODO(), namespacedName, secret)
 	if err != nil {
-		return err
+		if !errs.IsNotFound(err) {
+			return err
+		}
+		logf.Log.Info("secret is not found")
 	}
 
 	// get secrets and set environment variables
@@ -45,7 +58,15 @@ func LoadFromSecret(prefix, resourceKey string, cl client.Client) error {
 	return nil
 }
 
-// LoadFromConfigMap retrieves the host operator configMap
+// LoadFromConfigMap retrieves the host operator configmap and sets environment
+// variables in order to override default configurations.
+// If no configmap is found, then configuration will use all defaults.
+// Returns error if WATCH_NAMESPACE is not set, if the resource GET request failed
+// (for other reasons apart from isNotFound) and if setting env vars fails.
+//
+// prefix: represents the operator prefix (HOST_OPERATOR/MEMBER_OPERATOR)
+// resourceKey: is the env var which contains the configmap resource name.
+// cl: is the client that should be used to retrieve the configmap.
 func LoadFromConfigMap(prefix, resourceKey string, cl client.Client) error {
 	// get the configMap name
 	configMapName := getResourceName(resourceKey)
@@ -63,7 +84,10 @@ func LoadFromConfigMap(prefix, resourceKey string, cl client.Client) error {
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: configMapName}
 	err = cl.Get(context.TODO(), namespacedName, configMap)
 	if err != nil {
-		return err
+		if !errs.IsNotFound(err) {
+			return err
+		}
+		logf.Log.Info("configmap is not found")
 	}
 
 	// get configMap data and set environment variables
@@ -83,7 +107,7 @@ func getResourceName(key string) string {
 	// get the resource name
 	resourceName := os.Getenv(key)
 	if resourceName == "" {
-		logf.Log.Info(key + " is not set")
+		logf.Log.Info(key + " is not set. Will not override default configurations")
 		return ""
 	}
 
