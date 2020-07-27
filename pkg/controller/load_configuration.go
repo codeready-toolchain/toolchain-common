@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -12,7 +13,7 @@ import (
 )
 
 // LoadFromSecret retrieves an operator secret
-func LoadFromSecret(prefix, resourceKey, namespace string, cl client.Client) error {
+func LoadFromSecret(prefix, resourceKey string, cl client.Client) error {
 	// get the secret name
 	secretName := getResourceName(resourceKey)
 	if secretName == "" {
@@ -20,9 +21,14 @@ func LoadFromSecret(prefix, resourceKey, namespace string, cl client.Client) err
 	}
 
 	// get the secret
+	namespace, err := k8sutil.GetWatchNamespace()
+	if err != nil {
+		return err
+	}
+
 	secret := &v1.Secret{}
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: secretName}
-	err := cl.Get(context.TODO(), namespacedName, secret)
+	err = cl.Get(context.TODO(), namespacedName, secret)
 	if err != nil {
 		return err
 	}
@@ -40,7 +46,7 @@ func LoadFromSecret(prefix, resourceKey, namespace string, cl client.Client) err
 }
 
 // LoadFromConfigMap retrieves the host operator configMap
-func LoadFromConfigMap(prefix, resourceKey, namespace string, cl client.Client) error {
+func LoadFromConfigMap(prefix, resourceKey string, cl client.Client) error {
 	// get the configMap name
 	configMapName := getResourceName(resourceKey)
 	if configMapName == "" {
@@ -48,9 +54,14 @@ func LoadFromConfigMap(prefix, resourceKey, namespace string, cl client.Client) 
 	}
 
 	// get the configMap
+	namespace, err := k8sutil.GetWatchNamespace()
+	if err != nil {
+		return err
+	}
+
 	configMap := &v1.ConfigMap{}
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: configMapName}
-	err := cl.Get(context.TODO(), namespacedName, configMap)
+	err = cl.Get(context.TODO(), namespacedName, configMap)
 	if err != nil {
 		return err
 	}
