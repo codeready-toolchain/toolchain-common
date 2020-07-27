@@ -2,11 +2,14 @@ package test
 
 import (
 	"fmt"
+	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // AssertConditionsMatch asserts that the specified list A of conditions is equal to specified
@@ -33,6 +36,22 @@ func AssertContainsCondition(t T, conditions []toolchainv1alpha1.Condition, cont
 		}
 	}
 	assert.FailNow(t, fmt.Sprintf("the list of conditions %v doesn't contain the expected condition %v", conditions, contains))
+}
+
+// AssertConditionsMatchAndRecentTimestamps asserts that the specified list of conditions match AND asserts that the timestamps are recent
+func AssertConditionsMatchAndRecentTimestamps(t T, actual []toolchainv1alpha1.Condition, expected ...toolchainv1alpha1.Condition) {
+	AssertConditionsMatch(t, actual, expected...)
+	AssertTimestampsAreRecent(t, actual)
+}
+
+// AssertTimestampsAreRecent asserts that the timestamps for the provided list of conditions are recent
+func AssertTimestampsAreRecent(t T, conditions []toolchainv1alpha1.Condition) {
+	var secs int64 = 5
+	recentTime := metav1.Now().Add(time.Duration(-secs) * time.Second)
+	for _, c := range conditions {
+		assert.True(t, c.LastTransitionTime.After(recentTime), "LastTransitionTime was not updated within the last %d seconds", secs)
+		assert.True(t, (*c.LastUpdatedTime).After(recentTime), "LastUpdatedTime was not updated within the last %d seconds", secs)
+	}
 }
 
 // ConditionsMatch returns true if the specified list A of conditions is equal to specified

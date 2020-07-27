@@ -2,7 +2,6 @@ package status
 
 import (
 	"testing"
-	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
@@ -17,56 +16,65 @@ import (
 func TestGetDeploymentStatusConditions(t *testing.T) {
 
 	t.Run("test deployment status conditions", func(t *testing.T) {
+
+		t.Run("deployment ready", func(t *testing.T) {
+			fakeClient := test.NewFakeClient(t, fakeDeploymentReady())
+			conditions := GetDeploymentStatusConditions(fakeClient, "test-deployment", test.HostOperatorNs)
+			err := ValidateComponentConditionReady(conditions...)
+			require.NoError(t, err)
+
+			expected := toolchainv1alpha1.Condition{
+				Type:    toolchainv1alpha1.ConditionReady,
+				Status:  corev1.ConditionTrue,
+				Reason:  "DeploymentReady",
+				Message: "",
+			}
+			test.AssertConditionsMatchAndRecentTimestamps(t, conditions, expected)
+		})
+
 		t.Run("deployment does not exist", func(t *testing.T) {
 			fakeClient := test.NewFakeClient(t)
-			conditions, err := GetDeploymentStatusConditions(fakeClient, "test-deployment", test.HostOperatorNs)
+			conditions := GetDeploymentStatusConditions(fakeClient, "test-deployment", test.HostOperatorNs)
+			err := ValidateComponentConditionReady(conditions...)
 			require.Error(t, err)
-			require.Len(t, conditions, 1)
-			require.Equal(t, toolchainv1alpha1.ConditionReady, conditions[0].Type)
-			require.Equal(t, corev1.ConditionFalse, conditions[0].Status)
-			require.Equal(t, "DeploymentNotFound", conditions[0].Reason)
-			require.Contains(t, conditions[0].Message, "unable to get the deployment")
-			require.True(t, isRecent(conditions[0].LastTransitionTime), "LastTransitionTime should be recently updated")
-			require.True(t, isRecent(*conditions[0].LastUpdatedTime), "LastUpdatedTime should be recently updated")
+
+			expected := toolchainv1alpha1.Condition{
+				Type:    toolchainv1alpha1.ConditionReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  "DeploymentNotFound",
+				Message: "unable to get the deployment: deployments.apps \"test-deployment\" not found",
+			}
+			test.AssertConditionsMatchAndRecentTimestamps(t, conditions, expected)
 		})
 
 		t.Run("deployment not available", func(t *testing.T) {
 			fakeClient := test.NewFakeClient(t, fakeDeploymentNotAvailable())
-			conditions, err := GetDeploymentStatusConditions(fakeClient, "test-deployment", test.HostOperatorNs)
+			conditions := GetDeploymentStatusConditions(fakeClient, "test-deployment", test.HostOperatorNs)
+			err := ValidateComponentConditionReady(conditions...)
 			require.Error(t, err)
-			require.Len(t, conditions, 1)
-			require.Equal(t, toolchainv1alpha1.ConditionReady, conditions[0].Type)
-			require.Equal(t, corev1.ConditionFalse, conditions[0].Status)
-			require.Equal(t, "DeploymentNotReady", conditions[0].Reason)
-			require.Contains(t, conditions[0].Message, "deployment has unready status conditions")
-			require.True(t, isRecent(conditions[0].LastTransitionTime), "LastTransitionTime should be recently updated")
-			require.True(t, isRecent(*conditions[0].LastUpdatedTime), "LastUpdatedTime should be recently updated")
+
+			expected := toolchainv1alpha1.Condition{
+				Type:    toolchainv1alpha1.ConditionReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  "DeploymentNotReady",
+				Message: "deployment has unready status conditions: Available",
+			}
+			test.AssertConditionsMatchAndRecentTimestamps(t, conditions, expected)
 		})
 
 		t.Run("deployment not progressing", func(t *testing.T) {
 			fakeClient := test.NewFakeClient(t, fakeDeploymentNotProgressing())
-			conditions, err := GetDeploymentStatusConditions(fakeClient, "test-deployment", test.HostOperatorNs)
+			conditions := GetDeploymentStatusConditions(fakeClient, "test-deployment", test.HostOperatorNs)
+			err := ValidateComponentConditionReady(conditions...)
 			require.Error(t, err)
-			require.Len(t, conditions, 1)
-			require.Equal(t, toolchainv1alpha1.ConditionReady, conditions[0].Type)
-			require.Equal(t, corev1.ConditionFalse, conditions[0].Status)
-			require.Equal(t, "DeploymentNotReady", conditions[0].Reason)
-			require.Contains(t, conditions[0].Message, "deployment has unready status conditions")
-			require.True(t, isRecent(conditions[0].LastTransitionTime), "LastTransitionTime should be recently updated")
-			require.True(t, isRecent(*conditions[0].LastUpdatedTime), "LastUpdatedTime should be recently updated")
-		})
 
-		t.Run("deployment ready", func(t *testing.T) {
-			fakeClient := test.NewFakeClient(t, fakeDeploymentReady())
-			conditions, err := GetDeploymentStatusConditions(fakeClient, "test-deployment", test.HostOperatorNs)
-			require.NoError(t, err)
-			require.Len(t, conditions, 1)
-			require.Equal(t, toolchainv1alpha1.ConditionReady, conditions[0].Type)
-			require.Equal(t, corev1.ConditionTrue, conditions[0].Status)
-			require.Equal(t, "DeploymentReady", conditions[0].Reason)
-			require.Equal(t, conditions[0].Message, "")
-			require.True(t, isRecent(conditions[0].LastTransitionTime), "LastTransitionTime should be recently updated")
-			require.True(t, isRecent(*conditions[0].LastUpdatedTime), "LastUpdatedTime should be recently updated")
+			expected := toolchainv1alpha1.Condition{
+				Type:    toolchainv1alpha1.ConditionReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  "DeploymentNotReady",
+				Message: "deployment has unready status conditions: Progressing",
+			}
+			test.AssertConditionsMatchAndRecentTimestamps(t, conditions, expected)
 		})
 	})
 }
@@ -104,9 +112,4 @@ func newFakeDeployment(name, namespace string, deploymentConditions ...appsv1.De
 			Conditions: deploymentConditions,
 		},
 	}
-}
-
-func isRecent(timestamp metav1.Time) bool {
-	tenSecondsAgo := metav1.Now().Add(time.Duration(-10) * time.Second)
-	return timestamp.After(tenSecondsAgo)
 }
