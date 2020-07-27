@@ -22,7 +22,7 @@ func LoadFromSecret(prefix, resourceKey, namespace string, cl client.Client) err
 	// get the secret
 	secret := &v1.Secret{}
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: secretName}
-	err := client.Client.Get(cl, context.TODO(), namespacedName, secret)
+	err := cl.Get(context.TODO(), namespacedName, secret)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func LoadFromConfigMap(prefix, resourceKey, namespace string, cl client.Client) 
 	// get the configMap
 	configMap := &v1.ConfigMap{}
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: configMapName}
-	err := client.Client.Get(cl, context.TODO(), namespacedName, configMap)
+	err := cl.Get(context.TODO(), namespacedName, configMap)
 	if err != nil {
 		return err
 	}
