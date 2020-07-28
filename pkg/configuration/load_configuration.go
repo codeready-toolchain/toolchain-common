@@ -14,26 +14,28 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-// LoadFromSecret retrieves an operator secret and sets environment
-// variables in order to override default configurations.
+// LoadFromSecret retrieves an operator secret and sets a map
+// in order to override default configurations.
 // If no secret is found, then configuration will use defaults.
 // Returns error if WATCH_NAMESPACE is not set, if the resource GET request failed
 // (for other reasons apart from isNotFound) and if setting env vars fails.
 //
 // prefix: represents the operator prefix (HOST_OPERATOR/MEMBER_OPERATOR)
 // resourceKey: is the env var which contains the secret resource name.
-// cl: is the client that should be used to retrieve the configmap.
-func LoadFromSecret(prefix, resourceKey string, cl client.Client) error {
+// cl: is the client that should be used to retrieve the secret.
+func LoadFromSecret(prefix, resourceKey string, cl client.Client) (map[string]string, error) {
+	var secretData = make(map[string]string)
+
 	// get the secret name
 	secretName := getResourceName(resourceKey)
 	if secretName == "" {
-		return nil
+		return secretData, nil
 	}
 
 	// get the secret
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
-		return err
+		return secretData, err
 	}
 
 	secret := &v1.Secret{}
@@ -41,7 +43,7 @@ func LoadFromSecret(prefix, resourceKey string, cl client.Client) error {
 	err = cl.Get(context.TODO(), namespacedName, secret)
 	if err != nil {
 		if !errs.IsNotFound(err) {
-			return err
+			return secretData, err
 		}
 		logf.Log.Info("secret is not found")
 	}
@@ -49,13 +51,10 @@ func LoadFromSecret(prefix, resourceKey string, cl client.Client) error {
 	// get secrets and set environment variables
 	for key, value := range secret.Data {
 		secretKey := createOperatorEnvVarKey(prefix, key)
-		err := os.Setenv(secretKey, string(value))
-		if err != nil {
-			return err
-		}
+		secretData[secretKey] = string(value)
 	}
 
-	return nil
+	return secretData, nil
 }
 
 // LoadFromConfigMap retrieves the host operator configmap and sets environment

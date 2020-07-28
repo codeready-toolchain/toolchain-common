@@ -41,7 +41,7 @@ func TestLoadFromConfigMap(t *testing.T) {
 		cl := test.NewFakeClient(t, createConfigMap("test-config", "toolchain-host-operator", data))
 
 		// when
-		err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_CONFIG_MAP_NAME", cl)
+		err := LoadFromConfigMap("HOST_OPERATOR", "HOST_OPERATOR_CONFIG_MAP_NAME", cl)
 
 		// then
 		require.NoError(t, err)
@@ -110,10 +110,11 @@ func TestLoadFromSecret(t *testing.T) {
 		cl := test.NewFakeClient(t)
 
 		// when
-		err := LoadFromConfigMap("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
+		secretData, err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
 
 		// then
 		require.NoError(t, err)
+		assert.Empty(t, secretData)
 	})
 	t.Run("no secret name set", func(t *testing.T) {
 		// given
@@ -123,14 +124,14 @@ func TestLoadFromSecret(t *testing.T) {
 		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		// when
-		err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
+		secretData, err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
 
 		// then
 		require.NoError(t, err)
+		assert.Empty(t, secretData)
 
 		// test that the secret was not found since no secret name was set
-		testTest := os.Getenv("HOST_OPERATOR_SPECIAL_KEY")
-		assert.Equal(t, "", testTest)
+		assert.Equal(t, "", secretData["HOST_OPERATOR_SPECIAL_KEY"])
 	})
 	t.Run("cannot get secret", func(t *testing.T) {
 		// given
@@ -147,15 +148,12 @@ func TestLoadFromSecret(t *testing.T) {
 		}
 
 		// when
-		err := LoadFromConfigMap("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
+		secretData, err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
 
 		// then
 		require.Error(t, err)
 		assert.Equal(t, "oopsie woopsie", err.Error())
-
-		// test env vars are parsed and created correctly
-		testTest := os.Getenv("HOST_OPERATOR_TEST_KEY_SECRET")
-		assert.Equal(t, testTest, "")
+		assert.Empty(t, secretData)
 	})
 	t.Run("env overwrite", func(t *testing.T) {
 		// given
@@ -170,14 +168,14 @@ func TestLoadFromSecret(t *testing.T) {
 		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		// when
-		err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
+		secretData, err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
 
 		// then
 		require.NoError(t, err)
 
 		// test env vars are parsed and created correctly
-		testTest := os.Getenv("HOST_OPERATOR_TEST_KEY")
-		assert.Equal(t, testTest, "test-value")
+		assert.Equal(t, 1, len(secretData))
+		assert.Equal(t, "test-value", secretData["HOST_OPERATOR_TEST_KEY"])
 	})
 }
 
@@ -193,10 +191,11 @@ func TestNoWatchNamespaceSetWhenLoadingSecret(t *testing.T) {
 		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		// when
-		err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
+		secretData, err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
 
 		// then
 		require.Error(t, err)
+		assert.Empty(t, secretData)
 		assert.Equal(t, "WATCH_NAMESPACE must be set", err.Error())
 	})
 }
@@ -213,7 +212,7 @@ func TestNoWatchNamespaceSetWhenLoadingConfigMap(t *testing.T) {
 		cl := test.NewFakeClient(t, createConfigMap("test-config", "toolchain-host-operator", data))
 
 		// when
-		err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_CONFIG_MAP_NAME", cl)
+		err := LoadFromConfigMap("HOST_OPERATOR", "HOST_OPERATOR_CONFIG_MAP_NAME", cl)
 
 		// then
 		require.Error(t, err)
