@@ -6,15 +6,14 @@ import (
 	"os"
 	"testing"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestLoadFromConfigMap(t *testing.T) {
@@ -36,17 +35,10 @@ func TestLoadFromConfigMap(t *testing.T) {
 	})
 	t.Run("no config name set", func(t *testing.T) {
 		// given
-		configMap := &v1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-config",
-				Namespace: "toolchain-member-operator",
-			},
-			Data: map[string]string{
-				"super-special-key": "super-special-value",
-			},
+		data := map[string]string{
+			"super-special-key": "super-special-value",
 		}
-
-		cl := test.NewFakeClient(t, configMap)
+		cl := test.NewFakeClient(t, createConfigMap("test-config", "toolchain-host-operator", data))
 
 		// when
 		err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_CONFIG_MAP_NAME", cl)
@@ -63,17 +55,10 @@ func TestLoadFromConfigMap(t *testing.T) {
 		restore := test.SetEnvVarAndRestore(t, "MEMBER_OPERATOR_CONFIG_MAP_NAME", "test-config")
 		defer restore()
 
-		configMap := &v1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-config",
-				Namespace: "toolchain-member-operator",
-			},
-			Data: map[string]string{
-				"test-key-one": "test-value-one",
-			},
+		data := map[string]string{
+			"test-key-one": "test-value-one",
 		}
-
-		cl := test.NewFakeClient(t, configMap)
+		cl := test.NewFakeClient(t, createConfigMap("test-config", "toolchain-host-operator", data))
 
 		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 			return errors.New("oopsie woopsie")
@@ -95,17 +80,10 @@ func TestLoadFromConfigMap(t *testing.T) {
 		restore := test.SetEnvVarAndRestore(t, "MEMBER_OPERATOR_CONFIG_MAP_NAME", "test-config")
 		defer restore()
 
-		configMap := &v1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-config",
-				Namespace: "toolchain-member-operator",
-			},
-			Data: map[string]string{
-				"test-key": "test-value",
-			},
+		data := map[string]string{
+			"test-key": "test-value",
 		}
-
-		cl := test.NewFakeClient(t, configMap)
+		cl := test.NewFakeClient(t, createConfigMap("test-config", "toolchain-member-operator", data))
 
 		// when
 		err := LoadFromConfigMap("MEMBER_OPERATOR", "MEMBER_OPERATOR_CONFIG_MAP_NAME", cl)
@@ -137,17 +115,10 @@ func TestLoadFromSecret(t *testing.T) {
 	})
 	t.Run("no secret name set", func(t *testing.T) {
 		// given
-		secret := &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-secret",
-				Namespace: "toolchain-host-operator",
-			},
-			Data: map[string][]byte{
-				"special.key": []byte("special-value"),
-			},
+		data := map[string][]byte{
+			"special.key": []byte("special-value"),
 		}
-
-		cl := test.NewFakeClient(t, secret)
+		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		// when
 		err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
@@ -164,17 +135,10 @@ func TestLoadFromSecret(t *testing.T) {
 		restore := test.SetEnvVarAndRestore(t, "HOST_OPERATOR_SECRET_NAME", "test-secret")
 		defer restore()
 
-		secret := &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-secret",
-				Namespace: "toolchain-host-operator",
-			},
-			Data: map[string][]byte{
-				"test.key.secret": []byte("test-value-secret"),
-			},
+		data := map[string][]byte{
+			"test.key.secret": []byte("test-value-secret"),
 		}
-
-		cl := test.NewFakeClient(t, secret)
+		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 			return errors.New("oopsie woopsie")
@@ -196,17 +160,10 @@ func TestLoadFromSecret(t *testing.T) {
 		restore := test.SetEnvVarAndRestore(t, "HOST_OPERATOR_SECRET_NAME", "test-secret")
 		defer restore()
 
-		secret := &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-secret",
-				Namespace: "toolchain-host-operator",
-			},
-			Data: map[string][]byte{
-				"test.key": []byte("test-value"),
-			},
+		data := map[string][]byte{
+			"test.key": []byte("test-value"),
 		}
-
-		cl := test.NewFakeClient(t, secret)
+		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		// when
 		err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
@@ -226,17 +183,10 @@ func TestNoWatchNamespaceSetWhenLoadingSecret(t *testing.T) {
 		restore := test.SetEnvVarAndRestore(t, "HOST_OPERATOR_SECRET_NAME", "test-secret")
 		defer restore()
 
-		secret := &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-secret",
-				Namespace: "toolchain-host-operator",
-			},
-			Data: map[string][]byte{
-				"test.key": []byte("test-value"),
-			},
+		data := map[string][]byte{
+			"test.key": []byte("test-value"),
 		}
-
-		cl := test.NewFakeClient(t, secret)
+		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		// when
 		err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
@@ -253,17 +203,10 @@ func TestNoWatchNamespaceSetWhenLoadingConfigMap(t *testing.T) {
 		restore := test.SetEnvVarAndRestore(t, "HOST_OPERATOR_CONFIG_MAP_NAME", "test-config")
 		defer restore()
 
-		configMap := &v1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-config",
-				Namespace: "toolchain-host-operator",
-			},
-			Data: map[string]string{
-				"test-key": "test-value",
-			},
+		data := map[string]string{
+			"test-key": "test-value",
 		}
-
-		cl := test.NewFakeClient(t, configMap)
+		cl := test.NewFakeClient(t, createConfigMap("test-config", "toolchain-host-operator", data))
 
 		// when
 		err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_CONFIG_MAP_NAME", cl)
@@ -272,4 +215,24 @@ func TestNoWatchNamespaceSetWhenLoadingConfigMap(t *testing.T) {
 		require.Error(t, err)
 		assert.Equal(t, "WATCH_NAMESPACE must be set", err.Error())
 	})
+}
+
+func createSecret(name, namespace string, data map[string][]byte) *v1.Secret {
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: data,
+	}
+}
+
+func createConfigMap(name, namespace string, data map[string]string) *v1.ConfigMap {
+	return &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: data,
+	}
 }
