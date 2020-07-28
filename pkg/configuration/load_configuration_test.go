@@ -77,7 +77,9 @@ func TestLoadFromConfigMap(t *testing.T) {
 	})
 	t.Run("env overwrite", func(t *testing.T) {
 		// given
-		restore := test.SetEnvVarAndRestore(t, "MEMBER_OPERATOR_CONFIG_MAP_NAME", "test-config")
+		restore := test.SetEnvVarsAndRestore(t,
+			test.Env("MEMBER_OPERATOR_CONFIG_MAP_NAME", "test-config"),
+			test.Env("MEMBER_OPERATOR_TEST_KEY", ""))
 		defer restore()
 
 		data := map[string]string{
@@ -157,7 +159,9 @@ func TestLoadFromSecret(t *testing.T) {
 	})
 	t.Run("env overwrite", func(t *testing.T) {
 		// given
-		restore := test.SetEnvVarAndRestore(t, "HOST_OPERATOR_SECRET_NAME", "test-secret")
+		restore := test.SetEnvVarsAndRestore(t,
+			test.Env("HOST_OPERATOR_SECRET_NAME", "test-secret"),
+			test.Env("HOST_OPERATOR_TEST_KEY", ""))
 		defer restore()
 
 		data := map[string][]byte{
