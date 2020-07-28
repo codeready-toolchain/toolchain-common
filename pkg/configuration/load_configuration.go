@@ -50,7 +50,7 @@ func LoadFromSecret(prefix, resourceKey string, cl client.Client) (map[string]st
 
 	// get secrets and set environment variables
 	for key, value := range secret.Data {
-		secretKey := createOperatorEnvVarKey(prefix, key)
+		secretKey := CreateOperatorEnvVarKey(prefix, key)
 		secretData[secretKey] = string(value)
 	}
 
@@ -91,7 +91,7 @@ func LoadFromConfigMap(prefix, resourceKey string, cl client.Client) error {
 
 	// get configMap data and set environment variables
 	for key, value := range configMap.Data {
-		configKey := createOperatorEnvVarKey(prefix, key)
+		configKey := CreateOperatorEnvVarKey(prefix, key)
 		err := os.Setenv(configKey, value)
 		if err != nil {
 			return err
@@ -113,7 +113,11 @@ func getResourceName(key string) string {
 	return resourceName
 }
 
-// createHostEnvVarKey creates env vars based on resource data
-func createOperatorEnvVarKey(prefix, key string) string {
+// CreateOperatorEnvVarKey creates env vars based on resource data.
+// Returns env var key.
+//
+// prefix: represents the operator prefix (HOST_OPERATOR/MEMBER_OPERATOR)
+// key: is the value to convert into an env var key
+func CreateOperatorEnvVarKey(prefix, key string) string {
 	return prefix + "_" + (strings.ToUpper(strings.ReplaceAll(strings.ReplaceAll(key, ".", "_"), "-", "_")))
 }
