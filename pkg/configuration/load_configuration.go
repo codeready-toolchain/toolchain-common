@@ -23,8 +23,8 @@ import (
 // prefix: represents the operator prefix (HOST_OPERATOR/MEMBER_OPERATOR)
 // resourceKey: is the env var which contains the secret resource name.
 // cl: is the client that should be used to retrieve the secret.
-func LoadFromSecret(prefix, resourceKey string, cl client.Client) (map[string]string, error) {
-	var secretData = make(map[string]string)
+func LoadFromSecret(resourceKey string, cl client.Client) (map[string][]byte, error) {
+	var secretData = make(map[string][]byte)
 
 	// get the secret name
 	secretName := getResourceName(resourceKey)
@@ -48,13 +48,7 @@ func LoadFromSecret(prefix, resourceKey string, cl client.Client) (map[string]st
 		logf.Log.Info("secret is not found")
 	}
 
-	// get secrets and set environment variables
-	for key, value := range secret.Data {
-		secretKey := CreateOperatorEnvVarKey(prefix, key)
-		secretData[secretKey] = string(value)
-	}
-
-	return secretData, nil
+	return secret.Data, nil
 }
 
 // LoadFromConfigMap retrieves the host operator configmap and sets environment

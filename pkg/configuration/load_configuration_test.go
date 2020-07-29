@@ -110,7 +110,7 @@ func TestLoadFromSecret(t *testing.T) {
 		cl := test.NewFakeClient(t)
 
 		// when
-		secretData, err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
+		secretData, err := LoadFromSecret("HOST_OPERATOR_SECRET_NAME", cl)
 
 		// then
 		require.NoError(t, err)
@@ -124,14 +124,11 @@ func TestLoadFromSecret(t *testing.T) {
 		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		// when
-		secretData, err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
+		secretData, err := LoadFromSecret("HOST_OPERATOR_SECRET_NAME", cl)
 
 		// then
 		require.NoError(t, err)
 		assert.Empty(t, secretData)
-
-		// test that the secret was not found since no secret name was set
-		assert.Equal(t, "", secretData["HOST_OPERATOR_SPECIAL_KEY"])
 	})
 	t.Run("cannot get secret", func(t *testing.T) {
 		// given
@@ -148,7 +145,7 @@ func TestLoadFromSecret(t *testing.T) {
 		}
 
 		// when
-		secretData, err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
+		secretData, err := LoadFromSecret("HOST_OPERATOR_SECRET_NAME", cl)
 
 		// then
 		require.Error(t, err)
@@ -168,14 +165,14 @@ func TestLoadFromSecret(t *testing.T) {
 		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		// when
-		secretData, err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
+		secretData, err := LoadFromSecret("HOST_OPERATOR_SECRET_NAME", cl)
 
 		// then
 		require.NoError(t, err)
 
 		// test env vars are parsed and created correctly
 		assert.Equal(t, 1, len(secretData))
-		assert.Equal(t, "test-value", secretData["HOST_OPERATOR_TEST_KEY"])
+		assert.Equal(t, "test-value", string(secretData["test.key"]))
 	})
 }
 
@@ -191,7 +188,7 @@ func TestNoWatchNamespaceSetWhenLoadingSecret(t *testing.T) {
 		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		// when
-		secretData, err := LoadFromSecret("HOST_OPERATOR", "HOST_OPERATOR_SECRET_NAME", cl)
+		secretData, err := LoadFromSecret("HOST_OPERATOR_SECRET_NAME", cl)
 
 		// then
 		require.Error(t, err)
