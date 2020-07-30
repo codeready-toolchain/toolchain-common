@@ -20,7 +20,6 @@ import (
 // Returns error if WATCH_NAMESPACE is not set, if the resource GET request failed
 // (for other reasons apart from isNotFound) and if setting env vars fails.
 //
-// prefix: represents the operator prefix (HOST_OPERATOR/MEMBER_OPERATOR)
 // resourceKey: is the env var which contains the secret resource name.
 // cl: is the client that should be used to retrieve the secret.
 func LoadFromSecret(resourceKey string, cl client.Client) (map[string][]byte, error) {
