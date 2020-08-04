@@ -68,10 +68,9 @@ func TestClusterHealthChecks(t *testing.T) {
 		defer reset()
 
 		// when
-		err := updateClusterStatuses("test-namespace", cl)
+		updateClusterStatuses("test-namespace", cl)
 
 		// then
-		require.NoError(t, err)
 		assertClusterStatus(t, cl, "unstable", nil, notOffline(), unhealthy())
 		assertClusterStatus(t, cl, "not-found", nil, offline())
 		assertClusterStatus(t, cl, "stable", nodes, healthy())
@@ -87,10 +86,9 @@ func TestClusterHealthChecks(t *testing.T) {
 		defer resetCache()
 
 		// when
-		err := updateClusterStatuses("test-namespace", cl)
+		updateClusterStatuses("test-namespace", cl)
 
 		// then
-		require.NoError(t, err)
 		assertClusterStatus(t, cl, "unstable", nil, notOffline(), unhealthy())
 		assertClusterStatus(t, cl, "not-found", nil, offline())
 		assertClusterStatus(t, cl, "stable", nodes, healthy())
@@ -104,10 +102,9 @@ func TestClusterHealthChecks(t *testing.T) {
 		defer resetCache()
 
 		// when
-		err := updateClusterStatuses("test-namespace", cl)
+		updateClusterStatuses("test-namespace", cl)
 
 		// then
-		require.NoError(t, err)
 		assertClusterStatus(t, cl, "stable", nodes, healthy())
 	})
 
@@ -117,10 +114,9 @@ func TestClusterHealthChecks(t *testing.T) {
 		cl := test.NewFakeClient(t, stable, sec)
 
 		// when
-		err := updateClusterStatuses("test-namespace", cl)
+		updateClusterStatuses("test-namespace", cl)
 
 		// then
-		require.NoError(t, err)
 		assertClusterStatus(t, cl, "failing", nil, offline())
 	})
 }

@@ -8,14 +8,13 @@ import (
 
 	"github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubeclientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -31,10 +30,9 @@ const (
 )
 
 func StartHealthChecks(mgr manager.Manager, namespace string, stopChan <-chan struct{}, period time.Duration) {
+	logger.Info("starting health checks", "period", period)
 	go wait.Until(func() {
-		if err := updateClusterStatuses(namespace, mgr.GetClient()); err != nil {
-			logger.Error(err, "error monitoring status of toolchain clusters")
-		}
+		updateClusterStatuses(namespace, mgr.GetClient())
 	}, period, stopChan)
 }
 
@@ -42,31 +40,38 @@ type HealthChecker struct {
 	localClusterClient     client.Client
 	remoteClusterClient    client.Client
 	remoteClusterClientset *kubeclientset.Clientset
+	logger                 logr.Logger
 }
 
 // updateClusterStatuses checks cluster health and updates status of all ToolchainClusters
-func updateClusterStatuses(namespace string, cl client.Client) error {
+func updateClusterStatuses(namespace string, cl client.Client) {
 	clusters := &v1alpha1.ToolchainClusterList{}
 	err := cl.List(context.TODO(), clusters, client.InNamespace(namespace))
 	if err != nil {
-		return err
+		logger.Error(err, "unable to list existing ToolchainClusters")
+		return
+	}
+	if len(clusters.Items) == 0 {
+		logger.Error(err, "no ToolchainCluster found")
 	}
 
 	for _, obj := range clusters.Items {
 		clusterObj := obj.DeepCopy()
+		clusterLogger := logger.WithValues("cluster-name", clusterObj.Name)
+
 		cachedCluster, ok := cluster.GetCachedToolchainCluster(clusterObj.Name)
 		if !ok {
-			logger.Error(fmt.Errorf("cluster %s not found in cache", clusterObj.Name), "failed to retrieve stored data for cluster")
+			clusterLogger.Error(fmt.Errorf("cluster %s not found in cache", clusterObj.Name), "failed to retrieve stored data for cluster")
 			clusterObj.Status.Conditions = []v1alpha1.ToolchainClusterCondition{clusterOfflineCondition()}
 			if err := cl.Status().Update(context.TODO(), clusterObj); err != nil {
-				return errors.Wrapf(err, "Failed to update the status of cluster %s", clusterObj.Name)
+				clusterLogger.Error(err, "failed to update the status of ToolchainCluster")
 			}
 			continue
 		}
 
 		clientSet, err := kubeclientset.NewForConfig(cachedCluster.Config)
 		if err != nil {
-			logger.Error(err, "cannot create ClientSet", "cluster", clusterObj.Name)
+			clusterLogger.Error(err, "cannot create ClientSet for a ToolchainCluster")
 			continue
 		}
 
@@ -74,13 +79,13 @@ func updateClusterStatuses(namespace string, cl client.Client) error {
 			localClusterClient:     cl,
 			remoteClusterClient:    cachedCluster.Client,
 			remoteClusterClientset: clientSet,
+			logger:                 clusterLogger,
 		}
+		clusterLogger.Info("getting the current state of ToolchainCluster")
 		if err := healthChecker.updateIndividualClusterStatus(clusterObj); err != nil {
-			logger.Error(err, "unable to update cluster status", "toolchainCluster", clusterObj.Name)
+			clusterLogger.Error(err, "unable to update cluster status of ToolchainCluster")
 		}
 	}
-
-	return nil
 }
 
 func (hc *HealthChecker) updateIndividualClusterStatus(toolchainCluster *v1alpha1.ToolchainCluster) error {
@@ -111,7 +116,7 @@ func (hc *HealthChecker) updateClusterZonesAndRegion(currentClusterStatus *v1alp
 
 	zones, region, err := hc.getClusterZones()
 	if err != nil {
-		logger.Error(err, "Failed to get zones and region for the cluster")
+		hc.logger.Error(err, "Failed to get zones and region for the cluster")
 		return currentClusterStatus
 	}
 
@@ -133,7 +138,7 @@ func (hc *HealthChecker) getClusterHealthStatus(clusterName string) *v1alpha1.To
 	clusterStatus := v1alpha1.ToolchainClusterStatus{}
 	body, err := hc.remoteClusterClientset.DiscoveryClient.RESTClient().Get().AbsPath("/healthz").Do().Raw()
 	if err != nil {
-		runtime.HandleError(errors.Wrapf(err, "Failed to do cluster health check for cluster %q", clusterName))
+		hc.logger.Error(err, "Failed to do cluster health check for a ToolchainCluster")
 		clusterStatus.Conditions = append(clusterStatus.Conditions, clusterOfflineCondition())
 	} else {
 		if !strings.EqualFold(string(body), "ok") {
@@ -199,7 +204,6 @@ func (hc *HealthChecker) getClusterZones() ([]string, string, error) {
 	nodes := &corev1.NodeList{}
 	err := hc.remoteClusterClient.List(context.TODO(), nodes)
 	if err != nil {
-		klog.Errorf("Failed to list nodes while getting zone names: %v", err)
 		return nil, "", err
 	}
 
