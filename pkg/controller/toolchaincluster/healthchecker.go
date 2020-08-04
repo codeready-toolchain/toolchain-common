@@ -52,7 +52,7 @@ func updateClusterStatuses(namespace string, cl client.Client) {
 		return
 	}
 	if len(clusters.Items) == 0 {
-		logger.Error(err, "no ToolchainCluster found")
+		logger.Info("no ToolchainCluster found")
 	}
 
 	for _, obj := range clusters.Items {
