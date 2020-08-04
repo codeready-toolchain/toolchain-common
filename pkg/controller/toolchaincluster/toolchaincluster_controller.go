@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -51,7 +50,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource ToolchainCluster
-	return c.Watch(&source.Kind{Type: &toolchainv1alpha1.ToolchainCluster{}}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{})
+	return c.Watch(&source.Kind{Type: &toolchainv1alpha1.ToolchainCluster{}}, &handler.EnqueueRequestForObject{})
 }
 
 // blank assignment to verify that ReconcileToolchainCluster implements reconcile.Reconciler
