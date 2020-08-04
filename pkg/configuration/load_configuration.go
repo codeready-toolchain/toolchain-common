@@ -14,16 +14,15 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-// LoadFromSecret retrieves an operator secret and sets a map
-// in order to override default configurations.
-// If no secret is found, then configuration will use defaults.
-// Returns error if WATCH_NAMESPACE is not set, if the resource GET request failed
-// (for other reasons apart from isNotFound) and if setting env vars fails.
+// LoadFromSecret retrieves an operator secret, loads all keys and values from the secret
+// and stores them in a map. This map is then returned by the function.
+// The function doesn't take into account any default values - this has to be
+// handled while getting the values in the configuration object.
 //
 // resourceKey: is the env var which contains the secret resource name.
 // cl: is the client that should be used to retrieve the secret.
-func LoadFromSecret(resourceKey string, cl client.Client) (map[string][]byte, error) {
-	var secretData = make(map[string][]byte)
+func LoadFromSecret(resourceKey string, cl client.Client) (map[string]string, error) {
+	var secretData = make(map[string]string)
 
 	// get the secret name
 	secretName := getResourceName(resourceKey)
@@ -47,7 +46,11 @@ func LoadFromSecret(resourceKey string, cl client.Client) (map[string][]byte, er
 		logf.Log.Info("secret is not found")
 	}
 
-	return secret.Data, nil
+	for key, value := range secret.Data {
+		secretData[key] = string(value)
+	}
+
+	return secretData, nil
 }
 
 // LoadFromConfigMap retrieves the host operator configmap and sets environment

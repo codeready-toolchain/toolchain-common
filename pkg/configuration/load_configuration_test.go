@@ -172,7 +172,7 @@ func TestLoadFromSecret(t *testing.T) {
 
 		// test env vars are parsed and created correctly
 		assert.Equal(t, 1, len(secretData))
-		assert.Equal(t, "test-value", string(secretData["test.key"]))
+		assert.Equal(t, "test-value", secretData["test.key"])
 	})
 }
 
