@@ -1,7 +1,7 @@
 module github.com/codeready-toolchain/toolchain-common
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20200723153455-d67a817098f1
+	github.com/codeready-toolchain/api v0.0.0-20200805071634-c62858ce3204
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
@@ -33,8 +33,6 @@ require (
 	sigs.k8s.io/controller-runtime v0.5.2
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
-
-replace github.com/codeready-toolchain/api => github.com/MatousJobanek/api v0.0.0-20200803150704-20052fba4e3f
 
 replace (
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20200414152312-3e8f22fb0b56 // Using 'github.com/openshift/api@release-4.4'
