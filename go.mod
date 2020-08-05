@@ -1,7 +1,7 @@
 module github.com/codeready-toolchain/toolchain-common
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20200723153455-d67a817098f1
+	github.com/codeready-toolchain/api v0.0.0-20200805071634-c62858ce3204
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
@@ -26,13 +26,11 @@ require (
 	gopkg.in/square/go-jose.v2 v2.3.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.17.4
-	k8s.io/apiextensions-apiserver v0.17.4
 	k8s.io/apimachinery v0.17.4
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kube-openapi v0.0.0-20200427153329-656914f816f9 // indirect
 	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66 // indirect
 	sigs.k8s.io/controller-runtime v0.5.2
-	sigs.k8s.io/kubefed v0.3.0
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
