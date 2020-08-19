@@ -266,12 +266,6 @@ func TestProcessAndApply(t *testing.T) {
 	t.Run("should update existing role binding", func(t *testing.T) {
 		// given
 		cl := NewFakeClient(t)
-		cl.MockCreate = func(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
-			meta, err := meta.Accessor(obj)
-			require.NoError(t, err)
-			meta.SetResourceVersion("1")
-			return cl.Client.Create(ctx, obj, opts...)
-		}
 		cl.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
 			meta, err := meta.Accessor(obj)
 			require.NoError(t, err)

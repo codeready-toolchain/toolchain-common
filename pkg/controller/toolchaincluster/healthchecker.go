@@ -136,7 +136,7 @@ func (hc *HealthChecker) updateClusterZonesAndRegion(currentClusterStatus *v1alp
 // getClusterHealthStatus gets the kubernetes cluster health status by requesting "/healthz"
 func (hc *HealthChecker) getClusterHealthStatus(clusterName string) *v1alpha1.ToolchainClusterStatus {
 	clusterStatus := v1alpha1.ToolchainClusterStatus{}
-	body, err := hc.remoteClusterClientset.DiscoveryClient.RESTClient().Get().AbsPath("/healthz").Do().Raw()
+	body, err := hc.remoteClusterClientset.DiscoveryClient.RESTClient().Get().AbsPath("/healthz").Do(context.TODO()).Raw()
 	if err != nil {
 		hc.logger.Error(err, "Failed to do cluster health check for a ToolchainCluster")
 		clusterStatus.Conditions = append(clusterStatus.Conditions, clusterOfflineCondition())

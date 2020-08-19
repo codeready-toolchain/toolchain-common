@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	errs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -154,6 +154,7 @@ func TestNewClient(t *testing.T) {
 			created, retrieved := createAndGetDeployment(t, fclient)
 			dep2 := retrieved.DeepCopy()
 			dep2.Name = dep2.Name + "-2"
+			dep2.ResourceVersion = "" // resourceVersion can not be set for Create requests
 			assert.NoError(t, fclient.Create(context.TODO(), dep2))
 
 			assert.NoError(t, fclient.DeleteAllOf(context.TODO(), retrieved, client.InNamespace("somenamespace"), client.MatchingLabels(retrieved.ObjectMeta.Labels)))

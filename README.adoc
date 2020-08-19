@@ -8,7 +8,7 @@ This repo is for controllers, libs, scripts, make files, etc to be shared betwee
 
 == Build
 
-Requires Go version 1.13 - download for your development environment https://golang.org/dl/[here].
+Requires Go version 1.15 - download for your development environment https://golang.org/dl/[here].
 
 This repository uses https://github.com/golang/go/wiki/Modules[Go modules]. You may need to `export GO111MODULE=on` to turn modules support "on".
 
