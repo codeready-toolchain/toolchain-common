@@ -49,3 +49,11 @@ func DisabledUa(disabled bool) UaModifier {
 		ua.Spec.Disabled = disabled
 	}
 }
+
+// DeletedUa creates a UaModifier to set the deletion timestamp on the UserAccount
+func DeletedUa() UaModifier {
+	return func(ua *toolchainv1alpha1.UserAccount) {
+		now := metav1.Now()
+		ua.DeletionTimestamp = &now
+	}
+}
