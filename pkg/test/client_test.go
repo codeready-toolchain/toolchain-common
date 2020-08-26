@@ -154,6 +154,7 @@ func TestNewClient(t *testing.T) {
 			created, retrieved := createAndGetDeployment(t, fclient)
 			dep2 := retrieved.DeepCopy()
 			dep2.Name = dep2.Name + "-2"
+			dep2.ResourceVersion = ""
 			assert.NoError(t, fclient.Create(context.TODO(), dep2))
 
 			assert.NoError(t, fclient.DeleteAllOf(context.TODO(), retrieved, client.InNamespace("somenamespace"), client.MatchingLabels(retrieved.ObjectMeta.Labels)))
