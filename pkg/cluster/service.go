@@ -66,7 +66,7 @@ func (s *ToolchainClusterService) AddOrUpdateToolchainCluster(cluster *v1alpha1.
 
 func (s *ToolchainClusterService) addToolchainCluster(toolchainCluster *v1alpha1.ToolchainCluster) error {
 	// create the restclient of toolchainCluster
-	clusterConfig, err := s.buildClusterConfig(toolchainCluster, toolchainCluster.Namespace)
+	clusterConfig, err := NewClusterConfig(s.client, toolchainCluster, s.timeout)
 	if err != nil {
 		return errors.Wrap(err, "cannot create ToolchainCluster Config")
 	}
@@ -134,7 +134,8 @@ func (s *ToolchainClusterService) enrichLogger(cluster *v1alpha1.ToolchainCluste
 		WithValues("Request.Namespace", cluster.Namespace, "Request.Name", cluster.Name)
 }
 
-func (s *ToolchainClusterService) buildClusterConfig(toolchainCluster *v1alpha1.ToolchainCluster, toolchainNamespace string) (*rest.Config, error) {
+// NewClusterConfig generate a new cluster config by fetching the necessary info the given ToolchainCluster's associated Secret
+func NewClusterConfig(cl client.Client, toolchainCluster *v1alpha1.ToolchainCluster, timeout time.Duration) (*rest.Config, error) {
 	clusterName := toolchainCluster.Name
 
 	apiEndpoint := toolchainCluster.Spec.APIEndpoint
@@ -147,8 +148,11 @@ func (s *ToolchainClusterService) buildClusterConfig(toolchainCluster *v1alpha1.
 		return nil, errors.Errorf("cluster %s does not have a secret name", clusterName)
 	}
 	secret := &v1.Secret{}
-	name := types.NamespacedName{Namespace: toolchainNamespace, Name: secretName}
-	err := s.client.Get(context.TODO(), name, secret)
+	name := types.NamespacedName{
+		Namespace: toolchainCluster.Namespace,
+		Name:      secretName,
+	}
+	err := cl.Get(context.TODO(), name, secret)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to get secret %s for cluster %s", name, clusterName)
 	}
@@ -171,7 +175,7 @@ func (s *ToolchainClusterService) buildClusterConfig(toolchainCluster *v1alpha1.
 	clusterConfig.BearerToken = string(token)
 	clusterConfig.QPS = toolchainAPIQPS
 	clusterConfig.Burst = toolchainAPIBurst
-	clusterConfig.Timeout = s.timeout
+	clusterConfig.Timeout = timeout
 
 	return clusterConfig, nil
 }
