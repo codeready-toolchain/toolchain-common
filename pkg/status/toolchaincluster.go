@@ -6,8 +6,7 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
-
-	errs "github.com/pkg/errors"
+	"github.com/go-logr/logr"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,7 +25,7 @@ type ToolchainClusterAttributes struct {
 }
 
 // GetToolchainClusterConditions uses the provided ToolchainCluster attributes to determine status conditions
-func GetToolchainClusterConditions(attrs ToolchainClusterAttributes) []toolchainv1alpha1.Condition {
+func GetToolchainClusterConditions(logger logr.Logger, attrs ToolchainClusterAttributes) []toolchainv1alpha1.Condition {
 	// look up cluster connection status
 	toolchainCluster, ok := attrs.GetClusterFunc()
 	if !ok {
@@ -56,21 +55,13 @@ func GetToolchainClusterConditions(attrs ToolchainClusterAttributes) []toolchain
 		lastProbeNotFoundMsg := "the time of the last probe could not be determined"
 		return []toolchainv1alpha1.Condition{*NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusClusterConnectionNotReadyReason, lastProbeNotFoundMsg)}
 	}
-
-	// check that the last probe time is within limits. It should be less than (period + timeout) * threshold
-	totalf := attrs.Period.Seconds() + attrs.Timeout.Seconds()
-	maxDuration, err := time.ParseDuration(fmt.Sprintf("%fs", totalf))
-	if err != nil {
-		invalidLastProbeMsg := "the maximum duration since the last probe could not be determined - check the configured values for the ToolchainCluster health check period, timeout and failure threshold"
-		wrappedErr := errs.Wrap(err, invalidLastProbeMsg)
-		return []toolchainv1alpha1.Condition{*NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusClusterConnectionNotReadyReason, wrappedErr.Error())}
-	}
-
-	lastProbedTimePlusMaxDuration := lastProbeTime.Add(maxDuration)
-	currentTime := time.Now()
-	if currentTime.After(lastProbedTimePlusMaxDuration) {
-		errMsg := fmt.Sprintf("%s: %s", ErrMsgClusterConnectionLastProbeTimeExceeded, maxDuration.String())
-		return []toolchainv1alpha1.Condition{*NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusClusterConnectionLastProbeTimeExceededReason, errMsg)}
+	maxDuration := attrs.Period + attrs.Timeout
+	// check that the last probe time is within limits. It should be less than period + timeout
+	timeSinceLastProbe := time.Since(lastProbeTime.Time)
+	if timeSinceLastProbe > maxDuration {
+		err := fmt.Errorf("%s: %s", ErrMsgClusterConnectionLastProbeTimeExceeded, maxDuration.String())
+		logger.Error(err, fmt.Sprintf("the last probe happend before: %s, see: %+v", timeSinceLastProbe.String(), toolchainCluster.ClusterStatus))
+		return []toolchainv1alpha1.Condition{*NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusClusterConnectionLastProbeTimeExceededReason, err.Error())}
 	}
 	return []toolchainv1alpha1.Condition{*NewComponentReadyCondition(toolchainv1alpha1.ToolchainStatusClusterConnectionReadyReason)}
 }

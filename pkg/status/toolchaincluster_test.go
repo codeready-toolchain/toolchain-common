@@ -11,12 +11,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var fakeToolchainClusterReason = "AToolchainClusterReason"
 var fakeToolchainClusterMsg = "AToolchainClusterMsg"
 
+var log = logf.Log.WithName("toolchaincluster_test")
+
 func TestGetToolchainClusterConditions(t *testing.T) {
+	logf.SetLogger(logf.ZapLogger(true))
 	t.Run("test ToolchainCluster conditions", func(t *testing.T) {
 		t.Run("condition ready", func(t *testing.T) {
 			// given
@@ -33,7 +37,7 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			}
 
 			// when
-			conditions := GetToolchainClusterConditions(readyAttrs)
+			conditions := GetToolchainClusterConditions(log, readyAttrs)
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
@@ -57,7 +61,7 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			}
 
 			// when
-			conditions := GetToolchainClusterConditions(readyAttrs)
+			conditions := GetToolchainClusterConditions(log, readyAttrs)
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
@@ -81,7 +85,7 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			}
 
 			// when
-			conditions := GetToolchainClusterConditions(readyAttrs)
+			conditions := GetToolchainClusterConditions(log, readyAttrs)
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
@@ -106,7 +110,7 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			}
 
 			// when
-			conditions := GetToolchainClusterConditions(readyAttrs)
+			conditions := GetToolchainClusterConditions(log, readyAttrs)
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
@@ -131,7 +135,7 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			}
 
 			// when
-			conditions := GetToolchainClusterConditions(readyAttrs)
+			conditions := GetToolchainClusterConditions(log, readyAttrs)
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
@@ -156,7 +160,7 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			}
 
 			// when
-			conditions := GetToolchainClusterConditions(readyAttrs)
+			conditions := GetToolchainClusterConditions(log, readyAttrs)
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
