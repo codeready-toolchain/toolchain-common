@@ -19,9 +19,10 @@ func AssertHostOperatorStatusMatch(t T, actual toolchainv1alpha1.HostOperatorSta
 }
 
 // AssertMembersMatch asserts that the specified list A of members is equal to specified
-// list B of members ignoring the order of the elements. We can't use assert.ElementsMatch
-// because the LastTransitionTime of the actual conditions can be modified but the conditions
-// still should be treated as matched
+// list B of members ignoring the order of the elements.
+// It compares only the list of conditions and resource usage.
+// We can't use assert.ElementsMatch because the LastTransitionTime of the actual
+// conditions can be modified but the conditions still should be treated as matched
 func AssertMembersMatch(t T, actual []toolchainv1alpha1.Member, expected ...toolchainv1alpha1.Member) {
 	require.Equal(t, len(expected), len(actual))
 	for _, c := range expected {
@@ -30,11 +31,13 @@ func AssertMembersMatch(t T, actual []toolchainv1alpha1.Member, expected ...tool
 }
 
 // AssertContainsMember asserts that the specified list of members contains the specified member.
+// It compares only the list of conditions and resource usage.
 // LastTransitionTime is ignored.
 func AssertContainsMember(t T, members []toolchainv1alpha1.Member, contains toolchainv1alpha1.Member) {
 	for _, c := range members {
 		if c.ClusterName == contains.ClusterName {
 			AssertConditionsMatch(t, c.MemberStatus.Conditions, contains.MemberStatus.Conditions...)
+			assert.Equal(t, contains.MemberStatus.ResourceUsage, c.MemberStatus.ResourceUsage)
 			return
 		}
 	}
