@@ -208,34 +208,10 @@ func TestGetClustersByType(t *testing.T) {
 		clusterCache.addCachedToolchainCluster(member2)
 		member3 := newTestCachedToolchainCluster(t, "cluster-3", Member, notReady)
 		clusterCache.addCachedToolchainCluster(member3)
-		member4 := newTestCachedToolchainCluster(t, "cluster-4", Member, ready, capacityExhausted)
-		clusterCache.addCachedToolchainCluster(member4)
 
 		t.Run("get only ready member clusters", func(t *testing.T) {
 			//when
 			clusters := GetMemberClusters(Ready)
-
-			//then
-			assert.Len(t, clusters, 3)
-			assert.Contains(t, clusters, member1)
-			assert.Contains(t, clusters, member2)
-			assert.Contains(t, clusters, member4)
-		})
-
-		t.Run("get only member clusters with free capacity", func(t *testing.T) {
-			//when
-			clusters := GetMemberClusters(CapacityNotExhausted)
-
-			//then
-			assert.Len(t, clusters, 3)
-			assert.Contains(t, clusters, member1)
-			assert.Contains(t, clusters, member2)
-			assert.Contains(t, clusters, member3)
-		})
-
-		t.Run("get only ready member clusters that have free capacity", func(t *testing.T) {
-			//when
-			clusters := GetMemberClusters(Ready, CapacityNotExhausted)
 
 			//then
 			assert.Len(t, clusters, 2)
@@ -461,11 +437,6 @@ var notReady clusterOption = func(c *CachedToolchainCluster) {
 	})
 }
 
-// capacityExhausted an option to state that the cluster capacity has exhausted
-var capacityExhausted clusterOption = func(c *CachedToolchainCluster) {
-	c.CapacityExhausted = true
-}
-
 func newTestCachedToolchainCluster(t *testing.T, name string, clusterType Type, options ...clusterOption) *CachedToolchainCluster {
 	cl := test.NewFakeClient(t)
 	cachedCluster := &CachedToolchainCluster{
@@ -473,7 +444,6 @@ func newTestCachedToolchainCluster(t *testing.T, name string, clusterType Type, 
 		Client:            cl,
 		OperatorNamespace: name + "Namespace",
 		Type:              clusterType,
-		CapacityExhausted: false,
 		ClusterStatus:     &v1alpha1.ToolchainClusterStatus{},
 	}
 	for _, configure := range options {

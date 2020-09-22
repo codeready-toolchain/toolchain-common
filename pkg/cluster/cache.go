@@ -38,9 +38,6 @@ type CachedToolchainCluster struct {
 	// then the OwnerClusterName has a name of the member - it has to be same name as the name
 	// that is used for identifying the member in a Host cluster
 	OwnerClusterName string
-	// CapacityExhausted a flag to indicate that the cluster capacity has exhausted
-	// and it cannot be used to provision new user accounts.
-	CapacityExhausted bool
 }
 
 func (c *toolchainClusterClients) addCachedToolchainCluster(cluster *CachedToolchainCluster) {
@@ -74,11 +71,6 @@ type Condition func(cluster *CachedToolchainCluster) bool
 // Ready checks that the cluster is in a 'Ready' status condition
 var Ready Condition = func(cluster *CachedToolchainCluster) bool {
 	return IsReady(cluster.ClusterStatus)
-}
-
-// CapacityNotExhausted checks that the cluster capacity has not exhausted
-var CapacityNotExhausted Condition = func(cluster *CachedToolchainCluster) bool {
-	return !cluster.CapacityExhausted
 }
 
 func (c *toolchainClusterClients) getCachedToolchainClustersByType(clusterType Type, conditions ...Condition) []*CachedToolchainCluster {

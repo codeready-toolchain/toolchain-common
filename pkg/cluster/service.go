@@ -3,7 +3,6 @@ package cluster
 import (
 	"context"
 	"encoding/base64"
-	"strconv"
 	"time"
 
 	"github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
@@ -17,10 +16,9 @@ import (
 )
 
 const (
-	labelType              = "type"
-	labelNamespace         = "namespace"
-	labelOwnerClusterName  = "ownerClusterName"
-	labelCapacityExhausted = "toolchain.dev.openshift.com/capacity-exhausted"
+	labelType             = "type"
+	labelNamespace        = "namespace"
+	labelOwnerClusterName = "ownerClusterName"
 
 	defaultHostOperatorNamespace   = "toolchain-host-operator"
 	defaultMemberOperatorNamespace = "toolchain-member-operator"
@@ -75,13 +73,6 @@ func (s *ToolchainClusterService) addToolchainCluster(toolchainCluster *v1alpha1
 		return errors.Wrap(err, "cannot create ToolchainCluster client")
 	}
 
-	capacityExhausted := false
-	if c, exists := toolchainCluster.Labels[labelCapacityExhausted]; exists {
-		capacityExhausted, err = strconv.ParseBool(c)
-		if err != nil {
-			return errors.Wrap(err, "cannot create ToolchainCluster client")
-		}
-	}
 	cluster := &CachedToolchainCluster{
 		Name:              toolchainCluster.Name,
 		APIEndpoint:       toolchainCluster.Spec.APIEndpoint,
@@ -91,7 +82,6 @@ func (s *ToolchainClusterService) addToolchainCluster(toolchainCluster *v1alpha1
 		Type:              Type(toolchainCluster.Labels[labelType]),
 		OperatorNamespace: toolchainCluster.Labels[labelNamespace],
 		OwnerClusterName:  toolchainCluster.Labels[labelOwnerClusterName],
-		CapacityExhausted: capacityExhausted,
 	}
 	if cluster.Type == "" {
 		cluster.Type = Member
