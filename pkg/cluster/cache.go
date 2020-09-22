@@ -84,19 +84,22 @@ var CapacityNotExhausted Condition = func(cluster *CachedToolchainCluster) bool 
 func (c *toolchainClusterClients) getCachedToolchainClustersByType(clusterType Type, conditions ...Condition) []*CachedToolchainCluster {
 	c.RLock()
 	defer c.RUnlock()
-	clusters := make([]*CachedToolchainCluster, 0, len(c.clusters))
+	return Filter(clusterType, c.clusters, conditions...)
+}
+func Filter(clusterType Type, clusters map[string]*CachedToolchainCluster, conditions ...Condition) []*CachedToolchainCluster {
+	filteredClusters := make([]*CachedToolchainCluster, 0, len(clusters))
 clusters:
-	for _, cluster := range c.clusters {
+	for _, cluster := range clusters {
 		if cluster.Type == clusterType {
 			for _, match := range conditions {
 				if !match(cluster) {
 					continue clusters
 				}
 			}
-			clusters = append(clusters, cluster)
+			filteredClusters = append(filteredClusters, cluster)
 		}
 	}
-	return clusters
+	return filteredClusters
 }
 
 // GetCachedToolchainCluster returns a kube client for the cluster (with the given name) and info if the client exists
