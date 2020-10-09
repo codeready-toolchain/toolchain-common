@@ -32,6 +32,49 @@ login_to_cluster() {
     fi
 }
 
+create_service_account() {
+ROLE_NAME=`oc get Roles -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
+echo "using Role ${ROLE_NAME}"
+CLUSTER_ROLE_NAME=`oc get ClusterRoles -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
+echo "using ClusterRole ${CLUSTER_ROLE_NAME}"
+cat <<EOF | oc apply -f -
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ${SA_NAME}
+  namespace: ${OPERATOR_NS}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ${SA_NAME}
+  namespace: ${OPERATOR_NS}
+subjects:
+- kind: ServiceAccount
+  name: ${SA_NAME}
+  namespace: ${OPERATOR_NS}
+roleRef:
+  kind: Role
+  name: ${ROLE_NAME}
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ${SA_NAME}
+  namespace: ${OPERATOR_NS}
+subjects:
+- kind: ServiceAccount
+  name: ${SA_NAME}
+  namespace: ${OPERATOR_NS}
+roleRef:
+  kind: ClusterRole
+  name: ${CLUSTER_ROLE_NAME}
+  apiGroup: rbac.authorization.k8s.io
+EOF
+}
+
 if [[ $# -lt 2 ]]
 then
     user_help
@@ -92,12 +135,14 @@ if [[ ${OPERATOR_NS} == "" &&  ${CLUSTER_JOIN_TO_OPERATOR_NS} == "" ]]; then
   CLUSTER_JOIN_TO_OPERATOR_NS=toolchain-${CLUSTER_JOIN_TO}-operator
 fi
 
-SA_NAME=${JOINING_CLUSTER_TYPE}"-operator"
+SA_NAME="toolchaincluster-${JOINING_CLUSTER_TYPE}-operator"
 
 echo ${OPERATOR_NS}
 echo ${CLUSTER_JOIN_TO_OPERATOR_NS}
 
 login_to_cluster ${JOINING_CLUSTER_TYPE}
+
+create_service_account
 
 echo "Getting ${JOINING_CLUSTER_TYPE} SA token"
 SA_SECRET=`oc get sa ${SA_NAME} -n ${OPERATOR_NS} -o json | jq -r .secrets[].name | grep token`
@@ -145,7 +190,7 @@ spec:
   apiEndpoint: ${API_ENDPOINT}
   caBundle: ${SA_CA_CRT}
   secretRef:
-    name: ${SA_NAME}-${JOINING_CLUSTER_NAME}
+    name: ${SECRET_NAME}
 "
 
 echo "Creating ToolchainCluster representation of ${JOINING_CLUSTER_TYPE} in ${CLUSTER_JOIN_TO}:"
