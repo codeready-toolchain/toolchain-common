@@ -33,10 +33,6 @@ login_to_cluster() {
 }
 
 create_service_account() {
-ROLE_NAME=`oc get Roles -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
-echo "using Role ${ROLE_NAME}"
-CLUSTER_ROLE_NAME=`oc get ClusterRoles -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
-echo "using ClusterRole ${CLUSTER_ROLE_NAME}"
 cat <<EOF | oc apply -f -
 ---
 apiVersion: v1
@@ -44,6 +40,19 @@ kind: ServiceAccount
 metadata:
   name: ${SA_NAME}
   namespace: ${OPERATOR_NS}
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ${SA_NAME}
+  namespace: ${OPERATOR_NS}
+rules:
+- apiGroups:
+  - toolchain.dev.openshift.com
+  resources:
+  - "*"
+  verbs:
+  - "*"
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -53,24 +62,9 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: ${SA_NAME}
-  namespace: ${OPERATOR_NS}
 roleRef:
   kind: Role
-  name: ${ROLE_NAME}
-  apiGroup: rbac.authorization.k8s.io
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
   name: ${SA_NAME}
-  namespace: ${OPERATOR_NS}
-subjects:
-- kind: ServiceAccount
-  name: ${SA_NAME}
-  namespace: ${OPERATOR_NS}
-roleRef:
-  kind: ClusterRole
-  name: ${CLUSTER_ROLE_NAME}
   apiGroup: rbac.authorization.k8s.io
 EOF
 }
