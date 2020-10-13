@@ -94,8 +94,18 @@ EOF
 
 create_service_account_e2e() {
 ROLE_NAME=`oc get Roles -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
+if [[ -z ${ROLE_NAME} ]]; then
+    echo "Role that would have a prefix 'toolchain-${JOINING_CLUSTER_TYPE}-operator.v' wasn't found - available roles are:"
+    echo `oc get Roles -n ${OPERATOR_NS}`
+    exit 1
+fi
 echo "using Role ${ROLE_NAME}"
-CLUSTER_ROLE_NAME=`oc get ClusterRoles -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
+CLUSTER_ROLE_NAME=`oc get ClusterRoles -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
+if [[ -z ${CLUSTER_ROLE_NAME} ]]; then
+    echo "ClusterRole that would have a prefix 'toolchain-${JOINING_CLUSTER_TYPE}-operator.v' wasn't found - available ClusterRoles are:"
+    echo `oc get ClusterRoles`
+    exit 1
+fi
 echo "using ClusterRole ${CLUSTER_ROLE_NAME}"
 cat <<EOF | oc apply -f -
 ---
