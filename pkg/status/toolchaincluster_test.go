@@ -11,7 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 var fakeToolchainClusterReason = "AToolchainClusterReason"
@@ -20,7 +21,7 @@ var fakeToolchainClusterMsg = "AToolchainClusterMsg"
 var log = logf.Log.WithName("toolchaincluster_test")
 
 func TestGetToolchainClusterConditions(t *testing.T) {
-	logf.SetLogger(logf.ZapLogger(true))
+	logf.SetLogger(zap.Logger(true))
 	t.Run("test ToolchainCluster conditions", func(t *testing.T) {
 		t.Run("condition ready", func(t *testing.T) {
 			// given

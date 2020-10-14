@@ -217,21 +217,21 @@ func TestNoWatchNamespaceSetWhenLoadingConfigMap(t *testing.T) {
 	})
 }
 
-func createSecret(name, namespace string, data map[string][]byte) *v1.Secret {
+func createSecret(name, namespace string, data map[string][]byte) *v1.Secret { //nolint: unparam
 	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
 			Namespace: namespace,
+			Name:      name,
 		},
 		Data: data,
 	}
 }
 
-func createConfigMap(name, namespace string, data map[string]string) *v1.ConfigMap {
+func createConfigMap(name, namespace string, data map[string]string) *v1.ConfigMap { //nolint: unparam
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
 			Namespace: namespace,
+			Name:      name,
 		},
 		Data: data,
 	}
