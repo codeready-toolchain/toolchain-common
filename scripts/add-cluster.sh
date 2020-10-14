@@ -23,6 +23,9 @@ login_to_cluster() {
 }
 
 create_service_account() {
+# we need to delete the bindings since we cannot change the roleRef of the existing bindings
+oc delete rolebinding ${SA_NAME} -n ${OPERATOR_NS}
+oc delete clusterrolebinding ${SA_NAME}
 cat <<EOF | oc apply -f -
 ---
 apiVersion: v1
