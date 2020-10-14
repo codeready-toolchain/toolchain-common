@@ -2,7 +2,7 @@ package predicate
 
 import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var log = logf.Log.WithName("generation_not_changed_predicate").WithName("eventFilters")

@@ -90,7 +90,7 @@ func updateClusterStatuses(namespace string, cl client.Client) {
 
 func (hc *HealthChecker) updateIndividualClusterStatus(toolchainCluster *v1alpha1.ToolchainCluster) error {
 
-	currentClusterStatus := hc.getClusterHealthStatus(toolchainCluster.Name)
+	currentClusterStatus := hc.getClusterHealthStatus()
 
 	for index, currentCond := range currentClusterStatus.Conditions {
 		for _, previousCond := range toolchainCluster.Status.Conditions {
@@ -134,7 +134,7 @@ func (hc *HealthChecker) updateClusterZonesAndRegion(currentClusterStatus *v1alp
 }
 
 // getClusterHealthStatus gets the kubernetes cluster health status by requesting "/healthz"
-func (hc *HealthChecker) getClusterHealthStatus(clusterName string) *v1alpha1.ToolchainClusterStatus {
+func (hc *HealthChecker) getClusterHealthStatus() *v1alpha1.ToolchainClusterStatus {
 	clusterStatus := v1alpha1.ToolchainClusterStatus{}
 	body, err := hc.remoteClusterClientset.DiscoveryClient.RESTClient().Get().AbsPath("/healthz").Do(context.TODO()).Raw()
 	if err != nil {
