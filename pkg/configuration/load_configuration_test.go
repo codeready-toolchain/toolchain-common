@@ -38,7 +38,7 @@ func TestLoadFromConfigMap(t *testing.T) {
 		data := map[string]string{
 			"super-special-key": "super-special-value",
 		}
-		cl := test.NewFakeClient(t, createConfigMap("toolchain-host-operator", data))
+		cl := test.NewFakeClient(t, createConfigMap("test-config", "toolchain-host-operator", data))
 
 		// when
 		err := LoadFromConfigMap("HOST_OPERATOR", "HOST_OPERATOR_CONFIG_MAP_NAME", cl)
@@ -58,7 +58,7 @@ func TestLoadFromConfigMap(t *testing.T) {
 		data := map[string]string{
 			"test-key-one": "test-value-one",
 		}
-		cl := test.NewFakeClient(t, createConfigMap("toolchain-host-operator", data))
+		cl := test.NewFakeClient(t, createConfigMap("test-config", "toolchain-host-operator", data))
 
 		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 			return errors.New("oopsie woopsie")
@@ -85,7 +85,7 @@ func TestLoadFromConfigMap(t *testing.T) {
 		data := map[string]string{
 			"test-key": "test-value",
 		}
-		cl := test.NewFakeClient(t, createConfigMap("toolchain-member-operator", data))
+		cl := test.NewFakeClient(t, createConfigMap("test-config", "toolchain-member-operator", data))
 
 		// when
 		err := LoadFromConfigMap("MEMBER_OPERATOR", "MEMBER_OPERATOR_CONFIG_MAP_NAME", cl)
@@ -121,7 +121,7 @@ func TestLoadFromSecret(t *testing.T) {
 		data := map[string][]byte{
 			"special.key": []byte("special-value"),
 		}
-		cl := test.NewFakeClient(t, createSecret(data))
+		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		// when
 		secretData, err := LoadFromSecret("HOST_OPERATOR_SECRET_NAME", cl)
@@ -138,7 +138,7 @@ func TestLoadFromSecret(t *testing.T) {
 		data := map[string][]byte{
 			"test.key.secret": []byte("test-value-secret"),
 		}
-		cl := test.NewFakeClient(t, createSecret(data))
+		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 			return errors.New("oopsie woopsie")
@@ -162,7 +162,7 @@ func TestLoadFromSecret(t *testing.T) {
 		data := map[string][]byte{
 			"test.key": []byte("test-value"),
 		}
-		cl := test.NewFakeClient(t, createSecret(data))
+		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		// when
 		secretData, err := LoadFromSecret("HOST_OPERATOR_SECRET_NAME", cl)
@@ -185,7 +185,7 @@ func TestNoWatchNamespaceSetWhenLoadingSecret(t *testing.T) {
 		data := map[string][]byte{
 			"test.key": []byte("test-value"),
 		}
-		cl := test.NewFakeClient(t, createSecret(data))
+		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
 		// when
 		secretData, err := LoadFromSecret("HOST_OPERATOR_SECRET_NAME", cl)
@@ -206,7 +206,7 @@ func TestNoWatchNamespaceSetWhenLoadingConfigMap(t *testing.T) {
 		data := map[string]string{
 			"test-key": "test-value",
 		}
-		cl := test.NewFakeClient(t, createConfigMap("toolchain-host-operator", data))
+		cl := test.NewFakeClient(t, createConfigMap("test-config", "toolchain-host-operator", data))
 
 		// when
 		err := LoadFromConfigMap("HOST_OPERATOR", "HOST_OPERATOR_CONFIG_MAP_NAME", cl)
@@ -217,21 +217,21 @@ func TestNoWatchNamespaceSetWhenLoadingConfigMap(t *testing.T) {
 	})
 }
 
-func createSecret(data map[string][]byte) *v1.Secret {
+func createSecret(name, namespace string, data map[string][]byte) *v1.Secret { //nolint: unparam
 	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "toolchain-host-operator",
-			Name:      "test-secret",
+			Namespace: namespace,
+			Name:      name,
 		},
 		Data: data,
 	}
 }
 
-func createConfigMap(namespace string, data map[string]string) *v1.ConfigMap {
+func createConfigMap(name, namespace string, data map[string]string) *v1.ConfigMap { //nolint: unparam
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      "test-config",
+			Name:      name,
 		},
 		Data: data,
 	}
