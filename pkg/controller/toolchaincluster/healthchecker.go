@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubeclientset "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -100,37 +99,11 @@ func (hc *HealthChecker) updateIndividualClusterStatus(toolchainCluster *v1alpha
 		}
 	}
 
-	currentClusterStatus = hc.updateClusterZonesAndRegion(currentClusterStatus, toolchainCluster)
-
 	toolchainCluster.Status = *currentClusterStatus
 	if err := hc.localClusterClient.Status().Update(context.TODO(), toolchainCluster); err != nil {
 		return errors.Wrapf(err, "Failed to update the status of cluster %s", toolchainCluster.Name)
 	}
 	return nil
-}
-
-func (hc *HealthChecker) updateClusterZonesAndRegion(currentClusterStatus *v1alpha1.ToolchainClusterStatus, toolchainCluster *v1alpha1.ToolchainCluster) *v1alpha1.ToolchainClusterStatus {
-	if !cluster.IsReady(currentClusterStatus) {
-		return currentClusterStatus
-	}
-
-	zones, region, err := hc.getClusterZones()
-	if err != nil {
-		hc.logger.Error(err, "Failed to get zones and region for the cluster")
-		return currentClusterStatus
-	}
-
-	// If new zone & region are empty, preserve the old ones so that user configured zone & region
-	// labels are effective
-	if len(zones) == 0 {
-		zones = toolchainCluster.Status.Zones
-	}
-	if len(region) == 0 && toolchainCluster.Status.Region != nil {
-		region = *toolchainCluster.Status.Region
-	}
-	currentClusterStatus.Zones = zones
-	currentClusterStatus.Region = &region
-	return currentClusterStatus
 }
 
 // getClusterHealthStatus gets the kubernetes cluster health status by requesting "/healthz"
@@ -197,47 +170,4 @@ func clusterNotOfflineCondition() v1alpha1.ToolchainClusterCondition {
 		LastProbeTime:      currentTime,
 		LastTransitionTime: &currentTime,
 	}
-}
-
-// getClusterZones gets the kubernetes cluster zones and region by inspecting labels on nodes in the cluster.
-func (hc *HealthChecker) getClusterZones() ([]string, string, error) {
-	nodes := &corev1.NodeList{}
-	err := hc.remoteClusterClient.List(context.TODO(), nodes)
-	if err != nil {
-		return nil, "", err
-	}
-
-	zones := sets.NewString()
-	region := ""
-	for i, node := range nodes.Items {
-		zone := getZoneNameForNode(node)
-		// region is same for all nodes in the cluster, so just pick the region from first node.
-		if i == 0 {
-			region = getRegionNameForNode(node)
-		}
-		if zone != "" && !zones.Has(zone) {
-			zones.Insert(zone)
-		}
-	}
-	return zones.List(), region, nil
-}
-
-// Find the name of the zone in which a Node is running.
-func getZoneNameForNode(node corev1.Node) string {
-	for key, value := range node.Labels {
-		if key == corev1.LabelZoneFailureDomain {
-			return value
-		}
-	}
-	return ""
-}
-
-// Find the name of the region in which a Node is running.
-func getRegionNameForNode(node corev1.Node) string {
-	for key, value := range node.Labels {
-		if key == corev1.LabelZoneRegion {
-			return value
-		}
-	}
-	return ""
 }
