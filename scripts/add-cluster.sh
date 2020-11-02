@@ -46,26 +46,6 @@ rules:
   - "*"
   verbs:
   - "*"
-- apiGroups:
-  - route.openshift.io
-  resources:
-  - routes
-  verbs:
-  - "get"
-  - "list"
----
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: ${SA_NAME}
-rules:
-- apiGroups:
-  - route.openshift.io
-  resources:
-  - routes
-  verbs:
-  - "get"
-  - "list"
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -77,19 +57,6 @@ subjects:
   name: ${SA_NAME}
 roleRef:
   kind: Role
-  name: ${SA_NAME}
-  apiGroup: rbac.authorization.k8s.io
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: ${SA_NAME}
-subjects:
-- kind: ServiceAccount
-  name: ${SA_NAME}
-  namespace: ${OPERATOR_NS}
-roleRef:
-  kind: ClusterRole
   name: ${SA_NAME}
   apiGroup: rbac.authorization.k8s.io
 EOF
