@@ -10,6 +10,7 @@ user_help () {
     echo "-s,  --single-cluster running both operators on single cluster"
     echo "-kc, --kube-config    kubeconfig for managing multiple clusters"
     echo "-sc, --sandbox-config sandbox config file for managing Dev Sandbox instance"
+    echo "-le, --lets-encrypt   use let's encrypt certificate"
     exit 0
 }
 
@@ -21,17 +22,18 @@ login_to_cluster() {
       elif [[ -n ${KUBECONFIG} ]]; then
         oc config use-context "$1-admin"
       else
-        SERVER_API=`yq -r .$1.serverApi ${SANDBOX_CONFIG}`
-        SA_TOKEN=`yq -r .$1.tokens.registerCluster ${SANDBOX_CONFIG}`
-        OC_ADDITIONAL_PARAMS="--token=${SA_TOKEN} --server=${SERVER_API}"
+        REGISTER_SERVER_API=`yq -r .$1.serverApi ${SANDBOX_CONFIG}`
+        REGISTER_SA_TOKEN=`yq -r .$1.tokens.registerCluster ${SANDBOX_CONFIG}`
+        OC_ADDITIONAL_PARAMS="--token=${REGISTER_SA_TOKEN} --server=${REGISTER_SERVER_API}"
       fi
     fi
 }
 
 create_service_account() {
 # we need to delete the bindings since we cannot change the roleRef of the existing bindings
-oc delete rolebinding ${SA_NAME} -n ${OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}
-oc delete clusterrolebinding ${SA_NAME} ${OC_ADDITIONAL_PARAMS}
+if [[ -n `oc get rolebinding ${SA_NAME} 2>/dev/null` ]]; then
+    oc delete rolebinding ${SA_NAME} -n ${OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}
+fi
 cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
 ---
 apiVersion: v1
@@ -164,6 +166,10 @@ while test $# -gt 0; do
                 SINGLE_CLUSTER=true
                 shift
                 ;;
+            -le|--lets-encrypt)
+                LETS_ENCRYPT=true
+                shift
+                ;;
             *)
                echo "$1 is not a recognized flag!"
                user_help
@@ -173,7 +179,6 @@ while test $# -gt 0; do
 done
 
 CLUSTER_JOIN_TO="host"
-
 
 if [[ -n ${SANDBOX_CONFIG} ]]; then
     HOST_OPERATOR_NS=`yq -r .host.namespace ${SANDBOX_CONFIG}`
@@ -212,14 +217,27 @@ fi
 echo "Getting ${JOINING_CLUSTER_TYPE} SA token"
 SA_SECRET=`oc get sa ${SA_NAME} -n ${OPERATOR_NS} -o json ${OC_ADDITIONAL_PARAMS} | jq -r .secrets[].name | grep token`
 SA_TOKEN=`oc get secret ${SA_SECRET} -n ${OPERATOR_NS}  -o json ${OC_ADDITIONAL_PARAMS} | jq -r '.data["token"]' | base64 --decode`
-SA_CA_CRT=`oc get secret ${SA_SECRET} -n ${OPERATOR_NS} -o json ${OC_ADDITIONAL_PARAMS} | jq -r '.data["ca.crt"]'`
+if [[ ${LETS_ENCRYPT} == "true" ]]; then
+    SA_CA_CRT=`curl https://letsencrypt.org/certs/letsencryptauthorityx3.pem | base64 -w 0`
+else
+    SA_CA_CRT=`oc get secret ${SA_SECRET} -n ${OPERATOR_NS} -o json ${OC_ADDITIONAL_PARAMS} | jq -r '.data["ca.crt"]'`
+fi
 
-API_ENDPOINT=`oc get infrastructure cluster -o jsonpath='{.status.apiServerURL}' ${OC_ADDITIONAL_PARAMS}`
-JOINING_CLUSTER_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}' ${OC_ADDITIONAL_PARAMS}`
+if [[ -n ${SANDBOX_CONFIG} ]]; then
+    API_ENDPOINT=`yq -r .${JOINING_CLUSTER_TYPE}.serverApi ${SANDBOX_CONFIG}`
+    JOINING_CLUSTER_NAME=`yq -r .${JOINING_CLUSTER_TYPE}.serverName ${SANDBOX_CONFIG}`
 
-login_to_cluster ${CLUSTER_JOIN_TO}
+    login_to_cluster ${CLUSTER_JOIN_TO}
 
-CLUSTER_JOIN_TO_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}' ${OC_ADDITIONAL_PARAMS}`
+    CLUSTER_JOIN_TO_NAME=`yq -r .${CLUSTER_JOIN_TO}.serverName ${SANDBOX_CONFIG}`
+else
+    API_ENDPOINT=`oc get infrastructure cluster -o jsonpath='{.status.apiServerURL}' ${OC_ADDITIONAL_PARAMS}`
+    JOINING_CLUSTER_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}' ${OC_ADDITIONAL_PARAMS}`
+
+    login_to_cluster ${CLUSTER_JOIN_TO}
+
+    CLUSTER_JOIN_TO_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}' ${OC_ADDITIONAL_PARAMS}`
+fi
 
 SECRET_NAME=${SA_NAME}-${JOINING_CLUSTER_NAME}
 if [[ -n `oc get secret -n ${CLUSTER_JOIN_TO_OPERATOR_NS} ${OC_ADDITIONAL_PARAMS} | grep ${SECRET_NAME}` ]]; then
