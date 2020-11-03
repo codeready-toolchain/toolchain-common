@@ -8,25 +8,31 @@ user_help () {
     echo "-mn, --member-ns      namespace where member-operator is running"
     echo "-hn, --host-ns        namespace where host-operator is running"
     echo "-s,  --single-cluster running both operators on single cluster"
-    echo "-kc,  --kube-config   kubeconfig for managing multiple clusters"
+    echo "-kc, --kube-config    kubeconfig for managing multiple clusters"
+    echo "-sc, --sandbox-config sandbox config file for managing Dev Sandbox instance"
     exit 0
 }
 
 login_to_cluster() {
     if [[ ${SINGLE_CLUSTER} != "true" ]]; then
-      if [[ -z ${KUBECONFIG} ]]; then
+      if [[ -z ${KUBECONFIG} ]] && [[ -z ${SANDBOX_CONFIG} ]]; then
         echo "Please specify the path to kube config file using the parameter --kube-config"
-      else
+        echo "or specify SA tokens to be used when reaching operators using the parameters --host-token and --member-token"
+      elif [[ -n ${KUBECONFIG} ]]; then
         oc config use-context "$1-admin"
+      else
+        SERVER_API=`yq -r .$1.serverApi ${SANDBOX_CONFIG}`
+        SA_TOKEN=`yq -r .$1.tokens.registerCluster ${SANDBOX_CONFIG}`
+        OC_ADDITIONAL_PARAMS="--token=${SA_TOKEN} --server=${SERVER_API}"
       fi
     fi
 }
 
 create_service_account() {
 # we need to delete the bindings since we cannot change the roleRef of the existing bindings
-oc delete rolebinding ${SA_NAME} -n ${OPERATOR_NS}
-oc delete clusterrolebinding ${SA_NAME}
-cat <<EOF | oc apply -f -
+oc delete rolebinding ${SA_NAME} -n ${OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}
+oc delete clusterrolebinding ${SA_NAME} ${OC_ADDITIONAL_PARAMS}
+cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -63,21 +69,21 @@ EOF
 }
 
 create_service_account_e2e() {
-ROLE_NAME=`oc get Roles -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
+ROLE_NAME=`oc get Roles -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
 if [[ -z ${ROLE_NAME} ]]; then
     echo "Role that would have a prefix 'toolchain-${JOINING_CLUSTER_TYPE}-operator.v' wasn't found - available roles are:"
-    echo `oc get Roles -n ${OPERATOR_NS}`
+    echo `oc get Roles -n ${OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}`
     exit 1
 fi
 echo "using Role ${ROLE_NAME}"
-CLUSTER_ROLE_NAME=`oc get ClusterRoles -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
+CLUSTER_ROLE_NAME=`oc get ClusterRoles -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
 if [[ -z ${CLUSTER_ROLE_NAME} ]]; then
     echo "ClusterRole that would have a prefix 'toolchain-${JOINING_CLUSTER_TYPE}-operator.v' wasn't found - available ClusterRoles are:"
-    echo `oc get ClusterRoles`
+    echo `oc get ClusterRoles ${OC_ADDITIONAL_PARAMS}`
     exit 1
 fi
 echo "using ClusterRole ${CLUSTER_ROLE_NAME}"
-cat <<EOF | oc apply -f -
+cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -149,6 +155,11 @@ while test $# -gt 0; do
                 KUBECONFIG=$1
                 shift
                 ;;
+            -sc|--sandbox-config)
+                shift
+                SANDBOX_CONFIG=$1
+                shift
+                ;;
             -s|--single-cluster)
                 SINGLE_CLUSTER=true
                 shift
@@ -162,6 +173,12 @@ while test $# -gt 0; do
 done
 
 CLUSTER_JOIN_TO="host"
+
+
+if [[ -n ${SANDBOX_CONFIG} ]]; then
+    HOST_OPERATOR_NS=`yq -r .host.namespace ${SANDBOX_CONFIG}`
+    MEMBER_OPERATOR_NS=`yq -r .member.namespace ${SANDBOX_CONFIG}`
+fi
 
 # We need this to configurable to work with dynamic namespaces from end to end tests
 OPERATOR_NS=${MEMBER_OPERATOR_NS}
@@ -193,22 +210,22 @@ else
 fi
 
 echo "Getting ${JOINING_CLUSTER_TYPE} SA token"
-SA_SECRET=`oc get sa ${SA_NAME} -n ${OPERATOR_NS} -o json | jq -r .secrets[].name | grep token`
-SA_TOKEN=`oc get secret ${SA_SECRET} -n ${OPERATOR_NS}  -o json | jq -r '.data["token"]' | base64 --decode`
-SA_CA_CRT=`oc get secret ${SA_SECRET} -n ${OPERATOR_NS} -o json | jq -r '.data["ca.crt"]'`
+SA_SECRET=`oc get sa ${SA_NAME} -n ${OPERATOR_NS} -o json ${OC_ADDITIONAL_PARAMS} | jq -r .secrets[].name | grep token`
+SA_TOKEN=`oc get secret ${SA_SECRET} -n ${OPERATOR_NS}  -o json ${OC_ADDITIONAL_PARAMS} | jq -r '.data["token"]' | base64 --decode`
+SA_CA_CRT=`oc get secret ${SA_SECRET} -n ${OPERATOR_NS} -o json ${OC_ADDITIONAL_PARAMS} | jq -r '.data["ca.crt"]'`
 
-API_ENDPOINT=`oc get infrastructure cluster -o jsonpath='{.status.apiServerURL}'`
-JOINING_CLUSTER_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}'`
+API_ENDPOINT=`oc get infrastructure cluster -o jsonpath='{.status.apiServerURL}' ${OC_ADDITIONAL_PARAMS}`
+JOINING_CLUSTER_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}' ${OC_ADDITIONAL_PARAMS}`
 
 login_to_cluster ${CLUSTER_JOIN_TO}
 
-CLUSTER_JOIN_TO_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}'`
+CLUSTER_JOIN_TO_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}' ${OC_ADDITIONAL_PARAMS}`
 
 SECRET_NAME=${SA_NAME}-${JOINING_CLUSTER_NAME}
-if [[ -n `oc get secret -n ${CLUSTER_JOIN_TO_OPERATOR_NS} | grep ${SECRET_NAME}` ]]; then
-    oc delete secret ${SECRET_NAME} -n ${CLUSTER_JOIN_TO_OPERATOR_NS}
+if [[ -n `oc get secret -n ${CLUSTER_JOIN_TO_OPERATOR_NS} ${OC_ADDITIONAL_PARAMS} | grep ${SECRET_NAME}` ]]; then
+    oc delete secret ${SECRET_NAME} -n ${CLUSTER_JOIN_TO_OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}
 fi
-oc create secret generic ${SECRET_NAME} --from-literal=token="${SA_TOKEN}" --from-literal=ca.crt="${SA_CA_CRT}" -n ${CLUSTER_JOIN_TO_OPERATOR_NS}
+oc create secret generic ${SECRET_NAME} --from-literal=token="${SA_TOKEN}" --from-literal=ca.crt="${SA_CA_CRT}" -n ${CLUSTER_JOIN_TO_OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}
 
 TOOLCHAINCLUSTER_CRD="apiVersion: toolchain.dev.openshift.com/v1alpha1
 kind: ToolchainCluster
@@ -229,6 +246,6 @@ spec:
 echo "Creating ToolchainCluster representation of ${JOINING_CLUSTER_TYPE} in ${CLUSTER_JOIN_TO}:"
 echo ${TOOLCHAINCLUSTER_CRD}
 
-cat <<EOF | oc apply -f -
+cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
 ${TOOLCHAINCLUSTER_CRD}
 EOF
