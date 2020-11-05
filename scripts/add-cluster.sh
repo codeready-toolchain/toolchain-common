@@ -51,7 +51,22 @@ rules:
 - apiGroups:
   - toolchain.dev.openshift.com
   resources:
-  - "*"
+  - "bannedusers"
+  - "changetierrequests"
+  - "hostoperatorconfigs"
+  - "idlers"
+  - "masteruserrecords"
+  - "memberstatuses"
+  - "notifications"
+  - "nstemplatesets"
+  - "nstemplatetiers"
+  - "registrationservices"
+  - "templateupdaterequests"
+  - "tiertemplates"
+  - "toolchainclusters"
+  - "toolchainstatuses"
+  - "useraccounts"
+  - "usersignups"
   verbs:
   - "*"
 ---
