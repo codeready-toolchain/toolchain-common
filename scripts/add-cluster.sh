@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 user_help () {
     echo "Creates ToolchainCluster"
     echo "options:"
@@ -93,7 +95,7 @@ if [[ -z ${ROLE_NAME} ]]; then
     exit 1
 fi
 echo "using Role ${ROLE_NAME}"
-CLUSTER_ROLE_NAME=`oc get ClusterRoles -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
+CLUSTER_ROLE_NAME=`oc get ClusterRoles -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v" -m 1`
 if [[ -z ${CLUSTER_ROLE_NAME} ]]; then
     echo "ClusterRole that would have a prefix 'toolchain-${JOINING_CLUSTER_TYPE}-operator.v' wasn't found - available ClusterRoles are:"
     echo `oc get ClusterRoles ${OC_ADDITIONAL_PARAMS}`
