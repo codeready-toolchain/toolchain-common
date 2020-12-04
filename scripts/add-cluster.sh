@@ -24,7 +24,7 @@ login_to_cluster() {
       elif [[ -n ${KUBECONFIG} ]]; then
         oc config use-context "$1-admin"
       else
-        REGISTER_SERVER_API=`yq -r .$1.serverApi ${SANDBOX_CONFIG}`
+        REGISTER_SERVER_API=`yq -r .$1.serverAPI ${SANDBOX_CONFIG}`
         REGISTER_SA_TOKEN=`yq -r .$1.tokens.registerCluster ${SANDBOX_CONFIG}`
         OC_ADDITIONAL_PARAMS="--token=${REGISTER_SA_TOKEN} --server=${REGISTER_SERVER_API}"
       fi
@@ -241,7 +241,7 @@ else
 fi
 
 if [[ -n ${SANDBOX_CONFIG} ]]; then
-    API_ENDPOINT=`yq -r .${JOINING_CLUSTER_TYPE}.serverApi ${SANDBOX_CONFIG}`
+    API_ENDPOINT=`yq -r .${JOINING_CLUSTER_TYPE}.serverAPI ${SANDBOX_CONFIG}`
     JOINING_CLUSTER_NAME=`yq -r .${JOINING_CLUSTER_TYPE}.serverName ${SANDBOX_CONFIG}`
 
     login_to_cluster ${CLUSTER_JOIN_TO}
