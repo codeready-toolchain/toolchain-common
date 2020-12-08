@@ -25,6 +25,13 @@ func TestAddOrUpdateStatusConditions(t *testing.T) {
 		// then
 		assert.False(t, updated)
 		assert.Equal(t, current, newCs)
+
+		t.Run("with LastUpdatedTime", func(t *testing.T) {
+			//when
+			newCs := condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(current)
+			// then
+			assert.Equal(t, current, newCs)
+		})
 	})
 
 	t.Run("add to empty condition slice", func(t *testing.T) {
@@ -34,6 +41,13 @@ func TestAddOrUpdateStatusConditions(t *testing.T) {
 		// then
 		assert.True(t, updated)
 		test.AssertConditionsMatch(t, result, newConds...)
+
+		t.Run("with LastUpdatedTime", func(t *testing.T) {
+			//when
+			result := condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(existingConditions(0), newConds...)
+			// then
+			test.AssertConditionsMatch(t, result, newConds...)
+		})
 	})
 
 	t.Run("add new conditions", func(t *testing.T) {
@@ -45,11 +59,22 @@ func TestAddOrUpdateStatusConditions(t *testing.T) {
 		// then
 		assert.True(t, updated)
 		test.AssertConditionsMatch(t, result, append(current, newConds...)...)
+
+		t.Run("with LastUpdatedTime", func(t *testing.T) {
+			//when
+			newConds := newConditions(3)
+			result := condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(current, newConds...)
+			// then
+			test.AssertConditionsMatch(t, result, append(current, newConds...)...)
+		})
 	})
 
 	t.Run("update conditions", func(t *testing.T) {
 		// given
 		current := existingConditions(5)
+		for i, _ := range current {
+			current[i].LastUpdatedTime = &current[i].LastTransitionTime
+		}
 		//when
 		newConds := []toolchainv1alpha1.Condition{
 			// Updated message
@@ -95,6 +120,30 @@ func TestAddOrUpdateStatusConditions(t *testing.T) {
 				assert.True(t, c.LastTransitionTime.Before(&result[i].LastTransitionTime))
 			}
 		}
+
+		t.Run("with LastUpdatedTime", func(t *testing.T) {
+			//when
+			result := condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(current, newConds...)
+			// then
+			// all new conditions are modified
+			test.AssertConditionsMatch(t, result, []toolchainv1alpha1.Condition{current[0], newConds[0], newConds[1], newConds[2], newConds[3]}...)
+			// Check the LastTransitionTime. Should be changed in 3rd only where we updated the status.
+			// All current conditions should have LastUpdatedTime changed
+			for i, c := range current {
+				if i != 2 {
+					assert.NotEmpty(t, c.LastTransitionTime)
+					assert.Equal(t, c.LastTransitionTime, result[i].LastTransitionTime)
+				} else {
+					assert.True(t, c.LastTransitionTime.Before(&result[i].LastTransitionTime))
+				}
+			}
+			// Check all new conditions should have LastUpdatedTime changed
+			for i := 1; i < len(result); i++ {
+				require.NotEmpty(t, result[i].LastUpdatedTime)
+				assert.True(t, result[i].LastUpdatedTime.After(current[i].LastUpdatedTime.Time))
+			}
+			assert.False(t, result[0].LastUpdatedTime.After(current[0].LastUpdatedTime.Time)) // The existing not updated condition is not affected
+		})
 	})
 }
 

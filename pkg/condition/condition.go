@@ -12,10 +12,22 @@ import (
 // If the condition is not changed then the same unmodified slice is returned.
 // Also returns a bool flag which indicates if the conditions where updated/added
 func AddOrUpdateStatusConditions(conditions []toolchainv1alpha1.Condition, newConditions ...toolchainv1alpha1.Condition) ([]toolchainv1alpha1.Condition, bool) {
+	return addOrUpdateStatusConditions(conditions, false, newConditions...)
+}
+
+// AddOrUpdateStatusConditionsWithLastUpdatedTimestamp appends the new conditions to the condition slice. If there is already a condition
+// with the same type in the current condition array then the condition is updated in the result slice.
+// The condition's LastUpdatedTime is always updated to the current time even if nothing else is changed.
+func AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(conditions []toolchainv1alpha1.Condition, newConditions ...toolchainv1alpha1.Condition) []toolchainv1alpha1.Condition {
+	cs, _ := addOrUpdateStatusConditions(conditions, true, newConditions...)
+	return cs
+}
+
+func addOrUpdateStatusConditions(conditions []toolchainv1alpha1.Condition, updateLastUpdatedTimestamp bool, newConditions ...toolchainv1alpha1.Condition) ([]toolchainv1alpha1.Condition, bool) {
 	var atLeastOneUpdated bool
 	var updated bool
 	for _, cond := range newConditions {
-		conditions, updated = addOrUpdateStatusCondition(conditions, cond)
+		conditions, updated = addOrUpdateStatusCondition(conditions, cond, updateLastUpdatedTimestamp)
 		atLeastOneUpdated = atLeastOneUpdated || updated
 	}
 
@@ -79,16 +91,21 @@ func Count(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1al
 	return count
 }
 
-func addOrUpdateStatusCondition(conditions []toolchainv1alpha1.Condition, newCondition toolchainv1alpha1.Condition) ([]toolchainv1alpha1.Condition, bool) {
-	newCondition.LastTransitionTime = metav1.Now()
+func addOrUpdateStatusCondition(conditions []toolchainv1alpha1.Condition, newCondition toolchainv1alpha1.Condition, updateLastUpdatedTimestamp bool) ([]toolchainv1alpha1.Condition, bool) {
+	now := metav1.Now()
+	newCondition.LastTransitionTime = now
+	if updateLastUpdatedTimestamp {
+		newCondition.LastUpdatedTime = &now
+	}
 
 	if conditions == nil {
 		return []toolchainv1alpha1.Condition{newCondition}, true
 	} else {
 		for i, cond := range conditions {
 			if cond.Type == newCondition.Type {
-				// Condition already present. Update it if needed.
-				if cond.Status == newCondition.Status &&
+				// Condition already present. Update it if needed. Always update if "updateLastUpdatedTimestamp" is set to true.
+				if !updateLastUpdatedTimestamp &&
+					cond.Status == newCondition.Status &&
 					cond.Reason == newCondition.Reason &&
 					cond.Message == newCondition.Message {
 					// Nothing changed. No need to update.
