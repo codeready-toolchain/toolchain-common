@@ -6,7 +6,6 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
@@ -245,7 +244,6 @@ func (a *Assertion) HasCustomNamespaceTemplate(targetCluster, templateRef, templ
 func (a *Assertion) HasCustomClusterResourcesTemplate(targetCluster, template string) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
-	spew.Dump(a.masterUserRecord.Spec.UserAccounts)
 	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
 		if ua.TargetCluster == targetCluster {
 			require.NotNil(a.t, ua.Spec.NSTemplateSet.ClusterResources)

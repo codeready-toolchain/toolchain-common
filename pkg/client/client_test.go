@@ -2,6 +2,7 @@ package client_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -18,9 +19,10 @@ import (
 	authv1 "github.com/openshift/api/authorization/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -32,11 +34,16 @@ func TestApplySingle(t *testing.T) {
 	s := addToScheme(t)
 
 	defaultService := &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "registration-service",
 			Namespace: "toolchain-host-operator",
 		},
 		Spec: corev1.ServiceSpec{
+			ClusterIP: "10.2.3.4",
 			Selector: map[string]string{
 				"run": "registration-service",
 			},
@@ -59,133 +66,248 @@ func TestApplySingle(t *testing.T) {
 	modifiedCm := defaultCm.DeepCopyObject().(*corev1.ConfigMap)
 	modifiedCm.Data["first-param"] = "second-value"
 
-	t.Run("updates of service object", func(t *testing.T) {
+	t.Run("updates of Services", func(t *testing.T) {
+
 		// given
 		namespacedName := types.NamespacedName{Namespace: "toolchain-host-operator", Name: "registration-service"}
 
-		t.Run("when using forceUpdate=true, it should not update when specs are same", func(t *testing.T) {
-			// given
-			cl, _ := newClient(t, s)
-			obj := defaultService.DeepCopy()
-			_, err := cl.CreateOrUpdateObject(obj, true, nil)
-			require.NoError(t, err)
-			originalGeneration := obj.GetGeneration()
+		t.Run("as corev1 objects", func(t *testing.T) {
 
-			// when updating with the same obj again
-			createdOrChanged, err := cl.CreateOrUpdateObject(obj, true, nil)
+			t.Run("when using forceUpdate=true", func(t *testing.T) {
 
-			// then
-			require.NoError(t, err)
-			assert.False(t, createdOrChanged) // resource was not updated on the server, so returned value is `false`
-			updateGeneration := obj.GetGeneration()
-			assert.Equal(t, originalGeneration, updateGeneration)
+				t.Run("it should not update when specs are same", func(t *testing.T) {
+					// given
+					cl, _ := newClient(t, s)
+					obj := defaultService.DeepCopy()
+					_, err := cl.CreateOrUpdateObject(obj, true, nil)
+					require.NoError(t, err)
+					originalGeneration := obj.GetGeneration()
+
+					// when updating with the same obj again
+					createdOrChanged, err := cl.CreateOrUpdateObject(obj, true, nil)
+
+					// then
+					require.NoError(t, err)
+					assert.False(t, createdOrChanged) // resource was not updated on the server, so returned value is `false`
+					updateGeneration := obj.GetGeneration()
+					assert.Equal(t, originalGeneration, updateGeneration)
+				})
+
+				t.Run("it should not update when specs are same except ClusterIP", func(t *testing.T) {
+					// given
+					cl, _ := newClient(t, s)
+					obj := defaultService.DeepCopy()
+					_, err := cl.CreateOrUpdateObject(obj, true, nil)
+					require.NoError(t, err)
+					originalGeneration := obj.GetGeneration()
+					obj.Spec.ClusterIP = "" // modify for version to update
+					// when updating with the same obj again
+					createdOrChanged, err := cl.CreateOrUpdateObject(obj, true, nil)
+
+					// then
+					require.NoError(t, err)
+					assert.False(t, createdOrChanged) // resource was not updated on the server, so returned value is `false`
+					updateGeneration := obj.GetGeneration()
+					assert.Equal(t, originalGeneration, updateGeneration)
+					assert.Equal(t, defaultService.Spec.ClusterIP, obj.Spec.ClusterIP)
+				})
+
+				t.Run("it should update when specs are different", func(t *testing.T) {
+					// given
+					cl, _ := newClient(t, s)
+					obj := defaultService.DeepCopy()
+					_, err := cl.CreateOrUpdateObject(obj, true, nil)
+					require.NoError(t, err)
+					originalGeneration := obj.GetGeneration()
+
+					// when updating with the modified obj
+					modifiedObj := modifiedService.DeepCopy()
+					modifiedObj.Spec.ClusterIP = ""
+					modifiedObj.ObjectMeta.Generation = obj.GetGeneration()
+					createdOrChanged, err := cl.CreateOrUpdateObject(modifiedObj, true, nil)
+
+					// then
+					require.NoError(t, err)
+					assert.True(t, createdOrChanged) // resource was updated on the server, so returned value if `true`
+					updateGeneration := modifiedObj.GetGeneration()
+					assert.Equal(t, originalGeneration+1, updateGeneration)
+				})
+
+				t.Run("it should update when specs are different including ClusterIP", func(t *testing.T) {
+					// given
+					cl, _ := newClient(t, s)
+					obj := defaultService.DeepCopy()
+					_, err := cl.CreateOrUpdateObject(obj, true, nil)
+					require.NoError(t, err)
+					originalGeneration := obj.GetGeneration()
+
+					// when updating with the modified obj
+					modifiedObj := modifiedService.DeepCopy()
+					modifiedObj.ObjectMeta.Generation = obj.GetGeneration()
+					createdOrChanged, err := cl.CreateOrUpdateObject(modifiedObj, true, nil)
+
+					// then
+					require.NoError(t, err)
+					assert.True(t, createdOrChanged) // resource was updated on the server, so returned value if `true`
+					updateGeneration := modifiedObj.GetGeneration()
+					assert.Equal(t, originalGeneration+1, updateGeneration)
+					assert.Equal(t, defaultService.Spec.ClusterIP, obj.Spec.ClusterIP)
+				})
+
+				t.Run("when object is missing, it should create it", func(t *testing.T) {
+					// given
+					cl, cli := newClient(t, s)
+
+					// when
+					createdOrChanged, err := cl.CreateOrUpdateObject(modifiedService.DeepCopyObject(), true, &appsv1.Deployment{})
+
+					// then
+					require.NoError(t, err)
+					assert.True(t, createdOrChanged)
+					service := &corev1.Service{}
+					err = cli.Get(context.TODO(), namespacedName, service)
+					require.NoError(t, err)
+					assert.Equal(t, "all-services", service.Spec.Selector["run"])
+					assert.NotEmpty(t, service.OwnerReferences)
+				})
+			})
+
+			t.Run("when using forceUpdate=false", func(t *testing.T) {
+
+				t.Run("it should update when spec is different", func(t *testing.T) {
+					// given
+					cl, cli := newClient(t, s)
+					_, err := cl.CreateOrUpdateObject(defaultService.DeepCopyObject(), true, nil)
+					require.NoError(t, err)
+
+					// when
+					createdOrChanged, err := cl.CreateOrUpdateObject(modifiedService.DeepCopyObject(), false, nil)
+
+					// then
+					require.NoError(t, err)
+					assert.True(t, createdOrChanged)
+					service := &corev1.Service{}
+					err = cli.Get(context.TODO(), namespacedName, service)
+					require.NoError(t, err)
+					assert.Equal(t, "all-services", service.Spec.Selector["run"])
+				})
+
+				t.Run("it should not update when using same object", func(t *testing.T) {
+					// given
+					cl, _ := newClient(t, s)
+					_, err := cl.CreateOrUpdateObject(defaultService.DeepCopyObject(), true, nil)
+					require.NoError(t, err)
+
+					// when
+					createdOrChanged, err := cl.CreateOrUpdateObject(defaultService.DeepCopyObject(), false, nil)
+
+					// then
+					require.NoError(t, err)
+					assert.False(t, createdOrChanged)
+				})
+
+				t.Run("when object is missing, it should create it", func(t *testing.T) {
+					// given
+					cl, cli := newClient(t, s)
+
+					// when
+					createdOrChanged, err := cl.CreateOrUpdateObject(modifiedService.DeepCopyObject(), false, &appsv1.Deployment{})
+
+					// then
+					require.NoError(t, err)
+					assert.True(t, createdOrChanged)
+					service := &corev1.Service{}
+					err = cli.Get(context.TODO(), namespacedName, service)
+					require.NoError(t, err)
+					assert.Equal(t, "all-services", service.Spec.Selector["run"])
+					assert.NotEmpty(t, service.OwnerReferences)
+				})
+			})
+
+			t.Run("when object cannot be retrieved because of any error, then it should fail", func(t *testing.T) {
+				// given
+				cl, cli := newClient(t, s)
+				cli.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
+					return fmt.Errorf("unable to get")
+				}
+
+				// when
+				createdOrChanged, err := cl.CreateOrUpdateObject(modifiedService.DeepCopyObject(), false, nil)
+
+				// then
+				require.Error(t, err)
+				assert.False(t, createdOrChanged)
+				assert.Contains(t, err.Error(), "unable to get the resource")
+			})
 		})
 
-		t.Run("when using forceUpdate=true, it should update when specs are different", func(t *testing.T) {
-			// given
-			cl, _ := newClient(t, s)
-			obj := defaultService.DeepCopy()
-			_, err := cl.CreateOrUpdateObject(obj, true, nil)
-			require.NoError(t, err)
-			originalGeneration := obj.GetGeneration()
+		t.Run("as unstructured objects", func(t *testing.T) {
 
-			// when updating with the modified obj
-			modifiedObj := modifiedService.DeepCopy()
-			modifiedObj.ObjectMeta.Generation = obj.GetGeneration()
-			createdOrChanged, err := cl.CreateOrUpdateObject(modifiedObj, true, nil)
+			// only testing the specific cases of Services where an existing version exists, with a `spec.clusterIP` set
+			// and the updated version has no value for this field
 
-			// then
-			require.NoError(t, err)
-			assert.True(t, createdOrChanged) // resource was updated on the server, so returned value if `true`
-			updateGeneration := modifiedObj.GetGeneration()
-			assert.Equal(t, originalGeneration+1, updateGeneration)
+			t.Run("when using forceUpdate=true", func(t *testing.T) {
+
+				t.Run("it should not update when specs are same except ClusterIP", func(t *testing.T) {
+					// given
+					cl, _ := newClient(t, s)
+					// convert to unstructured
+					obj, err := toUnstructured(defaultService.DeepCopy())
+					require.NoError(t, err)
+					_, err = cl.CreateOrUpdateObject(obj, true, nil)
+					require.NoError(t, err)
+					originalGeneration := obj.GetGeneration()
+					err = unstructured.SetNestedField(obj.Object, "", "spec", "clusterIP") // modify for version to update
+					require.NoError(t, err)
+
+					// when updating with the same obj again
+					createdOrChanged, err := cl.CreateOrUpdateObject(obj, true, nil)
+
+					// then
+					require.NoError(t, err)
+					assert.False(t, createdOrChanged) // resource was not updated on the server, so returned value is `false`
+					updateGeneration := obj.GetGeneration()
+					assert.Equal(t, originalGeneration, updateGeneration)
+					clusterIP, found, err := unstructured.NestedString(obj.Object, "spec", "clusterIP")
+					require.NoError(t, err)
+					require.True(t, found)
+					assert.Equal(t, defaultService.Spec.ClusterIP, clusterIP)
+				})
+			})
 		})
+	})
 
-		t.Run("when using forceUpdate=false, it should update when spec is different", func(t *testing.T) {
+	t.Run("updates of ConfigMaps", func(t *testing.T) {
+
+		t.Run("it should update ConfigMap when data field is different and forceUpdate=false", func(t *testing.T) {
 			// given
 			cl, cli := newClient(t, s)
-			_, err := cl.CreateOrUpdateObject(defaultService.DeepCopyObject(), true, nil)
+			_, err := cl.CreateOrUpdateObject(defaultCm.DeepCopyObject(), true, nil)
 			require.NoError(t, err)
 
 			// when
-			createdOrChanged, err := cl.CreateOrUpdateObject(modifiedService.DeepCopyObject(), false, nil)
+			createdOrChanged, err := cl.CreateOrUpdateObject(modifiedCm.DeepCopyObject(), false, nil)
 
 			// then
 			require.NoError(t, err)
 			assert.True(t, createdOrChanged)
-			service := &corev1.Service{}
-			err = cli.Get(context.TODO(), namespacedName, service)
+			configMap := &corev1.ConfigMap{}
+			namespacedName := types.NamespacedName{Namespace: "toolchain-host-operator", Name: "registration-service"}
+			err = cli.Get(context.TODO(), namespacedName, configMap)
 			require.NoError(t, err)
-			assert.Equal(t, "all-services", service.Spec.Selector["run"])
-		})
-
-		t.Run("when using forceUpdate=false, it should NOT update when using same object", func(t *testing.T) {
-			// given
-			cl, _ := newClient(t, s)
-			_, err := cl.CreateOrUpdateObject(defaultService.DeepCopyObject(), true, nil)
-			require.NoError(t, err)
-
-			// when
-			createdOrChanged, err := cl.CreateOrUpdateObject(defaultService.DeepCopyObject(), false, nil)
-
-			// then
-			require.NoError(t, err)
-			assert.False(t, createdOrChanged)
-		})
-
-		t.Run("when object is missing, it should create it no matter what is set as forceUpdate", func(t *testing.T) {
-			// given
-			cl, cli := newClient(t, s)
-			deployment := &v1.Deployment{}
-
-			// when
-			createdOrChanged, err := cl.CreateOrUpdateObject(modifiedService.DeepCopyObject(), false, deployment)
-
-			// then
-			require.NoError(t, err)
-			assert.True(t, createdOrChanged)
-			service := &corev1.Service{}
-			err = cli.Get(context.TODO(), namespacedName, service)
-			require.NoError(t, err)
-			assert.Equal(t, "all-services", service.Spec.Selector["run"])
-			assert.NotEmpty(t, service.OwnerReferences)
-		})
-
-		t.Run("when object cannot be retrieved because of any error, then it should fail", func(t *testing.T) {
-			// given
-			cl, cli := newClient(t, s)
-			cli.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
-				return fmt.Errorf("unable to get")
-			}
-
-			// when
-			createdOrChanged, err := cl.CreateOrUpdateObject(modifiedService.DeepCopyObject(), false, nil)
-
-			// then
-			require.Error(t, err)
-			assert.False(t, createdOrChanged)
-			assert.Contains(t, err.Error(), "unable to get the resource")
+			assert.Equal(t, "second-value", configMap.Data["first-param"])
 		})
 	})
+}
 
-	t.Run("when using forceUpdate=false, it should update ConfigMap when data field is different", func(t *testing.T) {
-		// given
-		cl, cli := newClient(t, s)
-		_, err := cl.CreateOrUpdateObject(defaultCm.DeepCopyObject(), true, nil)
-		require.NoError(t, err)
-
-		// when
-		createdOrChanged, err := cl.CreateOrUpdateObject(modifiedCm.DeepCopyObject(), false, nil)
-
-		// then
-		require.NoError(t, err)
-		assert.True(t, createdOrChanged)
-		configMap := &corev1.ConfigMap{}
-		namespacedName := types.NamespacedName{Namespace: "toolchain-host-operator", Name: "registration-service"}
-		err = cli.Get(context.TODO(), namespacedName, configMap)
-		require.NoError(t, err)
-		assert.Equal(t, "second-value", configMap.Data["first-param"])
-	})
+func toUnstructured(obj *corev1.Service) (*unstructured.Unstructured, error) {
+	content, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+	result := &unstructured.Unstructured{}
+	_, _, err = unstructured.UnstructuredJSONScheme.Decode(content, nil, result)
+	return result, err
 }
 
 func TestProcessAndApply(t *testing.T) {

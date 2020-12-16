@@ -10,9 +10,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -91,9 +93,22 @@ func (p ApplyClient) createOrUpdateObj(newResource runtime.Object, forceUpdate b
 
 	// retrieve the current 'resourceVersion' to set it in the resource passed to the `client.Update()`
 	// otherwise we would get an error with the following message:
-	// "nstemplatetiers.toolchain.dev.openshift.com \"basic\" is invalid: metadata.resourceVersion: Invalid value: 0x0: must be specified for an update"
+	// `nstemplatetiers.toolchain.dev.openshift.com "basic" is invalid: metadata.resourceVersion: Invalid value: 0x0: must be specified for an update`
 	originalGeneration := metaExisting.GetGeneration()
 	metaNew.SetResourceVersion(metaExisting.GetResourceVersion())
+
+	// also, if the resource to create is a Service and there's a previous version, we should retain its `spec.ClusterIP`, otherwise
+	// the update will fail with the following error:
+	// `Service "<name>" is invalid: spec.clusterIP: Invalid value: "": field is immutable`
+	switch newResource := newResource.(type) {
+	case *corev1.Service:
+		newResource.Spec.ClusterIP = existing.(*corev1.Service).Spec.ClusterIP
+	case *unstructured.Unstructured:
+		if clusterIP, found, err := unstructured.NestedString(existing.(*unstructured.Unstructured).Object, "spec", "clusterIP"); err == nil && found {
+			unstructured.SetNestedField(newResource.Object, clusterIP, "spec", "clusterIP")
+		}
+	}
+
 	if err := p.cl.Update(context.TODO(), newResource); err != nil {
 		return false, errors.Wrapf(err, "unable to update the resource '%v'", newResource)
 	}
@@ -109,20 +124,19 @@ func (p ApplyClient) createOrUpdateObj(newResource runtime.Object, forceUpdate b
 }
 
 func getNewConfiguration(newResource runtime.Object) string {
-	newJson, err := marshalObjectContent(newResource)
+	newJSON, err := marshalObjectContent(newResource)
 	if err != nil {
 		log.Error(err, "unable to marshal the object", "object", newResource)
 		return fmt.Sprintf("%v", newResource)
 	}
-	return string(newJson)
+	return string(newJSON)
 }
 
 func marshalObjectContent(newResource runtime.Object) ([]byte, error) {
 	if newRes, ok := newResource.(runtime.Unstructured); ok {
 		return json.Marshal(newRes.UnstructuredContent())
-	} else {
-		return json.Marshal(newResource)
 	}
+	return json.Marshal(newResource)
 }
 
 func (p ApplyClient) createObj(newResource runtime.Object, metaNew v1.Object, owner v1.Object) error {
