@@ -123,7 +123,6 @@ func TestApplySingle(t *testing.T) {
 					// when updating with the modified obj
 					modifiedObj := modifiedService.DeepCopy()
 					modifiedObj.Spec.ClusterIP = ""
-					modifiedObj.ObjectMeta.Generation = obj.GetGeneration()
 					createdOrChanged, err := cl.CreateOrUpdateObject(modifiedObj, true, nil)
 
 					// then
@@ -143,7 +142,7 @@ func TestApplySingle(t *testing.T) {
 
 					// when updating with the modified obj
 					modifiedObj := modifiedService.DeepCopy()
-					modifiedObj.ObjectMeta.Generation = obj.GetGeneration()
+					modifiedObj.Spec.ClusterIP = ""
 					createdOrChanged, err := cl.CreateOrUpdateObject(modifiedObj, true, nil)
 
 					// then
@@ -253,22 +252,22 @@ func TestApplySingle(t *testing.T) {
 					cl, _ := newClient(t, s)
 					// convert to unstructured
 					obj, err := toUnstructured(defaultService.DeepCopy())
+
 					require.NoError(t, err)
 					_, err = cl.CreateOrUpdateObject(obj, true, nil)
 					require.NoError(t, err)
-					originalGeneration := obj.GetGeneration()
-					err = unstructured.SetNestedField(obj.Object, "", "spec", "clusterIP") // modify for version to update
+					modifiedObj := obj.DeepCopy()
+					err = unstructured.SetNestedField(modifiedObj.Object, "", "spec", "clusterIP") // modify for version to update
 					require.NoError(t, err)
 
 					// when updating with the same obj again
-					createdOrChanged, err := cl.CreateOrUpdateObject(obj, true, nil)
+					createdOrChanged, err := cl.CreateOrUpdateObject(modifiedObj, true, nil)
 
 					// then
 					require.NoError(t, err)
 					assert.False(t, createdOrChanged) // resource was not updated on the server, so returned value is `false`
-					updateGeneration := obj.GetGeneration()
-					assert.Equal(t, originalGeneration, updateGeneration)
-					clusterIP, found, err := unstructured.NestedString(obj.Object, "spec", "clusterIP")
+					assert.Equal(t, obj.GetGeneration(), modifiedObj.GetGeneration())
+					clusterIP, found, err := unstructured.NestedString(modifiedObj.Object, "spec", "clusterIP")
 					require.NoError(t, err)
 					require.True(t, found)
 					assert.Equal(t, defaultService.Spec.ClusterIP, clusterIP)
