@@ -105,7 +105,9 @@ func (p ApplyClient) createOrUpdateObj(newResource runtime.Object, forceUpdate b
 		newResource.Spec.ClusterIP = existing.(*corev1.Service).Spec.ClusterIP
 	case *unstructured.Unstructured:
 		if clusterIP, found, err := unstructured.NestedString(existing.(*unstructured.Unstructured).Object, "spec", "clusterIP"); err == nil && found {
-			unstructured.SetNestedField(newResource.Object, clusterIP, "spec", "clusterIP")
+			if err := unstructured.SetNestedField(newResource.Object, clusterIP, "spec", "clusterIP"); err != nil {
+				return false, err
+			}
 		}
 	}
 
