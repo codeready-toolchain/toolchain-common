@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/codeready-toolchain/api/pkg/apis"
-	applyCl "github.com/codeready-toolchain/toolchain-common/pkg/client"
+	"github.com/codeready-toolchain/toolchain-common/pkg/client"
 	"github.com/codeready-toolchain/toolchain-common/pkg/template"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	. "github.com/codeready-toolchain/toolchain-common/pkg/test"
@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestApplySingle(t *testing.T) {
@@ -226,7 +226,7 @@ func TestApplySingle(t *testing.T) {
 			t.Run("when object cannot be retrieved because of any error, then it should fail", func(t *testing.T) {
 				// given
 				cl, cli := newClient(t, s)
-				cli.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
+				cli.MockGet = func(ctx context.Context, key runtimeclient.ObjectKey, obj runtime.Object) error {
 					return fmt.Errorf("unable to get")
 				}
 
@@ -299,7 +299,7 @@ func TestApplySingle(t *testing.T) {
 	})
 }
 
-func toUnstructured(obj *corev1.Service) (*unstructured.Unstructured, error) {
+func toUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {
 	content, err := json.Marshal(obj)
 	if err != nil {
 		return nil, err
@@ -307,6 +307,163 @@ func toUnstructured(obj *corev1.Service) (*unstructured.Unstructured, error) {
 	result := &unstructured.Unstructured{}
 	_, _, err = unstructured.UnstructuredJSONScheme.Decode(content, nil, result)
 	return result, err
+}
+
+func TestRetainClusterIP(t *testing.T) {
+
+	t.Run("when new object is a service", func(t *testing.T) {
+
+		t.Run("when existing object has a ClusterIP", func(t *testing.T) {
+			// given
+			newResource := &corev1.Service{
+				Spec: corev1.ServiceSpec{},
+			}
+			existing := &corev1.Service{
+				Spec: corev1.ServiceSpec{
+					ClusterIP: "10.2.3.4",
+				},
+			}
+
+			// when
+			err := client.RetainClusterIP(newResource, existing)
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, "10.2.3.4", newResource.Spec.ClusterIP)
+		})
+
+		t.Run("when existing object has no ClusterIP", func(t *testing.T) {
+			// given
+			newResource := &corev1.Service{
+				Spec: corev1.ServiceSpec{},
+			}
+			existing := &corev1.Service{
+				Spec: corev1.ServiceSpec{},
+			}
+
+			// when
+			err := client.RetainClusterIP(newResource, existing)
+
+			// then
+			require.NoError(t, err)
+			assert.Empty(t, newResource.Spec.ClusterIP)
+		})
+
+		t.Run("when existing object is not a service", func(t *testing.T) {
+			// given
+			newResource := &corev1.Service{
+				Spec: corev1.ServiceSpec{},
+			}
+			existing := &corev1.ConfigMap{}
+
+			// when
+			err := client.RetainClusterIP(newResource, existing)
+
+			// then
+			require.NoError(t, err)
+			assert.Empty(t, newResource.Spec.ClusterIP)
+		})
+	})
+
+	t.Run("when new object is unstructured", func(t *testing.T) {
+
+		t.Run("when existing object has a ClusterIP", func(t *testing.T) {
+			// given
+			newResource, err := toUnstructured(&corev1.Service{
+				TypeMeta: metav1.TypeMeta{
+					Kind: "Service",
+				},
+				Spec: corev1.ServiceSpec{},
+			})
+			require.NoError(t, err)
+			existing, err := toUnstructured(&corev1.Service{
+				TypeMeta: metav1.TypeMeta{
+					Kind: "Service",
+				},
+				Spec: corev1.ServiceSpec{
+					ClusterIP: "10.2.3.4",
+				},
+			})
+			require.NoError(t, err)
+
+			// when
+			err = client.RetainClusterIP(newResource, existing)
+
+			// then
+			require.NoError(t, err)
+			clusterIP, found, err := unstructured.NestedString(newResource.Object, "spec", "clusterIP")
+			require.NoError(t, err)
+			require.True(t, found)
+			assert.Equal(t, "10.2.3.4", clusterIP)
+		})
+
+		t.Run("when existing object has no ClusterIP", func(t *testing.T) {
+			// given
+			newResource, err := toUnstructured(&corev1.Service{
+				TypeMeta: metav1.TypeMeta{
+					Kind: "Service",
+				},
+				Spec: corev1.ServiceSpec{},
+			})
+			require.NoError(t, err)
+			existing, err := toUnstructured(&corev1.Service{
+				TypeMeta: metav1.TypeMeta{
+					Kind: "Service",
+				},
+				Spec: corev1.ServiceSpec{},
+			})
+			require.NoError(t, err)
+
+			// when
+			err = client.RetainClusterIP(newResource, existing)
+
+			// then
+			require.NoError(t, err)
+			_, found, err := unstructured.NestedString(newResource.Object, "spec", "clusterIP")
+			require.NoError(t, err)
+			assert.False(t, found)
+
+		})
+
+		t.Run("when existing object is not a service", func(t *testing.T) {
+			// given
+			newResource, err := toUnstructured(&corev1.Service{
+				TypeMeta: metav1.TypeMeta{
+					Kind: "Service",
+				},
+				Spec: corev1.ServiceSpec{},
+			})
+			require.NoError(t, err)
+			existing, err := toUnstructured(&corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					Kind: "ConfigMap",
+				},
+			})
+			require.NoError(t, err)
+
+			// when
+			err = client.RetainClusterIP(newResource, existing)
+
+			// then
+			require.NoError(t, err)
+			_, found, err := unstructured.NestedString(newResource.Object, "spec", "clusterIP")
+			require.NoError(t, err)
+			assert.False(t, found)
+		})
+
+	})
+
+	t.Run("when new object is not a service nor unstructured", func(t *testing.T) {
+		// given
+		newResource := &corev1.ConfigMap{}
+		existing := &corev1.ConfigMap{}
+
+		// when
+		err := client.RetainClusterIP(newResource, existing)
+
+		// then
+		require.NoError(t, err)
+	})
 }
 
 func TestProcessAndApply(t *testing.T) {
@@ -335,7 +492,7 @@ func TestProcessAndApply(t *testing.T) {
 		labels := newLabels("", "john", "")
 
 		// when
-		createdOrUpdated, err := applyCl.NewApplyClient(cl, s).Apply(objs, labels)
+		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -355,7 +512,7 @@ func TestProcessAndApply(t *testing.T) {
 		labels := newLabels("basic", "john", "dev")
 
 		// when
-		createdOrUpdated, err := applyCl.NewApplyClient(cl, s).Apply(objs, labels)
+		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -375,7 +532,7 @@ func TestProcessAndApply(t *testing.T) {
 		labels := newLabels("", "john", "dev")
 
 		// when
-		createdOrUpdated, err := applyCl.NewApplyClient(cl, s).Apply(objs, labels)
+		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -387,7 +544,7 @@ func TestProcessAndApply(t *testing.T) {
 	t.Run("should update existing role binding", func(t *testing.T) {
 		// given
 		cl := NewFakeClient(t)
-		cl.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+		cl.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...runtimeclient.UpdateOption) error {
 			meta, err := meta.Accessor(obj)
 			require.NoError(t, err)
 			t.Logf("updating resource of kind %s with version %s\n", obj.GetObjectKind().GroupVersionKind().Kind, meta.GetResourceVersion())
@@ -404,7 +561,7 @@ func TestProcessAndApply(t *testing.T) {
 		require.NoError(t, err)
 		witoutType := newLabels("basic", "john", "")
 
-		createdOrUpdated, err := applyCl.NewApplyClient(cl, s).Apply(objs, witoutType)
+		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, witoutType)
 		require.NoError(t, err)
 		assert.True(t, createdOrUpdated)
 		assertRoleBindingExists(t, cl, user, witoutType)
@@ -416,7 +573,7 @@ func TestProcessAndApply(t *testing.T) {
 		objs, err = p.Process(tmpl, values)
 		require.NoError(t, err)
 		complete := newLabels("advanced", "john", "dev")
-		createdOrUpdated, err = applyCl.NewApplyClient(cl, s).Apply(objs, complete)
+		createdOrUpdated, err = client.NewApplyClient(cl, s).Apply(objs, complete)
 
 		// then
 		require.NoError(t, err)
@@ -439,14 +596,14 @@ func TestProcessAndApply(t *testing.T) {
 		objs, err := p.Process(tmpl, values)
 		require.NoError(t, err)
 		labels := newLabels("basic", "john", "dev")
-		created, err := applyCl.NewApplyClient(cl, s).Apply(objs, labels)
+		created, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 		require.NoError(t, err)
 		assert.True(t, created)
 		assertNamespaceExists(t, cl, user, labels, commit)
 		assertRoleBindingExists(t, cl, user, labels)
 
 		// when apply the same template again
-		updated, err := applyCl.NewApplyClient(cl, s).Apply(objs, labels)
+		updated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -459,7 +616,7 @@ func TestProcessAndApply(t *testing.T) {
 			// given
 			cl := NewFakeClient(t)
 			p := template.NewProcessor(s)
-			cl.MockCreate = func(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
+			cl.MockCreate = func(ctx context.Context, obj runtime.Object, opts ...runtimeclient.CreateOption) error {
 				return errors.New("failed to create resource")
 			}
 			tmpl, err := DecodeTemplate(decoder,
@@ -469,7 +626,7 @@ func TestProcessAndApply(t *testing.T) {
 			// when
 			objs, err := p.Process(tmpl, values)
 			require.NoError(t, err)
-			createdOrUpdated, err := applyCl.NewApplyClient(cl, s).Apply(objs, newLabels("", "", ""))
+			createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, newLabels("", "", ""))
 
 			// then
 			require.Error(t, err)
@@ -480,7 +637,7 @@ func TestProcessAndApply(t *testing.T) {
 			// given
 			cl := NewFakeClient(t)
 			p := template.NewProcessor(s)
-			cl.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+			cl.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...runtimeclient.UpdateOption) error {
 				return errors.New("failed to update resource")
 			}
 			tmpl, err := DecodeTemplate(decoder,
@@ -489,7 +646,7 @@ func TestProcessAndApply(t *testing.T) {
 			objs, err := p.Process(tmpl, values)
 			require.NoError(t, err)
 			labels := newLabels("", "", "")
-			createdOrUpdated, err := applyCl.NewApplyClient(cl, s).Apply(objs, labels)
+			createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 			require.NoError(t, err)
 			assert.True(t, createdOrUpdated)
 
@@ -499,7 +656,7 @@ func TestProcessAndApply(t *testing.T) {
 			require.NoError(t, err)
 			objs, err = p.Process(tmpl, values)
 			require.NoError(t, err)
-			createdOrUpdated, err = applyCl.NewApplyClient(cl, s).Apply(objs, newLabels("advanced", "john", "dev"))
+			createdOrUpdated, err = client.NewApplyClient(cl, s).Apply(objs, newLabels("advanced", "john", "dev"))
 
 			// then
 			assert.Error(t, err)
@@ -531,7 +688,7 @@ func TestProcessAndApply(t *testing.T) {
 			},
 		})
 		labels := newLabels("basic", "john", "dev")
-		createdOrUpdated, err := applyCl.NewApplyClient(cl, s).Apply(objs, labels)
+		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -548,7 +705,7 @@ func TestProcessAndApply(t *testing.T) {
 	})
 }
 
-func assertNamespaceExists(t *testing.T, c client.Client, nsName string, labels map[string]string, version string) corev1.Namespace {
+func assertNamespaceExists(t *testing.T, c runtimeclient.Client, nsName string, labels map[string]string, version string) corev1.Namespace {
 	// check that the namespace was created
 	var ns corev1.Namespace
 	err := c.Get(context.TODO(), types.NamespacedName{Name: nsName, Namespace: ""}, &ns) // assert namespace is cluster-scoped
@@ -570,7 +727,7 @@ func expectedLabels(labels map[string]string, version string) map[string]string 
 	return expLabels
 }
 
-func assertRoleBindingExists(t *testing.T, c client.Client, ns string, labels map[string]string) authv1.RoleBinding {
+func assertRoleBindingExists(t *testing.T, c runtimeclient.Client, ns string, labels map[string]string) authv1.RoleBinding {
 	// check that the rolebinding is created in the namespace
 	// (the fake client just records the request but does not perform any consistency check)
 	var rb authv1.RoleBinding
@@ -604,9 +761,9 @@ func getNameWithTimestamp(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
 }
 
-func newClient(t *testing.T, s *runtime.Scheme) (*applyCl.ApplyClient, *test.FakeClient) {
+func newClient(t *testing.T, s *runtime.Scheme) (*client.ApplyClient, *test.FakeClient) {
 	cli := NewFakeClient(t)
-	return applyCl.NewApplyClient(cli, s), cli
+	return client.NewApplyClient(cli, s), cli
 }
 
 func addToScheme(t *testing.T) *runtime.Scheme {

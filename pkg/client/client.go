@@ -100,17 +100,9 @@ func (p ApplyClient) createOrUpdateObj(newResource runtime.Object, forceUpdate b
 	// also, if the resource to create is a Service and there's a previous version, we should retain its `spec.ClusterIP`, otherwise
 	// the update will fail with the following error:
 	// `Service "<name>" is invalid: spec.clusterIP: Invalid value: "": field is immutable`
-	switch newResource := newResource.(type) {
-	case *corev1.Service:
-		newResource.Spec.ClusterIP = existing.(*corev1.Service).Spec.ClusterIP
-	case *unstructured.Unstructured:
-		if clusterIP, found, err := unstructured.NestedString(existing.(*unstructured.Unstructured).Object, "spec", "clusterIP"); err == nil && found {
-			if err := unstructured.SetNestedField(newResource.Object, clusterIP, "spec", "clusterIP"); err != nil {
-				return false, err
-			}
-		}
+	if err := RetainClusterIP(newResource, existing); err != nil {
+		return false, err
 	}
-
 	if err := p.cl.Update(context.TODO(), newResource); err != nil {
 		return false, errors.Wrapf(err, "unable to update the resource '%v'", newResource)
 	}
@@ -123,6 +115,42 @@ func (p ApplyClient) createOrUpdateObj(newResource runtime.Object, forceUpdate b
 
 	// check if it was changed or not
 	return originalGeneration != metaNewAfterUpdate.GetGeneration(), nil
+}
+
+// RetainClusterIP sets the `spec.clusterIP` value from the given 'existing' object
+// into the 'newResource' object.
+func RetainClusterIP(newResource, existing runtime.Object) error {
+	clusterIP, found, err := clusterIP(existing)
+	if err != nil {
+		return err
+	}
+	if !found {
+		// skip
+		return nil
+	}
+	switch newResource := newResource.(type) {
+	case *corev1.Service:
+		newResource.Spec.ClusterIP = clusterIP
+	case *unstructured.Unstructured:
+		if err := unstructured.SetNestedField(newResource.Object, clusterIP, "spec", "clusterIP"); err != nil {
+			return err
+		}
+	default:
+		// do nothing, object is not a service
+	}
+	return nil
+}
+
+func clusterIP(obj runtime.Object) (string, bool, error) {
+	switch obj := obj.(type) {
+	case *corev1.Service:
+		return obj.Spec.ClusterIP, (obj.Spec.ClusterIP != ""), nil
+	case *unstructured.Unstructured:
+		return unstructured.NestedString(obj.Object, "spec", "clusterIP")
+	default:
+		// do nothing, object is not a service
+		return "", false, nil
+	}
 }
 
 func getNewConfiguration(newResource runtime.Object) string {
