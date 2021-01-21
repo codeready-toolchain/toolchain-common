@@ -144,7 +144,7 @@ func RetainClusterIP(newResource, existing runtime.Object) error {
 func clusterIP(obj runtime.Object) (string, bool, error) {
 	switch obj := obj.(type) {
 	case *corev1.Service:
-		return obj.Spec.ClusterIP, (obj.Spec.ClusterIP != ""), nil
+		return obj.Spec.ClusterIP, obj.Spec.ClusterIP != "", nil
 	case *unstructured.Unstructured:
 		return unstructured.NestedString(obj.Object, "spec", "clusterIP")
 	default:
