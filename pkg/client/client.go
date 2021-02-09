@@ -84,6 +84,16 @@ func SaveConfiguration(saveConfiguration bool) ApplyObjectOption {
 // The return boolean says if the object was either created or updated (`true`). If nothing changed (ie, the generation was not
 // incremented by the server), then it returns `false`.
 func (p ApplyClient) ApplyObject(obj runtime.Object, options ...ApplyObjectOption) (bool, error) {
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	createdOrUpdated, err := p.applyObject(obj, options...)
+	if err != nil {
+		return createdOrUpdated, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
+	}
+	return createdOrUpdated, nil
+}
+
+func (p ApplyClient) applyObject(obj runtime.Object, options ...ApplyObjectOption) (bool, error) {
+	// gets the meta accessor to the new resource
 	// gets the meta accessor to the new resource
 	metaNew, err := meta.Accessor(obj)
 	if err != nil {
