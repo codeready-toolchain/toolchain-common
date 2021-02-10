@@ -19,10 +19,12 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// LastAppliedConfigurationAnnotationKey the key to save the last applied configuration in the resource annotations
 const LastAppliedConfigurationAnnotationKey = "toolchain.dev.openshift.com/last-applied-configuration"
 
 var log = logf.Log.WithName("apply_client")
 
+// ApplyClient the client to use when creating or updating objects
 type ApplyClient struct {
 	cl     client.Client
 	scheme *runtime.Scheme
@@ -33,44 +35,91 @@ func NewApplyClient(cl client.Client, scheme *runtime.Scheme) *ApplyClient {
 	return &ApplyClient{cl: cl, scheme: scheme}
 }
 
-// CreateOrUpdateObject creates the object if is missing and if the owner object is provided, then it's set as a controller reference.
+type applyObjectConfiguration struct {
+	owner             v1.Object
+	forceUpdate       bool
+	saveConfiguration bool
+}
+
+func newApplyObjectConfiguration(options ...ApplyObjectOption) applyObjectConfiguration {
+	config := applyObjectConfiguration{
+		owner:             nil,
+		forceUpdate:       false,
+		saveConfiguration: true,
+	}
+	for _, apply := range options {
+		apply(&config)
+	}
+	return config
+}
+
+// ApplyObjectOption an option when creating or updating a resource
+type ApplyObjectOption func(*applyObjectConfiguration)
+
+// SetOwner sets the owner of the resource (default: `nil`)
+func SetOwner(owner v1.Object) ApplyObjectOption {
+	return func(config *applyObjectConfiguration) {
+		config.owner = owner
+	}
+}
+
+// ForceUpdate forces the update of the resource (default: `false`)
+func ForceUpdate(forceUpdate bool) ApplyObjectOption {
+	return func(config *applyObjectConfiguration) {
+		config.forceUpdate = forceUpdate
+	}
+}
+
+// SaveConfiguration saves the applied configuration
+// in the resource annotations (default: `true`)
+func SaveConfiguration(saveConfiguration bool) ApplyObjectOption {
+	return func(config *applyObjectConfiguration) {
+		config.saveConfiguration = saveConfiguration
+	}
+}
+
+// ApplyObject creates the object if is missing and if the owner object is provided, then it's set as a controller reference.
 // If the objects exists then when the spec content has changed (based on the content of the annotation in the original object) then it
 // is automatically updated. If it looks to be same then based on the value of forceUpdate param it updates the object or not.
 // The return boolean says if the object was either created or updated (`true`). If nothing changed (ie, the generation was not
 // incremented by the server), then it returns `false`.
-func (p ApplyClient) CreateOrUpdateObject(obj runtime.Object, forceUpdate bool, owner v1.Object) (bool, error) {
+func (p ApplyClient) ApplyObject(obj runtime.Object, options ...ApplyObjectOption) (bool, error) {
 	gvk := obj.GetObjectKind().GroupVersionKind()
-	createdOrUpdated, err := p.createOrUpdateObj(obj, forceUpdate, owner)
+	createdOrUpdated, err := p.applyObject(obj, options...)
 	if err != nil {
 		return createdOrUpdated, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
 	}
 	return createdOrUpdated, nil
 }
 
-func (p ApplyClient) createOrUpdateObj(newResource runtime.Object, forceUpdate bool, owner v1.Object) (bool, error) {
+func (p ApplyClient) applyObject(obj runtime.Object, options ...ApplyObjectOption) (bool, error) {
 	// gets the meta accessor to the new resource
-	metaNew, err := meta.Accessor(newResource)
+	// gets the meta accessor to the new resource
+	metaNew, err := meta.Accessor(obj)
 	if err != nil {
-		return false, errors.Wrapf(err, "cannot get metadata from %+v", newResource)
+		return false, errors.Wrapf(err, "cannot get metadata from %+v", obj)
 	}
+	config := newApplyObjectConfiguration(options...)
 
 	// creates a deepcopy of the new resource to be used to check if it already exists
-	existing := newResource.DeepCopyObject()
+	existing := obj.DeepCopyObject()
 
-	// set current object as annotation
-	annotations := metaNew.GetAnnotations()
-	newConfiguration := getNewConfiguration(newResource)
-	if annotations == nil {
-		annotations = map[string]string{}
+	var newConfiguration string
+	if config.saveConfiguration {
+		// set current object as annotation
+		annotations := metaNew.GetAnnotations()
+		newConfiguration = getNewConfiguration(obj)
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations[LastAppliedConfigurationAnnotationKey] = newConfiguration
+		metaNew.SetAnnotations(annotations)
 	}
-	annotations[LastAppliedConfigurationAnnotationKey] = newConfiguration
-	metaNew.SetAnnotations(annotations)
-
 	// gets current object (if exists)
 	namespacedName := types.NamespacedName{Namespace: metaNew.GetNamespace(), Name: metaNew.GetName()}
 	if err := p.cl.Get(context.TODO(), namespacedName, existing); err != nil {
 		if apierrors.IsNotFound(err) {
-			return true, p.createObj(newResource, metaNew, owner)
+			return true, p.createObj(obj, metaNew, config.owner)
 		}
 		return false, errors.Wrapf(err, "unable to get the resource '%v'", existing)
 	}
@@ -82,7 +131,7 @@ func (p ApplyClient) createOrUpdateObj(newResource runtime.Object, forceUpdate b
 	}
 
 	// as it already exists, check using the UpdateStrategy if it should be updated
-	if !forceUpdate {
+	if !config.forceUpdate {
 		existingAnnotations := metaExisting.GetAnnotations()
 		if existingAnnotations != nil {
 			if newConfiguration == existingAnnotations[LastAppliedConfigurationAnnotationKey] {
@@ -100,17 +149,17 @@ func (p ApplyClient) createOrUpdateObj(newResource runtime.Object, forceUpdate b
 	// also, if the resource to create is a Service and there's a previous version, we should retain its `spec.ClusterIP`, otherwise
 	// the update will fail with the following error:
 	// `Service "<name>" is invalid: spec.clusterIP: Invalid value: "": field is immutable`
-	if err := RetainClusterIP(newResource, existing); err != nil {
+	if err := RetainClusterIP(obj, existing); err != nil {
 		return false, err
 	}
-	if err := p.cl.Update(context.TODO(), newResource); err != nil {
-		return false, errors.Wrapf(err, "unable to update the resource '%v'", newResource)
+	if err := p.cl.Update(context.TODO(), obj); err != nil {
+		return false, errors.Wrapf(err, "unable to update the resource '%v'", obj)
 	}
 
 	// gets the meta accessor to the resource that was updated
-	metaNewAfterUpdate, err := meta.Accessor(newResource)
+	metaNewAfterUpdate, err := meta.Accessor(obj)
 	if err != nil {
-		return false, errors.Wrapf(err, "cannot get metadata from %+v", newResource)
+		return false, errors.Wrapf(err, "cannot get metadata from %+v", obj)
 	}
 
 	// check if it was changed or not
@@ -179,10 +228,10 @@ func (p ApplyClient) createObj(newResource runtime.Object, metaNew v1.Object, ow
 	return p.cl.Create(context.TODO(), newResource)
 }
 
-// Apply applies the objects, ie, creates or updates them on the cluster
+// ApplyToolchainObjects applies the objects, ie, creates or updates them on the cluster
 // returns `true, nil` if at least one of the objects was created or modified,
 // `false, nil` if nothing changed, and `false, err` if an error occurred
-func (p ApplyClient) Apply(toolchainObjects []ToolchainObject, newLabels map[string]string) (bool, error) {
+func (p ApplyClient) ApplyToolchainObjects(toolchainObjects []ToolchainObject, newLabels map[string]string) (bool, error) {
 	createdOrUpdated := false
 	for _, toolchainObject := range toolchainObjects {
 		// set newLabels
@@ -196,7 +245,7 @@ func (p ApplyClient) Apply(toolchainObjects []ToolchainObject, newLabels map[str
 		toolchainObject.SetLabels(labels)
 
 		gvk := toolchainObject.GetGvk()
-		result, err := p.CreateOrUpdateObject(toolchainObject.GetRuntimeObject(), true, nil)
+		result, err := p.ApplyObject(toolchainObject.GetRuntimeObject(), ForceUpdate(true))
 		if err != nil {
 			return false, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
 		}
