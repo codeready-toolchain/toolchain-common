@@ -25,8 +25,8 @@ login_to_cluster() {
       elif [[ -n ${KUBECONFIG} ]]; then
         oc config use-context "$1-admin"
       else
-        REGISTER_SERVER_API=`yq -r .$1.serverAPI ${SANDBOX_CONFIG}`
-        REGISTER_SA_TOKEN=`yq -r .$1.tokens.registerCluster ${SANDBOX_CONFIG}`
+        REGISTER_SERVER_API=$(yq -r .\"$1\".serverAPI ${SANDBOX_CONFIG})
+        REGISTER_SA_TOKEN=$(yq -r .\"$1\".tokens.registerCluster ${SANDBOX_CONFIG})
         OC_ADDITIONAL_PARAMS="--token=${REGISTER_SA_TOKEN} --server=${REGISTER_SERVER_API}"
       fi
     fi
@@ -204,8 +204,8 @@ done
 CLUSTER_JOIN_TO="host"
 
 if [[ -n ${SANDBOX_CONFIG} ]]; then
-    OPERATOR_NS=$(yq -r .${JOINING_CLUSTER_TYPE}.namespace ${SANDBOX_CONFIG})
-    CLUSTER_JOIN_TO_OPERATOR_NS=$(yq -r .${TARGET_CLUSTER_NAME}.namespace ${SANDBOX_CONFIG})
+    OPERATOR_NS=$(yq -r .\"${JOINING_CLUSTER_TYPE}\".sandboxNamespace ${SANDBOX_CONFIG})
+    CLUSTER_JOIN_TO_OPERATOR_NS=$(yq -r .\"${TARGET_CLUSTER_NAME}\".sandboxNamespace ${SANDBOX_CONFIG})
     CLUSTER_JOIN_TO=${TARGET_CLUSTER_NAME}
 else
     # We need this to configurable to work with dynamic namespaces from end to end tests
@@ -248,12 +248,12 @@ else
 fi
 
 if [[ -n ${SANDBOX_CONFIG} ]]; then
-    API_ENDPOINT=`yq -r .${JOINING_CLUSTER_TYPE}.serverAPI ${SANDBOX_CONFIG}`
-    JOINING_CLUSTER_NAME=`yq -r .${JOINING_CLUSTER_TYPE}.serverName ${SANDBOX_CONFIG}`
+    API_ENDPOINT=$(yq -r .\"${JOINING_CLUSTER_TYPE}\".serverAPI ${SANDBOX_CONFIG})
+    JOINING_CLUSTER_NAME=$(yq -r .\"${JOINING_CLUSTER_TYPE}\".serverName ${SANDBOX_CONFIG})
 
     login_to_cluster ${CLUSTER_JOIN_TO}
 
-    CLUSTER_JOIN_TO_NAME=`yq -r .${CLUSTER_JOIN_TO}.serverName ${SANDBOX_CONFIG}`
+    CLUSTER_JOIN_TO_NAME=$(yq -r .\"${CLUSTER_JOIN_TO}\".serverName ${SANDBOX_CONFIG})
 else
     API_ENDPOINT=`oc get infrastructure cluster -o jsonpath='{.status.apiServerURL}' ${OC_ADDITIONAL_PARAMS}`
     JOINING_CLUSTER_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}' ${OC_ADDITIONAL_PARAMS}`
