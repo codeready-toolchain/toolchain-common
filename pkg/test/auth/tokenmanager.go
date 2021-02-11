@@ -66,6 +66,13 @@ type PublicKey struct {
 // ExtraClaim a function to set claims in the token to generate
 type ExtraClaim func(token *jwt.Token)
 
+// WithPreferredUsernameClaim sets the `preferred username` claim in the token to generate
+func WithPreferredUsernameClaim(username string) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(*MyClaims).PreferredUsername = username
+	}
+}
+
 // WithEmailClaim sets the `email` claim in the token to generate
 func WithEmailClaim(email string) ExtraClaim {
 	return func(token *jwt.Token) {

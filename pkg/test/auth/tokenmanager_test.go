@@ -240,6 +240,26 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, "doe", claims.FamilyName)
 	})
+	t.Run("create token with preferred username extra claim", func(t *testing.T) {
+		username := uuid.NewV4().String()
+		identity0 := &Identity{
+			ID:       uuid.NewV4(),
+			Username: username,
+		}
+		// generate the token
+		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithPreferredUsernameClaim("test-preferred-username"))
+		require.NoError(t, err)
+		// unmarshall it again
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return &(key0.PublicKey), nil
+		})
+		require.NoError(t, err)
+		require.True(t, decodedToken.Valid)
+		claims, ok := decodedToken.Claims.(*MyClaims)
+		require.True(t, ok)
+		require.Equal(t, "test-preferred-username", claims.PreferredUsername)
+
+	})
 	t.Run("create token with company extra claim", func(t *testing.T) {
 		username := uuid.NewV4().String()
 		identity0 := &Identity{
