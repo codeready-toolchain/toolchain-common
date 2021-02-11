@@ -10,6 +10,7 @@ user_help () {
     echo "-mn, --member-ns      namespace where member-operator is running"
     echo "-hn, --host-ns        namespace where host-operator is running"
     echo "-s,  --single-cluster running both operators on single cluster"
+    echo "-mm, --multi-member   enables deploying multiple members in a single cluster, provide a unique id that will be used as a suffix for additional member cluster names"
     echo "-kc, --kube-config    kubeconfig for managing multiple clusters"
     echo "-sc, --sandbox-config sandbox config file for managing Dev Sandbox instance"
     echo "-le, --lets-encrypt   use let's encrypt certificate"
@@ -183,6 +184,11 @@ while test $# -gt 0; do
                 SINGLE_CLUSTER=true
                 shift
                 ;;
+            -mm|--multi-member)
+                shift
+                MULTI_MEMBER=$1
+                shift
+                ;;
             -le|--lets-encrypt)
                 LETS_ENCRYPT=true
                 shift
@@ -224,10 +230,13 @@ echo ${CLUSTER_JOIN_TO_OPERATOR_NS}
 login_to_cluster ${JOINING_CLUSTER_TYPE}
 
 if [[ ${JOINING_CLUSTER_TYPE_NAME} != "e2e" ]]; then
-    SA_NAME="toolchaincluster-${JOINING_CLUSTER_TYPE}-operator"
+    SA_NAME="toolchaincluster-${JOINING_CLUSTER_TYPE}${MULTI_MEMBER}"
     create_service_account
 else
     SA_NAME="e2e-service-account"
+    if [[ ! -z ${MULTI_MEMBER} ]]; then
+      SA_NAME="${OPERATOR_NS}"
+    fi
     create_service_account_e2e
 fi
 
@@ -256,21 +265,25 @@ else
     CLUSTER_JOIN_TO_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}' ${OC_ADDITIONAL_PARAMS}`
 fi
 
+echo "Creating ${JOINING_CLUSTER_TYPE} secret"
 SECRET_NAME=${SA_NAME}-${JOINING_CLUSTER_NAME}
 if [[ -n `oc get secret -n ${CLUSTER_JOIN_TO_OPERATOR_NS} ${OC_ADDITIONAL_PARAMS} | grep ${SECRET_NAME}` ]]; then
     oc delete secret ${SECRET_NAME} -n ${CLUSTER_JOIN_TO_OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}
 fi
 oc create secret generic ${SECRET_NAME} --from-literal=token="${SA_TOKEN}" --from-literal=ca.crt="${SA_CA_CRT}" -n ${CLUSTER_JOIN_TO_OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}
 
+TOOLCHAINCLUSTER_NAME=${JOINING_CLUSTER_TYPE_NAME}-${JOINING_CLUSTER_NAME}${MULTI_MEMBER}
+OWNER_CLUSTER_NAME=${CLUSTER_JOIN_TO}-${CLUSTER_JOIN_TO_NAME}${MULTI_MEMBER}
+
 TOOLCHAINCLUSTER_CRD="apiVersion: toolchain.dev.openshift.com/v1alpha1
 kind: ToolchainCluster
 metadata:
-  name: ${JOINING_CLUSTER_TYPE_NAME}-${JOINING_CLUSTER_NAME}
+  name: ${TOOLCHAINCLUSTER_NAME}
   namespace: ${CLUSTER_JOIN_TO_OPERATOR_NS}
   labels:
     type: ${JOINING_CLUSTER_TYPE_NAME}
     namespace: ${OPERATOR_NS}
-    ownerClusterName: ${CLUSTER_JOIN_TO}-${CLUSTER_JOIN_TO_NAME}
+    ownerClusterName: ${OWNER_CLUSTER_NAME}
 spec:
   apiEndpoint: ${API_ENDPOINT}
   caBundle: ${SA_CA_CRT}
