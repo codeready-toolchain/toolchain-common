@@ -37,14 +37,17 @@ create_service_account() {
 if [[ -n `oc get rolebinding ${SA_NAME} 2>/dev/null` ]]; then
     oc delete rolebinding ${SA_NAME} -n ${OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}
 fi
+
 cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ${SA_NAME}
   namespace: ${OPERATOR_NS}
----
+EOF
+
+if [[ ${JOINING_CLUSTER_TYPE} == "host" ]]; then
+    cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -57,22 +60,40 @@ rules:
   - "bannedusers"
   - "changetierrequests"
   - "hostoperatorconfigs"
-  - "idlers"
   - "masteruserrecords"
-  - "memberstatuses"
   - "notifications"
-  - "nstemplatesets"
   - "nstemplatetiers"
   - "registrationservices"
   - "templateupdaterequests"
   - "tiertemplates"
   - "toolchainclusters"
   - "toolchainstatuses"
-  - "useraccounts"
   - "usersignups"
   verbs:
   - "*"
----
+EOF
+else
+    cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ${SA_NAME}
+  namespace: ${OPERATOR_NS}
+rules:
+- apiGroups:
+  - toolchain.dev.openshift.com
+  resources:
+  - "idlers"
+  - "nstemplatesets"
+  - "memberstatuses"
+  - "toolchainclusters"
+  - "useraccounts"
+  verbs:
+  - "*"
+EOF
+fi
+
+cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
