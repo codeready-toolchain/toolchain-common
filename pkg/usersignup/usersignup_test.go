@@ -1,9 +1,24 @@
 package usersignup
 
 import (
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
+	commontest "github.com/codeready-toolchain/toolchain-common/pkg/test"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestGenerateCompliantUsername(t *testing.T) {
+	janesignup := &v1alpha1.UserSignup{
+		Spec: v1alpha1.UserSignupSpec{Username: "jane-crtadmin#"},
+	}
+	forbiddenUsernamePrefixes := []string{}
+	username, err := GenerateCompliantUsername(janesignup, commontest.NewFakeClient(t), forbiddenUsernamePrefixes)
+	require.NoError(t, err)
+	require.Equal(t, "jane-crtadmin-crt", username)
+}
 
 func TestTransformUsername(t *testing.T) {
 	assertName(t, "some", "some@email.com")
