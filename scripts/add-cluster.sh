@@ -258,7 +258,7 @@ echo ${CLUSTER_JOIN_TO_OPERATOR_NS}
 login_to_cluster ${JOINING_CLUSTER_TYPE}
 
 if [[ ${JOINING_CLUSTER_TYPE_NAME} != "e2e" ]]; then
-    SA_NAME="toolchaincluster-${JOINING_CLUSTER_TYPE}${MULTI_MEMBER}"
+    SA_NAME="toolchaincluster-${JOINING_CLUSTER_TYPE_NAME}${MULTI_MEMBER}"
     create_service_account
 else
     SA_NAME="e2e-service-account"
@@ -301,7 +301,12 @@ fi
 oc create secret generic ${SECRET_NAME} --from-literal=token="${SA_TOKEN}" --from-literal=ca.crt="${SA_CA_CRT}" -n ${CLUSTER_JOIN_TO_OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}
 
 TOOLCHAINCLUSTER_NAME=${JOINING_CLUSTER_TYPE_NAME}-${JOINING_CLUSTER_NAME}${MULTI_MEMBER}
-OWNER_CLUSTER_NAME=${CLUSTER_JOIN_TO}-${CLUSTER_JOIN_TO_NAME}${MULTI_MEMBER}
+
+CLUSTER_JOIN_TO_TYPE_NAME=CLUSTER_JOIN_TO
+if [[ ${CLUSTER_JOIN_TO_TYPE_NAME} != "host" ]]; then
+    CLUSTER_JOIN_TO_TYPE_NAME="member"
+fi
+OWNER_CLUSTER_NAME=${CLUSTER_JOIN_TO_TYPE_NAME}-${CLUSTER_JOIN_TO_NAME}${MULTI_MEMBER}
 
 TOOLCHAINCLUSTER_CRD="apiVersion: toolchain.dev.openshift.com/v1alpha1
 kind: ToolchainCluster
