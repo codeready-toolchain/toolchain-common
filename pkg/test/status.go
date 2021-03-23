@@ -38,6 +38,7 @@ func AssertContainsMember(t T, members []toolchainv1alpha1.Member, contains tool
 		if c.ClusterName == contains.ClusterName {
 			t.Logf("checking '%s'", c.ClusterName)
 			AssertConditionsMatch(t, c.MemberStatus.Conditions, contains.MemberStatus.Conditions...)
+			assert.Equal(t, contains.ApiEndpoint, c.ApiEndpoint)
 			assert.Equal(t, contains.MemberStatus.ResourceUsage, c.MemberStatus.ResourceUsage)
 			assert.Equal(t, contains.UserAccountCount, c.UserAccountCount)
 			return
