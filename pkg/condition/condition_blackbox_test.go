@@ -72,7 +72,7 @@ func TestAddOrUpdateStatusConditions(t *testing.T) {
 	t.Run("update conditions", func(t *testing.T) {
 		// given
 		current := existingConditions(5)
-		for i, _ := range current {
+		for i := range current {
 			current[i].LastUpdatedTime = &current[i].LastTransitionTime
 		}
 		//when
