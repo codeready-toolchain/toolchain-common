@@ -13,12 +13,10 @@ func Approved(userSignup *v1alpha1.UserSignup) bool {
 }
 
 func SetApproved(userSignup *v1alpha1.UserSignup, val bool) {
-	if val && !contains(userSignup.Spec.States, v1alpha1.UserSignupStateApproved) {
-		userSignup.Spec.States = append(userSignup.Spec.States, v1alpha1.UserSignupStateApproved)
-	}
+	setState(userSignup, v1alpha1.UserSignupStateApproved, val)
 
-	if !val && contains(userSignup.Spec.States, v1alpha1.UserSignupStateApproved) {
-		userSignup.Spec.States = remove(userSignup.Spec.States, v1alpha1.UserSignupStateApproved)
+	if val {
+		setState(userSignup, v1alpha1.UserSignupStateVerificationRequired, false)
 	}
 }
 
@@ -27,13 +25,7 @@ func VerificationRequired(userSignup *v1alpha1.UserSignup) bool {
 }
 
 func SetVerificationRequired(userSignup *v1alpha1.UserSignup, val bool) {
-	if val && !contains(userSignup.Spec.States, v1alpha1.UserSignupStateVerificationRequired) {
-		userSignup.Spec.States = append(userSignup.Spec.States, v1alpha1.UserSignupStateVerificationRequired)
-	}
-
-	if !val && contains(userSignup.Spec.States, v1alpha1.UserSignupStateVerificationRequired) {
-		userSignup.Spec.States = remove(userSignup.Spec.States, v1alpha1.UserSignupStateVerificationRequired)
-	}
+	setState(userSignup, v1alpha1.UserSignupStateVerificationRequired, val)
 }
 
 func Deactivating(userSignup *v1alpha1.UserSignup) bool {
@@ -41,13 +33,7 @@ func Deactivating(userSignup *v1alpha1.UserSignup) bool {
 }
 
 func SetDeactivating(userSignup *v1alpha1.UserSignup, val bool) {
-	if val && !contains(userSignup.Spec.States, v1alpha1.UserSignupStateDeactivating) {
-		userSignup.Spec.States = append(userSignup.Spec.States, v1alpha1.UserSignupStateDeactivating)
-	}
-
-	if !val && contains(userSignup.Spec.States, v1alpha1.UserSignupStateDeactivating) {
-		userSignup.Spec.States = remove(userSignup.Spec.States, v1alpha1.UserSignupStateDeactivating)
-	}
+	setState(userSignup, v1alpha1.UserSignupStateDeactivating, val)
 }
 
 func Deactivated(userSignup *v1alpha1.UserSignup) bool {
@@ -55,12 +41,20 @@ func Deactivated(userSignup *v1alpha1.UserSignup) bool {
 }
 
 func SetDeactivated(userSignup *v1alpha1.UserSignup, val bool) {
-	if val && !contains(userSignup.Spec.States, v1alpha1.UserSignupStateDeactivated) {
-		userSignup.Spec.States = append(userSignup.Spec.States, v1alpha1.UserSignupStateDeactivated)
+	setState(userSignup, v1alpha1.UserSignupStateDeactivated, val)
+
+	if val {
+		setState(userSignup, v1alpha1.UserSignupStateApproved, false)
+	}
+}
+
+func setState(userSignup *v1alpha1.UserSignup, state v1alpha1.UserSignupState, val bool) {
+	if val && !contains(userSignup.Spec.States, state) {
+		userSignup.Spec.States = append(userSignup.Spec.States, state)
 	}
 
-	if !val && contains(userSignup.Spec.States, v1alpha1.UserSignupStateDeactivated) {
-		userSignup.Spec.States = remove(userSignup.Spec.States, v1alpha1.UserSignupStateDeactivated)
+	if !val && contains(userSignup.Spec.States, state) {
+		userSignup.Spec.States = remove(userSignup.Spec.States, state)
 	}
 }
 

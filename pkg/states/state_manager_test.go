@@ -22,15 +22,20 @@ func TestStateManager(t *testing.T) {
 
 		require.Len(t, u.Spec.States, 0)
 		require.False(t, Approved(u))
+
+		SetVerificationRequired(u, true)
+		SetApproved(u, true)
+
+		// Setting approved should remove verification required
+		require.False(t, VerificationRequired(u))
 	})
 
 	t.Run("test verification required", func(t *testing.T) {
-
+		SetApproved(u, false)
 		SetVerificationRequired(u, true)
 
 		require.True(t, VerificationRequired(u))
 
-		require.False(t, Approved(u))
 		require.Len(t, u.Spec.States, 1)
 		require.Equal(t, v1alpha1.UserSignupStateVerificationRequired, u.Spec.States[0])
 
@@ -56,18 +61,20 @@ func TestStateManager(t *testing.T) {
 	})
 
 	t.Run("test deactivated", func(t *testing.T) {
-		SetDeactivating(u, true)
+		SetDeactivated(u, true)
 
-		require.True(t, Deactivating(u))
-
-		require.False(t, Deactivated(u))
+		require.True(t, Deactivated(u))
 		require.Len(t, u.Spec.States, 1)
-		require.Equal(t, v1alpha1.UserSignupStateDeactivating, u.Spec.States[0])
+		require.Equal(t, v1alpha1.UserSignupStateDeactivated, u.Spec.States[0])
 
-		SetDeactivating(u, false)
-
+		SetDeactivated(u, false)
 		require.Len(t, u.Spec.States, 0)
-		require.False(t, Deactivating(u))
+
+		SetApproved(u, true)
+		SetDeactivated(u, true)
+
+		// Setting deactivated should also set approved to false
+		require.False(t, Approved(u))
 	})
 
 	t.Run("test active", func(t *testing.T) {
@@ -86,6 +93,10 @@ func TestStateManager(t *testing.T) {
 		SetDeactivated(u, true)
 		// Should not be active when deactivated
 		require.False(t, Active(u))
+		require.False(t, Approved(u))
+
+		// Reapprove
+		SetApproved(u, true)
 
 		SetVerificationRequired(u, false)
 		// Should still not be active
