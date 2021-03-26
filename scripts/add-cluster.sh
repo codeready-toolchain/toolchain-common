@@ -111,17 +111,17 @@ EOF
 }
 
 create_service_account_e2e() {
-ROLE_NAME=`oc get Roles -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
+ROLE_NAME=`oc get Roles -l olm.owner.kind=ClusterServiceVersion -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
 if [[ -z ${ROLE_NAME} ]]; then
     echo "Role that would have a prefix 'toolchain-${JOINING_CLUSTER_TYPE}-operator.v' wasn't found - available roles are:"
-    echo `oc get Roles -n ${OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}`
+    echo `oc get Roles -l olm.owner.kind=ClusterServiceVersion -n ${OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}`
     exit 1
 fi
 echo "using Role ${ROLE_NAME}"
-CLUSTER_ROLE_NAME=`oc get ClusterRoles -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v" -m 1`
+CLUSTER_ROLE_NAME=`oc get ClusterRoles -l olm.owner.kind=ClusterServiceVersion -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v" -m 1`
 if [[ -z ${CLUSTER_ROLE_NAME} ]]; then
     echo "ClusterRole that would have a prefix 'toolchain-${JOINING_CLUSTER_TYPE}-operator.v' wasn't found - available ClusterRoles are:"
-    echo `oc get ClusterRoles ${OC_ADDITIONAL_PARAMS}`
+    echo `oc get ClusterRoles ${OC_ADDITIONAL_PARAMS} -l olm.owner.kind=ClusterServiceVersion`
     exit 1
 fi
 echo "using ClusterRole ${CLUSTER_ROLE_NAME}"
@@ -286,11 +286,12 @@ if [[ -n ${SANDBOX_CONFIG} ]]; then
     CLUSTER_JOIN_TO_NAME=$(yq -r .\"${CLUSTER_JOIN_TO}\".serverName ${SANDBOX_CONFIG})
 else
     API_ENDPOINT=`oc get infrastructure cluster -o jsonpath='{.status.apiServerURL}' ${OC_ADDITIONAL_PARAMS}`
-    JOINING_CLUSTER_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}' ${OC_ADDITIONAL_PARAMS}`
+    JOINING_CLUSTER_NAME=`echo "${API_ENDPOINT}" | sed 's/.*api\.\([^:]*\):.*/\1/'`
 
     login_to_cluster ${CLUSTER_JOIN_TO}
 
-    CLUSTER_JOIN_TO_NAME=`oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}' ${OC_ADDITIONAL_PARAMS}`
+    CLUSTER_JOIN_TO_API_ENDPOINT=`oc get infrastructure cluster -o jsonpath='{.status.apiServerURL}' ${OC_ADDITIONAL_PARAMS}`
+    CLUSTER_JOIN_TO_NAME=`echo "${CLUSTER_JOIN_TO_API_ENDPOINT}" | sed 's/.*api\.\([^:]*\):.*/\1/'`
 fi
 
 echo "Creating ${JOINING_CLUSTER_TYPE} secret"
