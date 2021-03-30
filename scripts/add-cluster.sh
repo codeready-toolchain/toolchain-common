@@ -124,6 +124,11 @@ if [[ -z ${CLUSTER_ROLE_NAME} ]]; then
     echo `oc get ClusterRoles ${OC_ADDITIONAL_PARAMS} -l olm.owner.kind=ClusterServiceVersion`
     exit 1
 fi
+CLUSTER_ROLE_BINDING_NAME=${SA_NAME}-${OPERATOR_NS}
+# we need to delete the binding since we cannot change the roleRef of the existing binding
+if [[ -n `oc get ClusterRoleBinding ${CLUSTER_ROLE_BINDING_NAME} 2>/dev/null` ]]; then
+    oc delete ClusterRoleBinding ${CLUSTER_ROLE_BINDING_NAME} ${OC_ADDITIONAL_PARAMS}
+fi
 echo "using ClusterRole ${CLUSTER_ROLE_NAME}"
 cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
 ---
@@ -150,7 +155,7 @@ roleRef:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ${SA_NAME}-${OPERATOR_NS}
+  name: ${CLUSTER_ROLE_BINDING_NAME}
 subjects:
 - kind: ServiceAccount
   name: ${SA_NAME}
