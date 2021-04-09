@@ -78,6 +78,13 @@ func IsFalseWithReason(conditions []toolchainv1alpha1.Condition, conditionType t
 	return found && c.Status == apiv1.ConditionFalse && c.Reason == reason
 }
 
+// IsTrueWithReason returns `true` if the condition with the given condition type is found among the conditions
+// and its status is set to `true` with the given reason.
+func IsTrueWithReason(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType, reason string) bool {
+	c, found := FindConditionByType(conditions, conditionType)
+	return found && c.Status == apiv1.ConditionTrue && c.Reason == reason
+}
+
 // Count counts the conditions that match the given type/status/reason
 func Count(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType, status apiv1.ConditionStatus, reason string) int {
 	count := 0
