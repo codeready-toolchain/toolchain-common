@@ -65,6 +65,14 @@ func IsTrue(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1a
 	return found && c.Status == apiv1.ConditionTrue
 }
 
+// IsFalse returns `true` if the condition with the given condition type is found among the conditions
+// and its status is set to `false`.
+// Returns false for unknown conditions and conditions with status set to True.
+func IsFalse(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType) bool {
+	c, found := FindConditionByType(conditions, conditionType)
+	return found && c.Status == apiv1.ConditionFalse
+}
+
 // IsNotTrue returns `true` if the condition with the given condition type has an Unknown or `false`` status
 func IsNotTrue(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType) bool {
 	c, found := FindConditionByType(conditions, conditionType)
