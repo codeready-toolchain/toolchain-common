@@ -294,6 +294,63 @@ func TestIsTrue(t *testing.T) {
 	})
 }
 
+func TestIsFalse(t *testing.T) {
+	conditions := []toolchainv1alpha1.Condition{
+		{
+			Type:   toolchainv1alpha1.ConditionReady,
+			Status: corev1.ConditionFalse,
+		},
+		{
+			Type:   "custom_bool",
+			Status: corev1.ConditionFalse,
+		},
+		{
+			Type:   "false_cond",
+			Status: corev1.ConditionTrue,
+		},
+		{
+			Type:   "unknown_cond",
+			Status: corev1.ConditionUnknown,
+		},
+		{
+			Type:   "something_else",
+			Status: "someStatus",
+		},
+		{
+			Type:   toolchainv1alpha1.ToolchainStatusUnreadyNotificationCreated,
+			Status: corev1.ConditionFalse,
+			Reason: toolchainv1alpha1.ToolchainStatusRestoredNotificationCRCreationFailedReason,
+		},
+	}
+	t.Run("ready set to false", func(t *testing.T) {
+		assert.True(t, condition.IsFalse(conditions, toolchainv1alpha1.ConditionReady))
+	})
+
+	t.Run("toolchainstatus unready notification set to false", func(t *testing.T) {
+		assert.True(t, condition.IsFalse(conditions, toolchainv1alpha1.ToolchainStatusUnreadyNotificationCreated))
+	})
+
+	t.Run("custom bool set to false", func(t *testing.T) {
+		assert.True(t, condition.IsFalse(conditions, "custom_bool"))
+	})
+
+	t.Run("assert false when status is true", func(t *testing.T) {
+		assert.False(t, condition.IsFalse(conditions, "false_cond"))
+	})
+
+	t.Run("explicitly unknown status", func(t *testing.T) {
+		assert.False(t, condition.IsFalse(conditions, "unknown_cond"))
+	})
+
+	t.Run("unknown", func(t *testing.T) {
+		assert.False(t, condition.IsFalse(conditions, "unknown"))
+	})
+
+	t.Run("status is not bool", func(t *testing.T) {
+		assert.False(t, condition.IsFalse(conditions, "something_else"))
+	})
+}
+
 func TestIsFalseWithReason(t *testing.T) {
 	conditions := []toolchainv1alpha1.Condition{
 		{
