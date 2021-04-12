@@ -361,6 +361,73 @@ func TestIsFalseWithReason(t *testing.T) {
 	})
 }
 
+func TestIsTrueWithReason(t *testing.T) {
+	conditions := []toolchainv1alpha1.Condition{
+		{
+			Type:   toolchainv1alpha1.ConditionReady,
+			Status: corev1.ConditionFalse,
+		},
+		{
+			Type:   "custom_bool",
+			Status: corev1.ConditionFalse,
+		},
+		{
+			Type:   "true_cond_without_reason",
+			Status: corev1.ConditionTrue,
+		},
+		{
+			Type:   "true_cond_with_reason",
+			Status: corev1.ConditionTrue,
+			Reason: "reason",
+		},
+		{
+			Type:   "true_cond_with_other_reason",
+			Status: corev1.ConditionTrue,
+			Reason: "other",
+		},
+		{
+			Type:   "unknown_cond",
+			Status: corev1.ConditionUnknown,
+		},
+		{
+			Type:   "something_else",
+			Status: "someStatus",
+		},
+	}
+
+	t.Run("ready set to true", func(t *testing.T) {
+		assert.False(t, condition.IsTrueWithReason(conditions, toolchainv1alpha1.ConditionReady, "reason"))
+	})
+
+	t.Run("custom bool set to true", func(t *testing.T) {
+		assert.False(t, condition.IsTrueWithReason(conditions, "custom_bool", "reason"))
+	})
+
+	t.Run("false without reason", func(t *testing.T) {
+		assert.False(t, condition.IsTrueWithReason(conditions, "true_cond_without_reason", "reason"))
+	})
+
+	t.Run("false with reason", func(t *testing.T) {
+		assert.True(t, condition.IsTrueWithReason(conditions, "true_cond_with_reason", "reason"))
+	})
+
+	t.Run("false with other reason", func(t *testing.T) {
+		assert.False(t, condition.IsTrueWithReason(conditions, "true_cond_with_other_reason", "reason"))
+	})
+
+	t.Run("explicitly unknown", func(t *testing.T) {
+		assert.False(t, condition.IsTrueWithReason(conditions, "unknown_cond", "reason"))
+	})
+
+	t.Run("unknown", func(t *testing.T) {
+		assert.False(t, condition.IsTrueWithReason(conditions, "unknown", "reason"))
+	})
+
+	t.Run("status is not bool", func(t *testing.T) {
+		assert.False(t, condition.IsTrueWithReason(conditions, "something_else", "reason"))
+	})
+}
+
 func TestHasConditionReason(t *testing.T) {
 	conditions := []toolchainv1alpha1.Condition{
 		{
