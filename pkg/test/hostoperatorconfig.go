@@ -53,6 +53,27 @@ func (o AutomaticApprovalOption) Disabled() AutomaticApprovalOption {
 	return o
 }
 
+type DeactivationOption struct {
+	*HostOperatorConfigOptionImpl
+}
+
+func Deactivation() *DeactivationOption {
+	o := &DeactivationOption{
+		HostOperatorConfigOptionImpl: &HostOperatorConfigOptionImpl{},
+	}
+	o.addFunction(func(config *toolchainv1alpha1.HostOperatorConfig) {
+		config.Spec.Deactivation = toolchainv1alpha1.Deactivation{}
+	})
+	return o
+}
+
+func (o DeactivationOption) DeactivatingNotificationDays(days int) DeactivationOption {
+	o.addFunction(func(config *toolchainv1alpha1.HostOperatorConfig) {
+		config.Spec.Deactivation.DeactivatingNotificationDays = days
+	})
+	return o
+}
+
 type PerMemberClusterOption func(map[string]int)
 
 func PerMemberCluster(name string, value int) PerMemberClusterOption {
