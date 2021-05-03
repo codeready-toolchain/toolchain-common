@@ -70,11 +70,13 @@ func TestStateManager(t *testing.T) {
 		SetDeactivated(u, false)
 		require.Len(t, u.Spec.States, 0)
 
+		SetDeactivating(u, true)
 		SetApproved(u, true)
 		SetDeactivated(u, true)
 
-		// Setting deactivated should also set approved to false
+		// Setting deactivated should also set approved and deactivating to false
 		require.False(t, Approved(u))
+		require.False(t, Deactivating(u))
 	})
 
 	t.Run("test active", func(t *testing.T) {
