@@ -14,7 +14,7 @@ This repository uses https://github.com/golang/go/wiki/Modules[Go modules]. You 
 
 == Setting Up and Connecting Host and Member Clusters
 
-In a new terminal, login as admin to host-operator and then execute the following commands
+In a new terminal, login as admin and execute the following commands from the local `host-operator` repository directory
 ```
 $ make create-namespace 
 $ make deploy-rbac
