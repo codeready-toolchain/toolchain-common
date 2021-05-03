@@ -21,7 +21,7 @@ $ make deploy-rbac
 $ make deploy-crd
 ```
 
-login as admin to member and then execute the following commands
+then execute the following commands from the local `member-operator` repository directory
 ```
 $ make create-namespace 
 $ make deploy-rbac
