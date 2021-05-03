@@ -168,7 +168,7 @@ make add-host-to-member
 Note: We have make target available for this i.e. `make add-host-to-member` member-operator, host-operator repository
 
 ==== Using a single cluster for both operators host and member
-Assumption: This script assumes that you have host and member operators running on Openshift cluster
+Assumption: This script assumes that you have both host and member operators running on the same OpenShift cluster
 in respective namespace with all requires resources like Service Account, (Cluster)Role, (Cluster)RoleBinding, Custom Resource Definition.
 *Scenario 1: Add Member to Host*
 
