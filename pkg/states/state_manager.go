@@ -45,6 +45,7 @@ func SetDeactivated(userSignup *v1alpha1.UserSignup, val bool) {
 
 	if val {
 		setState(userSignup, v1alpha1.UserSignupStateApproved, false)
+		setState(userSignup, v1alpha1.UserSignupStateDeactivating, false)
 	}
 }
 
