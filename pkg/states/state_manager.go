@@ -34,6 +34,10 @@ func Deactivating(userSignup *v1alpha1.UserSignup) bool {
 
 func SetDeactivating(userSignup *v1alpha1.UserSignup, val bool) {
 	setState(userSignup, v1alpha1.UserSignupStateDeactivating, val)
+
+	if val {
+		setState(userSignup, v1alpha1.UserSignupStateDeactivated, false)
+	}
 }
 
 func Deactivated(userSignup *v1alpha1.UserSignup) bool {

@@ -58,6 +58,12 @@ func TestStateManager(t *testing.T) {
 
 		require.Len(t, u.Spec.States, 0)
 		require.False(t, Deactivating(u))
+
+		SetDeactivated(u, true)
+		SetDeactivating(u, true)
+
+		// Setting deactivating should also set deactivated to false
+		require.False(t, Deactivated(u))
 	})
 
 	t.Run("test deactivated", func(t *testing.T) {
