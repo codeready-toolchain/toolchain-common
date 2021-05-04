@@ -160,6 +160,13 @@ func ModifyUaInMur(mur *toolchainv1alpha1.MasterUserRecord, targetCluster string
 	}
 }
 
+func UserID(userID string) MurModifier {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
+		mur.Spec.UserID = userID
+		return nil
+	}
+}
+
 func StatusCondition(con toolchainv1alpha1.Condition) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		mur.Status.Conditions, _ = condition.AddOrUpdateStatusConditions(mur.Status.Conditions, con)
