@@ -17,6 +17,8 @@ func SetApproved(userSignup *v1alpha1.UserSignup, val bool) {
 
 	if val {
 		setState(userSignup, v1alpha1.UserSignupStateVerificationRequired, false)
+		setState(userSignup, v1alpha1.UserSignupStateDeactivating, false)
+		setState(userSignup, v1alpha1.UserSignupStateDeactivated, false)
 	}
 }
 
