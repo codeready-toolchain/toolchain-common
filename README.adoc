@@ -14,40 +14,15 @@ This repository uses https://github.com/golang/go/wiki/Modules[Go modules]. You 
 
 == Setting Up and Connecting Host and Member Clusters
 
-In a new terminal, execute the following commands
+To setup host and member clusters - follow steps from https://github.com/codeready-toolchain/toolchain-e2e/blob/master/dev_install.adoc
+
+Once the host and member operators are setup, we can add resources and watch the logs on the member-operator! To do so, open a new terminal and run the following commands
 ```
 $ cd $GOPATH/src/github.com/codeready-toolchain/host-operator
-$ minishift start --profile host
-$ make login-as-admin 
-$ make create-namespace 
-$ make deploy-rbac
-$ make deploy-crd
-```
-
-```
-$ cd $GOPATH/src/github.com/codeready-toolchain/member-operator
-$ minishift start --profile member
-$ make login-as-admin 
-$ make create-namespace 
-$ make deploy-rbac
-$ make deploy-crd
-$ make add-member-to-host
-$ make add-host-to-member
-$ make build
-$ make vendor
-$ export OPERATOR_NAMESPACE=toolchain-member-operator
-$ operator-sdk up local --namespace=toolchain-member-operator --verbose
-```
-
-Now that we are setup, we can add resources and watch the logs on the member-operator! To do so, open a new terminal and run the following commands
-```
-$ cd $GOPATH/src/github.com/codeready-toolchain/host-operator
-$ minishift profile set host
-$ make use-namespace
+# switch to appropriate namespace
 $ oc apply -f '/path/to/masteruserrecord.yaml'
 $ cd $GOPATH/github.com/codeready-toolchain/member-operator
-$ minishift profile set member
-$ make use-namespace
+# switch to appropriate namespace
 $ oc apply -f '/path/to/useraccount.yaml'
 ```
 
@@ -126,16 +101,7 @@ $ oc apply -f deploy/user.yaml
 The CodeReady Toolchain architecture contains two types of clusters `host` and `member`.
 To connect these two clusters together it is necessary to run a script link:scripts/add-cluster.sh[] that takes multiple flags like, `--type`, `--member-ns`, `--host-ns`, `--single-cluster`, `--kube-config`. However you can see all these options by using `./scripts/add-cluster.sh -h`
 
-==== host and member clusters using host and member profiles on minishift
-Make sure that you have started minishift as different profiles. You can use following commands for it.
-
-* `minishift start --profile host`
-* `minishift start --profile member`
-
-Once you have minishift running with above profiles, you can `./add-clusters.sh` script with required flags.
-
-Assumption: This script assumes that you have host and member operators running on host and member clusters(in our case clusters are different profiles)
-in respective namespace with all requires resources like Service Account, (Cluster)Role, (Cluste)RoleBinding, Custom Resource Definition.
+Assumption: This script assumes that you have host and member operators running on host and member clusters.
 
 *Scenario 1: Add Member to Host*
 
@@ -183,13 +149,7 @@ make add-host-to-member
 Note: We have make target available for this i.e. `make add-host-to-member` member-operator, host-operator repository
 
 ==== Using a single cluster for both operators host and member
-Make sure that you have started minishift. You can use following commands for it.
-
-* `minishift start`
-
-Once you have minishift or any openshift cluster running and logged in as admin, you can run `./scripts/add-clusters.sh` script with required flags.
-
-Assumption: This script assumes that you have host and member operators running on minishift or any other Openshift cluster
+Assumption: This script assumes that you have both host and member operators running on the same OpenShift cluster
 in respective namespace with all requires resources like Service Account, (Cluster)Role, (Cluster)RoleBinding, Custom Resource Definition.
 *Scenario 1: Add Member to Host*
 
