@@ -367,3 +367,14 @@ func UserIDFromUserSignup(userSignup *toolchainv1alpha1.UserSignup) MurModifier 
 		return nil
 	}
 }
+
+// WithAnnotation sets an annotation with the given key/value
+func WithAnnotation(key, value string) MurModifier {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
+		if mur.Annotations == nil {
+			mur.Annotations = map[string]string{}
+		}
+		mur.Annotations[key] = value
+		return nil
+	}
+}

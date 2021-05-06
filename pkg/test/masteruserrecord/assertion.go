@@ -220,6 +220,16 @@ func (a *Assertion) HasLabel(key string) *Assertion {
 	return a
 }
 
+// HasAnnotationWithValue verifies that the MasterUserRecord has
+// an annotation with the given key and value
+func (a *Assertion) HasAnnotationWithValue(key, value string) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	require.Contains(a.t, a.masterUserRecord.Annotations, key)
+	assert.Equal(a.t, value, a.masterUserRecord.Annotations[key])
+	return a
+}
+
 // HasCustomNamespaceTemplate verifies that for the given target cluster, there's a namespace with the given templateRef,
 // but the latter is "overriden" by the given template
 func (a *Assertion) HasCustomNamespaceTemplate(targetCluster, templateRef, template string) *Assertion {

@@ -30,7 +30,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 
 		t.Run("ok", func(t *testing.T) {
 			// given
-			mockT := NewMockT()
+			mockT := test.NewMockT()
 			client := test.NewFakeClient(mockT, mur)
 			client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
 				if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
@@ -59,7 +59,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 
 			t.Run("missing target cluster", func(t *testing.T) {
 				// given
-				mockT := NewMockT()
+				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
 				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
@@ -86,7 +86,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 
 			t.Run("different NSTemplateSets", func(t *testing.T) {
 				// given
-				mockT := NewMockT()
+				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
 				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
@@ -135,7 +135,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 					},
 				},
 			}
-			mockT := NewMockT()
+			mockT := test.NewMockT()
 			client := test.NewFakeClient(mockT, mur)
 			client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
 				if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
@@ -174,7 +174,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 						},
 					},
 				}
-				mockT := NewMockT()
+				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
 				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
@@ -214,7 +214,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 						},
 					},
 				}
-				mockT := NewMockT()
+				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
 				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
@@ -254,7 +254,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 						},
 					},
 				}
-				mockT := NewMockT()
+				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
 				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
@@ -297,7 +297,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 						},
 					},
 				}
-				mockT := NewMockT()
+				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
 				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
@@ -319,58 +319,4 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 		})
 
 	})
-}
-
-func NewMockT() *MockT {
-	return &MockT{}
-}
-
-var _ test.T = &MockT{}
-
-type MockT struct {
-	logfCount    int
-	errorfCount  int
-	fatalfCount  int
-	failnowCount int
-	failCount    int
-}
-
-func (t *MockT) Log(args ...interface{}) {
-	t.logfCount++
-}
-
-func (t *MockT) Logf(format string, args ...interface{}) {
-	t.logfCount++
-}
-
-func (t *MockT) Errorf(format string, args ...interface{}) {
-	t.errorfCount++
-}
-
-func (t *MockT) Fatalf(format string, args ...interface{}) {
-	t.fatalfCount++
-}
-
-func (t *MockT) FailNow() {
-	t.failnowCount++
-}
-
-func (t *MockT) Fail() {
-	t.failCount++
-}
-
-func (t *MockT) CalledLogf() bool {
-	return t.logfCount > 0
-}
-
-func (t *MockT) CalledErrorf() bool {
-	return t.errorfCount > 0
-}
-
-func (t *MockT) CalledFatalf() bool {
-	return t.fatalfCount > 0
-}
-
-func (t *MockT) CalledFailNow() bool {
-	return t.failnowCount > 0
 }
