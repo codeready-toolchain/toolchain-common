@@ -21,7 +21,7 @@ var fakeToolchainClusterMsg = "AToolchainClusterMsg"
 var log = logf.Log.WithName("toolchaincluster_test")
 
 func TestGetToolchainClusterConditions(t *testing.T) {
-	logf.SetLogger(zap.Logger(true))
+	logf.SetLogger(zap.New(zap.UseDevMode(true)))
 	t.Run("test ToolchainCluster conditions", func(t *testing.T) {
 		t.Run("condition ready", func(t *testing.T) {
 			// given
