@@ -115,28 +115,27 @@ func addOrUpdateStatusCondition(conditions []toolchainv1alpha1.Condition, newCon
 
 	if conditions == nil {
 		return []toolchainv1alpha1.Condition{newCondition}, true
-	} else {
-		for i, cond := range conditions {
-			if cond.Type == newCondition.Type {
-				// Condition already present. Update it if needed. Always update if "updateLastUpdatedTimestamp" is set to true.
-				if !updateLastUpdatedTimestamp &&
-					cond.Status == newCondition.Status &&
-					cond.Reason == newCondition.Reason &&
-					cond.Message == newCondition.Message {
-					// Nothing changed. No need to update.
-					return conditions, false
-				}
-
-				// Update LastTransitionTime only if the status changed otherwise keep the old time
-				if newCondition.Status == cond.Status {
-					newCondition.LastTransitionTime = cond.LastTransitionTime
-				}
-				// Don't modify the currentConditions slice. Generate a new slice instead.
-				res := make([]toolchainv1alpha1.Condition, len(conditions))
-				copy(res, conditions)
-				res[i] = newCondition
-				return res, true
+	}
+	for i, cond := range conditions {
+		if cond.Type == newCondition.Type {
+			// Condition already present. Update it if needed. Always update if "updateLastUpdatedTimestamp" is set to true.
+			if !updateLastUpdatedTimestamp &&
+				cond.Status == newCondition.Status &&
+				cond.Reason == newCondition.Reason &&
+				cond.Message == newCondition.Message {
+				// Nothing changed. No need to update.
+				return conditions, false
 			}
+
+			// Update LastTransitionTime only if the status changed otherwise keep the old time
+			if newCondition.Status == cond.Status {
+				newCondition.LastTransitionTime = cond.LastTransitionTime
+			}
+			// Don't modify the currentConditions slice. Generate a new slice instead.
+			res := make([]toolchainv1alpha1.Condition, len(conditions))
+			copy(res, conditions)
+			res[i] = newCondition
+			return res, true
 		}
 	}
 	return append(conditions, newCondition), true

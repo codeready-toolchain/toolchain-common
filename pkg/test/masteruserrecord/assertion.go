@@ -231,7 +231,7 @@ func (a *Assertion) HasAnnotationWithValue(key, value string) *Assertion {
 }
 
 // HasCustomNamespaceTemplate verifies that for the given target cluster, there's a namespace with the given templateRef,
-// but the latter is "overriden" by the given template
+// but the latter is "overridden" by the given template
 func (a *Assertion) HasCustomNamespaceTemplate(targetCluster, templateRef, template string) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
@@ -250,7 +250,7 @@ func (a *Assertion) HasCustomNamespaceTemplate(targetCluster, templateRef, templ
 }
 
 // HasCustomClusterResourcesTemplate verifies that for the given target cluster, there's a namespace with the given templateRef,
-// but the latter is "overriden" by the given template
+// but the latter is "overridden" by the given template
 func (a *Assertion) HasCustomClusterResourcesTemplate(targetCluster, template string) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
