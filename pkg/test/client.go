@@ -25,6 +25,10 @@ func   NewFakeClient(t T, initObjs ...runtime.Object) *FakeClient {
 	return &FakeClient{Client: cl, T: t}
 }
 
+func unused() {
+  //do nothing
+}
+
 type FakeClient struct {
 	client.Client
 	T                T
