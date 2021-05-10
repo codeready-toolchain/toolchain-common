@@ -16,7 +16,8 @@ import (
 )
 
 // NewFakeClient creates a fake K8s client with ability to override specific Get/List/Create/Update/StatusUpdate/Delete functions
-func NewFakeClient(t T, initObjs ...runtime.Object) *FakeClient {
+func   NewFakeClient(t T, initObjs ...runtime.Object) *FakeClient {
+
 	s := scheme.Scheme
 	err := apis.AddToScheme(s)
 	require.NoError(t, err)
