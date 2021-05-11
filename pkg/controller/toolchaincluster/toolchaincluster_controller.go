@@ -34,7 +34,7 @@ func Add(mgr manager.Manager, timeout time.Duration) error {
 func newReconciler(mgr manager.Manager, namespace string, timeout time.Duration) reconcile.Reconciler {
 	logger := logf.Log.WithName("toolchaincluster_cache")
 	clusterCacheService := cluster.NewToolchainClusterService(mgr.GetClient(), logger, namespace, timeout)
-	return &ReconcileToolchainCluster{
+	return &Reconciler{
 		client:              mgr.GetClient(),
 		scheme:              mgr.GetScheme(),
 		clusterCacheService: clusterCacheService,
@@ -53,11 +53,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return c.Watch(&source.Kind{Type: &toolchainv1alpha1.ToolchainCluster{}}, &handler.EnqueueRequestForObject{})
 }
 
-// blank assignment to verify that ReconcileToolchainCluster implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileToolchainCluster{}
+// blank assignment to verify that Reconciler implements reconcile.Reconciler
+var _ reconcile.Reconciler = &Reconciler{}
 
-// ReconcileToolchainCluster reconciles a ToolchainCluster object
-type ReconcileToolchainCluster struct {
+// Reconciler reconciles a ToolchainCluster object
+type Reconciler struct {
 	client              client.Client
 	scheme              *runtime.Scheme
 	clusterCacheService cluster.ToolchainClusterService
@@ -68,7 +68,7 @@ type ReconcileToolchainCluster struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileToolchainCluster) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling ToolchainCluster")
 

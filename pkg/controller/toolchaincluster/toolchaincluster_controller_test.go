@@ -84,8 +84,8 @@ func TestDeleteToolchainCluster(t *testing.T) {
 	})
 }
 
-func prepareReconcile(toolchainCluster *v1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) (ReconcileToolchainCluster, reconcile.Request) {
-	controller := ReconcileToolchainCluster{
+func prepareReconcile(toolchainCluster *v1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) (Reconciler, reconcile.Request) {
+	controller := Reconciler{
 		client:              cl,
 		scheme:              scheme.Scheme,
 		clusterCacheService: service,
