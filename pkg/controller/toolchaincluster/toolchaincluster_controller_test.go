@@ -8,6 +8,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test/verify"
 	"k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -89,6 +90,7 @@ func prepareReconcile(toolchainCluster *v1alpha1.ToolchainCluster, cl *test.Fake
 		client:              cl,
 		scheme:              scheme.Scheme,
 		clusterCacheService: service,
+		log:                 ctrl.Log.WithName("controllers").WithName("ToolchainCluster"),
 	}
 	req := reconcile.Request{
 		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
