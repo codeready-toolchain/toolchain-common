@@ -91,6 +91,9 @@ func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier
 			Labels: map[string]string{
 				templateTierHashLabelKey(DefaultNSTemplateTier.Name): hash,
 			},
+			Annotations: map[string]string{
+				toolchainv1alpha1.MasterUserRecordEmailAnnotationKey: "joe@redhat.com",
+			},
 		},
 		Spec: toolchainv1alpha1.MasterUserRecordSpec{
 			UserID:       userID,
