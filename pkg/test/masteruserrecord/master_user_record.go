@@ -91,6 +91,11 @@ func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier
 			Labels: map[string]string{
 				templateTierHashLabelKey(DefaultNSTemplateTier.Name): hash,
 			},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					BlockOwnerDeletion: func(b bool) *bool { return &b }(true),
+				},
+			},
 		},
 		Spec: toolchainv1alpha1.MasterUserRecordSpec{
 			UserID:       userID,
