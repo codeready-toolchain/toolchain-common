@@ -1,7 +1,7 @@
 package test
 
 import (
-	"github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
+	"github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"

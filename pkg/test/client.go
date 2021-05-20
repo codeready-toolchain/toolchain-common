@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/codeready-toolchain/api/pkg/apis"
+	"github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,7 +18,7 @@ import (
 // NewFakeClient creates a fake K8s client with ability to override specific Get/List/Create/Update/StatusUpdate/Delete functions
 func NewFakeClient(t T, initObjs ...runtime.Object) *FakeClient {
 	s := scheme.Scheme
-	err := apis.AddToScheme(s)
+	err := v1alpha1.AddToScheme(s)
 	require.NoError(t, err)
 	cl := fake.NewFakeClientWithScheme(s, initObjs...)
 	return &FakeClient{Client: cl, T: t}

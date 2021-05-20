@@ -3,8 +3,7 @@ package cluster
 import (
 	"testing"
 
-	"github.com/codeready-toolchain/api/pkg/apis"
-	"github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
+	"github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +19,7 @@ func TestRefreshCacheInService(t *testing.T) {
 	status := test.NewClusterStatus(v1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, map[string]string{"ownerClusterName": test.NameMember})
 	s := scheme.Scheme
-	err := apis.AddToScheme(s)
+	err := v1alpha1.AddToScheme(s)
 	require.NoError(t, err)
 	cl := test.NewFakeClient(t, toolchainCluster, sec)
 	service := NewToolchainClusterService(cl, logf.Log, "test-namespace", 0)

@@ -7,7 +7,7 @@ import (
 	texttemplate "text/template"
 	"time"
 
-	"github.com/codeready-toolchain/api/pkg/apis"
+	"github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/client"
 	"github.com/codeready-toolchain/toolchain-common/pkg/template"
 	. "github.com/codeready-toolchain/toolchain-common/pkg/test"
@@ -222,7 +222,7 @@ func addToScheme(t *testing.T) *runtime.Scheme {
 	s := scheme.Scheme
 	err := authv1.Install(s)
 	require.NoError(t, err)
-	err = apis.AddToScheme(s)
+	err = v1alpha1.AddToScheme(s)
 	require.NoError(t, err)
 	return s
 }

@@ -1,6 +1,6 @@
 package states
 
-import "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
+import "github.com/codeready-toolchain/api/api/v1alpha1"
 
 func Active(userSignup *v1alpha1.UserSignup) bool {
 	return Approved(userSignup) &&

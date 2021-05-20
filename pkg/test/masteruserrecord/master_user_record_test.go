@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/codeready-toolchain/api/pkg/apis"
-	toolchainv1alpha1 "github.com/codeready-toolchain/api/pkg/apis/toolchain/v1alpha1"
+	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	murtest "github.com/codeready-toolchain/toolchain-common/pkg/test/masteruserrecord"
 
@@ -21,7 +20,7 @@ import (
 func TestMasterUserRecordAssertion(t *testing.T) {
 
 	s := scheme.Scheme
-	err := apis.AddToScheme(s)
+	err := toolchainv1alpha1.AddToScheme(s)
 	require.NoError(t, err)
 
 	t.Run("HasNSTemplateSet assertion", func(t *testing.T) {
