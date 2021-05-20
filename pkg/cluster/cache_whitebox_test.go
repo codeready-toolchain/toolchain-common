@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/codeready-toolchain/api/api/v1alpha1"
+	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -423,16 +423,16 @@ type clusterOption func(*CachedToolchainCluster)
 
 // Ready an option to state the cluster as "ready"
 var ready clusterOption = func(c *CachedToolchainCluster) {
-	c.ClusterStatus.Conditions = append(c.ClusterStatus.Conditions, v1alpha1.ToolchainClusterCondition{
-		Type:   v1alpha1.ToolchainClusterReady,
+	c.ClusterStatus.Conditions = append(c.ClusterStatus.Conditions, toolchainv1alpha1.ToolchainClusterCondition{
+		Type:   toolchainv1alpha1.ToolchainClusterReady,
 		Status: v1.ConditionTrue,
 	})
 }
 
 // clusterNotReady an option to state the cluster as "not ready"
 var notReady clusterOption = func(c *CachedToolchainCluster) {
-	c.ClusterStatus.Conditions = append(c.ClusterStatus.Conditions, v1alpha1.ToolchainClusterCondition{
-		Type:   v1alpha1.ToolchainClusterReady,
+	c.ClusterStatus.Conditions = append(c.ClusterStatus.Conditions, toolchainv1alpha1.ToolchainClusterCondition{
+		Type:   toolchainv1alpha1.ToolchainClusterReady,
 		Status: v1.ConditionFalse,
 	})
 }
@@ -444,7 +444,7 @@ func newTestCachedToolchainCluster(t *testing.T, name string, clusterType Type, 
 		Client:            cl,
 		OperatorNamespace: name + "Namespace",
 		Type:              clusterType,
-		ClusterStatus:     &v1alpha1.ToolchainClusterStatus{},
+		ClusterStatus:     &toolchainv1alpha1.ToolchainClusterStatus{},
 	}
 	for _, configure := range options {
 		configure(cachedCluster)

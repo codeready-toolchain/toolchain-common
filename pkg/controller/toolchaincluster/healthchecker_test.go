@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/codeready-toolchain/api/api/v1alpha1"
+	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/assert"
@@ -34,9 +34,9 @@ func TestClusterHealthChecks(t *testing.T) {
 		Reply(404)
 
 	t.Run("ToolchainCluster.status doesn't contain any conditions", func(t *testing.T) {
-		unstable, sec := newToolchainCluster("unstable", "http://unstable.com", v1alpha1.ToolchainClusterStatus{})
-		notFound, _ := newToolchainCluster("not-found", "http://not-found.com", v1alpha1.ToolchainClusterStatus{})
-		stable, _ := newToolchainCluster("stable", "http://cluster.com", v1alpha1.ToolchainClusterStatus{})
+		unstable, sec := newToolchainCluster("unstable", "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		notFound, _ := newToolchainCluster("not-found", "http://not-found.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		stable, _ := newToolchainCluster("stable", "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, unstable, notFound, stable, sec)
 		reset := setupCachedClusters(t, cl, unstable, notFound, stable)
@@ -84,7 +84,7 @@ func TestClusterHealthChecks(t *testing.T) {
 	})
 
 	t.Run("if the connection cannot be established at beginning, then it should be offline", func(t *testing.T) {
-		stable, sec := newToolchainCluster("failing", "http://failing.com", v1alpha1.ToolchainClusterStatus{})
+		stable, sec := newToolchainCluster("failing", "http://failing.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, stable, sec)
 
@@ -96,7 +96,7 @@ func TestClusterHealthChecks(t *testing.T) {
 	})
 }
 
-func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*v1alpha1.ToolchainCluster) func() {
+func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolchainv1alpha1.ToolchainCluster) func() {
 	service := cluster.NewToolchainClusterService(cl, logf.Log, "test-namespace", 0)
 	for _, clustr := range clusters {
 		err := service.AddOrUpdateToolchainCluster(clustr)
@@ -112,19 +112,19 @@ func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*v1alpha
 	}
 }
 
-func withStatus(conditions ...v1alpha1.ToolchainClusterCondition) v1alpha1.ToolchainClusterStatus {
-	return v1alpha1.ToolchainClusterStatus{
+func withStatus(conditions ...toolchainv1alpha1.ToolchainClusterCondition) toolchainv1alpha1.ToolchainClusterStatus {
+	return toolchainv1alpha1.ToolchainClusterStatus{
 		Conditions: conditions,
 	}
 }
 
-func newToolchainCluster(name, apiEndpoint string, status v1alpha1.ToolchainClusterStatus) (*v1alpha1.ToolchainCluster, *corev1.Secret) {
+func newToolchainCluster(name, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
 	toolchainCluster, secret := test.NewToolchainClusterWithEndpoint(name, "secret", apiEndpoint, status, map[string]string{})
 	return toolchainCluster, secret
 }
 
-func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clusterConds ...v1alpha1.ToolchainClusterCondition) {
-	tc := &v1alpha1.ToolchainCluster{}
+func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clusterConds ...toolchainv1alpha1.ToolchainClusterCondition) {
+	tc := &toolchainv1alpha1.ToolchainCluster{}
 	err := cl.Get(context.TODO(), test.NamespacedName("test-namespace", clusterName), tc)
 	require.NoError(t, err)
 	assert.Len(t, tc.Status.Conditions, len(clusterConds))
@@ -142,30 +142,30 @@ ExpConditions:
 	}
 }
 
-func healthy() v1alpha1.ToolchainClusterCondition {
-	return v1alpha1.ToolchainClusterCondition{
-		Type:    v1alpha1.ToolchainClusterReady,
+func healthy() toolchainv1alpha1.ToolchainClusterCondition {
+	return toolchainv1alpha1.ToolchainClusterCondition{
+		Type:    toolchainv1alpha1.ToolchainClusterReady,
 		Status:  corev1.ConditionTrue,
 		Reason:  "ClusterReady",
 		Message: "/healthz responded with ok",
 	}
 }
-func unhealthy() v1alpha1.ToolchainClusterCondition {
-	return v1alpha1.ToolchainClusterCondition{Type: v1alpha1.ToolchainClusterReady,
+func unhealthy() toolchainv1alpha1.ToolchainClusterCondition {
+	return toolchainv1alpha1.ToolchainClusterCondition{Type: toolchainv1alpha1.ToolchainClusterReady,
 		Status:  corev1.ConditionFalse,
 		Reason:  "ClusterNotReady",
 		Message: "/healthz responded without ok",
 	}
 }
-func offline() v1alpha1.ToolchainClusterCondition {
-	return v1alpha1.ToolchainClusterCondition{Type: v1alpha1.ToolchainClusterOffline,
+func offline() toolchainv1alpha1.ToolchainClusterCondition {
+	return toolchainv1alpha1.ToolchainClusterCondition{Type: toolchainv1alpha1.ToolchainClusterOffline,
 		Status:  corev1.ConditionTrue,
 		Reason:  "ClusterNotReachable",
 		Message: "cluster is not reachable",
 	}
 }
-func notOffline() v1alpha1.ToolchainClusterCondition {
-	return v1alpha1.ToolchainClusterCondition{Type: v1alpha1.ToolchainClusterOffline,
+func notOffline() toolchainv1alpha1.ToolchainClusterCondition {
+	return toolchainv1alpha1.ToolchainClusterCondition{Type: toolchainv1alpha1.ToolchainClusterOffline,
 		Status:  corev1.ConditionFalse,
 		Reason:  "ClusterReachable",
 		Message: "cluster is reachable",

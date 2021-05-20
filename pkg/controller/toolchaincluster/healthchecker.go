@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codeready-toolchain/api/api/v1alpha1"
+	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -44,7 +44,7 @@ type HealthChecker struct {
 
 // updateClusterStatuses checks cluster health and updates status of all ToolchainClusters
 func updateClusterStatuses(namespace string, cl client.Client) {
-	clusters := &v1alpha1.ToolchainClusterList{}
+	clusters := &toolchainv1alpha1.ToolchainClusterList{}
 	err := cl.List(context.TODO(), clusters, client.InNamespace(namespace))
 	if err != nil {
 		logger.Error(err, "unable to list existing ToolchainClusters")
@@ -61,7 +61,7 @@ func updateClusterStatuses(namespace string, cl client.Client) {
 		cachedCluster, ok := cluster.GetCachedToolchainCluster(clusterObj.Name)
 		if !ok {
 			clusterLogger.Error(fmt.Errorf("cluster %s not found in cache", clusterObj.Name), "failed to retrieve stored data for cluster")
-			clusterObj.Status.Conditions = []v1alpha1.ToolchainClusterCondition{clusterOfflineCondition()}
+			clusterObj.Status.Conditions = []toolchainv1alpha1.ToolchainClusterCondition{clusterOfflineCondition()}
 			if err := cl.Status().Update(context.TODO(), clusterObj); err != nil {
 				clusterLogger.Error(err, "failed to update the status of ToolchainCluster")
 			}
@@ -87,7 +87,7 @@ func updateClusterStatuses(namespace string, cl client.Client) {
 	}
 }
 
-func (hc *HealthChecker) updateIndividualClusterStatus(toolchainCluster *v1alpha1.ToolchainCluster) error {
+func (hc *HealthChecker) updateIndividualClusterStatus(toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
 
 	currentClusterStatus := hc.getClusterHealthStatus()
 
@@ -107,8 +107,8 @@ func (hc *HealthChecker) updateIndividualClusterStatus(toolchainCluster *v1alpha
 }
 
 // getClusterHealthStatus gets the kubernetes cluster health status by requesting "/healthz"
-func (hc *HealthChecker) getClusterHealthStatus() *v1alpha1.ToolchainClusterStatus {
-	clusterStatus := v1alpha1.ToolchainClusterStatus{}
+func (hc *HealthChecker) getClusterHealthStatus() *toolchainv1alpha1.ToolchainClusterStatus {
+	clusterStatus := toolchainv1alpha1.ToolchainClusterStatus{}
 	body, err := hc.remoteClusterClientset.DiscoveryClient.RESTClient().Get().AbsPath("/healthz").Do(context.TODO()).Raw()
 	if err != nil {
 		hc.logger.Error(err, "Failed to do cluster health check for a ToolchainCluster")
@@ -124,48 +124,48 @@ func (hc *HealthChecker) getClusterHealthStatus() *v1alpha1.ToolchainClusterStat
 	return &clusterStatus
 }
 
-func clusterReadyCondition() v1alpha1.ToolchainClusterCondition {
+func clusterReadyCondition() toolchainv1alpha1.ToolchainClusterCondition {
 	currentTime := metav1.Now()
-	return v1alpha1.ToolchainClusterCondition{
-		Type:               v1alpha1.ToolchainClusterReady,
+	return toolchainv1alpha1.ToolchainClusterCondition{
+		Type:               toolchainv1alpha1.ToolchainClusterReady,
 		Status:             corev1.ConditionTrue,
-		Reason:             v1alpha1.ToolchainClusterClusterReadyReason,
+		Reason:             toolchainv1alpha1.ToolchainClusterClusterReadyReason,
 		Message:            healthzOk,
 		LastProbeTime:      currentTime,
 		LastTransitionTime: &currentTime,
 	}
 }
 
-func clusterNotReadyCondition() v1alpha1.ToolchainClusterCondition {
+func clusterNotReadyCondition() toolchainv1alpha1.ToolchainClusterCondition {
 	currentTime := metav1.Now()
-	return v1alpha1.ToolchainClusterCondition{
-		Type:               v1alpha1.ToolchainClusterReady,
+	return toolchainv1alpha1.ToolchainClusterCondition{
+		Type:               toolchainv1alpha1.ToolchainClusterReady,
 		Status:             corev1.ConditionFalse,
-		Reason:             v1alpha1.ToolchainClusterClusterNotReadyReason,
+		Reason:             toolchainv1alpha1.ToolchainClusterClusterNotReadyReason,
 		Message:            healthzNotOk,
 		LastProbeTime:      currentTime,
 		LastTransitionTime: &currentTime,
 	}
 }
 
-func clusterOfflineCondition() v1alpha1.ToolchainClusterCondition {
+func clusterOfflineCondition() toolchainv1alpha1.ToolchainClusterCondition {
 	currentTime := metav1.Now()
-	return v1alpha1.ToolchainClusterCondition{
-		Type:               v1alpha1.ToolchainClusterOffline,
+	return toolchainv1alpha1.ToolchainClusterCondition{
+		Type:               toolchainv1alpha1.ToolchainClusterOffline,
 		Status:             corev1.ConditionTrue,
-		Reason:             v1alpha1.ToolchainClusterClusterNotReachableReason,
+		Reason:             toolchainv1alpha1.ToolchainClusterClusterNotReachableReason,
 		Message:            clusterNotReachableMsg,
 		LastProbeTime:      currentTime,
 		LastTransitionTime: &currentTime,
 	}
 }
 
-func clusterNotOfflineCondition() v1alpha1.ToolchainClusterCondition {
+func clusterNotOfflineCondition() toolchainv1alpha1.ToolchainClusterCondition {
 	currentTime := metav1.Now()
-	return v1alpha1.ToolchainClusterCondition{
-		Type:               v1alpha1.ToolchainClusterOffline,
+	return toolchainv1alpha1.ToolchainClusterCondition{
+		Type:               toolchainv1alpha1.ToolchainClusterOffline,
 		Status:             corev1.ConditionFalse,
-		Reason:             v1alpha1.ToolchainClusterClusterReachableReason,
+		Reason:             toolchainv1alpha1.ToolchainClusterClusterReachableReason,
 		Message:            clusterReachableMsg,
 		LastProbeTime:      currentTime,
 		LastTransitionTime: &currentTime,

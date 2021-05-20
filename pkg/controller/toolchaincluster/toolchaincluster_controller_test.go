@@ -3,7 +3,7 @@ package toolchaincluster
 import (
 	"testing"
 
-	"github.com/codeready-toolchain/api/api/v1alpha1"
+	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test/verify"
@@ -14,7 +14,7 @@ import (
 
 func TestAddToolchainClusterAsMember(t *testing.T) {
 	// given & then
-	verify.AddToolchainClusterAsMember(t, func(toolchainCluster *v1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
+	verify.AddToolchainClusterAsMember(t, func(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
 		// given
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
@@ -27,7 +27,7 @@ func TestAddToolchainClusterAsMember(t *testing.T) {
 
 func TestAddToolchainClusterAsHost(t *testing.T) {
 	// given & then
-	verify.AddToolchainClusterAsHost(t, func(toolchainCluster *v1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
+	verify.AddToolchainClusterAsHost(t, func(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
 		// given
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
@@ -39,7 +39,7 @@ func TestAddToolchainClusterAsHost(t *testing.T) {
 
 func TestAddToolchainClusterFailsBecauseOfMissingSecret(t *testing.T) {
 	// given & then
-	verify.AddToolchainClusterFailsBecauseOfMissingSecret(t, func(toolchainCluster *v1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
+	verify.AddToolchainClusterFailsBecauseOfMissingSecret(t, func(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
 		// given
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
@@ -51,7 +51,7 @@ func TestAddToolchainClusterFailsBecauseOfMissingSecret(t *testing.T) {
 
 func TestAddToolchainClusterFailsBecauseOfEmptySecret(t *testing.T) {
 	// given & then
-	verify.AddToolchainClusterFailsBecauseOfEmptySecret(t, func(toolchainCluster *v1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
+	verify.AddToolchainClusterFailsBecauseOfEmptySecret(t, func(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
 		// given
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
@@ -63,7 +63,7 @@ func TestAddToolchainClusterFailsBecauseOfEmptySecret(t *testing.T) {
 
 func TestUpdateToolchainCluster(t *testing.T) {
 	// given & then
-	verify.UpdateToolchainCluster(t, func(toolchainCluster *v1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
+	verify.UpdateToolchainCluster(t, func(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
 		// given
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
@@ -75,7 +75,7 @@ func TestUpdateToolchainCluster(t *testing.T) {
 
 func TestDeleteToolchainCluster(t *testing.T) {
 	// given & then
-	verify.DeleteToolchainCluster(t, func(toolchainCluster *v1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
+	verify.DeleteToolchainCluster(t, func(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
 		// given
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
@@ -85,7 +85,7 @@ func TestDeleteToolchainCluster(t *testing.T) {
 	})
 }
 
-func prepareReconcile(toolchainCluster *v1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) (Reconciler, reconcile.Request) {
+func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) (Reconciler, reconcile.Request) {
 	controller := Reconciler{
 		client:              cl,
 		scheme:              scheme.Scheme,

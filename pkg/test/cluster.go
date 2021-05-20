@@ -1,7 +1,7 @@
 package test
 
 import (
-	"github.com/codeready-toolchain/api/api/v1alpha1"
+	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
@@ -14,11 +14,11 @@ const (
 	NameMember = "east"
 )
 
-func NewToolchainCluster(name, secName string, status v1alpha1.ToolchainClusterStatus, labels map[string]string) (*v1alpha1.ToolchainCluster, *corev1.Secret) {
+func NewToolchainCluster(name, secName string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
 	return NewToolchainClusterWithEndpoint(name, secName, "http://cluster.com", status, labels)
 }
 
-func NewToolchainClusterWithEndpoint(name, secName, apiEndpoint string, status v1alpha1.ToolchainClusterStatus, labels map[string]string) (*v1alpha1.ToolchainCluster, *corev1.Secret) {
+func NewToolchainClusterWithEndpoint(name, secName, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
 	logf.SetLogger(zap.Logger())
 	gock.New(apiEndpoint).
 		Get("api").
@@ -36,9 +36,9 @@ func NewToolchainClusterWithEndpoint(name, secName, apiEndpoint string, status v
 		},
 	}
 
-	return &v1alpha1.ToolchainCluster{
-		Spec: v1alpha1.ToolchainClusterSpec{
-			SecretRef: v1alpha1.LocalSecretReference{
+	return &toolchainv1alpha1.ToolchainCluster{
+		Spec: toolchainv1alpha1.ToolchainClusterSpec{
+			SecretRef: toolchainv1alpha1.LocalSecretReference{
 				Name: secName,
 			},
 			APIEndpoint: apiEndpoint,
@@ -53,9 +53,9 @@ func NewToolchainClusterWithEndpoint(name, secName, apiEndpoint string, status v
 	}, secret
 }
 
-func NewClusterStatus(conType v1alpha1.ToolchainClusterConditionType, conStatus corev1.ConditionStatus) v1alpha1.ToolchainClusterStatus {
-	return v1alpha1.ToolchainClusterStatus{
-		Conditions: []v1alpha1.ToolchainClusterCondition{{
+func NewClusterStatus(conType toolchainv1alpha1.ToolchainClusterConditionType, conStatus corev1.ConditionStatus) toolchainv1alpha1.ToolchainClusterStatus {
+	return toolchainv1alpha1.ToolchainClusterStatus{
+		Conditions: []toolchainv1alpha1.ToolchainClusterCondition{{
 			Type:   conType,
 			Status: conStatus,
 		}},

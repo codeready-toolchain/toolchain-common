@@ -3,7 +3,7 @@ package cluster
 import (
 	"sync"
 
-	"github.com/codeready-toolchain/api/api/v1alpha1"
+	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -32,7 +32,7 @@ type CachedToolchainCluster struct {
 	// OperatorNamespace is a name of a namespace (in the cluster) the operator is running in
 	OperatorNamespace string
 	// ClusterStatus is the cluster result as of the last health check probe.
-	ClusterStatus *v1alpha1.ToolchainClusterStatus
+	ClusterStatus *toolchainv1alpha1.ToolchainClusterStatus
 	// OwnerClusterName keeps the name of the cluster the ToolchainCluster resource is created in
 	// eg. if this ToolchainCluster identifies a Host cluster (and thus is created in Member)
 	// then the OwnerClusterName has a name of the member - it has to be same name as the name

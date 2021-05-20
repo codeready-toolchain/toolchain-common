@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeready-toolchain/api/api/v1alpha1"
+	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/assert"
@@ -16,12 +16,12 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type FunctionToVerify func(toolchainCluster *v1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error
+type FunctionToVerify func(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error
 
 func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify) {
 	// given
 	defer gock.Off()
-	status := test.NewClusterStatus(v1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
+	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	memberLabels := []map[string]string{
 		Labels("", "", test.NameHost),
 		Labels(cluster.Member, "", test.NameHost),
@@ -57,7 +57,7 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) {
 	// given
 	defer gock.Off()
-	status := test.NewClusterStatus(v1alpha1.ToolchainClusterReady, corev1.ConditionFalse)
+	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse)
 	memberLabels := []map[string]string{
 		Labels(cluster.Host, "", test.NameMember),
 		Labels(cluster.Host, "host-ns", test.NameMember)}
@@ -92,7 +92,7 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 func AddToolchainClusterFailsBecauseOfMissingSecret(t *testing.T, functionToVerify FunctionToVerify) {
 	// given
 	defer gock.Off()
-	status := test.NewClusterStatus(v1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
+	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster, _ := test.NewToolchainCluster("east", "secret", status, Labels("", "", test.NameHost))
 	cl := test.NewFakeClient(t, toolchainCluster)
 	service := newToolchainClusterService(cl)
@@ -110,7 +110,7 @@ func AddToolchainClusterFailsBecauseOfMissingSecret(t *testing.T, functionToVeri
 func AddToolchainClusterFailsBecauseOfEmptySecret(t *testing.T, functionToVerify FunctionToVerify) {
 	// given
 	defer gock.Off()
-	status := test.NewClusterStatus(v1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
+	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster, _ := test.NewToolchainCluster("east", "secret", status,
 		Labels("", "", test.NameHost))
 	secret := &corev1.Secret{
@@ -134,10 +134,10 @@ func AddToolchainClusterFailsBecauseOfEmptySecret(t *testing.T, functionToVerify
 func UpdateToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	// given
 	defer gock.Off()
-	statusTrue := test.NewClusterStatus(v1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
+	statusTrue := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster1, sec1 := test.NewToolchainCluster("east", "secret1", statusTrue,
 		Labels("", "", test.NameMember))
-	statusFalse := test.NewClusterStatus(v1alpha1.ToolchainClusterReady, corev1.ConditionFalse)
+	statusFalse := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse)
 	toolchainCluster2, sec2 := test.NewToolchainCluster("east", "secret2", statusFalse,
 		Labels(cluster.Host, "", test.NameMember))
 	cl := test.NewFakeClient(t, toolchainCluster2, sec1, sec2)
@@ -163,7 +163,7 @@ func UpdateToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 func DeleteToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	// given
 	defer gock.Off()
-	status := test.NewClusterStatus(v1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
+	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster, sec := test.NewToolchainCluster("east", "sec", status,
 		Labels("", "", test.NameHost))
 	cl := test.NewFakeClient(t, sec)
