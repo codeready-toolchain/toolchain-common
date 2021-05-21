@@ -1,7 +1,7 @@
 module github.com/codeready-toolchain/toolchain-common
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20210512064851-b871cbf562fd
+	github.com/codeready-toolchain/api v0.0.0-20210520133910-ab0d90c32c0b
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
 	github.com/go-logr/logr v0.4.0
@@ -30,7 +30,7 @@ require (
 	sigs.k8s.io/controller-runtime v0.6.0
 )
 
-replace github.com/codeready-toolchain/api => github.com/matousjobanek/api v0.0.0-20210520100306-bffff6b38043
+replace github.com/codeready-toolchain/api => github.com/matousjobanek/api v0.0.0-20210521080009-872e73020eff
 
 replace (
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible // Required by OLM
