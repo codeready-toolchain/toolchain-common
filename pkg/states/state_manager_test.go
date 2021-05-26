@@ -96,39 +96,4 @@ func TestStateManager(t *testing.T) {
 		require.False(t, Approved(u))
 		require.False(t, Deactivating(u))
 	})
-
-	t.Run("test active", func(t *testing.T) {
-		u = &toolchainv1alpha1.UserSignup{}
-		// Should not be active by default
-		require.False(t, Active(u))
-
-		SetApproved(u, true)
-		// Should be active when approved
-		require.True(t, Active(u))
-
-		SetVerificationRequired(u, true)
-		// Should not be active when verification is required
-		require.False(t, Active(u))
-
-		SetDeactivated(u, true)
-		// Should not be active when deactivated
-		require.False(t, Active(u))
-		require.False(t, Approved(u))
-
-		// Reapprove
-		SetApproved(u, true)
-
-		// Deactivated should now be false
-		require.False(t, Deactivated(u))
-
-		// Verification Required should now be false
-		require.False(t, VerificationRequired(u))
-
-		// Should be active
-		require.True(t, Active(u))
-
-		SetDeactivating(u, true)
-		// Should be active when deactivating
-		require.True(t, Active(u))
-	})
 }
