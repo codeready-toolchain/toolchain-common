@@ -2,12 +2,6 @@ package states
 
 import toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 
-func Active(userSignup *toolchainv1alpha1.UserSignup) bool {
-	return Approved(userSignup) &&
-		!VerificationRequired(userSignup) &&
-		!Deactivated(userSignup)
-}
-
 func Approved(userSignup *toolchainv1alpha1.UserSignup) bool {
 	return contains(userSignup.Spec.States, toolchainv1alpha1.UserSignupStateApproved)
 }
