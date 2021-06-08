@@ -113,16 +113,14 @@ EOF
 }
 
 create_service_account_e2e() {
-ROLE_NAME=`oc get Roles -l olm.owner.kind=ClusterServiceVersion -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v"`
-if [[ -z ${ROLE_NAME} ]]; then
-    echo "Role that would have a prefix 'toolchain-${JOINING_CLUSTER_TYPE}-operator.v' wasn't found - available roles are:"
-    echo `oc get Roles -l olm.owner.kind=ClusterServiceVersion -n ${OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}`
-    exit 1
-fi
+ROLE_NAME=`oc get Roles -l olm.owner.kind=ClusterServiceVersion -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v" || true`
 echo "using Role ${ROLE_NAME}"
-CLUSTER_ROLE_NAME=`oc get ClusterRoles -l olm.owner.kind=ClusterServiceVersion -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v" -m 1`
-if [[ -z ${CLUSTER_ROLE_NAME} ]]; then
-    echo "ClusterRole that would have a prefix 'toolchain-${JOINING_CLUSTER_TYPE}-operator.v' wasn't found - available ClusterRoles are:"
+CLUSTER_ROLE_NAME=`oc get ClusterRoles -l olm.owner.kind=ClusterServiceVersion -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v" -m 1 || true`
+if [[ -z ${CLUSTER_ROLE_NAME} ]] && [[ -z ${ROLE_NAME} ]]; then
+    echo "There wasn't found any ClusterRole nor Role that would have a prefix 'toolchain-${JOINING_CLUSTER_TYPE}-operator.v'"
+    echo "Available roles are:"
+    echo `oc get Roles -l olm.owner.kind=ClusterServiceVersion -n ${OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}`
+    echo "Available ClusterRoles are:"
     echo `oc get ClusterRoles ${OC_ADDITIONAL_PARAMS} -l olm.owner.kind=ClusterServiceVersion`
     exit 1
 fi
@@ -133,13 +131,15 @@ if [[ -n `oc get ClusterRoleBinding ${CLUSTER_ROLE_BINDING_NAME} 2>/dev/null` ]]
 fi
 echo "using ClusterRole ${CLUSTER_ROLE_NAME}"
 cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ${SA_NAME}
   namespace: ${OPERATOR_NS}
----
+EOF
+
+if [[ -n ${ROLE_NAME} ]]; then
+cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -153,7 +153,11 @@ roleRef:
   kind: Role
   name: ${ROLE_NAME}
   apiGroup: rbac.authorization.k8s.io
----
+EOF
+fi
+
+if [[ -n ${CLUSTER_ROLE_NAME} ]]; then
+cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -167,6 +171,8 @@ roleRef:
   name: ${CLUSTER_ROLE_NAME}
   apiGroup: rbac.authorization.k8s.io
 EOF
+fi
+
 }
 
 if [[ $# -lt 2 ]]
