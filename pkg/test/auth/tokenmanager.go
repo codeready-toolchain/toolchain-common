@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	uuid "github.com/gofrs/uuid"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -138,8 +138,8 @@ type Identity struct {
 // NewIdentity returns a new, random identity
 func NewIdentity() *Identity {
 	return &Identity{
-		ID:       uuid.NewV4(),
-		Username: "testuser-" + uuid.NewV4().String(),
+		ID:       uuid.Must(uuid.NewV4()),
+		Username: "testuser-" + uuid.Must(uuid.NewV4()).String(),
 	}
 }
 
@@ -221,7 +221,7 @@ func (tg *TokenManager) GenerateToken(identity Identity, kid string, extraClaims
 	token := jwt.New(jwt.SigningMethodRS256)
 
 	token.Claims = &MyClaims{StandardClaims: jwt.StandardClaims{
-		Id:        uuid.NewV4().String(),
+		Id:        uuid.Must(uuid.NewV4()).String(),
 		IssuedAt:  time.Now().Unix(),
 		Issuer:    "codeready-toolchain",
 		ExpiresAt: time.Now().Unix() + 60*60*24*30,
@@ -230,7 +230,7 @@ func (tg *TokenManager) GenerateToken(identity Identity, kid string, extraClaims
 	},
 		IdentityID:        identity.ID.String(),
 		PreferredUsername: identity.Username,
-		SessionState:      uuid.NewV4().String(),
+		SessionState:      uuid.Must(uuid.NewV4()).String(),
 		Type:              "Bearer",
 		Approved:          true,
 		Name:              "Test User",

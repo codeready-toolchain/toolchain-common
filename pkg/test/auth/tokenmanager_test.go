@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	uuid "github.com/satori/go.uuid"
+	uuid "github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 	jose "gopkg.in/square/go-jose.v2"
 	"gotest.tools/assert"
@@ -18,11 +18,11 @@ import (
 func TestTokenManagerKeys(t *testing.T) {
 	t.Run("create keys", func(t *testing.T) {
 		tokenManager := NewTokenManager()
-		kid0 := uuid.NewV4().String()
+		kid0 := uuid.Must(uuid.NewV4()).String()
 		key0, err := tokenManager.AddPrivateKey(kid0)
 		require.NoError(t, err)
 		require.NotNil(t, key0)
-		kid1 := uuid.NewV4().String()
+		kid1 := uuid.Must(uuid.NewV4()).String()
 		key1, err := tokenManager.AddPrivateKey(kid1)
 		require.NoError(t, err)
 		require.NotNil(t, key1)
@@ -32,7 +32,7 @@ func TestTokenManagerKeys(t *testing.T) {
 
 	t.Run("remove keys", func(t *testing.T) {
 		tokenManager := NewTokenManager()
-		kid0 := uuid.NewV4().String()
+		kid0 := uuid.Must(uuid.NewV4()).String()
 		key0, err := tokenManager.AddPrivateKey(kid0)
 		require.NoError(t, err)
 		require.NotNil(t, key0)
@@ -50,11 +50,11 @@ func TestTokenManagerKeys(t *testing.T) {
 
 	t.Run("get key", func(t *testing.T) {
 		tokenManager := NewTokenManager()
-		kid0 := uuid.NewV4().String()
+		kid0 := uuid.Must(uuid.NewV4()).String()
 		key0, err := tokenManager.AddPrivateKey(kid0)
 		require.NoError(t, err)
 		require.NotNil(t, key0)
-		kid1 := uuid.NewV4().String()
+		kid1 := uuid.Must(uuid.NewV4()).String()
 		key1, err := tokenManager.AddPrivateKey(kid1)
 		require.NoError(t, err)
 		require.NotNil(t, key1)
@@ -73,15 +73,15 @@ func TestTokenManagerKeys(t *testing.T) {
 
 func TestTokenManagerTokens(t *testing.T) {
 	tokenManager := NewTokenManager()
-	kid0 := uuid.NewV4().String()
+	kid0 := uuid.Must(uuid.NewV4()).String()
 	key0, err := tokenManager.AddPrivateKey(kid0)
 	require.NoError(t, err)
 	require.NotNil(t, key0)
 
 	t.Run("create token", func(t *testing.T) {
-		username := uuid.NewV4().String()
+		username := uuid.Must(uuid.NewV4()).String()
 		identity0 := &Identity{
-			ID:       uuid.NewV4(),
+			ID:       uuid.Must(uuid.NewV4()),
 			Username: username,
 		}
 		// generate the token
@@ -99,9 +99,9 @@ func TestTokenManagerTokens(t *testing.T) {
 	})
 
 	t.Run("create token with email extra claim", func(t *testing.T) {
-		username := uuid.NewV4().String()
+		username := uuid.Must(uuid.NewV4()).String()
 		identity0 := &Identity{
-			ID:       uuid.NewV4(),
+			ID:       uuid.Must(uuid.NewV4()),
 			Username: username,
 		}
 		// generate the token
@@ -118,9 +118,9 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.Equal(t, identity0.ID.String(), claims.Subject)
 	})
 	t.Run("create token with iat extra claim", func(t *testing.T) {
-		username := uuid.NewV4().String()
+		username := uuid.Must(uuid.NewV4()).String()
 		identity0 := &Identity{
-			ID:       uuid.NewV4(),
+			ID:       uuid.Must(uuid.NewV4()),
 			Username: username,
 		}
 		// generate the token
@@ -139,9 +139,9 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.Equal(t, iatTime.Unix(), claims.IssuedAt)
 	})
 	t.Run("create token with exp extra claim", func(t *testing.T) {
-		username := uuid.NewV4().String()
+		username := uuid.Must(uuid.NewV4()).String()
 		identity0 := &Identity{
-			ID:       uuid.NewV4(),
+			ID:       uuid.Must(uuid.NewV4()),
 			Username: username,
 		}
 		// generate the token
@@ -161,9 +161,9 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.Equal(t, expTime.Unix(), claims.ExpiresAt)
 	})
 	t.Run("create token with sub extra claim", func(t *testing.T) {
-		username := uuid.NewV4().String()
+		username := uuid.Must(uuid.NewV4()).String()
 		identity0 := &Identity{
-			ID:       uuid.NewV4(),
+			ID:       uuid.Must(uuid.NewV4()),
 			Username: username,
 		}
 		// generate the token
@@ -180,9 +180,9 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.Equal(t, "test", claims.Subject)
 	})
 	t.Run("create token with nbf extra claim", func(t *testing.T) {
-		username := uuid.NewV4().String()
+		username := uuid.Must(uuid.NewV4()).String()
 		identity0 := &Identity{
-			ID:       uuid.NewV4(),
+			ID:       uuid.Must(uuid.NewV4()),
 			Username: username,
 		}
 		// generate the token
@@ -202,9 +202,9 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.Equal(t, nbfTime.Unix(), claims.NotBefore)
 	})
 	t.Run("create token with given name extra claim", func(t *testing.T) {
-		username := uuid.NewV4().String()
+		username := uuid.Must(uuid.NewV4()).String()
 		identity0 := &Identity{
-			ID:       uuid.NewV4(),
+			ID:       uuid.Must(uuid.NewV4()),
 			Username: username,
 		}
 		// generate the token
@@ -222,9 +222,9 @@ func TestTokenManagerTokens(t *testing.T) {
 
 	})
 	t.Run("create token with family name extra claim", func(t *testing.T) {
-		username := uuid.NewV4().String()
+		username := uuid.Must(uuid.NewV4()).String()
 		identity0 := &Identity{
-			ID:       uuid.NewV4(),
+			ID:       uuid.Must(uuid.NewV4()),
 			Username: username,
 		}
 		// generate the token
@@ -241,9 +241,9 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.Equal(t, "doe", claims.FamilyName)
 	})
 	t.Run("create token with preferred username extra claim", func(t *testing.T) {
-		username := uuid.NewV4().String()
+		username := uuid.Must(uuid.NewV4()).String()
 		identity0 := &Identity{
-			ID:       uuid.NewV4(),
+			ID:       uuid.Must(uuid.NewV4()),
 			Username: username,
 		}
 		// generate the token
@@ -261,9 +261,9 @@ func TestTokenManagerTokens(t *testing.T) {
 
 	})
 	t.Run("create token with company extra claim", func(t *testing.T) {
-		username := uuid.NewV4().String()
+		username := uuid.Must(uuid.NewV4()).String()
 		identity0 := &Identity{
-			ID:       uuid.NewV4(),
+			ID:       uuid.Must(uuid.NewV4()),
 			Username: username,
 		}
 		// generate the token
@@ -280,9 +280,9 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.Equal(t, "red hat", claims.Company)
 	})
 	t.Run("create token with near future iat claim to test validation workaround", func(t *testing.T) {
-		username := uuid.NewV4().String()
+		username := uuid.Must(uuid.NewV4()).String()
 		identity0 := &Identity{
-			ID:       uuid.NewV4(),
+			ID:       uuid.Must(uuid.NewV4()),
 			Username: username,
 		}
 		// generate the token
@@ -304,11 +304,11 @@ func TestTokenManagerTokens(t *testing.T) {
 
 func TestTokenManagerKeyService(t *testing.T) {
 	tokenManager := NewTokenManager()
-	kid0 := uuid.NewV4().String()
+	kid0 := uuid.Must(uuid.NewV4()).String()
 	key0, err := tokenManager.AddPrivateKey(kid0)
 	require.NoError(t, err)
 	require.NotNil(t, key0)
-	kid1 := uuid.NewV4().String()
+	kid1 := uuid.Must(uuid.NewV4()).String()
 	key1, err := tokenManager.AddPrivateKey(kid1)
 	require.NoError(t, err)
 	require.NotNil(t, key1)
@@ -361,7 +361,7 @@ func TestTokenManagerKeyService(t *testing.T) {
 
 func TestTokenManagerE2ETestKeys(t *testing.T) {
 	identity := NewIdentity()
-	emailClaim := WithEmailClaim(uuid.NewV4().String() + "@email.tld")
+	emailClaim := WithEmailClaim(uuid.Must(uuid.NewV4()).String() + "@email.tld")
 	token, err := GenerateSignedE2ETestToken(*identity, emailClaim)
 	require.NoError(t, err)
 	require.NotNil(t, token)

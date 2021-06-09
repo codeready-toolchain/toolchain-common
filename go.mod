@@ -16,7 +16,6 @@ require (
 	github.com/operator-framework/operator-sdk v0.19.2
 	github.com/pkg/errors v0.9.1
 	github.com/redhat-cop/operator-utils v0.0.0-20190827162636-51e6b0c32776
-	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.6.1
 	gopkg.in/h2non/gock.v1 v1.0.14
 	gopkg.in/square/go-jose.v2 v2.3.0
