@@ -3,6 +3,7 @@ package config
 import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,7 +36,7 @@ func AutomaticApproval() *AutomaticApprovalOption {
 		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
 	}
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.AutomaticApproval = toolchainv1alpha1.AutomaticApproval{}
+		config.Spec.Host.AutomaticApproval = toolchainv1alpha1.AutomaticApprovalConfig{}
 	})
 	return o
 }
@@ -65,7 +66,7 @@ func Deactivation() *DeactivationOption {
 		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
 	}
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.Deactivation = toolchainv1alpha1.Deactivation{}
+		config.Spec.Host.Deactivation = toolchainv1alpha1.DeactivationConfig{}
 	})
 	return o
 }
@@ -131,6 +132,27 @@ func (o MembersOption) SpecificPerMemberCluster(clusterName string, memberConfig
 			config.Spec.Members.SpecificPerMemberCluster = make(map[string]toolchainv1alpha1.MemberOperatorConfigSpec)
 		}
 		config.Spec.Members.SpecificPerMemberCluster[clusterName] = memberConfigSpec
+	})
+	return o
+}
+
+type MetricsOption struct {
+	*ToolchainConfigOptionImpl
+}
+
+func Metrics() *MetricsOption {
+	o := &MetricsOption{
+		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
+	}
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.Metrics = toolchainv1alpha1.MetricsConfig{}
+	})
+	return o
+}
+
+func (o MetricsOption) ForceSynchronization(force bool) MetricsOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.Metrics.ForceSynchronization = &force
 	})
 	return o
 }
