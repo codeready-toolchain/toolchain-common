@@ -8,7 +8,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -24,14 +23,11 @@ func TestLabelMapper(t *testing.T) {
 				"revision": "123",
 			},
 		}
-		obj := corev1.Namespace{
+		obj := &corev1.Namespace{
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := eventToOwnerByLabelMapper{namespace: "ns", label: "owner"}.Map(handler.MapObject{
-			Meta:   &objMeta,
-			Object: &obj,
-		})
+		result := MapToOwnerByLabel("ns", "owner")(obj)
 		// then
 		require.Len(t, result, 1)
 		assert.Equal(t, reconcile.Request{
@@ -54,10 +50,7 @@ func TestLabelMapper(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := eventToOwnerByLabelMapper{namespace: "ns", label: "owner"}.Map(handler.MapObject{
-			Meta:   &objMeta,
-			Object: &obj,
-		})
+		result := MapToOwnerByLabel("ns", "owner")(&obj)
 		// then
 		require.Empty(t, result)
 	})

@@ -2,16 +2,27 @@ package configuration
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 
 	errs "k8s.io/apimachinery/pkg/api/errors"
 
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+const (
+	// WatchNamespaceEnvVar is the constant for env variable WATCH_NAMESPACE
+	// which is the namespace where the watch activity happens.
+	// this value is empty if the operator is running with clusterScope.
+	WatchNamespaceEnvVar = "WATCH_NAMESPACE"
+
+	// OperatorNameEnvVar is the constant for env variable OPERATOR_NAME
+	// which is the name of the current operator
+	OperatorNameEnvVar = "OPERATOR_NAME"
 )
 
 // LoadFromSecret retrieves an operator secret, loads all keys and values from the secret
@@ -31,7 +42,7 @@ func LoadFromSecret(resourceKey string, cl client.Client) (map[string]string, er
 	}
 
 	// get the secret
-	namespace, err := k8sutil.GetWatchNamespace()
+	namespace, err := GetWatchNamespace()
 	if err != nil {
 		return secretData, err
 	}
@@ -70,7 +81,7 @@ func LoadFromConfigMap(prefix, resourceKey string, cl client.Client) error {
 	}
 
 	// get the configMap
-	namespace, err := k8sutil.GetWatchNamespace()
+	namespace, err := GetWatchNamespace()
 	if err != nil {
 		return err
 	}
@@ -116,4 +127,25 @@ func getResourceName(key string) string {
 // key: is the value to convert into an env var key
 func createOperatorEnvVarKey(prefix, key string) string {
 	return prefix + "_" + (strings.ToUpper(strings.ReplaceAll(strings.ReplaceAll(key, ".", "_"), "-", "_")))
+}
+
+// GetWatchNamespace returns the namespace the operator should be watching for changes
+func GetWatchNamespace() (string, error) {
+	ns, found := os.LookupEnv(WatchNamespaceEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s must be set", WatchNamespaceEnvVar)
+	}
+	return ns, nil
+}
+
+// GetOperatorName return the operator name
+func GetOperatorName() (string, error) {
+	operatorName, found := os.LookupEnv(OperatorNameEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s must be set", OperatorNameEnvVar)
+	}
+	if len(operatorName) == 0 {
+		return "", fmt.Errorf("%s must not be empty", OperatorNameEnvVar)
+	}
+	return operatorName, nil
 }

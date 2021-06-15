@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"reflect"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
@@ -20,59 +21,62 @@ func NewFakeClient(t T, initObjs ...runtime.Object) *FakeClient {
 	s := scheme.Scheme
 	err := toolchainv1alpha1.AddToScheme(s)
 	require.NoError(t, err)
-	cl := fake.NewFakeClientWithScheme(s, initObjs...)
+	cl := fake.NewClientBuilder().
+		WithScheme(s).
+		WithRuntimeObjects(initObjs...).
+		Build()
 	return &FakeClient{Client: cl, T: t}
 }
 
 type FakeClient struct {
 	client.Client
 	T                T
-	MockGet          func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error
-	MockList         func(ctx context.Context, list runtime.Object, opts ...client.ListOption) error
-	MockCreate       func(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error
-	MockUpdate       func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error
-	MockPatch        func(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error
-	MockStatusUpdate func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error
-	MockStatusPatch  func(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error
-	MockDelete       func(ctx context.Context, obj runtime.Object, opts ...client.DeleteOption) error
-	MockDeleteAllOf  func(ctx context.Context, obj runtime.Object, opts ...client.DeleteAllOfOption) error
+	MockGet          func(ctx context.Context, key client.ObjectKey, obj client.Object) error
+	MockList         func(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error
+	MockCreate       func(ctx context.Context, obj client.Object, opts ...client.CreateOption) error
+	MockUpdate       func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
+	MockPatch        func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error
+	MockStatusUpdate func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
+	MockStatusPatch  func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error
+	MockDelete       func(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
+	MockDeleteAllOf  func(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error
 }
 
 type mockStatusUpdate struct {
-	mockUpdate func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error
-	mockPatch  func(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error
+	mockUpdate func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
+	mockPatch  func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error
 }
 
-func (m *mockStatusUpdate) Update(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+func (m *mockStatusUpdate) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	return m.mockUpdate(ctx, obj, opts...)
 }
 
-func (m *mockStatusUpdate) Patch(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+func (m *mockStatusUpdate) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	return m.mockPatch(ctx, obj, patch, opts...)
 }
 
-func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
+func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 	if c.MockGet != nil {
 		return c.MockGet(ctx, key, obj)
 	}
 	return c.Client.Get(ctx, key, obj)
 }
 
-func (c *FakeClient) List(ctx context.Context, list runtime.Object, opts ...client.ListOption) error {
+func (c *FakeClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
 	if c.MockList != nil {
 		return c.MockList(ctx, list, opts...)
 	}
 	return c.Client.List(ctx, list, opts...)
 }
 
-func (c *FakeClient) Create(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
+func (c *FakeClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
 	if c.MockCreate != nil {
 		return c.MockCreate(ctx, obj, opts...)
 	}
 	return Create(ctx, c, obj, opts...)
 }
 
-func Create(ctx context.Context, cl *FakeClient, obj runtime.Object, opts ...client.CreateOption) error {
+func Create(ctx context.Context, cl *FakeClient, obj client.Object, opts ...client.CreateOption) error {
 	// Set Generation to `1` for newly created objects since the kube fake client doesn't set it
 	mt, err := meta.Accessor(obj)
 	if err != nil {
@@ -96,14 +100,14 @@ func (c *FakeClient) Status() client.StatusWriter {
 	return &m
 }
 
-func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+func (c *FakeClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	if c.MockUpdate != nil {
 		return c.MockUpdate(ctx, obj, opts...)
 	}
 	return Update(ctx, c, obj, opts...)
 }
 
-func Update(ctx context.Context, cl *FakeClient, obj runtime.Object, opts ...client.UpdateOption) error {
+func Update(ctx context.Context, cl *FakeClient, obj client.Object, opts ...client.UpdateOption) error {
 	// Update Generation if needed since the kube fake client doesn't update generations.
 	// Increment the generation if spec (for objects with Spec) or data/stringData (for objects like CM and Secrets) is changed.
 	updatingMeta, err := meta.Accessor(obj)
@@ -147,8 +151,11 @@ func Update(ctx context.Context, cl *FakeClient, obj runtime.Object, opts ...cli
 	return cl.Client.Update(ctx, obj, opts...)
 }
 
-func cleanObject(obj runtime.Object) (runtime.Object, error) {
-	newObj := obj.DeepCopyObject()
+func cleanObject(obj client.Object) (client.Object, error) {
+	newObj, ok := obj.DeepCopyObject().(client.Object)
+	if !ok {
+		return nil, fmt.Errorf("unable cast the deepcopy of the object to client.Object: %+v", obj)
+	}
 
 	m, err := toMap(newObj)
 	if err != nil {
@@ -177,21 +184,21 @@ func toMap(obj runtime.Object) (map[string]interface{}, error) {
 	return m, nil
 }
 
-func (c *FakeClient) Delete(ctx context.Context, obj runtime.Object, opts ...client.DeleteOption) error {
+func (c *FakeClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
 	if c.MockDelete != nil {
 		return c.MockDelete(ctx, obj, opts...)
 	}
 	return c.Client.Delete(ctx, obj, opts...)
 }
 
-func (c *FakeClient) DeleteAllOf(ctx context.Context, obj runtime.Object, opts ...client.DeleteAllOfOption) error {
+func (c *FakeClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
 	if c.MockDeleteAllOf != nil {
 		return c.MockDeleteAllOf(ctx, obj, opts...)
 	}
 	return c.Client.DeleteAllOf(ctx, obj, opts...)
 }
 
-func (c *FakeClient) Patch(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+func (c *FakeClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	if c.MockPatch != nil {
 		return c.MockPatch(ctx, obj, patch, opts...)
 	}

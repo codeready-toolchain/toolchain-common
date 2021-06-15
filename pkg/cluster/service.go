@@ -84,7 +84,9 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 		if err := toolchainv1alpha1.AddToScheme(scheme); err != nil {
 			return err
 		}
-		cl, err = client.New(clusterConfig, client.Options{})
+		cl, err = client.New(clusterConfig, client.Options{
+			Scheme: scheme,
+		})
 		if err != nil {
 			return errors.Wrap(err, "cannot create ToolchainCluster client")
 		}

@@ -13,6 +13,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/template"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	. "github.com/codeready-toolchain/toolchain-common/pkg/test"
+	templatev1 "github.com/openshift/api/template/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
@@ -159,7 +160,7 @@ func TestApplySingle(t *testing.T) {
 					cl, cli := newClient(t, s)
 
 					// when
-					createdOrChanged, err := cl.ApplyObject(modifiedService.DeepCopyObject(), client.ForceUpdate(true), client.SetOwner(&appsv1.Deployment{}))
+					createdOrChanged, err := cl.ApplyRuntimeObject(modifiedService.DeepCopyObject(), client.ForceUpdate(true), client.SetOwner(&appsv1.Deployment{}))
 
 					// then
 					require.NoError(t, err)
@@ -178,11 +179,11 @@ func TestApplySingle(t *testing.T) {
 				t.Run("it should update when spec is different", func(t *testing.T) {
 					// given
 					cl, cli := newClient(t, s)
-					_, err := cl.ApplyObject(defaultService.DeepCopyObject(), client.ForceUpdate(true))
+					_, err := cl.ApplyRuntimeObject(defaultService.DeepCopyObject(), client.ForceUpdate(true))
 					require.NoError(t, err)
 
 					// when
-					createdOrChanged, err := cl.ApplyObject(modifiedService.DeepCopyObject())
+					createdOrChanged, err := cl.ApplyRuntimeObject(modifiedService.DeepCopyObject())
 
 					// then
 					require.NoError(t, err)
@@ -196,11 +197,11 @@ func TestApplySingle(t *testing.T) {
 				t.Run("it should not update when using same object", func(t *testing.T) {
 					// given
 					cl, _ := newClient(t, s)
-					_, err := cl.ApplyObject(defaultService.DeepCopyObject(), client.ForceUpdate(true))
+					_, err := cl.ApplyRuntimeObject(defaultService.DeepCopyObject(), client.ForceUpdate(true))
 					require.NoError(t, err)
 
 					// when
-					createdOrChanged, err := cl.ApplyObject(defaultService.DeepCopyObject())
+					createdOrChanged, err := cl.ApplyRuntimeObject(defaultService.DeepCopyObject())
 
 					// then
 					require.NoError(t, err)
@@ -212,7 +213,7 @@ func TestApplySingle(t *testing.T) {
 					cl, cli := newClient(t, s)
 
 					// when
-					createdOrChanged, err := cl.ApplyObject(modifiedService.DeepCopyObject(), client.SetOwner(&appsv1.Deployment{}))
+					createdOrChanged, err := cl.ApplyRuntimeObject(modifiedService.DeepCopyObject(), client.SetOwner(&appsv1.Deployment{}))
 
 					// then
 					require.NoError(t, err)
@@ -232,7 +233,7 @@ func TestApplySingle(t *testing.T) {
 					cl, cli := newClient(t, s)
 
 					// when
-					createdOrChanged, err := cl.ApplyObject(modifiedService.DeepCopyObject(), client.SaveConfiguration(false))
+					createdOrChanged, err := cl.ApplyRuntimeObject(modifiedService.DeepCopyObject(), client.SaveConfiguration(false))
 
 					// then
 					require.NoError(t, err)
@@ -247,11 +248,11 @@ func TestApplySingle(t *testing.T) {
 				t.Run("it should update when spec is different", func(t *testing.T) {
 					// given
 					cl, cli := newClient(t, s)
-					_, err := cl.ApplyObject(defaultService.DeepCopyObject(), client.SaveConfiguration(false))
+					_, err := cl.ApplyRuntimeObject(defaultService.DeepCopyObject(), client.SaveConfiguration(false))
 					require.NoError(t, err)
 
 					// when
-					createdOrChanged, err := cl.ApplyObject(modifiedService.DeepCopyObject(), client.SaveConfiguration(false))
+					createdOrChanged, err := cl.ApplyRuntimeObject(modifiedService.DeepCopyObject(), client.SaveConfiguration(false))
 
 					// then
 					require.NoError(t, err)
@@ -267,12 +268,12 @@ func TestApplySingle(t *testing.T) {
 			t.Run("when object cannot be retrieved because of any error, then it should fail", func(t *testing.T) {
 				// given
 				cl, cli := newClient(t, s)
-				cli.MockGet = func(ctx context.Context, key runtimeclient.ObjectKey, obj runtime.Object) error {
+				cli.MockGet = func(ctx context.Context, key runtimeclient.ObjectKey, obj runtimeclient.Object) error {
 					return fmt.Errorf("unable to get")
 				}
 
 				// when
-				createdOrChanged, err := cl.ApplyObject(modifiedService.DeepCopyObject())
+				createdOrChanged, err := cl.ApplyRuntimeObject(modifiedService.DeepCopyObject())
 
 				// then
 				require.Error(t, err)
@@ -322,11 +323,11 @@ func TestApplySingle(t *testing.T) {
 		t.Run("it should update ConfigMap when data field is different and forceUpdate=false", func(t *testing.T) {
 			// given
 			cl, cli := newClient(t, s)
-			_, err := cl.ApplyObject(defaultCm.DeepCopyObject(), client.ForceUpdate(true))
+			_, err := cl.ApplyRuntimeObject(defaultCm.DeepCopyObject(), client.ForceUpdate(true))
 			require.NoError(t, err)
 
 			// when
-			createdOrChanged, err := cl.ApplyObject(modifiedCm.DeepCopyObject())
+			createdOrChanged, err := cl.ApplyRuntimeObject(modifiedCm.DeepCopyObject())
 
 			// then
 			require.NoError(t, err)
@@ -585,7 +586,7 @@ func TestProcessAndApply(t *testing.T) {
 	t.Run("should update existing role binding", func(t *testing.T) {
 		// given
 		cl := NewFakeClient(t)
-		cl.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...runtimeclient.UpdateOption) error {
+		cl.MockUpdate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
 			meta, err := meta.Accessor(obj)
 			require.NoError(t, err)
 			t.Logf("updating resource of kind %s with version %s\n", obj.GetObjectKind().GroupVersionKind().Kind, meta.GetResourceVersion())
@@ -657,7 +658,7 @@ func TestProcessAndApply(t *testing.T) {
 			// given
 			cl := NewFakeClient(t)
 			p := template.NewProcessor(s)
-			cl.MockCreate = func(ctx context.Context, obj runtime.Object, opts ...runtimeclient.CreateOption) error {
+			cl.MockCreate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.CreateOption) error {
 				return errors.New("failed to create resource")
 			}
 			tmpl, err := DecodeTemplate(decoder,
@@ -678,7 +679,7 @@ func TestProcessAndApply(t *testing.T) {
 			// given
 			cl := NewFakeClient(t)
 			p := template.NewProcessor(s)
-			cl.MockUpdate = func(ctx context.Context, obj runtime.Object, opts ...runtimeclient.UpdateOption) error {
+			cl.MockUpdate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
 				return errors.New("failed to update resource")
 			}
 			tmpl, err := DecodeTemplate(decoder,
@@ -812,6 +813,8 @@ func addToScheme(t *testing.T) *runtime.Scheme {
 	err := authv1.Install(s)
 	require.NoError(t, err)
 	err = toolchainv1alpha1.AddToScheme(s)
+	require.NoError(t, err)
+	err = templatev1.Install(s)
 	require.NoError(t, err)
 	return s
 }

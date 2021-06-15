@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -60,7 +59,7 @@ func TestLoadFromConfigMap(t *testing.T) {
 		}
 		cl := test.NewFakeClient(t, createConfigMap("test-config", "toolchain-host-operator", data))
 
-		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
+		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 			return errors.New("oopsie woopsie")
 		}
 
@@ -140,7 +139,7 @@ func TestLoadFromSecret(t *testing.T) {
 		}
 		cl := test.NewFakeClient(t, createSecret("test-secret", "toolchain-host-operator", data))
 
-		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
+		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 			return errors.New("oopsie woopsie")
 		}
 
@@ -235,4 +234,69 @@ func createConfigMap(name, namespace string, data map[string]string) *v1.ConfigM
 		},
 		Data: data,
 	}
+}
+
+func TestGetWatchNamespaceWhenSet(t *testing.T) {
+	// given
+	restore := test.SetEnvVarAndRestore(t, "WATCH_NAMESPACE", "member-operator")
+	defer restore()
+
+	// when
+	namespace, err := GetWatchNamespace()
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, "member-operator", namespace)
+}
+
+func TestGetWatchNamespaceWhenNotSet(t *testing.T) {
+	// given
+	restore := test.UnsetEnvVarAndRestore(t, "WATCH_NAMESPACE")
+	defer restore()
+
+	// when
+	namespace, err := GetWatchNamespace()
+
+	// then
+	require.EqualError(t, err, "WATCH_NAMESPACE must be set")
+	assert.Empty(t, namespace)
+}
+
+func TestGetOperatorNameWhenSet(t *testing.T) {
+	// given
+	restore := test.SetEnvVarAndRestore(t, "OPERATOR_NAME", "toolchain-member-operator")
+	defer restore()
+
+	// when
+	name, err := GetOperatorName()
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, "toolchain-member-operator", name)
+}
+
+func TestGetOperatorNameWhenEmpty(t *testing.T) {
+	// given
+	restore := test.SetEnvVarAndRestore(t, "OPERATOR_NAME", "")
+	defer restore()
+
+	// when
+	name, err := GetOperatorName()
+
+	// then
+	require.EqualError(t, err, "OPERATOR_NAME must not be empty")
+	assert.Empty(t, name)
+}
+
+func TestGetOperatorNameWhenNotSet(t *testing.T) {
+	// given
+	restore := test.UnsetEnvVarAndRestore(t, "OPERATOR_NAME")
+	defer restore()
+
+	// when
+	name, err := GetOperatorName()
+
+	// then
+	require.EqualError(t, err, "OPERATOR_NAME must be set")
+	assert.Empty(t, name)
 }

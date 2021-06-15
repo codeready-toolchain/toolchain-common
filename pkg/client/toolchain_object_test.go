@@ -163,7 +163,7 @@ func verifyRoleBining(t *testing.T, rb *rbacv1.RoleBinding, toolchainObject Tool
 	assert.Equal(t, "first-value", toolchainObject.GetLabels()["firstlabel"])
 	assert.Equal(t, "second-value", toolchainObject.GetLabels()["secondlabel"])
 	assert.Equal(t, rbacv1.SchemeGroupVersion.WithKind("RoleBinding"), toolchainObject.GetGvk())
-	assert.Equal(t, rb, toolchainObject.GetRuntimeObject())
+	assert.Equal(t, rb, toolchainObject.GetClientObject())
 }
 
 func newRole(name string) *rbacv1.Role {
@@ -207,4 +207,38 @@ func newRoleBinding(name string) *rbacv1.RoleBinding {
 			Name: name,
 		},
 	}
+}
+
+func TestSortedComparableToolchainObjectsWithThreeObjects(t *testing.T) {
+	// given
+	roleBindingA, err := NewComparableToolchainObject(newRoleBinding("rb-a"), nil)
+	require.NoError(t, err)
+	roleBindingB, err := NewComparableToolchainObject(newRoleBinding("rb-b"), nil)
+	require.NoError(t, err)
+	rbNamespaceZ := newRoleBinding("rb-a")
+	rbNamespaceZ.Namespace = "namespace-z"
+	roleBindingNamespaceZ, err := NewComparableToolchainObject(rbNamespaceZ, nil)
+	require.NoError(t, err)
+
+	objects := []ComparableToolchainObject{
+		roleBindingNamespaceZ,
+		roleBindingB,
+		roleBindingA,
+	}
+
+	// when
+	sorted := SortedComparableToolchainObjects(objects)
+
+	// then
+	assert.Equal(t, roleBindingA, sorted[0])
+	assert.Equal(t, roleBindingB, sorted[1])
+	assert.Equal(t, roleBindingNamespaceZ, sorted[2])
+}
+
+func TestSortedComparableToolchainObjectsWhenEmpty(t *testing.T) {
+	// when
+	sorted := SortedComparableToolchainObjects([]ComparableToolchainObject{})
+
+	// then
+	assert.Empty(t, sorted)
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/client"
 	"github.com/codeready-toolchain/toolchain-common/pkg/template"
 	. "github.com/codeready-toolchain/toolchain-common/pkg/test"
+	templatev1 "github.com/openshift/api/template/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 
 	authv1 "github.com/openshift/api/authorization/v1"
@@ -224,6 +225,8 @@ func addToScheme(t *testing.T) *runtime.Scheme {
 	require.NoError(t, err)
 	err = toolchainv1alpha1.AddToScheme(s)
 	require.NoError(t, err)
+	err = templatev1.Install(s)
+	require.NoError(t, err)
 	return s
 }
 
@@ -237,7 +240,7 @@ func assertObject(t *testing.T, expectedObj expectedObj, actual client.Toolchain
 	expMeta, err := meta.Accessor(expected)
 	require.NoError(t, err)
 
-	assert.Equal(t, expected, actual.GetRuntimeObject())
+	assert.Equal(t, expected, actual.GetClientObject())
 	assert.Equal(t, expected.GetObjectKind().GroupVersionKind(), actual.GetGvk())
 	assert.Equal(t, expMeta.GetName(), actual.GetName())
 	assert.Equal(t, expMeta.GetNamespace(), actual.GetNamespace())

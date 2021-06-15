@@ -2,11 +2,9 @@ package test
 
 import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
-	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -19,7 +17,6 @@ func NewToolchainCluster(name, secName string, status toolchainv1alpha1.Toolchai
 }
 
 func NewToolchainClusterWithEndpoint(name, secName, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
-	logf.SetLogger(zap.Logger())
 	gock.New(apiEndpoint).
 		Get("api").
 		Persist().

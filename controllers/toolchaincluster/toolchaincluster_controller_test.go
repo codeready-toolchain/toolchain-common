@@ -1,6 +1,7 @@
 package toolchaincluster
 
 import (
+	"context"
 	"testing"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
@@ -8,7 +9,6 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test/verify"
 	"k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -19,7 +19,7 @@ func TestAddToolchainClusterAsMember(t *testing.T) {
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
 		// when
-		_, err := controller.Reconcile(req)
+		_, err := controller.Reconcile(context.TODO(), req)
 		return err
 	})
 
@@ -32,7 +32,7 @@ func TestAddToolchainClusterAsHost(t *testing.T) {
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
 		// when
-		_, err := controller.Reconcile(req)
+		_, err := controller.Reconcile(context.TODO(), req)
 		return err
 	})
 }
@@ -44,7 +44,7 @@ func TestAddToolchainClusterFailsBecauseOfMissingSecret(t *testing.T) {
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
 		// when
-		_, err := controller.Reconcile(req)
+		_, err := controller.Reconcile(context.TODO(), req)
 		return err
 	})
 }
@@ -56,7 +56,7 @@ func TestAddToolchainClusterFailsBecauseOfEmptySecret(t *testing.T) {
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
 		// when
-		_, err := controller.Reconcile(req)
+		_, err := controller.Reconcile(context.TODO(), req)
 		return err
 	})
 }
@@ -68,7 +68,7 @@ func TestUpdateToolchainCluster(t *testing.T) {
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
 		// when
-		_, err := controller.Reconcile(req)
+		_, err := controller.Reconcile(context.TODO(), req)
 		return err
 	})
 }
@@ -80,7 +80,7 @@ func TestDeleteToolchainCluster(t *testing.T) {
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
 		// when
-		_, err := controller.Reconcile(req)
+		_, err := controller.Reconcile(context.TODO(), req)
 		return err
 	})
 }
@@ -90,7 +90,6 @@ func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *
 		client:              cl,
 		scheme:              scheme.Scheme,
 		clusterCacheService: service,
-		log:                 ctrl.Log.WithName("controllers").WithName("ToolchainCluster"),
 	}
 	req := reconcile.Request{
 		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),

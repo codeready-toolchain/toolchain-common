@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestMasterUserRecordAssertion(t *testing.T) {
@@ -31,7 +31,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 			// given
 			mockT := test.NewMockT()
 			client := test.NewFakeClient(mockT, mur)
-			client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+			client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object) error {
 				if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
 					if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
 						*obj = *mur
@@ -60,7 +60,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 				// given
 				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
-				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
 						if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
 							*obj = *mur
@@ -87,7 +87,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 				// given
 				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
-				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
 						if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
 							*obj = *mur
@@ -136,7 +136,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 			}
 			mockT := test.NewMockT()
 			client := test.NewFakeClient(mockT, mur)
-			client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+			client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object) error {
 				if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
 					if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
 						*obj = *mur
@@ -175,7 +175,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 				}
 				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
-				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
 						if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
 							*obj = *mur
@@ -215,7 +215,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 				}
 				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
-				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
 						if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
 							*obj = *mur
@@ -255,7 +255,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 				}
 				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
-				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
 						if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
 							*obj = *mur
@@ -298,7 +298,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 				}
 				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
-				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtime.Object) error {
+				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
 						if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
 							*obj = *mur

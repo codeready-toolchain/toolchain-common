@@ -19,10 +19,6 @@ type OnlyUpdateWhenGenerationNotChanged struct {
 
 // Update implements default UpdateEvent filter for validating no generation change
 func (OnlyUpdateWhenGenerationNotChanged) Update(e event.UpdateEvent) bool {
-	if e.MetaOld == nil {
-		log.Error(nil, "Update event has no old metadata", "event", e)
-		return false
-	}
 	if e.ObjectOld == nil {
 		log.Error(nil, "Update event has no old runtime object to update", "event", e)
 		return false
@@ -31,11 +27,7 @@ func (OnlyUpdateWhenGenerationNotChanged) Update(e event.UpdateEvent) bool {
 		log.Error(nil, "Update event has no new runtime object for update", "event", e)
 		return false
 	}
-	if e.MetaNew == nil {
-		log.Error(nil, "Update event has no new metadata", "event", e)
-		return false
-	}
-	return e.MetaNew.GetGeneration() == e.MetaOld.GetGeneration()
+	return e.ObjectNew.GetGeneration() == e.ObjectOld.GetGeneration()
 }
 
 // Create implements Predicate
@@ -61,11 +53,6 @@ type LabelsAndGenerationPredicate struct {
 
 // Update only returns true if either the labels or generation have changed
 func (LabelsAndGenerationPredicate) Update(e event.UpdateEvent) bool {
-
-	if e.MetaOld == nil {
-		log.Error(nil, "Update event has no old metadata", "event", e)
-		return false
-	}
 	if e.ObjectOld == nil {
 		log.Error(nil, "Update event has no old runtime object to update", "event", e)
 		return false
@@ -74,12 +61,7 @@ func (LabelsAndGenerationPredicate) Update(e event.UpdateEvent) bool {
 		log.Error(nil, "Update event has no new runtime object for update", "event", e)
 		return false
 	}
-	if e.MetaNew == nil {
-		log.Error(nil, "Update event has no new metadata", "event", e)
-		return false
-	}
-
 	// reconcile if the labels have changed
-	return !reflect.DeepEqual(e.MetaOld.GetLabels(), e.MetaNew.GetLabels()) ||
-		e.MetaNew.GetGeneration() != e.MetaOld.GetGeneration()
+	return !reflect.DeepEqual(e.ObjectOld.GetLabels(), e.ObjectNew.GetLabels()) ||
+		e.ObjectNew.GetGeneration() != e.ObjectOld.GetGeneration()
 }

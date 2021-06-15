@@ -78,12 +78,21 @@ func SaveConfiguration(saveConfiguration bool) ApplyObjectOption {
 	}
 }
 
+// ApplyRuntimeObject casts the provided object to client.Object and calls ApplyClient.ApplyObject method
+func (p ApplyClient) ApplyRuntimeObject(obj runtime.Object, options ...ApplyObjectOption) (bool, error) {
+	clientObj, ok := obj.(client.Object)
+	if !ok {
+		return false, fmt.Errorf("unable to cast of the object to client.Object: %+v", obj)
+	}
+	return p.applyObject(clientObj, options...)
+}
+
 // ApplyObject creates the object if is missing and if the owner object is provided, then it's set as a controller reference.
 // If the objects exists then when the spec content has changed (based on the content of the annotation in the original object) then it
 // is automatically updated. If it looks to be same then based on the value of forceUpdate param it updates the object or not.
 // The return boolean says if the object was either created or updated (`true`). If nothing changed (ie, the generation was not
 // incremented by the server), then it returns `false`.
-func (p ApplyClient) ApplyObject(obj runtime.Object, options ...ApplyObjectOption) (bool, error) {
+func (p ApplyClient) ApplyObject(obj client.Object, options ...ApplyObjectOption) (bool, error) {
 	gvk := obj.GetObjectKind().GroupVersionKind()
 	createdOrUpdated, err := p.applyObject(obj, options...)
 	if err != nil {
@@ -92,7 +101,7 @@ func (p ApplyClient) ApplyObject(obj runtime.Object, options ...ApplyObjectOptio
 	return createdOrUpdated, nil
 }
 
-func (p ApplyClient) applyObject(obj runtime.Object, options ...ApplyObjectOption) (bool, error) {
+func (p ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption) (bool, error) {
 	// gets the meta accessor to the new resource
 	// gets the meta accessor to the new resource
 	metaNew, err := meta.Accessor(obj)
@@ -102,7 +111,7 @@ func (p ApplyClient) applyObject(obj runtime.Object, options ...ApplyObjectOptio
 	config := newApplyObjectConfiguration(options...)
 
 	// creates a deepcopy of the new resource to be used to check if it already exists
-	existing := obj.DeepCopyObject()
+	existing := obj.DeepCopyObject().(client.Object)
 
 	var newConfiguration string
 	if config.saveConfiguration {
@@ -218,7 +227,7 @@ func marshalObjectContent(newResource runtime.Object) ([]byte, error) {
 	return json.Marshal(newResource)
 }
 
-func (p ApplyClient) createObj(newResource runtime.Object, metaNew v1.Object, owner v1.Object) error {
+func (p ApplyClient) createObj(newResource client.Object, metaNew v1.Object, owner v1.Object) error {
 	if owner != nil {
 		err := controllerutil.SetControllerReference(owner, metaNew, p.scheme)
 		if err != nil {
@@ -245,7 +254,7 @@ func (p ApplyClient) ApplyToolchainObjects(toolchainObjects []ToolchainObject, n
 		toolchainObject.SetLabels(labels)
 
 		gvk := toolchainObject.GetGvk()
-		result, err := p.ApplyObject(toolchainObject.GetRuntimeObject(), ForceUpdate(true))
+		result, err := p.ApplyObject(toolchainObject.GetClientObject(), ForceUpdate(true))
 		if err != nil {
 			return false, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
 		}

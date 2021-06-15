@@ -6,9 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	uuid "github.com/gofrs/uuid"
-	"k8s.io/apimachinery/pkg/runtime"
-
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -174,7 +172,7 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("mock Get", func(t *testing.T) {
 			defer func() { fclient.MockGet = nil }()
-			fclient.MockGet = func(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
+			fclient.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 				return expectedErr
 			}
 			assert.EqualError(t, fclient.Get(context.TODO(), types.NamespacedName{Namespace: "somenamespace", Name: created.Name}, &v1.Secret{}), expectedErr.Error())
@@ -182,7 +180,7 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("mock List", func(t *testing.T) {
 			defer func() { fclient.MockList = nil }()
-			fclient.MockList = func(ctx context.Context, list runtime.Object, opts ...client.ListOption) error {
+			fclient.MockList = func(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
 				return expectedErr
 			}
 			assert.EqualError(t, fclient.List(context.TODO(), &v1.SecretList{}, client.InNamespace("somenamespace")), expectedErr.Error())
@@ -190,7 +188,7 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("mock Create", func(t *testing.T) {
 			defer func() { fclient.MockCreate = nil }()
-			fclient.MockCreate = func(ctx context.Context, obj runtime.Object, option ...client.CreateOption) error {
+			fclient.MockCreate = func(ctx context.Context, obj client.Object, option ...client.CreateOption) error {
 				return expectedErr
 			}
 			assert.EqualError(t, fclient.Create(context.TODO(), &v1.Secret{}), expectedErr.Error())
@@ -198,7 +196,7 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("mock Update", func(t *testing.T) {
 			defer func() { fclient.MockUpdate = nil }()
-			fclient.MockUpdate = func(ctx context.Context, obj runtime.Object, option ...client.UpdateOption) error {
+			fclient.MockUpdate = func(ctx context.Context, obj client.Object, option ...client.UpdateOption) error {
 				return expectedErr
 			}
 			assert.EqualError(t, fclient.Update(context.TODO(), &v1.Secret{}), expectedErr.Error())
@@ -206,7 +204,7 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("mock Patch", func(t *testing.T) {
 			defer func() { fclient.MockPatch = nil }()
-			fclient.MockPatch = func(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+			fclient.MockPatch = func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 				return expectedErr
 			}
 			assert.EqualError(t, fclient.Patch(context.TODO(), &v1.Secret{}, client.RawPatch(types.MergePatchType, []byte{})), expectedErr.Error())
@@ -214,7 +212,7 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("mock Delete", func(t *testing.T) {
 			defer func() { fclient.MockDelete = nil }()
-			fclient.MockDelete = func(ctx context.Context, obj runtime.Object, opts ...client.DeleteOption) error {
+			fclient.MockDelete = func(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
 				return expectedErr
 			}
 			assert.EqualError(t, fclient.Delete(context.TODO(), &v1.Secret{}), expectedErr.Error())
@@ -222,7 +220,7 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("mock DeleteAllOf", func(t *testing.T) {
 			defer func() { fclient.MockDeleteAllOf = nil }()
-			fclient.MockDeleteAllOf = func(ctx context.Context, obj runtime.Object, opts ...client.DeleteAllOfOption) error {
+			fclient.MockDeleteAllOf = func(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
 				return expectedErr
 			}
 			assert.EqualError(t, fclient.DeleteAllOf(context.TODO(), &v1.Secret{}), expectedErr.Error())
@@ -230,7 +228,7 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("mock Status Update", func(t *testing.T) {
 			defer func() { fclient.MockStatusUpdate = nil }()
-			fclient.MockStatusUpdate = func(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+			fclient.MockStatusUpdate = func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 				return expectedErr
 			}
 			assert.EqualError(t, fclient.MockStatusUpdate(context.TODO(), &v1.Secret{}), expectedErr.Error())
@@ -238,7 +236,7 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("mock Status Patch", func(t *testing.T) {
 			defer func() { fclient.MockStatusPatch = nil }()
-			fclient.MockStatusPatch = func(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+			fclient.MockStatusPatch = func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 				return expectedErr
 			}
 			assert.EqualError(t, fclient.MockStatusPatch(context.TODO(), &v1.Secret{}, client.RawPatch(types.MergePatchType, []byte{})), expectedErr.Error())

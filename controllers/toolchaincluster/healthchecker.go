@@ -28,11 +28,11 @@ const (
 	clusterReachableMsg    = "cluster is reachable"
 )
 
-func StartHealthChecks(mgr manager.Manager, namespace string, stopChan <-chan struct{}, period time.Duration) {
+func StartHealthChecks(ctx context.Context, mgr manager.Manager, namespace string, period time.Duration) {
 	logger.Info("starting health checks", "period", period)
 	go wait.Until(func() {
 		updateClusterStatuses(namespace, mgr.GetClient())
-	}, period, stopChan)
+	}, period, ctx.Done())
 }
 
 type HealthChecker struct {
