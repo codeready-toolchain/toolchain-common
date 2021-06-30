@@ -113,23 +113,12 @@ EOF
 }
 
 create_service_account_e2e() {
-ROLE_NAME=`oc get Roles -l olm.owner.kind=ClusterServiceVersion -n ${OPERATOR_NS} -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v" || true`
-echo "using Role ${ROLE_NAME}"
-CLUSTER_ROLE_NAME=`oc get ClusterRoles -l olm.owner.kind=ClusterServiceVersion -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ${OC_ADDITIONAL_PARAMS} | grep "^toolchain-${JOINING_CLUSTER_TYPE}-operator\.v" -m 1 || true`
-if [[ -z ${CLUSTER_ROLE_NAME} ]] && [[ -z ${ROLE_NAME} ]]; then
-    echo "There wasn't found any ClusterRole nor Role that would have a prefix 'toolchain-${JOINING_CLUSTER_TYPE}-operator.v'"
-    echo "Available roles are:"
-    echo `oc get Roles -l olm.owner.kind=ClusterServiceVersion -n ${OPERATOR_NS} ${OC_ADDITIONAL_PARAMS}`
-    echo "Available ClusterRoles are:"
-    echo `oc get ClusterRoles ${OC_ADDITIONAL_PARAMS} -l olm.owner.kind=ClusterServiceVersion`
-    exit 1
-fi
 CLUSTER_ROLE_BINDING_NAME=${SA_NAME}-${OPERATOR_NS}
 # we need to delete the binding since we cannot change the roleRef of the existing binding
 if [[ -n `oc get ClusterRoleBinding ${CLUSTER_ROLE_BINDING_NAME} 2>/dev/null` ]]; then
     oc delete ClusterRoleBinding ${CLUSTER_ROLE_BINDING_NAME} ${OC_ADDITIONAL_PARAMS}
 fi
-echo "using ClusterRole ${CLUSTER_ROLE_NAME}"
+echo "Creating SA ${SA_NAME}"
 cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
 apiVersion: v1
 kind: ServiceAccount
@@ -138,25 +127,7 @@ metadata:
   namespace: ${OPERATOR_NS}
 EOF
 
-if [[ -n ${ROLE_NAME} ]]; then
-cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: ${SA_NAME}
-  namespace: ${OPERATOR_NS}
-subjects:
-- kind: ServiceAccount
-  name: ${SA_NAME}
-  namespace: ${OPERATOR_NS}
-roleRef:
-  kind: Role
-  name: ${ROLE_NAME}
-  apiGroup: rbac.authorization.k8s.io
-EOF
-fi
-
-if [[ -n ${CLUSTER_ROLE_NAME} ]]; then
+echo "Creating ClusterRoleBinding ${CLUSTER_ROLE_BINDING_NAME}"
 cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -168,10 +139,9 @@ subjects:
   namespace: ${OPERATOR_NS}
 roleRef:
   kind: ClusterRole
-  name: ${CLUSTER_ROLE_NAME}
+  name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 EOF
-fi
 
 }
 
