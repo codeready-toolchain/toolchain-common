@@ -261,13 +261,6 @@ func (o WebhookOption) Deploy(value bool) WebhookOption {
 	return o
 }
 
-func (o WebhookOption) Image(value string) WebhookOption {
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.Webhook.Image = &value
-	})
-	return o
-}
-
 func NewMemberOperatorConfig(options ...MemberOperatorConfigOption) *toolchainv1alpha1.MemberOperatorConfig {
 	memberOperatorConfig := &toolchainv1alpha1.MemberOperatorConfig{
 		ObjectMeta: metav1.ObjectMeta{
