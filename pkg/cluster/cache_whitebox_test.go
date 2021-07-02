@@ -11,8 +11,14 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+func getOrFetchCachedToolchainCluster() func(name string) (*CachedToolchainCluster, bool) {
+	return func(name string) (cluster *CachedToolchainCluster, b bool) {
+		return clusterCache.getCachedToolchainCluster(name, true)
+	}
+}
+
 var getCachedToolchainClusterFuncs = []func(name string) (*CachedToolchainCluster, bool){
-	clusterCache.getCachedToolchainCluster, GetCachedToolchainCluster}
+	getOrFetchCachedToolchainCluster(), GetCachedToolchainCluster}
 
 func TestAddCluster(t *testing.T) {
 	// given
@@ -322,34 +328,65 @@ func TestDeleteCluster(t *testing.T) {
 
 func TestRefreshCache(t *testing.T) {
 	// given
-	defer resetClusterCache()
 	testCluster := newTestCachedToolchainCluster(t, "testCluster", Member, ready)
 	newCluster := newTestCachedToolchainCluster(t, "newCluster", Member, ready)
-	clusterCache.addCachedToolchainCluster(testCluster)
-	clusterCache.refreshCache = func() {
-		clusterCache.addCachedToolchainCluster(newCluster)
-	}
 
-	t.Run("refresh and get existing cluster", func(t *testing.T) {
-		// when
-		returnedNewCluster, ok := clusterCache.getCachedToolchainCluster("newCluster")
+	t.Run("refresh enabled", func(t *testing.T) {
+		defer resetClusterCache()
+		clusterCache.addCachedToolchainCluster(testCluster)
+		clusterCache.refreshCache = func() {
+			clusterCache.addCachedToolchainCluster(newCluster)
+		}
+		t.Run("refresh and get existing cluster", func(t *testing.T) {
+			// when
+			returnedNewCluster, ok := clusterCache.getCachedToolchainCluster("newCluster", true)
 
-		// then
-		assert.True(t, ok)
-		assert.Equal(t, newCluster, returnedNewCluster)
+			// then
+			assert.True(t, ok)
+			assert.Equal(t, newCluster, returnedNewCluster)
 
-		returnedTestCluster, ok := clusterCache.getCachedToolchainCluster("testCluster")
-		assert.True(t, ok)
-		assert.Equal(t, testCluster, returnedTestCluster)
+			returnedTestCluster, ok := clusterCache.getCachedToolchainCluster("testCluster", true)
+			assert.True(t, ok)
+			assert.Equal(t, testCluster, returnedTestCluster)
+		})
+
+		t.Run("refresh and get non-existing cluster", func(t *testing.T) {
+			// when
+			cluster, ok := clusterCache.getCachedToolchainCluster("anotherCluster", true)
+
+			// then
+			assert.False(t, ok)
+			assert.Nil(t, cluster)
+		})
 	})
 
-	t.Run("refresh and get non-existing cluster", func(t *testing.T) {
-		// when
-		cluster, ok := clusterCache.getCachedToolchainCluster("anotherCluster")
+	t.Run("refresh disabled", func(t *testing.T) {
+		defer resetClusterCache()
+		clusterCache.addCachedToolchainCluster(testCluster)
+		clusterCache.refreshCache = func() {
+			clusterCache.addCachedToolchainCluster(newCluster)
+		}
+		t.Run("don't refresh and get the only cluster that is in cache", func(t *testing.T) {
+			// when
+			returnedNewCluster, ok := clusterCache.getCachedToolchainCluster("newCluster", false)
 
-		// then
-		assert.False(t, ok)
-		assert.Nil(t, cluster)
+			// then
+			assert.False(t, ok)
+			assert.Nil(t, returnedNewCluster)
+
+			returnedTestCluster, ok := clusterCache.getCachedToolchainCluster("testCluster", false)
+			assert.True(t, ok)
+			assert.Equal(t, testCluster, returnedTestCluster)
+		})
+
+		t.Run("non-existing cluster", func(t *testing.T) {
+			// when
+			cluster, ok := clusterCache.getCachedToolchainCluster("anotherCluster", false)
+
+			// then
+			assert.False(t, ok)
+			assert.Nil(t, cluster)
+		})
 	})
 }
 
@@ -378,7 +415,7 @@ func TestMultipleActionsInParallel(t *testing.T) {
 			go func() {
 				defer waitForFinished.Done()
 				latch.Wait()
-				cluster, ok := clusterCache.getCachedToolchainCluster(clusterToTest.Name)
+				cluster, ok := clusterCache.getCachedToolchainCluster(clusterToTest.Name, true)
 				if ok {
 					assert.Equal(t, clusterToTest, cluster)
 				} else {
@@ -409,11 +446,11 @@ func TestMultipleActionsInParallel(t *testing.T) {
 	// then
 	waitForFinished.Wait()
 
-	member, ok := clusterCache.getCachedToolchainCluster("memberCluster")
+	member, ok := clusterCache.getCachedToolchainCluster("memberCluster", true)
 	assert.True(t, ok)
 	assert.Equal(t, memberCluster, member)
 
-	host, ok := clusterCache.getCachedToolchainCluster("hostCluster")
+	host, ok := clusterCache.getCachedToolchainCluster("hostCluster", true)
 	assert.True(t, ok)
 	assert.Equal(t, hostCluster, host)
 }

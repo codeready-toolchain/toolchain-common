@@ -52,11 +52,11 @@ func (c *toolchainClusterClients) deleteCachedToolchainCluster(name string) {
 	delete(c.clusters, name)
 }
 
-func (c *toolchainClusterClients) getCachedToolchainCluster(name string) (*CachedToolchainCluster, bool) {
+func (c *toolchainClusterClients) getCachedToolchainCluster(name string, canRefreshCache bool) (*CachedToolchainCluster, bool) {
 	c.RLock()
 	defer c.RUnlock()
 	_, ok := c.clusters[name]
-	if !ok && c.refreshCache != nil {
+	if !ok && canRefreshCache && c.refreshCache != nil {
 		c.RUnlock()
 		c.refreshCache()
 		c.RLock()
@@ -96,7 +96,7 @@ clusters:
 
 // GetCachedToolchainCluster returns a kube client for the cluster (with the given name) and info if the client exists
 func GetCachedToolchainCluster(name string) (*CachedToolchainCluster, bool) {
-	return clusterCache.getCachedToolchainCluster(name)
+	return clusterCache.getCachedToolchainCluster(name, true)
 }
 
 // GetHostClusterFunc a func that returns the Host cluster from the cache,

@@ -3,12 +3,14 @@ package cluster
 import (
 	"context"
 	"encoding/base64"
+	"reflect"
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -55,22 +57,40 @@ func (s *ToolchainClusterService) AddOrUpdateToolchainCluster(cluster *toolchain
 	log := s.enrichLogger(cluster)
 	log.Info("observed a cluster")
 
-	err := s.addToolchainCluster(cluster)
+	err := s.addToolchainCluster(log, cluster)
 	if err != nil {
 		return errors.Wrap(err, "the cluster was not added nor updated")
 	}
 	return nil
 }
 
-func (s *ToolchainClusterService) addToolchainCluster(toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
+func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
 	// create the restclient of toolchainCluster
 	clusterConfig, err := NewClusterConfig(s.client, toolchainCluster, s.timeout)
 	if err != nil {
 		return errors.Wrap(err, "cannot create ToolchainCluster Config")
 	}
-	cl, err := client.New(clusterConfig, client.Options{})
-	if err != nil {
-		return errors.Wrap(err, "cannot create ToolchainCluster client")
+
+	var cl client.Client
+	// check if there is already a cached ToolchainCluster so we could reuse the client
+	// we cannot allow to refresh the cache, because the refresh function calls this addToolchainCluster method which results in a recursive loop
+	cachedToolchainCluster, exists := clusterCache.getCachedToolchainCluster(toolchainCluster.Name, false)
+	if !exists ||
+		cachedToolchainCluster.Client == nil ||
+		!reflect.DeepEqual(clusterConfig, cachedToolchainCluster.Config) {
+
+		log.Info("creating new client for the cached ToolchainCluster")
+		scheme := runtime.NewScheme()
+		if err := toolchainv1alpha1.AddToScheme(scheme); err != nil {
+			return err
+		}
+		cl, err = client.New(clusterConfig, client.Options{})
+		if err != nil {
+			return errors.Wrap(err, "cannot create ToolchainCluster client")
+		}
+	} else {
+		log.Info("reusing the client for the cached ToolchainCluster")
+		cl = cachedToolchainCluster.Client
 	}
 
 	cluster := &CachedToolchainCluster{
@@ -93,7 +113,6 @@ func (s *ToolchainClusterService) addToolchainCluster(toolchainCluster *toolchai
 			cluster.OperatorNamespace = defaultMemberOperatorNamespace
 		}
 	}
-
 	clusterCache.addCachedToolchainCluster(cluster)
 	return nil
 }
@@ -112,7 +131,7 @@ func (s *ToolchainClusterService) refreshCache() {
 	}
 	for _, cluster := range toolchainClusters.Items {
 		log := s.enrichLogger(&cluster)
-		err := s.addToolchainCluster(&cluster)
+		err := s.addToolchainCluster(log, &cluster)
 		if err != nil {
 			log.Error(err, "the cluster was not added", "cluster", cluster)
 		}
