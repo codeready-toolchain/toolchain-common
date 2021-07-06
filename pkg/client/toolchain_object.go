@@ -99,7 +99,11 @@ func (o *comparableToolchainObjectImpl) IsSame(otherObject ToolchainObject) (boo
 	return o.compare(o.ToolchainObject, otherObject)
 }
 
-func SortedComparableToolchainObjects(objects []ComparableToolchainObject) []ComparableToolchainObject {
+// SortToolchainObjectsByName takes the given list of ComparableToolchainObjects and sorts them by
+// their namespaced name (it joins the object's namespace and name by a coma and compares them)
+// The resulting sorted array is then returned.
+// This function is important for write predictable and reliable tests
+func SortToolchainObjectsByName(objects []ComparableToolchainObject) []ComparableToolchainObject {
 	names := make([]string, len(objects))
 	for i, object := range objects {
 		names[i] = fmt.Sprintf("%s,%s", object.GetNamespace(), object.GetName())

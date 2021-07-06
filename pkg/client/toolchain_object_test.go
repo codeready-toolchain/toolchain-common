@@ -227,7 +227,7 @@ func TestSortedComparableToolchainObjectsWithThreeObjects(t *testing.T) {
 	}
 
 	// when
-	sorted := SortedComparableToolchainObjects(objects)
+	sorted := SortToolchainObjectsByName(objects)
 
 	// then
 	assert.Equal(t, roleBindingA, sorted[0])
@@ -237,7 +237,7 @@ func TestSortedComparableToolchainObjectsWithThreeObjects(t *testing.T) {
 
 func TestSortedComparableToolchainObjectsWhenEmpty(t *testing.T) {
 	// when
-	sorted := SortedComparableToolchainObjects([]ComparableToolchainObject{})
+	sorted := SortToolchainObjectsByName([]ComparableToolchainObject{})
 
 	// then
 	assert.Empty(t, sorted)
