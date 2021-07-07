@@ -262,6 +262,19 @@ func TestGetWatchNamespaceWhenNotSet(t *testing.T) {
 	assert.Empty(t, namespace)
 }
 
+func TestGetWatchNamespaceWhenEmpty(t *testing.T) {
+	// given
+	restore := test.SetEnvVarAndRestore(t, "WATCH_NAMESPACE", "")
+	defer restore()
+
+	// when
+	namespace, err := GetWatchNamespace()
+
+	// then
+	require.EqualError(t, err, "WATCH_NAMESPACE must not be empty")
+	assert.Empty(t, namespace)
+}
+
 func TestGetOperatorNameWhenSet(t *testing.T) {
 	// given
 	restore := test.SetEnvVarAndRestore(t, "OPERATOR_NAME", "toolchain-member-operator")
