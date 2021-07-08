@@ -29,11 +29,8 @@ require (
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v0.20.2
-	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kubectl v0.20.2 // indirect
 	sigs.k8s.io/controller-runtime v0.8.3
 )
-
-replace github.com/codeready-toolchain/api => github.com/matousjobanek/api v0.0.0-20210706080942-cd9fdc6e0953
 
 go 1.16
