@@ -1,7 +1,7 @@
 module github.com/codeready-toolchain/toolchain-common
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20210624035742-cf092ca048fa
+	github.com/codeready-toolchain/api v0.0.0-20210708073330-362a8f80c8fc
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
 	github.com/go-logr/logr v0.4.0
@@ -29,6 +29,7 @@ require (
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v0.20.2
+	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kubectl v0.20.2 // indirect
 	sigs.k8s.io/controller-runtime v0.8.3
 )
