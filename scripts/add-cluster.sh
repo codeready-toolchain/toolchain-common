@@ -309,7 +309,7 @@ spec:
 "
 
 echo "Creating ToolchainCluster representation of ${JOINING_CLUSTER_TYPE} in ${CLUSTER_JOIN_TO}:"
-echo ${TOOLCHAINCLUSTER_CRD}
+echo ${TOOLCHAINCLUSTER_CRD} | yq '.spec.caBundle="***"'
 
 cat <<EOF | oc apply ${OC_ADDITIONAL_PARAMS} -f -
 ${TOOLCHAINCLUSTER_CRD}
