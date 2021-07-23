@@ -12,9 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -264,14 +262,4 @@ func TestMultipleExecutionsInParallel(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, config.AutomaticApproval().MaxNumberOfUsersOverall())
 	assert.NotEmpty(t, config.AutomaticApproval().MaxNumberOfUsersSpecificPerMemberCluster())
-}
-
-func newSecret(name string, data map[string][]byte) *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: test.HostOperatorNs,
-		},
-		Data: data,
-	}
 }
