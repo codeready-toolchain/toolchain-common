@@ -133,13 +133,16 @@ func WithNotBeforeClaim(nbf time.Time) ExtraClaim {
 type Identity struct {
 	ID       uuid.UUID
 	Username string
+	Email    string
 }
 
 // NewIdentity returns a new, random identity
 func NewIdentity() *Identity {
+	username := "testuser-" + uuid.Must(uuid.NewV4()).String()
 	return &Identity{
 		ID:       uuid.Must(uuid.NewV4()),
-		Username: "testuser-" + uuid.Must(uuid.NewV4()).String(),
+		Username: username,
+		Email:    username + "@acme.com",
 	}
 }
 
