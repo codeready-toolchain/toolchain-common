@@ -16,7 +16,7 @@ import (
 
 func NewToolchainConfigWithReset(t *testing.T, options ...testconfig.ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
 	t.Cleanup(Reset)
-	return testconfig.NewToolchainConfig(options...)
+	return testconfig.NewToolchainConfig(t, options...)
 }
 
 func UpdateToolchainConfigWithReset(t *testing.T, cl client.Client, options ...testconfig.ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
@@ -24,5 +24,5 @@ func UpdateToolchainConfigWithReset(t *testing.T, cl client.Client, options ...t
 	err := cl.Get(context.TODO(), types.NamespacedName{Namespace: test.HostOperatorNs, Name: "config"}, currentConfig)
 	require.NoError(t, err)
 	t.Cleanup(Reset)
-	return testconfig.ModifyToolchainConfig(currentConfig, options...)
+	return testconfig.ModifyToolchainConfig(t, cl, options...)
 }

@@ -1,9 +1,16 @@
 package config
 
 import (
+	"context"
+	"os"
+	"testing"
+
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type EnvName string
@@ -68,9 +75,6 @@ func AutomaticApproval() *AutomaticApprovalOption {
 	o := &AutomaticApprovalOption{
 		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
 	}
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.AutomaticApproval = toolchainv1alpha1.AutomaticApprovalConfig{}
-	})
 	return o
 }
 
@@ -111,9 +115,6 @@ func Deactivation() *DeactivationOption {
 	o := &DeactivationOption{
 		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
 	}
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.Deactivation = toolchainv1alpha1.DeactivationConfig{}
-	})
 	return o
 }
 
@@ -153,9 +154,6 @@ func Metrics() *MetricsOption {
 	o := &MetricsOption{
 		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
 	}
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.Metrics = toolchainv1alpha1.MetricsConfig{}
-	})
 	return o
 }
 
@@ -174,9 +172,6 @@ func Notifications() *NotificationsOption {
 	o := &NotificationsOption{
 		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
 	}
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.Notifications = toolchainv1alpha1.NotificationsConfig{}
-	})
 	return o
 }
 
@@ -255,9 +250,6 @@ func RegistrationService() *RegistrationServiceOption {
 	o := &RegistrationServiceOption{
 		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
 	}
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.RegistrationService = toolchainv1alpha1.RegistrationServiceConfig{}
-	})
 	return o
 }
 
@@ -289,24 +281,24 @@ func (o RegistrationServiceOption) RegistrationServiceURL(value string) Registra
 	return o
 }
 
-func (o RegistrationServiceOption) Analytics() *RegistrationServiceAnalyticsOption {
-	c := &RegistrationServiceAnalyticsOption{
+func (o RegistrationServiceOption) Analytics() RegistrationServiceAnalyticsOption {
+	c := RegistrationServiceAnalyticsOption{
 		ToolchainConfigOptionImpl: o.ToolchainConfigOptionImpl,
 		parent:                    o,
 	}
 	return c
 }
 
-func (o RegistrationServiceOption) Auth() *RegistrationServiceAuthOption {
-	c := &RegistrationServiceAuthOption{
+func (o RegistrationServiceOption) Auth() RegistrationServiceAuthOption {
+	c := RegistrationServiceAuthOption{
 		ToolchainConfigOptionImpl: o.ToolchainConfigOptionImpl,
 		parent:                    o,
 	}
 	return c
 }
 
-func (o RegistrationServiceOption) Verification() *RegistrationServiceVerificationOption {
-	c := &RegistrationServiceVerificationOption{
+func (o RegistrationServiceOption) Verification() RegistrationServiceVerificationOption {
+	c := RegistrationServiceVerificationOption{
 		ToolchainConfigOptionImpl: o.ToolchainConfigOptionImpl,
 		parent:                    o,
 	}
@@ -318,18 +310,18 @@ type RegistrationServiceAnalyticsOption struct {
 	parent RegistrationServiceOption
 }
 
-func (o RegistrationServiceAnalyticsOption) SegmentWriteKey(value string) *RegistrationServiceOption {
+func (o RegistrationServiceAnalyticsOption) SegmentWriteKey(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Analytics.SegmentWriteKey = &value
 	})
-	return &o.parent
+	return o.parent
 }
 
-func (o RegistrationServiceAnalyticsOption) WoopraDomain(value string) *RegistrationServiceOption {
+func (o RegistrationServiceAnalyticsOption) WoopraDomain(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Analytics.WoopraDomain = &value
 	})
-	return &o.parent
+	return o.parent
 }
 
 type RegistrationServiceAuthOption struct {
@@ -337,32 +329,32 @@ type RegistrationServiceAuthOption struct {
 	parent RegistrationServiceOption
 }
 
-func (o RegistrationServiceAuthOption) AuthClientConfigContentType(value string) *RegistrationServiceOption {
+func (o RegistrationServiceAuthOption) AuthClientConfigContentType(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Auth.AuthClientConfigContentType = &value
 	})
-	return &o.parent
+	return o.parent
 }
 
-func (o RegistrationServiceAuthOption) AuthClientLibraryURL(value string) *RegistrationServiceOption {
+func (o RegistrationServiceAuthOption) AuthClientLibraryURL(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Auth.AuthClientLibraryURL = &value
 	})
-	return &o.parent
+	return o.parent
 }
 
-func (o RegistrationServiceAuthOption) AuthClientConfigRaw(value string) *RegistrationServiceOption {
+func (o RegistrationServiceAuthOption) AuthClientConfigRaw(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Auth.AuthClientConfigRaw = &value
 	})
-	return &o.parent
+	return o.parent
 }
 
-func (o RegistrationServiceAuthOption) AuthClientPublicKeysURL(value string) *RegistrationServiceOption {
+func (o RegistrationServiceAuthOption) AuthClientPublicKeysURL(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Auth.AuthClientPublicKeysURL = &value
 	})
-	return &o.parent
+	return o.parent
 }
 
 type RegistrationServiceVerificationOption struct {
@@ -370,46 +362,46 @@ type RegistrationServiceVerificationOption struct {
 	parent RegistrationServiceOption
 }
 
-func (o RegistrationServiceVerificationOption) Enabled(value bool) *RegistrationServiceOption {
+func (o RegistrationServiceVerificationOption) Enabled(value bool) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Verification.Enabled = &value
 	})
-	return &o.parent
+	return o.parent
 }
 
-func (o RegistrationServiceVerificationOption) DailyLimit(value int) *RegistrationServiceOption {
+func (o RegistrationServiceVerificationOption) DailyLimit(value int) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Verification.DailyLimit = &value
 	})
-	return &o.parent
+	return o.parent
 }
 
-func (o RegistrationServiceVerificationOption) AttemptsAllowed(value int) *RegistrationServiceOption {
+func (o RegistrationServiceVerificationOption) AttemptsAllowed(value int) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Verification.AttemptsAllowed = &value
 	})
-	return &o.parent
+	return o.parent
 }
 
-func (o RegistrationServiceVerificationOption) MessageTemplate(value string) *RegistrationServiceOption {
+func (o RegistrationServiceVerificationOption) MessageTemplate(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Verification.MessageTemplate = &value
 	})
-	return &o.parent
+	return o.parent
 }
 
-func (o RegistrationServiceVerificationOption) ExcludedEmailDomains(value string) *RegistrationServiceOption {
+func (o RegistrationServiceVerificationOption) ExcludedEmailDomains(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Verification.ExcludedEmailDomains = &value
 	})
-	return &o.parent
+	return o.parent
 }
 
-func (o RegistrationServiceVerificationOption) CodeExpiresInMin(value int) *RegistrationServiceOption {
+func (o RegistrationServiceVerificationOption) CodeExpiresInMin(value int) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Verification.CodeExpiresInMin = &value
 	})
-	return &o.parent
+	return o.parent
 }
 
 func (o RegistrationServiceVerificationOption) Secret() *RegistrationVerificationSecretOption {
@@ -459,9 +451,6 @@ func Tiers() *TiersOption {
 	o := &TiersOption{
 		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
 	}
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.Tiers = toolchainv1alpha1.TiersConfig{}
-	})
 	return o
 }
 
@@ -494,9 +483,6 @@ func ToolchainStatus() *ToolchainStatusOption {
 	o := &ToolchainStatusOption{
 		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
 	}
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.ToolchainStatus = toolchainv1alpha1.ToolchainStatusConfig{}
-	})
 	return o
 }
 
@@ -515,9 +501,6 @@ func Users() *UsersOption {
 	o := &UsersOption{
 		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
 	}
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.Users = toolchainv1alpha1.UsersConfig{}
-	})
 	return o
 }
 
@@ -575,10 +558,15 @@ func (o MembersOption) SpecificPerMemberCluster(clusterName string, memberConfig
 
 //---End of Member Configurations---//
 
-func NewToolchainConfig(options ...ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
+func NewToolchainConfig(t *testing.T, options ...ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
+	namespace, found := os.LookupEnv("WATCH_NAMESPACE")
+	if !found {
+		t.Logf("WATCH_NAMESPACE env var is not set, defaulting to '%s'", test.HostOperatorNs)
+		namespace = test.HostOperatorNs
+	}
 	toolchainConfig := &toolchainv1alpha1.ToolchainConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: test.HostOperatorNs,
+			Namespace: namespace,
 			Name:      "config",
 		},
 	}
@@ -588,9 +576,18 @@ func NewToolchainConfig(options ...ToolchainConfigOption) *toolchainv1alpha1.Too
 	return toolchainConfig
 }
 
-func ModifyToolchainConfig(toolchainConfig *toolchainv1alpha1.ToolchainConfig, options ...ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
-	for _, option := range options {
-		option.Apply(toolchainConfig)
+func ModifyToolchainConfig(t *testing.T, cl client.Client, options ...ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
+	namespace, found := os.LookupEnv("WATCH_NAMESPACE")
+	if !found {
+		t.Log("WATCH_NAMESPACE env var is not set")
+		namespace = test.HostOperatorNs
 	}
-	return toolchainConfig
+	currentConfig := &toolchainv1alpha1.ToolchainConfig{}
+	err := cl.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: "config"}, currentConfig)
+	require.NoError(t, err)
+
+	for _, option := range options {
+		option.Apply(currentConfig)
+	}
+	return currentConfig
 }

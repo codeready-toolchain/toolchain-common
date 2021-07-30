@@ -41,46 +41,57 @@ func updateConfig(config *toolchainv1alpha1.ToolchainConfig, secrets map[string]
 	configCache.set(config, secrets)
 }
 
-func LoadLatest(cl client.Client) error {
+func LoadLatest(cl client.Client) (ToolchainConfig, error) {
 	namespace, err := commonconfig.GetWatchNamespace()
 	if err != nil {
-		return errs.Wrap(err, "Failed to get watch namespace")
+		return ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}}, errs.Wrap(err, "Failed to get watch namespace")
 	}
 
 	config := &toolchainv1alpha1.ToolchainConfig{}
 	if err := cl.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: "config"}, config); err != nil {
 		if apierrors.IsNotFound(err) {
 			cacheLog.Info("ToolchainConfig resource with the name 'config' wasn't found, default configuration will be used", "namespace", namespace)
-			return nil
+			return ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}}, nil
 		}
-		return err
+		return ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}}, err
 	}
 
 	allSecrets, err := commonconfig.LoadSecrets(cl, namespace)
 	if err != nil {
-		return err
+		return ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}}, err
 	}
 
 	configCache.set(config, allSecrets)
-	return nil
+	return getConfigOrDefault(), nil
 }
 
-// GetConfig returns a cached host-operator config.
+// GetConfig returns a cached toolchain config.
 // If no config is stored in the cache, then it retrieves it from the cluster and stores in the cache.
 // If the resource is not found, then returns the default config.
 // If any failure happens while getting the ToolchainConfig resource, then returns an error.
 func GetConfig(cl client.Client) (ToolchainConfig, error) {
+	config, _ := configCache.get()
+	if config == nil {
+		return LoadLatest(cl)
+	}
+	return getConfigOrDefault(), nil
+}
+
+func getConfigOrDefault() ToolchainConfig {
 	config, secrets := configCache.get()
 	if config == nil {
-		if err := LoadLatest(cl); err != nil {
-			return ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}, secrets: secrets}, err
-		}
-		config, secrets = configCache.get()
+		return ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}, secrets: secrets}
 	}
+	return ToolchainConfig{cfg: &config.Spec, secrets: secrets}
+}
+
+// GetCachedConfig returns the cached toolchain config or a toolchainconfig with default values
+func GetCachedConfig() ToolchainConfig {
+	config, secrets := configCache.get()
 	if config == nil {
-		return ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}, secrets: secrets}, nil
+		return ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}, secrets: secrets}
 	}
-	return ToolchainConfig{cfg: &config.Spec, secrets: secrets}, nil
+	return ToolchainConfig{cfg: &config.Spec, secrets: secrets}
 }
 
 // Reset resets the cache.

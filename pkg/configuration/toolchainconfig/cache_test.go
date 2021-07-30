@@ -3,10 +3,10 @@ package toolchainconfig
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"testing"
 
+	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	testconfig "github.com/codeready-toolchain/toolchain-common/pkg/test/config"
 
@@ -19,7 +19,7 @@ import (
 
 func TestCache(t *testing.T) {
 	// given
-	os.Setenv("WATCH_NAMESPACE", test.HostOperatorNs)
+	test.SetEnvVarAndRestore(t, "WATCH_NAMESPACE", test.HostOperatorNs)
 	cl := test.NewFakeClient(t)
 
 	// when
@@ -131,10 +131,11 @@ func TestGetConfigFailed(t *testing.T) {
 		}
 
 		// when
-		err := LoadLatest(cl)
+		actual, err := LoadLatest(cl)
 
 		// then
 		require.EqualError(t, err, "list error")
+		require.Equal(t, ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}}, actual) // default configuration
 	})
 }
 
@@ -145,21 +146,17 @@ func TestLoadLatest(t *testing.T) {
 		cl := test.NewFakeClient(t, initconfig)
 
 		// when
-		err := LoadLatest(cl)
+		actual, err := LoadLatest(cl)
 
 		// then
-		require.NoError(t, err)
-		actual, err := GetConfig(cl)
 		require.NoError(t, err)
 		assert.Equal(t, 1100, actual.AutomaticApproval().MaxNumberOfUsersOverall())
 
 		t.Run("returns the same when the config hasn't been updated", func(t *testing.T) {
 			// when
-			err := LoadLatest(cl)
+			actual, err := LoadLatest(cl)
 
 			// then
-			require.NoError(t, err)
-			actual, err = GetConfig(cl)
 			require.NoError(t, err)
 			assert.Equal(t, 1100, actual.AutomaticApproval().MaxNumberOfUsersOverall())
 		})
@@ -171,11 +168,9 @@ func TestLoadLatest(t *testing.T) {
 			require.NoError(t, err)
 
 			// when
-			err = LoadLatest(cl)
+			actual, err = LoadLatest(cl)
 
 			// then
-			require.NoError(t, err)
-			actual, err = GetConfig(cl)
 			require.NoError(t, err)
 			assert.Equal(t, 2000, actual.AutomaticApproval().MaxNumberOfUsersOverall())
 		})
@@ -186,10 +181,11 @@ func TestLoadLatest(t *testing.T) {
 		cl := test.NewFakeClient(t)
 
 		// when
-		err := LoadLatest(cl)
+		actual, err := LoadLatest(cl)
 
 		// then
 		require.NoError(t, err)
+		require.Equal(t, ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}}, actual) // default configuration
 	})
 
 	t.Run("get config error", func(t *testing.T) {
@@ -201,10 +197,11 @@ func TestLoadLatest(t *testing.T) {
 		}
 
 		// when
-		err := LoadLatest(cl)
+		actual, err := LoadLatest(cl)
 
 		// then
 		require.EqualError(t, err, "get error")
+		require.Equal(t, ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}}, actual) // default configuration
 	})
 
 	t.Run("load secrets error", func(t *testing.T) {
@@ -216,10 +213,11 @@ func TestLoadLatest(t *testing.T) {
 		}
 
 		// when
-		err := LoadLatest(cl)
+		actual, err := LoadLatest(cl)
 
 		// then
 		require.EqualError(t, err, "list error")
+		require.Equal(t, ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}}, actual) // default configuration
 	})
 }
 

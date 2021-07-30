@@ -166,12 +166,12 @@ func TestRegistrationService(t *testing.T) {
 			Verification().MessageTemplate("Developer Sandbox verification code: %s").
 			Verification().ExcludedEmailDomains("redhat.com,ibm.com").
 			Verification().CodeExpiresInMin(151).
-			Verification().Secret().Ref("verification-secrets").TwilioAccountSID("twiolio.sid").TwilioAuthToken("twiolio.token").TwilioFromNumber("twiolio.fromnumber"))
+			Verification().Secret().Ref("verification-secrets").TwilioAccountSID("twilio.sid").TwilioAuthToken("twilio.token").TwilioFromNumber("twilio.fromnumber"))
 
 		verificationSecretValues := make(map[string]string)
-		verificationSecretValues["twiolio.sid"] = "def"
-		verificationSecretValues["twiolio.token"] = "ghi"
-		verificationSecretValues["twiolio.fromnumber"] = "jkl"
+		verificationSecretValues["twilio.sid"] = "def"
+		verificationSecretValues["twilio.token"] = "ghi"
+		verificationSecretValues["twilio.fromnumber"] = "jkl"
 		secrets := make(map[string]map[string]string)
 		secrets["verification-secrets"] = verificationSecretValues
 
@@ -192,7 +192,7 @@ func TestRegistrationService(t *testing.T) {
 		assert.Equal(t, 15, toolchainCfg.RegistrationService().Verification().DailyLimit())
 		assert.Equal(t, 13, toolchainCfg.RegistrationService().Verification().AttemptsAllowed())
 		assert.Equal(t, "Developer Sandbox verification code: %s", toolchainCfg.RegistrationService().Verification().MessageTemplate())
-		assert.Equal(t, "redhat.com,ibm.com", toolchainCfg.RegistrationService().Verification().ExcludedEmailDomains())
+		assert.Equal(t, []string{"redhat.com", "ibm.com"}, toolchainCfg.RegistrationService().Verification().ExcludedEmailDomains())
 		assert.Equal(t, 151, toolchainCfg.RegistrationService().Verification().CodeExpiresInMin())
 		assert.Equal(t, "def", toolchainCfg.RegistrationService().Verification().TwilioAccountSID())
 		assert.Equal(t, "ghi", toolchainCfg.RegistrationService().Verification().TwilioAuthToken())
