@@ -10,15 +10,13 @@ import (
 
 var log = logf.Log.WithName("generation_not_changed_predicate").WithName("eventFilters")
 
-// OnlyUpdateWhenGenerationNotChanged implements a default update predicate function on no generation change
-// (adapted from sigs.k8s.io/controller-runtime/pkg/predicate/predicate.ResourceVersionChangedPredicate)
-// other predicate functions return false for all cases
-// Copied and slightly modified from github.com/operator-framework/operator-sdk/pkg/predicate/predicate.go
-type OnlyUpdateWhenGenerationNotChanged struct {
+// EitherUpdateWhenGenerationNotChangedOrDelete implements a predicate that triggers
+// reconciles either for updates when generation was not changed or for deletion
+type EitherUpdateWhenGenerationNotChangedOrDelete struct {
 }
 
 // Update implements default UpdateEvent filter for validating no generation change
-func (OnlyUpdateWhenGenerationNotChanged) Update(e event.UpdateEvent) bool {
+func (EitherUpdateWhenGenerationNotChangedOrDelete) Update(e event.UpdateEvent) bool {
 	if e.ObjectOld == nil {
 		log.Error(nil, "Update event has no old runtime object to update", "event", e)
 		return false
@@ -31,17 +29,17 @@ func (OnlyUpdateWhenGenerationNotChanged) Update(e event.UpdateEvent) bool {
 }
 
 // Create implements Predicate
-func (OnlyUpdateWhenGenerationNotChanged) Create(e event.CreateEvent) bool {
+func (EitherUpdateWhenGenerationNotChangedOrDelete) Create(e event.CreateEvent) bool {
 	return false
 }
 
 // Delete implements Predicate
-func (OnlyUpdateWhenGenerationNotChanged) Delete(e event.DeleteEvent) bool {
-	return false
+func (EitherUpdateWhenGenerationNotChangedOrDelete) Delete(e event.DeleteEvent) bool {
+	return true
 }
 
 // Generic implements Predicate
-func (OnlyUpdateWhenGenerationNotChanged) Generic(e event.GenericEvent) bool {
+func (EitherUpdateWhenGenerationNotChangedOrDelete) Generic(e event.GenericEvent) bool {
 	return false
 }
 

@@ -15,7 +15,7 @@ var missingDataEvents = []event.UpdateEvent{
 	{ObjectOld: &toolchainv1alpha1.UserAccount{}}}
 
 func TestOnlyUpdateWhenGenerationNotChangedPredicate(t *testing.T) {
-	var noGenChangedPred = OnlyUpdateWhenGenerationNotChanged{}
+	var noGenChangedPred = EitherUpdateWhenGenerationNotChangedOrDelete{}
 
 	t.Run("update event", func(t *testing.T) {
 
@@ -70,7 +70,7 @@ func TestOnlyUpdateWhenGenerationNotChangedPredicate(t *testing.T) {
 		assert.False(t, ok)
 	})
 
-	t.Run("delete event returns false", func(t *testing.T) {
+	t.Run("delete event returns true", func(t *testing.T) {
 		// given
 		deleteEvent := event.DeleteEvent{
 			Object: &toolchainv1alpha1.UserAccount{ObjectMeta: metav1.ObjectMeta{Generation: int64(123456789)}}}
@@ -79,7 +79,7 @@ func TestOnlyUpdateWhenGenerationNotChangedPredicate(t *testing.T) {
 		ok := noGenChangedPred.Delete(deleteEvent)
 
 		// then
-		assert.False(t, ok)
+		assert.True(t, ok)
 	})
 
 	t.Run("generic event returns false", func(t *testing.T) {
