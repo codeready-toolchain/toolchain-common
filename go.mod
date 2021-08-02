@@ -2,12 +2,12 @@ module github.com/codeready-toolchain/toolchain-common
 
 require (
 	github.com/codeready-toolchain/api v0.0.0-20210708073330-362a8f80c8fc
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.7 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/gofrs/uuid v3.3.0+incompatible
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/lestrrat-go/jwx v0.9.0
 	github.com/magiconair/properties v1.8.1
 	github.com/mailru/easyjson v0.7.1 // indirect

@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	uuid "github.com/gofrs/uuid"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
