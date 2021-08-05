@@ -191,9 +191,8 @@ func TestNoWatchNamespaceSetWhenLoadingSecret(t *testing.T) {
 		secretData, err := LoadFromSecret("HOST_OPERATOR_SECRET_NAME", cl)
 
 		// then
-		require.Error(t, err)
+		require.EqualError(t, err, "WATCH_NAMESPACE must be set")
 		assert.Empty(t, secretData)
-		assert.Equal(t, "WATCH_NAMESPACE must be set", err.Error())
 	})
 }
 

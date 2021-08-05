@@ -1,4 +1,4 @@
-package toolchainconfig
+package configuration
 
 import (
 	"testing"
@@ -11,8 +11,8 @@ import (
 
 func TestAutomaticApprovalConfig(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t)
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t)
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.False(t, toolchainCfg.AutomaticApproval().IsEnabled())
 		assert.Equal(t, 1000, toolchainCfg.AutomaticApproval().MaxNumberOfUsersOverall())
@@ -21,8 +21,8 @@ func TestAutomaticApprovalConfig(t *testing.T) {
 		assert.Empty(t, toolchainCfg.AutomaticApproval().ResourceCapacityThresholdSpecificPerMemberCluster())
 	})
 	t.Run("non-default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t, testconfig.AutomaticApproval().Enabled(true).MaxNumberOfUsers(123, testconfig.PerMemberCluster("member1", 321)).ResourceCapacityThreshold(456, testconfig.PerMemberCluster("member1", 654)))
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().Enabled(true).MaxNumberOfUsers(123, testconfig.PerMemberCluster("member1", 321)).ResourceCapacityThreshold(456, testconfig.PerMemberCluster("member1", 654)))
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.True(t, toolchainCfg.AutomaticApproval().IsEnabled())
 		assert.Equal(t, 123, toolchainCfg.AutomaticApproval().MaxNumberOfUsersOverall())
@@ -34,14 +34,14 @@ func TestAutomaticApprovalConfig(t *testing.T) {
 
 func TestDeactivationConfig(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t)
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t)
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, 3, toolchainCfg.Deactivation().DeactivatingNotificationDays())
 	})
 	t.Run("non-default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t, testconfig.Deactivation().DeactivatingNotificationDays(5))
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t, testconfig.Deactivation().DeactivatingNotificationDays(5))
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, 5, toolchainCfg.Deactivation().DeactivatingNotificationDays())
 	})
@@ -49,14 +49,14 @@ func TestDeactivationConfig(t *testing.T) {
 
 func TestEnvironment(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t)
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t)
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, "prod", toolchainCfg.Environment())
 	})
 	t.Run("non-default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t, testconfig.Environment(testconfig.E2E))
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t, testconfig.Environment(testconfig.E2E))
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, "e2e-tests", toolchainCfg.Environment())
 	})
@@ -64,14 +64,14 @@ func TestEnvironment(t *testing.T) {
 
 func TestMetrics(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t)
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t)
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.False(t, toolchainCfg.Metrics().ForceSynchronization())
 	})
 	t.Run("non-default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t, testconfig.Metrics().ForceSynchronization(true))
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t, testconfig.Metrics().ForceSynchronization(true))
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.True(t, toolchainCfg.Metrics().ForceSynchronization())
 	})
@@ -79,8 +79,8 @@ func TestMetrics(t *testing.T) {
 
 func TestNotifications(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t)
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t)
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Empty(t, toolchainCfg.Notifications().AdminEmail())
 		assert.Empty(t, toolchainCfg.Notifications().MailgunDomain())
@@ -91,7 +91,7 @@ func TestNotifications(t *testing.T) {
 		assert.Equal(t, 24*time.Hour, toolchainCfg.Notifications().DurationBeforeNotificationDeletion())
 	})
 	t.Run("non-default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t,
+		cfg := NewToolchainConfigObjWithReset(t,
 			testconfig.Notifications().
 				AdminEmail("joe.schmoe@redhat.com").
 				DurationBeforeNotificationDeletion("48h").
@@ -110,7 +110,7 @@ func TestNotifications(t *testing.T) {
 		secrets := make(map[string]map[string]string)
 		secrets["notifications"] = notificationSecretValues
 
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, secrets)
+		toolchainCfg := newToolchainConfig(cfg, secrets)
 
 		assert.Equal(t, "joe.schmoe@redhat.com", toolchainCfg.Notifications().AdminEmail())
 		assert.Equal(t, "abc123", toolchainCfg.Notifications().MailgunAPIKey())
@@ -124,8 +124,8 @@ func TestNotifications(t *testing.T) {
 
 func TestRegistrationService(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t)
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t)
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, "prod", toolchainCfg.RegistrationService().Environment())
 		assert.Equal(t, "info", toolchainCfg.RegistrationService().LogLevel())
@@ -149,7 +149,7 @@ func TestRegistrationService(t *testing.T) {
 		assert.Empty(t, toolchainCfg.RegistrationService().Verification().TwilioFromNumber())
 	})
 	t.Run("non-default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t, testconfig.RegistrationService().
+		cfg := NewToolchainConfigObjWithReset(t, testconfig.RegistrationService().
 			Environment("e2e-tests").
 			LogLevel("debug").
 			Namespace("another-namespace").
@@ -175,7 +175,7 @@ func TestRegistrationService(t *testing.T) {
 		secrets := make(map[string]map[string]string)
 		secrets["verification-secrets"] = verificationSecretValues
 
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, secrets)
+		toolchainCfg := newToolchainConfig(cfg, secrets)
 
 		assert.Equal(t, "e2e-tests", toolchainCfg.RegistrationService().Environment())
 		assert.Equal(t, "debug", toolchainCfg.RegistrationService().LogLevel())
@@ -202,25 +202,25 @@ func TestRegistrationService(t *testing.T) {
 
 func TestTiers(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t)
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t)
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, "base", toolchainCfg.Tiers().DefaultTier())
 		assert.Equal(t, 24*time.Hour, toolchainCfg.Tiers().DurationBeforeChangeTierRequestDeletion())
 		assert.Equal(t, 5, toolchainCfg.Tiers().TemplateUpdateRequestMaxPoolSize())
 	})
 	t.Run("invalid", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t, testconfig.Tiers().DurationBeforeChangeTierRequestDeletion("rapid"))
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t, testconfig.Tiers().DurationBeforeChangeTierRequestDeletion("rapid"))
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, 24*time.Hour, toolchainCfg.Tiers().DurationBeforeChangeTierRequestDeletion())
 	})
 	t.Run("non-default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t, testconfig.Tiers().
+		cfg := NewToolchainConfigObjWithReset(t, testconfig.Tiers().
 			DefaultTier("advanced").
 			DurationBeforeChangeTierRequestDeletion("48h").
 			TemplateUpdateRequestMaxPoolSize(40))
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, "advanced", toolchainCfg.Tiers().DefaultTier())
 		assert.Equal(t, 48*time.Hour, toolchainCfg.Tiers().DurationBeforeChangeTierRequestDeletion())
@@ -230,14 +230,14 @@ func TestTiers(t *testing.T) {
 
 func TestToolchainStatus(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t)
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t)
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, 5*time.Second, toolchainCfg.ToolchainStatus().ToolchainStatusRefreshTime())
 	})
 	t.Run("non-default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t, testconfig.ToolchainStatus().ToolchainStatusRefreshTime("10s"))
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t, testconfig.ToolchainStatus().ToolchainStatusRefreshTime("10s"))
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, 10*time.Second, toolchainCfg.ToolchainStatus().ToolchainStatusRefreshTime())
 	})
@@ -245,16 +245,16 @@ func TestToolchainStatus(t *testing.T) {
 
 func TestUsers(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t)
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t)
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, 2, toolchainCfg.Users().MasterUserRecordUpdateFailureThreshold())
 		assert.Equal(t, []string{"openshift", "kube", "default", "redhat", "sandbox"}, toolchainCfg.Users().ForbiddenUsernamePrefixes())
 		assert.Equal(t, []string{"admin"}, toolchainCfg.Users().ForbiddenUsernameSuffixes())
 	})
 	t.Run("non-default", func(t *testing.T) {
-		cfg := NewToolchainConfigWithReset(t, testconfig.Users().MasterUserRecordUpdateFailureThreshold(10).ForbiddenUsernamePrefixes("bread,butter").ForbiddenUsernameSuffixes("sugar,cream"))
-		toolchainCfg := NewToolchainConfig(&cfg.Spec, map[string]map[string]string{})
+		cfg := NewToolchainConfigObjWithReset(t, testconfig.Users().MasterUserRecordUpdateFailureThreshold(10).ForbiddenUsernamePrefixes("bread,butter").ForbiddenUsernameSuffixes("sugar,cream"))
+		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, 10, toolchainCfg.Users().MasterUserRecordUpdateFailureThreshold())
 		assert.Equal(t, []string{"bread", "butter"}, toolchainCfg.Users().ForbiddenUsernamePrefixes())
