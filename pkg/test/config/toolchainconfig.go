@@ -558,7 +558,7 @@ func (o MembersOption) SpecificPerMemberCluster(clusterName string, memberConfig
 
 //---End of Member Configurations---//
 
-func NewToolchainConfig(t *testing.T, options ...ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
+func NewToolchainConfigObj(t *testing.T, options ...ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
 	namespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	if !found {
 		t.Logf("WATCH_NAMESPACE env var is not set, defaulting to '%s'", test.HostOperatorNs)
@@ -576,7 +576,7 @@ func NewToolchainConfig(t *testing.T, options ...ToolchainConfigOption) *toolcha
 	return toolchainConfig
 }
 
-func ModifyToolchainConfig(t *testing.T, cl client.Client, options ...ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
+func ModifyToolchainConfigObj(t *testing.T, cl client.Client, options ...ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
 	namespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	if !found {
 		t.Log("WATCH_NAMESPACE env var is not set")

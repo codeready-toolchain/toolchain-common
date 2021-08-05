@@ -18,7 +18,7 @@ import (
 // It is located here to prevent import cycles between this package and the test package.
 func NewToolchainConfigObjWithReset(t *testing.T, options ...testconfig.ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
 	t.Cleanup(Reset)
-	return testconfig.NewToolchainConfig(t, options...)
+	return testconfig.NewToolchainConfigObj(t, options...)
 }
 
 // UpdateToolchainConfigObjWithReset updates the ToolchainConfig resource with the name "config" found using the provided client and updated using the provided options.
@@ -29,5 +29,5 @@ func UpdateToolchainConfigObjWithReset(t *testing.T, cl client.Client, options .
 	err := cl.Get(context.TODO(), types.NamespacedName{Namespace: test.HostOperatorNs, Name: "config"}, currentConfig)
 	require.NoError(t, err)
 	t.Cleanup(Reset)
-	return testconfig.ModifyToolchainConfig(t, cl, options...)
+	return testconfig.ModifyToolchainConfigObj(t, cl, options...)
 }
