@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	uuid "github.com/gofrs/uuid"
+	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/require"
 	jose "gopkg.in/square/go-jose.v2"
 	"gotest.tools/assert"

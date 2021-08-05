@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	uuid "github.com/gofrs/uuid"
+	"github.com/golang-jwt/jwt"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
 )
@@ -133,13 +133,16 @@ func WithNotBeforeClaim(nbf time.Time) ExtraClaim {
 type Identity struct {
 	ID       uuid.UUID
 	Username string
+	Email    string
 }
 
 // NewIdentity returns a new, random identity
 func NewIdentity() *Identity {
+	username := "testuser-" + uuid.Must(uuid.NewV4()).String()
 	return &Identity{
 		ID:       uuid.Must(uuid.NewV4()),
-		Username: "testuser-" + uuid.Must(uuid.NewV4()).String(),
+		Username: username,
+		Email:    username + "@acme.com",
 	}
 }
 
