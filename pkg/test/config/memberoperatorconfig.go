@@ -261,7 +261,7 @@ func (o WebhookOption) Deploy(value bool) WebhookOption {
 	return o
 }
 
-func NewMemberOperatorConfig(options ...MemberOperatorConfigOption) *toolchainv1alpha1.MemberOperatorConfig {
+func NewMemberOperatorConfigObj(options ...MemberOperatorConfigOption) *toolchainv1alpha1.MemberOperatorConfig {
 	memberOperatorConfig := &toolchainv1alpha1.MemberOperatorConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: test.MemberOperatorNs,
@@ -274,7 +274,7 @@ func NewMemberOperatorConfig(options ...MemberOperatorConfigOption) *toolchainv1
 	return memberOperatorConfig
 }
 
-func ModifyMemberOperatorConfig(memberOperatorConfig *toolchainv1alpha1.MemberOperatorConfig, options ...MemberOperatorConfigOption) *toolchainv1alpha1.MemberOperatorConfig {
+func ModifyMemberOperatorConfigObj(memberOperatorConfig *toolchainv1alpha1.MemberOperatorConfig, options ...MemberOperatorConfigOption) *toolchainv1alpha1.MemberOperatorConfig {
 	for _, option := range options {
 		option.Apply(memberOperatorConfig)
 	}

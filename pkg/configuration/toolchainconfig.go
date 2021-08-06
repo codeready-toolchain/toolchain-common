@@ -1,6 +1,7 @@
 package configuration
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -55,10 +56,15 @@ func ForceLoadToolchainConfig(cl client.Client) (ToolchainConfig, error) {
 }
 
 func newToolchainConfig(config runtime.Object, secrets map[string]map[string]string) ToolchainConfig {
+	if config == nil {
+		// return default config if there's no config resource
+		return ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}}
+	}
+
 	toolchaincfg, ok := config.(*toolchainv1alpha1.ToolchainConfig)
 	if !ok {
 		// return default config
-		logger.Error(nil, "cache contains incorrect configuration resource type")
+		logger.Error(fmt.Errorf("cache does not contain toolchainconfig resource type"), "failed to get ToolchainConfig from resource, using default configuration")
 		return ToolchainConfig{cfg: &toolchainv1alpha1.ToolchainConfigSpec{}}
 	}
 	return ToolchainConfig{cfg: &toolchaincfg.Spec, secrets: secrets}

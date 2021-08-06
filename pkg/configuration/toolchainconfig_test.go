@@ -1,13 +1,236 @@
 package configuration
 
 import (
+	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	testconfig "github.com/codeready-toolchain/toolchain-common/pkg/test/config"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestGetToolchainConfig(t *testing.T) {
+	restore := test.SetEnvVarAndRestore(t, "WATCH_NAMESPACE", test.HostOperatorNs)
+	defer restore()
+	t.Run("no config object - default config", func(t *testing.T) {
+		// given
+		Reset()
+		cl := test.NewFakeClient(t)
+
+		// when
+		toolchainCfg, err := GetToolchainConfig(cl)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, "prod", toolchainCfg.Environment())
+		assert.Empty(t, toolchainCfg.Notifications().MailgunAPIKey())
+	})
+
+	t.Run("config object retrieved", func(t *testing.T) {
+		// given
+		Reset()
+		toolchainCfgObj := testconfig.NewToolchainConfigObj(t, testconfig.Environment("e2e-tests"), testconfig.Notifications().Secret().Ref("notifications-secret").MailgunAPIKey("mailgunAPIKey"))
+		secret := test.CreateSecret("notifications-secret", test.HostOperatorNs, map[string][]byte{
+			"mailgunAPIKey": []byte("abc123"),
+		})
+		cl := test.NewFakeClient(t, toolchainCfgObj, secret)
+
+		// when
+		toolchainCfg, err := GetToolchainConfig(cl)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, "e2e-tests", toolchainCfg.Environment())
+		assert.Equal(t, "abc123", toolchainCfg.Notifications().MailgunAPIKey())
+
+		t.Run("config object updated but cache not updated", func(t *testing.T) {
+			// given
+			obj := testconfig.ModifyToolchainConfigObj(t, cl, testconfig.Environment("unit-tests"))
+			err := cl.Update(context.TODO(), obj)
+			assert.NoError(t, err)
+
+			secret.Data["mailgunAPIKey"] = []byte("def456")
+			err = cl.Update(context.TODO(), secret)
+			assert.NoError(t, err)
+
+			actual := &toolchainv1alpha1.ToolchainConfig{}
+			err = cl.Get(context.TODO(), types.NamespacedName{Name: "config", Namespace: test.HostOperatorNs}, actual)
+			assert.NoError(t, err)
+			assert.Equal(t, "unit-tests", *actual.Spec.Host.Environment)
+
+			// when
+			toolchainCfg, err = GetToolchainConfig(cl)
+
+			// then
+			assert.NoError(t, err)
+			assert.Equal(t, "e2e-tests", toolchainCfg.Environment()) // returns cached value
+			assert.Equal(t, "abc123", toolchainCfg.Notifications().MailgunAPIKey())
+		})
+	})
+
+	t.Run("error retrieving config object", func(t *testing.T) {
+		// given
+		Reset()
+		toolchainCfgObj := testconfig.NewToolchainConfigObj(t, testconfig.Environment("e2e-tests"))
+		cl := test.NewFakeClient(t, toolchainCfgObj)
+		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+			return fmt.Errorf("get failed")
+		}
+
+		// when
+		toolchainCfg, err := GetToolchainConfig(cl)
+
+		// then
+		assert.EqualError(t, err, "get failed")
+		assert.Equal(t, "prod", toolchainCfg.Environment())
+		assert.Empty(t, toolchainCfg.Notifications().MailgunAPIKey())
+	})
+}
+
+func TestGetCachedToolchainConfig(t *testing.T) {
+	t.Run("cache uninitialized", func(t *testing.T) {
+		// when
+		toolchainCfg := GetCachedToolchainConfig()
+
+		// then
+		assert.Equal(t, "prod", toolchainCfg.Environment())
+		assert.Empty(t, toolchainCfg.Notifications().MailgunAPIKey())
+	})
+
+	t.Run("cache initialized", func(t *testing.T) {
+		// given
+		toolchainCfgObj := testconfig.NewToolchainConfigObj(t, testconfig.Environment("e2e-tests"), testconfig.Notifications().Secret().Ref("notifications-secret").MailgunAPIKey("mailgunAPIKey"))
+		updateConfig(toolchainCfgObj, map[string]map[string]string{
+			"notifications-secret": {
+				"mailgunAPIKey": "abc123",
+			},
+		})
+
+		// when
+		toolchainCfg := GetCachedToolchainConfig()
+
+		// then
+		assert.Equal(t, "e2e-tests", toolchainCfg.Environment())
+		assert.Equal(t, "abc123", toolchainCfg.Notifications().MailgunAPIKey())
+	})
+}
+
+func TestForceLoadToolchainConfig(t *testing.T) {
+	restore := test.SetEnvVarAndRestore(t, "WATCH_NAMESPACE", test.HostOperatorNs)
+	defer restore()
+	t.Run("no config object - default config", func(t *testing.T) {
+		// given
+		Reset()
+		cl := test.NewFakeClient(t)
+
+		// when
+		toolchainCfg, err := ForceLoadToolchainConfig(cl)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, "prod", toolchainCfg.Environment())
+		assert.Empty(t, toolchainCfg.Notifications().MailgunAPIKey())
+	})
+
+	t.Run("config object retrieved", func(t *testing.T) {
+		// given
+		Reset()
+		toolchainCfgObj := testconfig.NewToolchainConfigObj(t, testconfig.Environment("e2e-tests"), testconfig.Notifications().Secret().Ref("notifications-secret").MailgunAPIKey("mailgunAPIKey"))
+		secret := test.CreateSecret("notifications-secret", test.HostOperatorNs, map[string][]byte{
+			"mailgunAPIKey": []byte("abc123"),
+		})
+		cl := test.NewFakeClient(t, toolchainCfgObj, secret)
+
+		// when
+		toolchainCfg, err := ForceLoadToolchainConfig(cl)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, "e2e-tests", toolchainCfg.Environment())
+		assert.Equal(t, "abc123", toolchainCfg.Notifications().MailgunAPIKey())
+
+		t.Run("config object updated but cache not updated", func(t *testing.T) {
+			// given
+			obj := testconfig.ModifyToolchainConfigObj(t, cl, testconfig.Environment("unit-tests"))
+			err := cl.Update(context.TODO(), obj)
+			assert.NoError(t, err)
+
+			secret.Data["mailgunAPIKey"] = []byte("def456")
+			err = cl.Update(context.TODO(), secret)
+			assert.NoError(t, err)
+
+			actual := &toolchainv1alpha1.ToolchainConfig{}
+			err = cl.Get(context.TODO(), types.NamespacedName{Name: "config", Namespace: test.HostOperatorNs}, actual)
+			assert.NoError(t, err)
+			assert.Equal(t, "unit-tests", *actual.Spec.Host.Environment)
+
+			// when
+			toolchainCfg, err = ForceLoadToolchainConfig(cl)
+
+			// then
+			assert.NoError(t, err)
+			assert.Equal(t, "unit-tests", toolchainCfg.Environment())               // returns actual value
+			assert.Equal(t, "def456", toolchainCfg.Notifications().MailgunAPIKey()) // returns actual value
+		})
+
+	})
+
+	t.Run("error retrieving config object", func(t *testing.T) {
+		// given
+		Reset()
+		toolchainCfgObj := testconfig.NewToolchainConfigObj(t, testconfig.Environment("e2e-tests"))
+		cl := test.NewFakeClient(t, toolchainCfgObj)
+		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+			return fmt.Errorf("get failed")
+		}
+
+		// when
+		toolchainCfg, err := GetToolchainConfig(cl)
+
+		// then
+		assert.EqualError(t, err, "get failed")
+		assert.Equal(t, "prod", toolchainCfg.Environment())
+		assert.Empty(t, toolchainCfg.Notifications().MailgunAPIKey())
+	})
+}
+
+func TestNewToolchainConfig(t *testing.T) {
+	t.Run("correct object type - config initialized correctly", func(t *testing.T) {
+		// given
+		toolchainCfgObj := testconfig.NewToolchainConfigObj(t, testconfig.Environment("e2e-tests"))
+
+		// when
+		toolchainCfg := newToolchainConfig(toolchainCfgObj, nil)
+
+		// then
+		assert.Equal(t, "e2e-tests", toolchainCfg.Environment())
+	})
+
+	t.Run("incorrect object type - default config used", func(t *testing.T) {
+		// given
+		toolchainCfgObj := testconfig.NewMemberOperatorConfigObj()
+
+		// when
+		toolchainCfg := newToolchainConfig(toolchainCfgObj, nil)
+
+		// then
+		assert.Equal(t, "prod", toolchainCfg.Environment())
+	})
+
+	t.Run("nil toolchainconfig resource - default config used", func(t *testing.T) {
+		// when
+		toolchainCfg := newToolchainConfig(nil, nil)
+
+		// then
+		assert.Equal(t, "prod", toolchainCfg.Environment())
+	})
+}
 
 func TestAutomaticApprovalConfig(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
