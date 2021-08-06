@@ -191,7 +191,7 @@ func TestForceLoadToolchainConfig(t *testing.T) {
 		}
 
 		// when
-		toolchainCfg, err := GetToolchainConfig(cl)
+		toolchainCfg, err := ForceLoadToolchainConfig(cl)
 
 		// then
 		assert.EqualError(t, err, "get failed")
@@ -261,12 +261,22 @@ func TestDeactivationConfig(t *testing.T) {
 		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, 3, toolchainCfg.Deactivation().DeactivatingNotificationDays())
+		assert.Empty(t, toolchainCfg.Deactivation().DeactivationDomainsExcluded())
+		assert.Equal(t, 365, toolchainCfg.Deactivation().UserSignupDeactivatedRetentionDays())
+		assert.Equal(t, 7, toolchainCfg.Deactivation().UserSignupUnverifiedRetentionDays())
 	})
 	t.Run("non-default", func(t *testing.T) {
-		cfg := NewToolchainConfigObjWithReset(t, testconfig.Deactivation().DeactivatingNotificationDays(5))
+		cfg := NewToolchainConfigObjWithReset(t, testconfig.Deactivation().
+			DeactivatingNotificationDays(5).
+			DeactivationDomainsExcluded("@redhat.com,@ibm.com").
+			UserSignupDeactivatedRetentionDays(44).
+			UserSignupUnverifiedRetentionDays(77))
 		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, 5, toolchainCfg.Deactivation().DeactivatingNotificationDays())
+		assert.Equal(t, []string{"@redhat.com", "@ibm.com"}, toolchainCfg.Deactivation().DeactivationDomainsExcluded())
+		assert.Equal(t, 44, toolchainCfg.Deactivation().UserSignupDeactivatedRetentionDays())
+		assert.Equal(t, 77, toolchainCfg.Deactivation().UserSignupUnverifiedRetentionDays())
 	})
 }
 
@@ -342,6 +352,16 @@ func TestNotifications(t *testing.T) {
 		assert.Equal(t, "devsandbox@redhat.com", toolchainCfg.Notifications().MailgunSenderEmail())
 		assert.Equal(t, "mailknife", toolchainCfg.Notifications().NotificationDeliveryService())
 		assert.Equal(t, 48*time.Hour, toolchainCfg.Notifications().DurationBeforeNotificationDeletion())
+	})
+
+	t.Run("edge case", func(t *testing.T) {
+		cfg := NewToolchainConfigObjWithReset(t,
+			testconfig.Notifications().
+				DurationBeforeNotificationDeletion("banana"))
+
+		toolchainCfg := newToolchainConfig(cfg, nil)
+
+		assert.Equal(t, 24*time.Hour, toolchainCfg.Notifications().DurationBeforeNotificationDeletion())
 	})
 }
 
@@ -463,6 +483,13 @@ func TestToolchainStatus(t *testing.T) {
 		toolchainCfg := newToolchainConfig(cfg, map[string]map[string]string{})
 
 		assert.Equal(t, 10*time.Second, toolchainCfg.ToolchainStatus().ToolchainStatusRefreshTime())
+	})
+	t.Run("edge case", func(t *testing.T) {
+		cfg := NewToolchainConfigObjWithReset(t, testconfig.ToolchainStatus().ToolchainStatusRefreshTime("banana"))
+
+		toolchainCfg := newToolchainConfig(cfg, nil)
+
+		assert.Equal(t, 5*time.Second, toolchainCfg.ToolchainStatus().ToolchainStatusRefreshTime())
 	})
 }
 

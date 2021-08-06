@@ -48,7 +48,7 @@ func updateConfig(config runtime.Object, secrets map[string]map[string]string) {
 func loadLatest(cl client.Client, configObj client.Object) (runtime.Object, map[string]map[string]string, error) {
 	namespace, err := GetWatchNamespace()
 	if err != nil {
-		return nil, nil, errs.Wrap(err, "Failed to get watch namespace")
+		return nil, nil, errs.Wrap(err, "failed to get watch namespace")
 	}
 
 	if err := cl.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: "config"}, configObj); err != nil {

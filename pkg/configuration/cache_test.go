@@ -21,17 +21,29 @@ import (
 
 func TestCache(t *testing.T) {
 	// given
-	restore := test.SetEnvVarAndRestore(t, "WATCH_NAMESPACE", test.HostOperatorNs)
-	defer restore()
 	cl := test.NewFakeClient(t)
 
-	// when
-	actual, secrets, err := getConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
+	t.Run("WATCH_NAMESPACE not set", func(t *testing.T) {
+		// when
+		actual, secrets, err := getConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
 
-	// then
-	require.NoError(t, err)
-	require.Nil(t, actual)
-	require.Empty(t, secrets)
+		// then
+		require.EqualError(t, err, "failed to get watch namespace: WATCH_NAMESPACE must be set")
+		require.Nil(t, actual)
+		require.Empty(t, secrets)
+	})
+
+	restore := test.SetEnvVarAndRestore(t, "WATCH_NAMESPACE", test.HostOperatorNs)
+	defer restore()
+	t.Run("empty cache", func(t *testing.T) {
+		// when
+		actual, secrets, err := getConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
+
+		// then
+		require.NoError(t, err)
+		require.Nil(t, actual)
+		require.Empty(t, secrets)
+	})
 
 	t.Run("return config that is stored in cache", func(t *testing.T) {
 		// given
