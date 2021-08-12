@@ -25,7 +25,7 @@ func TestCache(t *testing.T) {
 
 	t.Run("WATCH_NAMESPACE not set", func(t *testing.T) {
 		// when
-		actual, secrets, err := getConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
+		actual, secrets, err := GetConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 		// then
 		require.EqualError(t, err, "failed to get watch namespace: WATCH_NAMESPACE must be set")
@@ -37,7 +37,7 @@ func TestCache(t *testing.T) {
 	defer restore()
 	t.Run("empty cache", func(t *testing.T) {
 		// when
-		actual, secrets, err := getConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
+		actual, secrets, err := GetConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 		// then
 		require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestCache(t *testing.T) {
 		cl := test.NewFakeClient(t, originalConfig)
 
 		// when
-		actual, secrets, err := getConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
+		actual, secrets, err := GetConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 		// then
 		require.NoError(t, err)
@@ -66,7 +66,7 @@ func TestCache(t *testing.T) {
 			cl := test.NewFakeClient(t, newConfig)
 
 			// when
-			config, secrets, err := getConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
+			config, secrets, err := GetConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 			// then
 			require.NoError(t, err)
@@ -93,10 +93,10 @@ func TestCache(t *testing.T) {
 			}
 
 			// when
-			updateConfig(newConfig, secretData)
+			UpdateConfig(newConfig, secretData)
 
 			// then
-			config, secrets, err := getConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
+			config, secrets, err := GetConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
 			require.NoError(t, err)
 
 			toolchaincfg, ok := config.(*toolchainv1alpha1.ToolchainConfig)
@@ -119,7 +119,7 @@ func TestGetConfigFailed(t *testing.T) {
 		}
 
 		// when
-		actual, secrets, err := getConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
+		actual, secrets, err := GetConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 		// then
 		require.NoError(t, err)
@@ -136,7 +136,7 @@ func TestGetConfigFailed(t *testing.T) {
 		}
 
 		// when
-		actual, secrets, err := getConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
+		actual, secrets, err := GetConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 		// then
 		require.Error(t, err)
@@ -153,7 +153,7 @@ func TestGetConfigFailed(t *testing.T) {
 		}
 
 		// when
-		actual, secrets, err := loadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
+		actual, secrets, err := LoadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 		// then
 		require.EqualError(t, err, "list error")
@@ -181,7 +181,7 @@ func TestLoadLatest(t *testing.T) {
 		cl := test.NewFakeClient(t, initConfig, initSecret)
 
 		// when
-		actual, secrets, err := loadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
+		actual, secrets, err := LoadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 		// then
 		require.NoError(t, err)
@@ -193,7 +193,7 @@ func TestLoadLatest(t *testing.T) {
 
 		t.Run("returns the same when the config hasn't been updated", func(t *testing.T) {
 			// when
-			actual, secrets, err := loadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
+			actual, secrets, err := LoadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 			// then
 			require.NoError(t, err)
@@ -217,7 +217,7 @@ func TestLoadLatest(t *testing.T) {
 			require.NoError(t, err)
 
 			// when
-			actual, secrets, err := loadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
+			actual, secrets, err := LoadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 			// then
 			require.NoError(t, err)
@@ -234,7 +234,7 @@ func TestLoadLatest(t *testing.T) {
 		cl := test.NewFakeClient(t)
 
 		// when
-		actual, secrets, err := loadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
+		actual, secrets, err := LoadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 		// then
 		require.NoError(t, err)
@@ -251,7 +251,7 @@ func TestLoadLatest(t *testing.T) {
 		}
 
 		// when
-		actual, secrets, err := loadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
+		actual, secrets, err := LoadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 		// then
 		require.EqualError(t, err, "get error")
@@ -268,7 +268,7 @@ func TestLoadLatest(t *testing.T) {
 		}
 
 		// when
-		actual, secrets, err := loadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
+		actual, secrets, err := LoadLatest(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 		// then
 		require.EqualError(t, err, "list error")
@@ -305,7 +305,7 @@ func TestMultipleExecutionsInParallel(t *testing.T) {
 			latch.Wait()
 
 			// when
-			config, secrets, err := getConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
+			config, secrets, err := GetConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 			// then
 			require.NoError(t, err)
@@ -324,14 +324,14 @@ func TestMultipleExecutionsInParallel(t *testing.T) {
 					"mailgunAPIKey": fmt.Sprintf("abc%d", i),
 				},
 			}
-			updateConfig(config, secretData)
+			UpdateConfig(config, secretData)
 		}(i)
 	}
 
 	// when
 	latch.Done()
 	waitForFinished.Wait()
-	config, secrets, err := getConfig(test.NewFakeClient(t), &toolchainv1alpha1.ToolchainConfig{})
+	config, secrets, err := GetConfig(test.NewFakeClient(t), &toolchainv1alpha1.ToolchainConfig{})
 
 	// then
 	require.NoError(t, err)

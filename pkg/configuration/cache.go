@@ -38,14 +38,14 @@ func (c *cache) get() (runtime.Object, map[string]map[string]string) {
 	return c.configObj.DeepCopyObject(), CopyOf(c.secrets)
 }
 
-func updateConfig(config runtime.Object, secrets map[string]map[string]string) {
+func UpdateConfig(config runtime.Object, secrets map[string]map[string]string) {
 	configCache.set(config, secrets)
 }
 
 // loadLatest retrieves the latest configuration object and secrets using the provided client and updates the cache.
 // If the resource is not found, then returns nil for the configuration and secret.
 // If any failure happens while getting the configuration object or secrets, then returns an error.
-func loadLatest(cl client.Client, configObj client.Object) (runtime.Object, map[string]map[string]string, error) {
+func LoadLatest(cl client.Client, configObj client.Object) (runtime.Object, map[string]map[string]string, error) {
 	namespace, err := GetWatchNamespace()
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "failed to get watch namespace")
@@ -74,16 +74,16 @@ func loadLatest(cl client.Client, configObj client.Object) (runtime.Object, map[
 // and stores in the cache.
 // If the resource is not found, then returns nil for the configuration and secret.
 // If any failure happens while getting the configuration object or secrets, then returns an error.
-func getConfig(cl client.Client, configObj client.Object) (runtime.Object, map[string]map[string]string, error) {
+func GetConfig(cl client.Client, configObj client.Object) (runtime.Object, map[string]map[string]string, error) {
 	config, secrets := configCache.get()
 	if config == nil {
-		return loadLatest(cl, configObj)
+		return LoadLatest(cl, configObj)
 	}
 	return config, secrets, nil
 }
 
 // getCachedConfig returns the cached toolchainconfig or a toolchainconfig with default values
-func getCachedConfig() (runtime.Object, map[string]map[string]string) {
+func GetCachedConfig() (runtime.Object, map[string]map[string]string) {
 	return configCache.get()
 }
 
