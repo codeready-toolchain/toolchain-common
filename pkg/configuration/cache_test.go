@@ -162,6 +162,40 @@ func TestGetConfigFailed(t *testing.T) {
 	})
 }
 
+func TestGetCachedConfig(t *testing.T) {
+	t.Run("cache empty", func(t *testing.T) {
+		// when
+		actual, secrets := GetCachedConfig()
+
+		// then
+		assert.Nil(t, actual)
+		assert.Empty(t, secrets)
+	})
+
+	t.Run("cache filled", func(t *testing.T) {
+		// given
+		original := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(1, testconfig.PerMemberCluster("member", 1)))
+
+		secretData := map[string]map[string]string{
+			"notification-secret": {
+				"mailgunAPIKey": fmt.Sprintf("abc"),
+			},
+		}
+		UpdateConfig(original, secretData)
+
+		// when
+		actual, secrets := GetCachedConfig()
+
+		// then
+		require.NotNil(t, actual)
+		toolchaincfg, ok := actual.(*toolchainv1alpha1.ToolchainConfig)
+		require.True(t, ok)
+		assert.Equal(t, original.Spec, toolchaincfg.Spec)
+		assert.Equal(t, secretData, secrets)
+	})
+
+}
+
 func TestLoadLatest(t *testing.T) {
 	restore := test.SetEnvVarAndRestore(t, "WATCH_NAMESPACE", test.HostOperatorNs)
 	defer restore()
