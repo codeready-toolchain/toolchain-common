@@ -17,7 +17,7 @@ import (
 // NewToolchainConfigObjWithReset creates a ToolchainConfig object and adds the cache Reset to the test cleanup.
 // It is located here to prevent import cycles between this package and the test package.
 func NewToolchainConfigObjWithReset(t *testing.T, options ...testconfig.ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
-	t.Cleanup(Reset)
+	t.Cleanup(ResetCache)
 	return testconfig.NewToolchainConfigObj(t, options...)
 }
 
@@ -28,6 +28,6 @@ func UpdateToolchainConfigObjWithReset(t *testing.T, cl client.Client, options .
 	currentConfig := &toolchainv1alpha1.ToolchainConfig{}
 	err := cl.Get(context.TODO(), types.NamespacedName{Namespace: test.HostOperatorNs, Name: "config"}, currentConfig)
 	require.NoError(t, err)
-	t.Cleanup(Reset)
+	t.Cleanup(ResetCache)
 	return testconfig.ModifyToolchainConfigObj(t, cl, options...)
 }

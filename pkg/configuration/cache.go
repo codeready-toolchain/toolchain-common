@@ -90,6 +90,6 @@ func GetCachedConfig() (runtime.Object, map[string]map[string]string) {
 // Reset resets the cache.
 // Should be used only in tests, but since it has to be used in other packages,
 // then the function has to be exported and placed here.
-func Reset() {
+func ResetCache() {
 	configCache = &cache{}
 }
