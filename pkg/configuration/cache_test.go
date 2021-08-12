@@ -178,7 +178,7 @@ func TestGetCachedConfig(t *testing.T) {
 
 		secretData := map[string]map[string]string{
 			"notification-secret": {
-				"mailgunAPIKey": fmt.Sprintf("abc"),
+				"mailgunAPIKey": "abc",
 			},
 		}
 		UpdateConfig(original, secretData)
