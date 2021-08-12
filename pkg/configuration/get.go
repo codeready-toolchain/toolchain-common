@@ -16,6 +16,13 @@ func GetInt(value *int, defaultValue int) int {
 	return defaultValue
 }
 
+func GetInt32(value *int32, defaultValue int32) int32 {
+	if value != nil {
+		return *value
+	}
+	return defaultValue
+}
+
 func GetString(value *string, defaultValue string) string {
 	if value != nil {
 		return *value
