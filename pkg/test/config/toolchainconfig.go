@@ -274,6 +274,13 @@ func (o RegistrationServiceOption) Namespace(value string) RegistrationServiceOp
 	return o
 }
 
+func (o RegistrationServiceOption) Replicas(value int32) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Replicas = &value
+	})
+	return o
+}
+
 func (o RegistrationServiceOption) RegistrationServiceURL(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.RegistrationServiceURL = &value
