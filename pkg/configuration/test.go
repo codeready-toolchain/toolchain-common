@@ -31,3 +31,16 @@ func UpdateToolchainConfigObjWithReset(t *testing.T, cl client.Client, options .
 	t.Cleanup(ResetCache)
 	return testconfig.ModifyToolchainConfigObj(t, cl, options...)
 }
+
+func NewMemberOperatorConfigWithReset(t *testing.T, options ...testconfig.MemberOperatorConfigOption) *toolchainv1alpha1.MemberOperatorConfig {
+	t.Cleanup(ResetCache)
+	return testconfig.NewMemberOperatorConfigObj(options...)
+}
+
+func UpdateMemberOperatorConfigWithReset(t *testing.T, cl client.Client, options ...testconfig.MemberOperatorConfigOption) *toolchainv1alpha1.MemberOperatorConfig {
+	currentConfig := &toolchainv1alpha1.MemberOperatorConfig{}
+	err := cl.Get(context.TODO(), types.NamespacedName{Namespace: test.MemberOperatorNs, Name: "config"}, currentConfig)
+	require.NoError(t, err)
+	t.Cleanup(ResetCache)
+	return testconfig.ModifyMemberOperatorConfigObj(currentConfig, options...)
+}
