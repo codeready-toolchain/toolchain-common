@@ -26,13 +26,13 @@ var log = logf.Log.WithName("apply_client")
 
 // ApplyClient the client to use when creating or updating objects
 type ApplyClient struct {
-	cl     client.Client
+	Client client.Client
 	scheme *runtime.Scheme
 }
 
 // NewApplyClient returns a new ApplyClient
 func NewApplyClient(cl client.Client, scheme *runtime.Scheme) *ApplyClient {
-	return &ApplyClient{cl: cl, scheme: scheme}
+	return &ApplyClient{Client: cl, scheme: scheme}
 }
 
 type applyObjectConfiguration struct {
@@ -126,7 +126,7 @@ func (p ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption
 	}
 	// gets current object (if exists)
 	namespacedName := types.NamespacedName{Namespace: metaNew.GetNamespace(), Name: metaNew.GetName()}
-	if err := p.cl.Get(context.TODO(), namespacedName, existing); err != nil {
+	if err := p.Client.Get(context.TODO(), namespacedName, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			return true, p.createObj(obj, metaNew, config.owner)
 		}
@@ -161,7 +161,7 @@ func (p ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption
 	if err := RetainClusterIP(obj, existing); err != nil {
 		return false, err
 	}
-	if err := p.cl.Update(context.TODO(), obj); err != nil {
+	if err := p.Client.Update(context.TODO(), obj); err != nil {
 		return false, errors.Wrapf(err, "unable to update the resource '%v'", obj)
 	}
 
@@ -234,7 +234,7 @@ func (p ApplyClient) createObj(newResource client.Object, metaNew v1.Object, own
 			return errors.Wrap(err, "unable to set controller references")
 		}
 	}
-	return p.cl.Create(context.TODO(), newResource)
+	return p.Client.Create(context.TODO(), newResource)
 }
 
 // ApplyToolchainObjects applies the objects, ie, creates or updates them on the cluster
