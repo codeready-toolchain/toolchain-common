@@ -12,7 +12,6 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/template"
 	. "github.com/codeready-toolchain/toolchain-common/pkg/test"
 	templatev1 "github.com/openshift/api/template/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 
 	authv1 "github.com/openshift/api/authorization/v1"
 	"github.com/stretchr/testify/assert"
@@ -237,13 +236,11 @@ func getNameWithTimestamp(prefix string) string {
 func assertObject(t *testing.T, expectedObj expectedObj, actual client.ToolchainObject) {
 	expected, err := newObject(string(expectedObj.template), expectedObj.username, expectedObj.commit)
 	require.NoError(t, err, "failed to create object from template")
-	expMeta, err := meta.Accessor(expected)
-	require.NoError(t, err)
 
 	assert.Equal(t, expected, actual.GetClientObject())
 	assert.Equal(t, expected.GetObjectKind().GroupVersionKind(), actual.GetGvk())
-	assert.Equal(t, expMeta.GetName(), actual.GetName())
-	assert.Equal(t, expMeta.GetNamespace(), actual.GetNamespace())
+	assert.Equal(t, expected.GetName(), actual.GetName())
+	assert.Equal(t, expected.GetNamespace(), actual.GetNamespace())
 }
 
 type expectedObj struct {
@@ -252,7 +249,7 @@ type expectedObj struct {
 	commit   string
 }
 
-func newObject(template, username, commit string) (runtime.Unstructured, error) {
+func newObject(template, username, commit string) (*unstructured.Unstructured, error) {
 	tmpl := texttemplate.New("")
 	tmpl, err := tmpl.Parse(template)
 	if err != nil {

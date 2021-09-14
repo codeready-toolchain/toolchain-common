@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -37,19 +35,14 @@ type toolchainObjectImpl struct {
 }
 
 // NewToolchainObject returns an instance of ToolchainObject for the given runtime.Object
-func NewToolchainObject(ob client.Object) (ToolchainObject, error) {
-	if ob == nil {
+func NewToolchainObject(obj client.Object) (ToolchainObject, error) {
+	if obj == nil {
 		return nil, fmt.Errorf("the provided object is nil, so the constructor cannot create an instance of ToolchainObject")
 	}
-	accessor, err := meta.Accessor(ob)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to get accessor of object %v", ob)
-	}
-
 	return &toolchainObjectImpl{
-		Object:       accessor,
-		gvk:          ob.GetObjectKind().GroupVersionKind(),
-		clientObject: ob,
+		Object:       obj,
+		gvk:          obj.GetObjectKind().GroupVersionKind(),
+		clientObject: obj,
 	}, nil
 }
 
