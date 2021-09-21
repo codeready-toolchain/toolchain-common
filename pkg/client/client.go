@@ -223,7 +223,7 @@ func (p ApplyClient) createObj(newResource client.Object, owner v1.Object) error
 // ApplyToolchainObjects applies the objects, ie, creates or updates them on the cluster
 // returns `true, nil` if at least one of the objects was created or modified,
 // `false, nil` if nothing changed, and `false, err` if an error occurred
-func (p ApplyClient) ApplyToolchainObjects(toolchainObjects []ToolchainObject, newLabels map[string]string) (bool, error) {
+func (p ApplyClient) ApplyToolchainObjects(toolchainObjects []client.Object, newLabels map[string]string) (bool, error) {
 	createdOrUpdated := false
 	for _, toolchainObject := range toolchainObjects {
 		// set newLabels
@@ -236,10 +236,9 @@ func (p ApplyClient) ApplyToolchainObjects(toolchainObjects []ToolchainObject, n
 		}
 		toolchainObject.SetLabels(labels)
 
-		gvk := toolchainObject.GetGvk()
-		result, err := p.ApplyObject(toolchainObject.GetClientObject(), ForceUpdate(true))
+		result, err := p.ApplyObject(toolchainObject, ForceUpdate(true))
 		if err != nil {
-			return false, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
+			return false, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", toolchainObject.GetObjectKind().GroupVersionKind().Kind, toolchainObject.GetObjectKind().GroupVersionKind().Version)
 		}
 		createdOrUpdated = createdOrUpdated || result
 	}

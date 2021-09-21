@@ -11,7 +11,6 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/client"
 	"github.com/codeready-toolchain/toolchain-common/pkg/template"
-	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	. "github.com/codeready-toolchain/toolchain-common/pkg/test"
 	templatev1 "github.com/openshift/api/template/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -800,7 +799,7 @@ func getNameWithTimestamp(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
 }
 
-func newClient(t *testing.T, s *runtime.Scheme) (*client.ApplyClient, *test.FakeClient) {
+func newClient(t *testing.T, s *runtime.Scheme) (*client.ApplyClient, *FakeClient) {
 	cli := NewFakeClient(t)
 	return client.NewApplyClient(cli, s), cli
 }
