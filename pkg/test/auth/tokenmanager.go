@@ -217,7 +217,7 @@ type MyClaims struct {
 	FamilyName        string `json:"family_name,omitempty"`
 	Email             string `json:"email,omitempty"`
 	EmailVerified     bool   `json:"email_verified,omitempty"`
-	OriginalSub		  string `json:"original_sub"`
+	OriginalSub       string `json:"original_sub"`
 }
 
 func (c *MyClaims) Valid() error {
