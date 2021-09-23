@@ -122,6 +122,13 @@ func WithSubClaim(sub string) ExtraClaim {
 	}
 }
 
+// WithOriginalSubClaim sets the `original_sub` claim in the token to generate
+func WithOriginalSubClaim(originalSub string) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(*MyClaims).OriginalSub = originalSub
+	}
+}
+
 // WithNotBeforeClaim sets the `nbf` claim in the token to generate
 func WithNotBeforeClaim(nbf time.Time) ExtraClaim {
 	return func(token *jwt.Token) {
@@ -210,6 +217,7 @@ type MyClaims struct {
 	FamilyName        string `json:"family_name,omitempty"`
 	Email             string `json:"email,omitempty"`
 	EmailVerified     bool   `json:"email_verified,omitempty"`
+	OriginalSub		  string `json:"original_sub"`
 }
 
 func (c *MyClaims) Valid() error {
