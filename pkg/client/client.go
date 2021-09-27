@@ -12,7 +12,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -104,10 +103,6 @@ func (p ApplyClient) ApplyObject(obj client.Object, options ...ApplyObjectOption
 func (p ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption) (bool, error) {
 	// gets the meta accessor to the new resource
 	// gets the meta accessor to the new resource
-	metaNew, err := meta.Accessor(obj)
-	if err != nil {
-		return false, errors.Wrapf(err, "cannot get metadata from %+v", obj)
-	}
 	config := newApplyObjectConfiguration(options...)
 
 	// creates a deepcopy of the new resource to be used to check if it already exists
@@ -116,32 +111,26 @@ func (p ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption
 	var newConfiguration string
 	if config.saveConfiguration {
 		// set current object as annotation
-		annotations := metaNew.GetAnnotations()
+		annotations := obj.GetAnnotations()
 		newConfiguration = getNewConfiguration(obj)
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
 		annotations[LastAppliedConfigurationAnnotationKey] = newConfiguration
-		metaNew.SetAnnotations(annotations)
+		obj.SetAnnotations(annotations)
 	}
 	// gets current object (if exists)
-	namespacedName := types.NamespacedName{Namespace: metaNew.GetNamespace(), Name: metaNew.GetName()}
+	namespacedName := types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}
 	if err := p.Client.Get(context.TODO(), namespacedName, existing); err != nil {
 		if apierrors.IsNotFound(err) {
-			return true, p.createObj(obj, metaNew, config.owner)
+			return true, p.createObj(obj, config.owner)
 		}
 		return false, errors.Wrapf(err, "unable to get the resource '%v'", existing)
 	}
 
-	// gets the meta accessor to the existing resource
-	metaExisting, err := meta.Accessor(existing)
-	if err != nil {
-		return false, errors.Wrapf(err, "cannot get metadata from %+v", existing)
-	}
-
 	// as it already exists, check using the UpdateStrategy if it should be updated
 	if !config.forceUpdate {
-		existingAnnotations := metaExisting.GetAnnotations()
+		existingAnnotations := existing.GetAnnotations()
 		if existingAnnotations != nil {
 			if newConfiguration == existingAnnotations[LastAppliedConfigurationAnnotationKey] {
 				return false, nil
@@ -152,8 +141,8 @@ func (p ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption
 	// retrieve the current 'resourceVersion' to set it in the resource passed to the `client.Update()`
 	// otherwise we would get an error with the following message:
 	// `nstemplatetiers.toolchain.dev.openshift.com "basic" is invalid: metadata.resourceVersion: Invalid value: 0x0: must be specified for an update`
-	originalGeneration := metaExisting.GetGeneration()
-	metaNew.SetResourceVersion(metaExisting.GetResourceVersion())
+	originalGeneration := existing.GetGeneration()
+	obj.SetResourceVersion(existing.GetResourceVersion())
 
 	// also, if the resource to create is a Service and there's a previous version, we should retain its `spec.ClusterIP`, otherwise
 	// the update will fail with the following error:
@@ -165,14 +154,8 @@ func (p ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption
 		return false, errors.Wrapf(err, "unable to update the resource '%v'", obj)
 	}
 
-	// gets the meta accessor to the resource that was updated
-	metaNewAfterUpdate, err := meta.Accessor(obj)
-	if err != nil {
-		return false, errors.Wrapf(err, "cannot get metadata from %+v", obj)
-	}
-
 	// check if it was changed or not
-	return originalGeneration != metaNewAfterUpdate.GetGeneration(), nil
+	return originalGeneration != obj.GetGeneration(), nil
 }
 
 // RetainClusterIP sets the `spec.clusterIP` value from the given 'existing' object
@@ -227,9 +210,9 @@ func marshalObjectContent(newResource runtime.Object) ([]byte, error) {
 	return json.Marshal(newResource)
 }
 
-func (p ApplyClient) createObj(newResource client.Object, metaNew v1.Object, owner v1.Object) error {
+func (p ApplyClient) createObj(newResource client.Object, owner v1.Object) error {
 	if owner != nil {
-		err := controllerutil.SetControllerReference(owner, metaNew, p.scheme)
+		err := controllerutil.SetControllerReference(owner, newResource, p.scheme)
 		if err != nil {
 			return errors.Wrap(err, "unable to set controller references")
 		}

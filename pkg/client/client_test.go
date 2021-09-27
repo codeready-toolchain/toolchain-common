@@ -14,7 +14,6 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	. "github.com/codeready-toolchain/toolchain-common/pkg/test"
 	templatev1 "github.com/openshift/api/template/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	authv1 "github.com/openshift/api/authorization/v1"
@@ -587,11 +586,9 @@ func TestProcessAndApply(t *testing.T) {
 		// given
 		cl := NewFakeClient(t)
 		cl.MockUpdate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
-			meta, err := meta.Accessor(obj)
-			require.NoError(t, err)
-			t.Logf("updating resource of kind %s with version %s\n", obj.GetObjectKind().GroupVersionKind().Kind, meta.GetResourceVersion())
-			if obj.GetObjectKind().GroupVersionKind().Kind == "RoleBinding" && meta.GetResourceVersion() != "1" {
-				return fmt.Errorf("invalid resource version: %q", meta.GetResourceVersion())
+			t.Logf("updating resource of kind %s with version %s\n", obj.GetObjectKind().GroupVersionKind().Kind, obj.GetResourceVersion())
+			if obj.GetObjectKind().GroupVersionKind().Kind == "RoleBinding" && obj.GetResourceVersion() != "1" {
+				return fmt.Errorf("invalid resource version: %q", obj.GetResourceVersion())
 			}
 			return cl.Client.Update(ctx, obj, opts...)
 		}

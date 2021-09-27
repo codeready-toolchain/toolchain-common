@@ -8,7 +8,6 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -78,11 +77,7 @@ func (c *FakeClient) Create(ctx context.Context, obj client.Object, opts ...clie
 
 func Create(ctx context.Context, cl *FakeClient, obj client.Object, opts ...client.CreateOption) error {
 	// Set Generation to `1` for newly created objects since the kube fake client doesn't set it
-	mt, err := meta.Accessor(obj)
-	if err != nil {
-		return err
-	}
-	mt.SetGeneration(1)
+	obj.SetGeneration(1)
 	return cl.Client.Create(ctx, obj, opts...)
 }
 
@@ -110,10 +105,6 @@ func (c *FakeClient) Update(ctx context.Context, obj client.Object, opts ...clie
 func Update(ctx context.Context, cl *FakeClient, obj client.Object, opts ...client.UpdateOption) error {
 	// Update Generation if needed since the kube fake client doesn't update generations.
 	// Increment the generation if spec (for objects with Spec) or data/stringData (for objects like CM and Secrets) is changed.
-	updatingMeta, err := meta.Accessor(obj)
-	if err != nil {
-		return err
-	}
 	updatingMap, err := toMap(obj)
 	if err != nil {
 		return err
@@ -127,11 +118,7 @@ func Update(ctx context.Context, cl *FakeClient, obj client.Object, opts ...clie
 	if err != nil {
 		return err
 	}
-	if err := cl.Client.Get(ctx, types.NamespacedName{Namespace: updatingMeta.GetNamespace(), Name: updatingMeta.GetName()}, current); err != nil {
-		return err
-	}
-	currentMeta, err := meta.Accessor(current)
-	if err != nil {
+	if err := cl.Client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}, current); err != nil {
 		return err
 	}
 	currentMap, err := toMap(current)
@@ -144,9 +131,9 @@ func Update(ctx context.Context, cl *FakeClient, obj client.Object, opts ...clie
 	currentMap["apiVersion"] = nil
 
 	if !reflect.DeepEqual(updatingMap, currentMap) {
-		updatingMeta.SetGeneration(currentMeta.GetGeneration() + 1)
+		obj.SetGeneration(current.GetGeneration() + 1)
 	} else {
-		updatingMeta.SetGeneration(currentMeta.GetGeneration())
+		obj.SetGeneration(current.GetGeneration())
 	}
 	return cl.Client.Update(ctx, obj, opts...)
 }
