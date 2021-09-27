@@ -220,10 +220,10 @@ func (p ApplyClient) createObj(newResource client.Object, owner v1.Object) error
 	return p.Client.Create(context.TODO(), newResource)
 }
 
-// ApplyToolchainObjects applies the objects, ie, creates or updates them on the cluster
+// Apply applies the objects, ie, creates or updates them on the cluster
 // returns `true, nil` if at least one of the objects was created or modified,
 // `false, nil` if nothing changed, and `false, err` if an error occurred
-func (p ApplyClient) ApplyToolchainObjects(toolchainObjects []client.Object, newLabels map[string]string) (bool, error) {
+func (p ApplyClient) Apply(toolchainObjects []client.Object, newLabels map[string]string) (bool, error) {
 	createdOrUpdated := false
 	for _, toolchainObject := range toolchainObjects {
 		// set newLabels

@@ -532,7 +532,7 @@ func TestProcessAndApply(t *testing.T) {
 		labels := newLabels("", "john", "")
 
 		// when
-		createdOrUpdated, err := client.NewApplyClient(cl, s).ApplyToolchainObjects(objs, labels)
+		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -552,7 +552,7 @@ func TestProcessAndApply(t *testing.T) {
 		labels := newLabels("basic", "john", "dev")
 
 		// when
-		createdOrUpdated, err := client.NewApplyClient(cl, s).ApplyToolchainObjects(objs, labels)
+		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -572,7 +572,7 @@ func TestProcessAndApply(t *testing.T) {
 		labels := newLabels("", "john", "dev")
 
 		// when
-		createdOrUpdated, err := client.NewApplyClient(cl, s).ApplyToolchainObjects(objs, labels)
+		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -599,7 +599,7 @@ func TestProcessAndApply(t *testing.T) {
 		require.NoError(t, err)
 		witoutType := newLabels("basic", "john", "")
 
-		createdOrUpdated, err := client.NewApplyClient(cl, s).ApplyToolchainObjects(objs, witoutType)
+		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, witoutType)
 		require.NoError(t, err)
 		assert.True(t, createdOrUpdated)
 		assertRoleBindingExists(t, cl, user, witoutType)
@@ -611,7 +611,7 @@ func TestProcessAndApply(t *testing.T) {
 		objs, err = p.Process(tmpl, values)
 		require.NoError(t, err)
 		complete := newLabels("advanced", "john", "dev")
-		createdOrUpdated, err = client.NewApplyClient(cl, s).ApplyToolchainObjects(objs, complete)
+		createdOrUpdated, err = client.NewApplyClient(cl, s).Apply(objs, complete)
 
 		// then
 		require.NoError(t, err)
@@ -634,14 +634,14 @@ func TestProcessAndApply(t *testing.T) {
 		objs, err := p.Process(tmpl, values)
 		require.NoError(t, err)
 		labels := newLabels("basic", "john", "dev")
-		created, err := client.NewApplyClient(cl, s).ApplyToolchainObjects(objs, labels)
+		created, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 		require.NoError(t, err)
 		assert.True(t, created)
 		assertNamespaceExists(t, cl, user, labels, commit)
 		assertRoleBindingExists(t, cl, user, labels)
 
 		// when apply the same template again
-		updated, err := client.NewApplyClient(cl, s).ApplyToolchainObjects(objs, labels)
+		updated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -664,7 +664,7 @@ func TestProcessAndApply(t *testing.T) {
 			// when
 			objs, err := p.Process(tmpl, values)
 			require.NoError(t, err)
-			createdOrUpdated, err := client.NewApplyClient(cl, s).ApplyToolchainObjects(objs, newLabels("", "", ""))
+			createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, newLabels("", "", ""))
 
 			// then
 			require.Error(t, err)
@@ -684,7 +684,7 @@ func TestProcessAndApply(t *testing.T) {
 			objs, err := p.Process(tmpl, values)
 			require.NoError(t, err)
 			labels := newLabels("", "", "")
-			createdOrUpdated, err := client.NewApplyClient(cl, s).ApplyToolchainObjects(objs, labels)
+			createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 			require.NoError(t, err)
 			assert.True(t, createdOrUpdated)
 
@@ -694,7 +694,7 @@ func TestProcessAndApply(t *testing.T) {
 			require.NoError(t, err)
 			objs, err = p.Process(tmpl, values)
 			require.NoError(t, err)
-			createdOrUpdated, err = client.NewApplyClient(cl, s).ApplyToolchainObjects(objs, newLabels("advanced", "john", "dev"))
+			createdOrUpdated, err = client.NewApplyClient(cl, s).Apply(objs, newLabels("advanced", "john", "dev"))
 
 			// then
 			assert.Error(t, err)
@@ -726,7 +726,7 @@ func TestProcessAndApply(t *testing.T) {
 			},
 		})
 		labels := newLabels("basic", "john", "dev")
-		createdOrUpdated, err := client.NewApplyClient(cl, s).ApplyToolchainObjects(objs, labels)
+		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)

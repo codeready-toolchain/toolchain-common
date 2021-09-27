@@ -11,7 +11,7 @@ import (
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestSortedComparableToolchainObjectsWithThreeObjects(t *testing.T) {
+func TestSortedObjectsWithThreeObjects(t *testing.T) {
 	// given
 	roleBindingA := newRoleBinding("rb-a")
 	roleBindingB := newRoleBinding("rb-b")
@@ -25,7 +25,7 @@ func TestSortedComparableToolchainObjectsWithThreeObjects(t *testing.T) {
 	}
 
 	// when
-	sorted := client.SortToolchainObjectsByName(objects)
+	sorted := client.SortObjectsByName(objects)
 
 	// then
 	assert.Equal(t, roleBindingA, sorted[0])
@@ -33,9 +33,9 @@ func TestSortedComparableToolchainObjectsWithThreeObjects(t *testing.T) {
 	assert.Equal(t, roleBindingNamespaceZ, sorted[2])
 }
 
-func TestSortedComparableToolchainObjectsWhenEmpty(t *testing.T) {
+func TestSortObjectsWhenEmpty(t *testing.T) {
 	// when
-	sorted := client.SortToolchainObjectsByName([]runtimeclient.Object{})
+	sorted := client.SortObjectsByName([]runtimeclient.Object{})
 
 	// then
 	assert.Empty(t, sorted)
