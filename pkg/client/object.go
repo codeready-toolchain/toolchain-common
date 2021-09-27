@@ -19,16 +19,16 @@ func SortObjectsByName(objects []runtimeclient.Object) []runtimeclient.Object {
 		names[i] = fmt.Sprintf("%s,%s", object.GetNamespace(), object.GetName())
 	}
 	sort.Strings(names)
-	toolchainObjects := make([]runtimeclient.Object, len(objects))
+	sortedObjects := make([]runtimeclient.Object, len(objects))
 	for i, name := range names {
 		for _, object := range objects {
 			if fmt.Sprintf("%s,%s", object.GetNamespace(), object.GetName()) == name {
-				toolchainObjects[i] = object
+				sortedObjects[i] = object
 				break
 			}
 		}
 	}
-	return toolchainObjects
+	return sortedObjects
 }
 
 // SameGVKandName returns `true` if both objects have the same GroupVersionKind and Name, `false` otherwise
