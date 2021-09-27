@@ -61,3 +61,77 @@ func newRoleBinding(name string) *rbacv1.RoleBinding {
 		},
 	}
 }
+
+func TestSameGVKandName(t *testing.T) {
+	t.Run("same GVK and Name", func(t *testing.T) {
+		// given
+		a := &rbacv1.Role{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Kind:       "Role",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "hollywood", // what else for a role?
+			},
+		}
+		b := &rbacv1.Role{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Kind:       "Role",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "hollywood",
+			},
+		}
+		// when/then
+		assert.True(t, client.SameGVKandName(a, b))
+	})
+
+	t.Run("not same GVK", func(t *testing.T) {
+		// given
+		a := &rbacv1.Role{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Kind:       "Role",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "hollywood",
+			},
+		}
+		b := &rbacv1.Role{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Kind:       "RoleZ",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "hollywood",
+			},
+		}
+		// when/then
+		assert.False(t, client.SameGVKandName(a, b))
+	})
+
+	t.Run("not same Name", func(t *testing.T) {
+		// given
+		a := &rbacv1.Role{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Kind:       "Role",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "hollywood", // L.A
+			},
+		}
+		b := &rbacv1.Role{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Kind:       "Role",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bollywood", // Mumbai
+			},
+		}
+		// when/then
+		assert.False(t, client.SameGVKandName(a, b))
+	})
+}

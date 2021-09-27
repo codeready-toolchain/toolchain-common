@@ -30,3 +30,9 @@ func SortObjectsByName(objects []runtimeclient.Object) []runtimeclient.Object {
 	}
 	return toolchainObjects
 }
+
+// SameGVKandName returns `true` if both objects have the same GroupVersionKind and Name, `false` otherwise
+func SameGVKandName(a, b runtimeclient.Object) bool {
+	return a.GetObjectKind().GroupVersionKind() == b.GetObjectKind().GroupVersionKind() &&
+		a.GetName() == b.GetName()
+}
