@@ -7,8 +7,6 @@ import (
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type CompareObjects func(firstObject, secondObject runtimeclient.Object) (bool, error)
-
 // SortObjectsByName takes the given list of Objects and sorts them by
 // their namespaced name (it joins the object's namespace and name by a coma and compares them)
 // The resulting sorted array is then returned.
