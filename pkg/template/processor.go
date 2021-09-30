@@ -5,13 +5,12 @@ import (
 	"math/rand"
 	"time"
 
-	commonclient "github.com/codeready-toolchain/toolchain-common/pkg/client"
 	templatev1 "github.com/openshift/api/template/v1"
 	"github.com/openshift/library-go/pkg/template/generator"
 	"github.com/openshift/library-go/pkg/template/templateprocessing"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Processor the tool that will process and apply a template with variables
@@ -28,7 +27,7 @@ func NewProcessor(scheme *runtime.Scheme) Processor {
 
 // Process processes the template (ie, replaces the variables with their actual values) and optionally filters the result
 // to return a subset of the template objects
-func (p Processor) Process(tmpl *templatev1.Template, values map[string]string, filters ...FilterFunc) ([]commonclient.ToolchainObject, error) {
+func (p Processor) Process(tmpl *templatev1.Template, values map[string]string, filters ...FilterFunc) ([]runtimeclient.Object, error) {
 	// inject variables in the twmplate
 	for param, val := range values {
 		v := templateprocessing.GetParameterByName(tmpl, param)
@@ -49,17 +48,13 @@ func (p Processor) Process(tmpl *templatev1.Template, values map[string]string, 
 		return nil, errors.Wrap(err, "failed to convert template to external template object")
 	}
 	filtered := Filter(result.Objects, filters...)
-	objects := make([]commonclient.ToolchainObject, len(filtered))
+	objects := make([]runtimeclient.Object, len(filtered))
 	for i, rawObject := range filtered {
-		clientObj, ok := rawObject.Object.(client.Object)
+		clientObj, ok := rawObject.Object.(runtimeclient.Object)
 		if !ok {
 			return nil, fmt.Errorf("unable to cast of the object to client.Object: %+v", rawObject)
 		}
-		toolchainObject, err := commonclient.NewToolchainObject(clientObj)
-		if err != nil {
-			return nil, err
-		}
-		objects[i] = toolchainObject
+		objects[i] = clientObj
 	}
 	return objects, nil
 }

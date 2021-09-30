@@ -8,7 +8,6 @@ import (
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
-	"github.com/codeready-toolchain/toolchain-common/pkg/client"
 	"github.com/codeready-toolchain/toolchain-common/pkg/template"
 	. "github.com/codeready-toolchain/toolchain-common/pkg/test"
 	templatev1 "github.com/openshift/api/template/v1"
@@ -20,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes/scheme"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestProcess(t *testing.T) {
@@ -233,12 +233,12 @@ func getNameWithTimestamp(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
 }
 
-func assertObject(t *testing.T, expectedObj expectedObj, actual client.ToolchainObject) {
+func assertObject(t *testing.T, expectedObj expectedObj, actual runtimeclient.Object) {
 	expected, err := newObject(string(expectedObj.template), expectedObj.username, expectedObj.commit)
 	require.NoError(t, err, "failed to create object from template")
 
-	assert.Equal(t, expected, actual.GetClientObject())
-	assert.Equal(t, expected.GetObjectKind().GroupVersionKind(), actual.GetGvk())
+	assert.Equal(t, expected, actual)
+	assert.Equal(t, expected.GetObjectKind().GroupVersionKind(), actual.GetObjectKind().GroupVersionKind())
 	assert.Equal(t, expected.GetName(), actual.GetName())
 	assert.Equal(t, expected.GetNamespace(), actual.GetNamespace())
 }
