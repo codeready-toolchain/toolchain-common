@@ -66,6 +66,7 @@ func (a *Assertion) MatchMasterUserRecord(mur *toolchainv1alpha1.MasterUserRecor
 	a.MatchEmbeddedSpec(spec)
 	assert.Equal(a.t, mur.Spec.UserID, a.userAccount.Spec.UserID)
 	assert.Equal(a.t, mur.Spec.Disabled, a.userAccount.Spec.Disabled)
+	assert.Equal(a.t, mur.Spec.OriginalSub, a.userAccount.Spec.OriginalSub)
 	return a
 }
 
