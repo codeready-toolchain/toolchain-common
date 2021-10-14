@@ -381,3 +381,18 @@ func WithAnnotation(key, value string) MurModifier {
 		return nil
 	}
 }
+
+// WithLabel sets a label with the given key/value
+func WithLabel(key, value string) MurModifier {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
+		if mur.Labels == nil {
+			mur.Labels = map[string]string{}
+		}
+		mur.Labels[key] = value
+		return nil
+	}
+}
+
+func WithOwnerLabel(owner string) MurModifier {
+	return WithLabel(toolchainv1alpha1.MasterUserRecordOwnerLabelKey, owner)
+}
