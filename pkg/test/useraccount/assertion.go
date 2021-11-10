@@ -53,6 +53,26 @@ func (a *Assertion) Exists() *Assertion {
 	return a
 }
 
+func (a *Assertion) Get() *toolchainv1alpha1.UserAccount {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	return a.userAccount
+}
+
+func (a *Assertion) HasFinalizer(finalizer string) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	assert.Contains(a.t, a.userAccount.Finalizers, finalizer)
+	return a
+}
+
+func (a *Assertion) HasNoFinalizer() *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	assert.Empty(a.t, a.userAccount.Finalizers)
+	return a
+}
+
 func (a *Assertion) MatchEmbeddedSpec(spec toolchainv1alpha1.UserAccountSpecEmbedded) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
@@ -81,5 +101,12 @@ func (a *Assertion) HasConditions(expected ...toolchainv1alpha1.Condition) *Asse
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	test.AssertConditionsMatch(a.t, a.userAccount.Status.Conditions, expected...)
+	return a
+}
+
+func (a *Assertion) HasNoConditions() *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	assert.Empty(a.t, a.userAccount.Status.Conditions)
 	return a
 }

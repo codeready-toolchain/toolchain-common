@@ -5,6 +5,7 @@ import (
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +18,7 @@ import (
 // because the LastTransitionTime of the actual conditions can be modified but the conditions
 // still should be treated as matched
 func AssertConditionsMatch(t T, actual []toolchainv1alpha1.Condition, expected ...toolchainv1alpha1.Condition) {
-	t.Logf("actual vs expected conditions: '%v' / '%v'", actual, expected)
+	t.Logf("actual vs expected conditions:\n%s", cmp.Diff(expected, actual))
 	require.Equal(t, len(expected), len(actual))
 	for _, c := range expected {
 		AssertContainsCondition(t, actual, c)
