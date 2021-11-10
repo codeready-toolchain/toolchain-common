@@ -8,6 +8,7 @@ require (
 	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/google/go-cmp v0.5.2
 	github.com/lestrrat-go/jwx v0.9.0
 	github.com/magiconair/properties v1.8.1
 	github.com/mailru/easyjson v0.7.1 // indirect
