@@ -142,7 +142,7 @@ func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
 		Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
 			UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
 				NSLimit:       "basic",
-				NSTemplateSet: DefaultNSTemplateSet.Spec,
+				NSTemplateSet: &DefaultNSTemplateSet.Spec,
 			},
 		},
 	}
@@ -218,7 +218,7 @@ func AdditionalAccount(cluster string, tier toolchainv1alpha1.NSTemplateTier, mo
 			Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
 				UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
 					NSLimit:       tier.Name,
-					NSTemplateSet: templates,
+					NSTemplateSet: &templates,
 				},
 			},
 		}

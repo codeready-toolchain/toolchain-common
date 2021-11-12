@@ -69,7 +69,7 @@ func (a *Assertion) HasNSTemplateSet(targetCluster string, expectations ...NsTem
 	}
 	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
 		if ua.TargetCluster == targetCluster {
-			assert.Equal(a.t, *expectedTmplSetSpec, ua.Spec.NSTemplateSet)
+			assert.Equal(a.t, *expectedTmplSetSpec, *ua.Spec.NSTemplateSet)
 			return a
 		}
 	}
