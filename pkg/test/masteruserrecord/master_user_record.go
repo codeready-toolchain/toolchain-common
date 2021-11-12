@@ -23,53 +23,59 @@ import (
 type MurModifier func(mur *toolchainv1alpha1.MasterUserRecord) error
 type UaInMurModifier func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord)
 
+const DefaultNSTemplateTierName = "basic"
+
 // DefaultNSTemplateTier the default NSTemplateTier used to initialize the MasterUserRecord
-var DefaultNSTemplateTier = toolchainv1alpha1.NSTemplateTier{
-	ObjectMeta: metav1.ObjectMeta{
-		Namespace: test.HostOperatorNs,
-		Name:      "basic",
-	},
-	Spec: toolchainv1alpha1.NSTemplateTierSpec{
-		Namespaces: []toolchainv1alpha1.NSTemplateTierNamespace{
-			{
-				TemplateRef: "basic-dev-123abc",
+func DefaultNSTemplateTier() toolchainv1alpha1.NSTemplateTier {
+	return toolchainv1alpha1.NSTemplateTier{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: test.HostOperatorNs,
+			Name:      DefaultNSTemplateTierName,
+		},
+		Spec: toolchainv1alpha1.NSTemplateTierSpec{
+			Namespaces: []toolchainv1alpha1.NSTemplateTierNamespace{
+				{
+					TemplateRef: "basic-dev-123abc",
+				},
+				{
+					TemplateRef: "basic-code-123abc",
+				},
+				{
+					TemplateRef: "basic-stage-123abc",
+				},
 			},
-			{
-				TemplateRef: "basic-code-123abc",
-			},
-			{
-				TemplateRef: "basic-stage-123abc",
+			ClusterResources: &toolchainv1alpha1.NSTemplateTierClusterResources{
+				TemplateRef: "basic-clusterresources-654321a",
 			},
 		},
-		ClusterResources: &toolchainv1alpha1.NSTemplateTierClusterResources{
-			TemplateRef: "basic-clusterresources-654321a",
-		},
-	},
+	}
 }
 
 // DefaultNSTemplateSet the default NSTemplateSet used to initialize the MasterUserRecord
-var DefaultNSTemplateSet = toolchainv1alpha1.NSTemplateSet{
-	ObjectMeta: metav1.ObjectMeta{
-		Namespace: test.HostOperatorNs,
-		Name:      DefaultNSTemplateTier.Name,
-	},
-	Spec: toolchainv1alpha1.NSTemplateSetSpec{
-		TierName: DefaultNSTemplateTier.Name,
-		Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
-			{
-				TemplateRef: "basic-dev-123abc",
+func DefaultNSTemplateSet() *toolchainv1alpha1.NSTemplateSet {
+	return &toolchainv1alpha1.NSTemplateSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: test.HostOperatorNs,
+			Name:      DefaultNSTemplateTierName,
+		},
+		Spec: toolchainv1alpha1.NSTemplateSetSpec{
+			TierName: DefaultNSTemplateTierName,
+			Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
+				{
+					TemplateRef: "basic-dev-123abc",
+				},
+				{
+					TemplateRef: "basic-code-123abc",
+				},
+				{
+					TemplateRef: "basic-stage-123abc",
+				},
 			},
-			{
-				TemplateRef: "basic-code-123abc",
-			},
-			{
-				TemplateRef: "basic-stage-123abc",
+			ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
+				TemplateRef: "basic-clusterresources-654321a",
 			},
 		},
-		ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
-			TemplateRef: "basic-clusterresources-654321a",
-		},
-	},
+	}
 }
 
 func NewMasterUserRecords(t *testing.T, size int, nameFmt string, modifiers ...MurModifier) []runtime.Object {
@@ -82,14 +88,14 @@ func NewMasterUserRecords(t *testing.T, size int, nameFmt string, modifiers ...M
 
 func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier) *toolchainv1alpha1.MasterUserRecord {
 	userID := uuid.Must(uuid.NewV4()).String()
-	hash, err := computeTemplateRefsHash(DefaultNSTemplateTier) // we can assume the JSON marshalling will always work
+	hash, err := computeTemplateRefsHash(DefaultNSTemplateTier()) // we can assume the JSON marshalling will always work
 	require.NoError(t, err)
 	mur := &toolchainv1alpha1.MasterUserRecord{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: test.HostOperatorNs,
 			Name:      userName,
 			Labels: map[string]string{
-				templateTierHashLabelKey(DefaultNSTemplateTier.Name): hash,
+				templateTierHashLabelKey(DefaultNSTemplateTierName): hash,
 			},
 			Annotations: map[string]string{
 				toolchainv1alpha1.MasterUserRecordEmailAnnotationKey: "joe@redhat.com",
@@ -142,7 +148,7 @@ func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
 		Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
 			UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
 				NSLimit:       "basic",
-				NSTemplateSet: &DefaultNSTemplateSet.Spec,
+				NSTemplateSet: &DefaultNSTemplateSet().Spec,
 			},
 		},
 	}
