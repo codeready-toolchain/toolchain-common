@@ -10,15 +10,20 @@ import (
 type UaModifier func(ua *toolchainv1alpha1.UserAccount)
 
 func NewUserAccountFromMur(mur *toolchainv1alpha1.MasterUserRecord, modifiers ...UaModifier) *toolchainv1alpha1.UserAccount {
+	// copy the NSTemplateSet with the new TierName,
+	tmplSet := *mur.Spec.UserAccounts[0].Spec.NSTemplateSet
 	ua := &toolchainv1alpha1.UserAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mur.Name,
 			Namespace: test.MemberOperatorNs,
 		},
 		Spec: toolchainv1alpha1.UserAccountSpec{
-			UserID:              mur.Spec.UserID,
-			Disabled:            mur.Spec.Disabled,
-			UserAccountSpecBase: mur.Spec.UserAccounts[0].Spec.UserAccountSpecBase,
+			UserID:   mur.Spec.UserID,
+			Disabled: mur.Spec.Disabled,
+			UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
+				NSLimit:       mur.Spec.UserAccounts[0].Spec.NSLimit,
+				NSTemplateSet: &tmplSet,
+			},
 		},
 	}
 	Modify(ua, modifiers...)

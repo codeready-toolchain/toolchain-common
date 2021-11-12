@@ -321,32 +321,18 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 }
 
 func TestTierNameModifier(t *testing.T) {
-	// given
-	s := scheme.Scheme
-	err := toolchainv1alpha1.AddToScheme(s)
-	require.NoError(t, err)
 
-	mur1 := murtest.NewMasterUserRecord(t, "john", murtest.Finalizer("finalizer.toolchain.dev.openshift.com"))
-	mur2 := murtest.NewMasterUserRecord(t, "jack", murtest.Finalizer("finalizer.toolchain.dev.openshift.com"))
-	client := test.NewFakeClient(t, mur1, mur2)
-	client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object) error {
-		if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
-			switch {
-			case key.Namespace == test.HostOperatorNs && key.Name == "john":
-				*obj = *mur1
-				return nil
-			case key.Namespace == test.HostOperatorNs && key.Name == "jack":
-				*obj = *mur2
-				return nil
-			}
-		}
-		return fmt.Errorf("unexpected object key: %v", key)
-	}
-	// when
-	murtest.ModifyUaInMur(mur1, test.MemberClusterName, murtest.TierName("admin"))
+	t.Run("distinct MURs should have distinct NSTemplateSets", func(t *testing.T) {
+		// given
+		mur1 := murtest.NewMasterUserRecord(t, "john", murtest.Finalizer("finalizer.toolchain.dev.openshift.com"))
+		mur2 := murtest.NewMasterUserRecord(t, "jack", murtest.Finalizer("finalizer.toolchain.dev.openshift.com"))
 
-	// then
-	assert.Equal(t, "admin", mur1.Spec.UserAccounts[0].Spec.NSTemplateSet.TierName) // modified
-	assert.Equal(t, "basic", mur2.Spec.UserAccounts[0].Spec.NSTemplateSet.TierName) // modified
+		// when
+		murtest.ModifyUaInMur(mur1, test.MemberClusterName, murtest.TierName("admin"))
+
+		// then
+		assert.Equal(t, "admin", mur1.Spec.UserAccounts[0].Spec.NSTemplateSet.TierName) // modified
+		assert.Equal(t, "basic", mur2.Spec.UserAccounts[0].Spec.NSTemplateSet.TierName) // unmodified
+	})
 
 }
