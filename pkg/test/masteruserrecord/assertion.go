@@ -147,6 +147,17 @@ func (a *Assertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTie
 	return a
 }
 
+func (a *Assertion) UserAccountHasNoTier(targetCluster string) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
+		if ua.TargetCluster == targetCluster {
+			assert.Nil(a.t, ua.Spec.NSTemplateSet)
+		}
+	}
+	return a
+}
+
 func (a *Assertion) UserAccountHasTier(targetCluster string, tier toolchainv1alpha1.NSTemplateTier) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
@@ -161,6 +172,7 @@ func (a *Assertion) UserAccountHasTier(targetCluster string, tier toolchainv1alp
 }
 
 func (a *Assertion) userAccountHasTier(ua toolchainv1alpha1.UserAccountEmbedded, tier toolchainv1alpha1.NSTemplateTier) {
+	require.NotNil(a.t, ua.Spec.NSTemplateSet)
 	assert.Equal(a.t, tier.Name, ua.Spec.NSTemplateSet.TierName)
 	actualTemplateRefs := []string{}
 	for _, ns := range ua.Spec.NSTemplateSet.Namespaces {
