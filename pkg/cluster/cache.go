@@ -16,10 +16,7 @@ type toolchainClusterClients struct {
 	refreshCache func()
 }
 
-// CachedToolchainCluster stores cluster client; cluster related info and previous health check probe results
-type CachedToolchainCluster struct {
-	// Client is the kube client for the cluster.
-	Client client.Client
+type Config struct {
 	// Config contains rest config data
 	Config *rest.Config
 	// Name is the name of the cluster. Has to be unique - is used as a key in a map.
@@ -31,13 +28,20 @@ type CachedToolchainCluster struct {
 	Type Type
 	// OperatorNamespace is a name of a namespace (in the cluster) the operator is running in
 	OperatorNamespace string
-	// ClusterStatus is the cluster result as of the last health check probe.
-	ClusterStatus *toolchainv1alpha1.ToolchainClusterStatus
 	// OwnerClusterName keeps the name of the cluster the ToolchainCluster resource is created in
 	// eg. if this ToolchainCluster identifies a Host cluster (and thus is created in Member)
 	// then the OwnerClusterName has a name of the member - it has to be same name as the name
 	// that is used for identifying the member in a Host cluster
 	OwnerClusterName string
+}
+
+// CachedToolchainCluster stores cluster client; cluster related info and previous health check probe results
+type CachedToolchainCluster struct {
+	*Config
+	// Client is the kube client for the cluster.
+	Client client.Client
+	// ClusterStatus is the cluster result as of the last health check probe.
+	ClusterStatus *toolchainv1alpha1.ToolchainClusterStatus
 }
 
 func (c *toolchainClusterClients) addCachedToolchainCluster(cluster *CachedToolchainCluster) {
