@@ -68,7 +68,7 @@ func updateClusterStatuses(namespace string, cl client.Client) {
 			continue
 		}
 
-		clientSet, err := kubeclientset.NewForConfig(cachedCluster.Config.Config)
+		clientSet, err := kubeclientset.NewForConfig(cachedCluster.RestConfig)
 		if err != nil {
 			clusterLogger.Error(err, "cannot create ClientSet for a ToolchainCluster")
 			continue

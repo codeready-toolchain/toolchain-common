@@ -238,7 +238,7 @@ func (a *ClusterConfigAssertion) HasAPIEndpoint(apiEndpoint string) *ClusterConf
 }
 
 func (a *ClusterConfigAssertion) RestConfigHasHost(host string) *ClusterConfigAssertion {
-	require.NotNil(a.t, a.clusterConfig.Config)
-	assert.Equal(a.t, host, a.clusterConfig.Config.Host)
+	require.NotNil(a.t, a.clusterConfig.RestConfig)
+	assert.Equal(a.t, host, a.clusterConfig.RestConfig.Host)
 	return a
 }

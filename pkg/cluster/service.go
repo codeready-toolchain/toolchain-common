@@ -76,7 +76,7 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 	cachedToolchainCluster, exists := clusterCache.getCachedToolchainCluster(toolchainCluster.Name, false)
 	if !exists ||
 		cachedToolchainCluster.Client == nil ||
-		!reflect.DeepEqual(clusterConfig.Config, cachedToolchainCluster.Config) {
+		!reflect.DeepEqual(clusterConfig.RestConfig, cachedToolchainCluster.Config) {
 
 		log.Info("creating new client for the cached ToolchainCluster")
 		scheme := runtime.NewScheme()
@@ -86,7 +86,7 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 		if err := v1.AddToScheme(scheme); err != nil {
 			return err
 		}
-		cl, err = client.New(clusterConfig.Config, client.Options{
+		cl, err = client.New(clusterConfig.RestConfig, client.Options{
 			Scheme: scheme,
 		})
 		if err != nil {
@@ -170,7 +170,7 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 		return nil, errors.Errorf("the secret for cluster %s is missing a non-empty value for %q", clusterName, toolchainTokenKey)
 	}
 
-	clusterConfig, err := clientcmd.BuildConfigFromFlags(apiEndpoint, "")
+	restConfig, err := clientcmd.BuildConfigFromFlags(apiEndpoint, "")
 	if err != nil {
 		return nil, err
 	}
@@ -179,16 +179,16 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 	if err != nil {
 		return nil, err
 	}
-	clusterConfig.CAData = ca
-	clusterConfig.BearerToken = string(token)
-	clusterConfig.QPS = toolchainAPIQPS
-	clusterConfig.Burst = toolchainAPIBurst
-	clusterConfig.Timeout = timeout
+	restConfig.CAData = ca
+	restConfig.BearerToken = string(token)
+	restConfig.QPS = toolchainAPIQPS
+	restConfig.Burst = toolchainAPIBurst
+	restConfig.Timeout = timeout
 
 	return &Config{
 		Name:              toolchainCluster.Name,
 		APIEndpoint:       toolchainCluster.Spec.APIEndpoint,
-		Config:            clusterConfig,
+		RestConfig:        restConfig,
 		Type:              Type(toolchainCluster.Labels[labelType]),
 		OperatorNamespace: toolchainCluster.Labels[labelNamespace],
 		OwnerClusterName:  toolchainCluster.Labels[labelOwnerClusterName],

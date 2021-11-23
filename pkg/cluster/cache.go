@@ -17,8 +17,8 @@ type toolchainClusterClients struct {
 }
 
 type Config struct {
-	// Config contains rest config data
-	Config *rest.Config
+	// RestConfig contains rest config data
+	RestConfig *rest.Config
 	// Name is the name of the cluster. Has to be unique - is used as a key in a map.
 	Name string
 	// APIEndpoint is the API endpoint of the corresponding ToolchainCluster. This can be a hostname,
