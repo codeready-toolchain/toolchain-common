@@ -102,6 +102,7 @@ func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier
 			},
 		},
 		Spec: toolchainv1alpha1.MasterUserRecordSpec{
+			TierName:     DefaultNSTemplateSet().Spec.TierName,
 			UserID:       userID,
 			UserAccounts: []toolchainv1alpha1.UserAccountEmbedded{newEmbeddedUa(test.MemberClusterName)},
 		},

@@ -144,6 +144,7 @@ func (a *Assertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTie
 	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
 		a.userAccountHasTier(ua, tier)
 	}
+	assert.Equal(a.t, tier.Name, a.masterUserRecord.Spec.TierName)
 	return a
 }
 
