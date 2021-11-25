@@ -138,13 +138,19 @@ func (a *Assertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Cond
 	return a
 }
 
+func (a *Assertion) HasTier(tier toolchainv1alpha1.NSTemplateTier) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	assert.Equal(a.t, tier.Name, a.masterUserRecord.Spec.TierName)
+	return a
+}
+
 func (a *Assertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTier) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
 	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
 		a.userAccountHasTier(ua, tier)
 	}
-	assert.Equal(a.t, tier.Name, a.masterUserRecord.Spec.TierName)
 	return a
 }
 
