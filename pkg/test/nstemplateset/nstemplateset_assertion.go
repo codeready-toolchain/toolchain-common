@@ -17,70 +17,70 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type NSTemplateSetAssertion struct {
+type Assertion struct {
 	nsTmplSet      *toolchainv1alpha1.NSTemplateSet
 	client         client.Client
 	namespacedName types.NamespacedName
 	t              test.T
 }
 
-func (a *NSTemplateSetAssertion) loadNSTemplateSet() error {
+func (a *Assertion) loadNSTemplateSet() error {
 	nsTmplSet := &toolchainv1alpha1.NSTemplateSet{}
 	err := a.client.Get(context.TODO(), a.namespacedName, nsTmplSet)
 	a.nsTmplSet = nsTmplSet
 	return err
 }
 
-func AssertThatNSTemplateSet(t test.T, namespace, name string, client client.Client) *NSTemplateSetAssertion {
-	return &NSTemplateSetAssertion{
+func AssertThatNSTemplateSet(t test.T, namespace, name string, client client.Client) *Assertion {
+	return &Assertion{
 		client:         client,
 		namespacedName: test.NamespacedName(namespace, name),
 		t:              t,
 	}
 }
 
-func (a *NSTemplateSetAssertion) Exists() *NSTemplateSetAssertion {
+func (a *Assertion) Exists() *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	return a
 }
 
-func (a *NSTemplateSetAssertion) DoesNotExist() *NSTemplateSetAssertion {
+func (a *Assertion) DoesNotExist() *Assertion {
 	err := a.loadNSTemplateSet()
 	require.Error(a.t, err)
 	assert.IsType(a.t, v1.StatusReasonNotFound, errors.ReasonForError(err))
 	return a
 }
 
-func (a *NSTemplateSetAssertion) HasNoConditions() *NSTemplateSetAssertion {
+func (a *Assertion) HasNoConditions() *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	require.Empty(a.t, a.nsTmplSet.Status.Conditions)
 	return a
 }
 
-func (a *NSTemplateSetAssertion) HasConditions(expected ...toolchainv1alpha1.Condition) *NSTemplateSetAssertion {
+func (a *Assertion) HasConditions(expected ...toolchainv1alpha1.Condition) *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	test.AssertConditionsMatch(a.t, a.nsTmplSet.Status.Conditions, expected...)
 	return a
 }
 
-func (a *NSTemplateSetAssertion) HasNoOwnerReferences() *NSTemplateSetAssertion {
+func (a *Assertion) HasNoOwnerReferences() *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	assert.Empty(a.t, a.nsTmplSet.ObjectMeta.OwnerReferences)
 	return a
 }
 
-func (a *NSTemplateSetAssertion) HasTierName(tierName string) *NSTemplateSetAssertion {
+func (a *Assertion) HasTierName(tierName string) *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	assert.Equal(a.t, a.nsTmplSet.Spec.TierName, tierName)
 	return a
 }
 
-func (a *NSTemplateSetAssertion) HasClusterResourcesTemplateRef(templateRef string) *NSTemplateSetAssertion {
+func (a *Assertion) HasClusterResourcesTemplateRef(templateRef string) *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	assert.NotNil(a.t, a.nsTmplSet.Spec.ClusterResources.TemplateRef)
@@ -88,14 +88,14 @@ func (a *NSTemplateSetAssertion) HasClusterResourcesTemplateRef(templateRef stri
 	return a
 }
 
-func (a *NSTemplateSetAssertion) HasClusterResourcesNil() *NSTemplateSetAssertion {
+func (a *Assertion) HasClusterResourcesNil() *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	assert.Nil(a.t, a.nsTmplSet.Spec.ClusterResources)
 	return a
 }
 
-func (a *NSTemplateSetAssertion) HasNamespaceTemplateRefs(templateRefs ...string) *NSTemplateSetAssertion {
+func (a *Assertion) HasNamespaceTemplateRefs(templateRefs ...string) *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	require.Len(a.t, a.nsTmplSet.Spec.Namespaces, len(templateRefs))
@@ -112,7 +112,7 @@ TemplateRefs:
 	return a
 }
 
-func (a *NSTemplateSetAssertion) HasSpecNamespaces(types ...string) *NSTemplateSetAssertion {
+func (a *Assertion) HasSpecNamespaces(types ...string) *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	require.Len(a.t, a.nsTmplSet.Spec.Namespaces, len(types))
@@ -205,7 +205,7 @@ func Terminating() toolchainv1alpha1.Condition {
 	}
 }
 
-func (a *NSTemplateSetAssertion) HasFinalizer() *NSTemplateSetAssertion {
+func (a *Assertion) HasFinalizer() *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	assert.Len(a.t, a.nsTmplSet.Finalizers, 1)
@@ -213,7 +213,7 @@ func (a *NSTemplateSetAssertion) HasFinalizer() *NSTemplateSetAssertion {
 	return a
 }
 
-func (a *NSTemplateSetAssertion) DoesNotHaveFinalizer() *NSTemplateSetAssertion {
+func (a *Assertion) DoesNotHaveFinalizer() *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	assert.Len(a.t, a.nsTmplSet.Finalizers, 0)
