@@ -477,11 +477,13 @@ var notReady clusterOption = func(c *CachedToolchainCluster) {
 func newTestCachedToolchainCluster(t *testing.T, name string, clusterType Type, options ...clusterOption) *CachedToolchainCluster {
 	cl := test.NewFakeClient(t)
 	cachedCluster := &CachedToolchainCluster{
-		Name:              name,
-		Client:            cl,
-		OperatorNamespace: name + "Namespace",
-		Type:              clusterType,
-		ClusterStatus:     &toolchainv1alpha1.ToolchainClusterStatus{},
+		Config: &Config{
+			Name:              name,
+			OperatorNamespace: name + "Namespace",
+			Type:              clusterType,
+		},
+		Client:        cl,
+		ClusterStatus: &toolchainv1alpha1.ToolchainClusterStatus{},
 	}
 	for _, configure := range options {
 		configure(cachedCluster)
