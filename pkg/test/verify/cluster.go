@@ -153,11 +153,14 @@ func UpdateToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	require.NoError(t, err)
 	cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
 	require.True(t, ok)
-	assert.Equal(t, cluster.Host, cachedToolchainCluster.Type)
-	assert.Equal(t, "toolchain-host-operator", cachedToolchainCluster.OperatorNamespace)
 	assert.Equal(t, statusFalse, *cachedToolchainCluster.ClusterStatus)
-	assert.Equal(t, test.NameMember, cachedToolchainCluster.OwnerClusterName)
-	assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
+	AssertClusterConfigThat(t, cachedToolchainCluster.Config).
+		IsOfType(cluster.Host).
+		HasName("east").
+		HasOperatorNamespace("toolchain-host-operator").
+		HasOwnerClusterName(test.NameMember).
+		HasAPIEndpoint("http://cluster.com").
+		RestConfigHasHost("http://cluster.com")
 }
 
 func DeleteToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
@@ -195,4 +198,47 @@ func Labels(clType cluster.Type, ns, ownerClusterName string) map[string]string 
 
 func newToolchainClusterService(cl client.Client) cluster.ToolchainClusterService {
 	return cluster.NewToolchainClusterService(cl, logf.Log, "test-namespace", 3*time.Second)
+}
+
+type ClusterConfigAssertion struct {
+	t             *testing.T
+	clusterConfig *cluster.Config
+}
+
+func AssertClusterConfigThat(t *testing.T, clusterConfig *cluster.Config) *ClusterConfigAssertion {
+	return &ClusterConfigAssertion{
+		t:             t,
+		clusterConfig: clusterConfig,
+	}
+}
+
+func (a *ClusterConfigAssertion) IsOfType(clusterType cluster.Type) *ClusterConfigAssertion {
+	assert.Equal(a.t, clusterType, a.clusterConfig.Type)
+	return a
+}
+
+func (a *ClusterConfigAssertion) HasOperatorNamespace(namespace string) *ClusterConfigAssertion {
+	assert.Equal(a.t, namespace, a.clusterConfig.OperatorNamespace)
+	return a
+}
+
+func (a *ClusterConfigAssertion) HasName(name string) *ClusterConfigAssertion {
+	assert.Equal(a.t, name, a.clusterConfig.Name)
+	return a
+}
+
+func (a *ClusterConfigAssertion) HasOwnerClusterName(name string) *ClusterConfigAssertion {
+	assert.Equal(a.t, name, a.clusterConfig.OwnerClusterName)
+	return a
+}
+
+func (a *ClusterConfigAssertion) HasAPIEndpoint(apiEndpoint string) *ClusterConfigAssertion {
+	assert.Equal(a.t, apiEndpoint, a.clusterConfig.APIEndpoint)
+	return a
+}
+
+func (a *ClusterConfigAssertion) RestConfigHasHost(host string) *ClusterConfigAssertion {
+	require.NotNil(a.t, a.clusterConfig.RestConfig)
+	assert.Equal(a.t, host, a.clusterConfig.RestConfig.Host)
+	return a
 }

@@ -12,7 +12,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -77,7 +76,7 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 	cachedToolchainCluster, exists := clusterCache.getCachedToolchainCluster(toolchainCluster.Name, false)
 	if !exists ||
 		cachedToolchainCluster.Client == nil ||
-		!reflect.DeepEqual(clusterConfig, cachedToolchainCluster.Config) {
+		!reflect.DeepEqual(clusterConfig.RestConfig, cachedToolchainCluster.Config) {
 
 		log.Info("creating new client for the cached ToolchainCluster")
 		scheme := runtime.NewScheme()
@@ -87,7 +86,7 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 		if err := v1.AddToScheme(scheme); err != nil {
 			return err
 		}
-		cl, err = client.New(clusterConfig, client.Options{
+		cl, err = client.New(clusterConfig.RestConfig, client.Options{
 			Scheme: scheme,
 		})
 		if err != nil {
@@ -99,14 +98,9 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 	}
 
 	cluster := &CachedToolchainCluster{
-		Name:              toolchainCluster.Name,
-		APIEndpoint:       toolchainCluster.Spec.APIEndpoint,
-		Client:            cl,
-		Config:            clusterConfig,
-		ClusterStatus:     &toolchainCluster.Status,
-		Type:              Type(toolchainCluster.Labels[labelType]),
-		OperatorNamespace: toolchainCluster.Labels[labelNamespace],
-		OwnerClusterName:  toolchainCluster.Labels[labelOwnerClusterName],
+		Config:        clusterConfig,
+		Client:        cl,
+		ClusterStatus: &toolchainCluster.Status,
 	}
 	if cluster.Type == "" {
 		cluster.Type = Member
@@ -148,8 +142,8 @@ func (s *ToolchainClusterService) enrichLogger(cluster *toolchainv1alpha1.Toolch
 		WithValues("Request.Namespace", cluster.Namespace, "Request.Name", cluster.Name)
 }
 
-// NewClusterConfig generate a new cluster config by fetching the necessary info the given ToolchainCluster's associated Secret
-func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.ToolchainCluster, timeout time.Duration) (*rest.Config, error) {
+// NewClusterConfig generate a new cluster config by fetching the necessary info the given ToolchainCluster's associated Secret and taking all data from ToolchainCluster CR
+func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.ToolchainCluster, timeout time.Duration) (*Config, error) {
 	clusterName := toolchainCluster.Name
 
 	apiEndpoint := toolchainCluster.Spec.APIEndpoint
@@ -176,7 +170,7 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 		return nil, errors.Errorf("the secret for cluster %s is missing a non-empty value for %q", clusterName, toolchainTokenKey)
 	}
 
-	clusterConfig, err := clientcmd.BuildConfigFromFlags(apiEndpoint, "")
+	restConfig, err := clientcmd.BuildConfigFromFlags(apiEndpoint, "")
 	if err != nil {
 		return nil, err
 	}
@@ -185,13 +179,20 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 	if err != nil {
 		return nil, err
 	}
-	clusterConfig.CAData = ca
-	clusterConfig.BearerToken = string(token)
-	clusterConfig.QPS = toolchainAPIQPS
-	clusterConfig.Burst = toolchainAPIBurst
-	clusterConfig.Timeout = timeout
+	restConfig.CAData = ca
+	restConfig.BearerToken = string(token)
+	restConfig.QPS = toolchainAPIQPS
+	restConfig.Burst = toolchainAPIBurst
+	restConfig.Timeout = timeout
 
-	return clusterConfig, nil
+	return &Config{
+		Name:              toolchainCluster.Name,
+		APIEndpoint:       toolchainCluster.Spec.APIEndpoint,
+		RestConfig:        restConfig,
+		Type:              Type(toolchainCluster.Labels[labelType]),
+		OperatorNamespace: toolchainCluster.Labels[labelNamespace],
+		OwnerClusterName:  toolchainCluster.Labels[labelOwnerClusterName],
+	}, nil
 }
 
 func IsReady(clusterStatus *toolchainv1alpha1.ToolchainClusterStatus) bool {
@@ -203,4 +204,20 @@ func IsReady(clusterStatus *toolchainv1alpha1.ToolchainClusterStatus) bool {
 		}
 	}
 	return false
+}
+
+func ListToolchainClusterConfigs(cl client.Client, namespace string, clusterType Type, timeout time.Duration) ([]*Config, error) {
+	toolchainClusters := &toolchainv1alpha1.ToolchainClusterList{}
+	if err := cl.List(context.TODO(), toolchainClusters, client.InNamespace(namespace), client.MatchingLabels{labelType: string(clusterType)}); err != nil {
+		return nil, err
+	}
+	var configs []*Config
+	for _, cluster := range toolchainClusters.Items {
+		clusterConfig, err := NewClusterConfig(cl, &cluster, timeout)
+		if err != nil {
+			return nil, err
+		}
+		configs = append(configs, clusterConfig)
+	}
+	return configs, nil
 }
