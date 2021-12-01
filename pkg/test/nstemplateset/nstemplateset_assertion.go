@@ -17,6 +17,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// TODO: remove in favor of github.com/codeready-toolchain/toolchain-common/test/nstemplateset
+// (because there's already a `go mod replace` directive for github.com/codeready-toolchain/toolchain-common)
+
 type Assertion struct {
 	nsTmplSet      *toolchainv1alpha1.NSTemplateSet
 	client         client.Client
@@ -43,6 +46,19 @@ func (a *Assertion) Exists() *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	return a
+}
+
+func (a *Assertion) HasDeletionTimestamp() *Assertion {
+	err := a.loadNSTemplateSet()
+	require.NoError(a.t, err)
+	assert.NotNil(a.t, a.nsTmplSet.DeletionTimestamp)
+	return a
+}
+
+func (a *Assertion) Get() *toolchainv1alpha1.NSTemplateSet {
+	err := a.loadNSTemplateSet()
+	require.NoError(a.t, err)
+	return a.nsTmplSet
 }
 
 func (a *Assertion) DoesNotExist() *Assertion {
