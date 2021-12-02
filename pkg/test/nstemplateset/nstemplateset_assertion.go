@@ -17,9 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// TODO: remove in favor of github.com/codeready-toolchain/toolchain-common/test/nstemplateset
-// (because there's already a `go mod replace` directive for github.com/codeready-toolchain/toolchain-common)
-
 type Assertion struct {
 	nsTmplSet      *toolchainv1alpha1.NSTemplateSet
 	client         client.Client
