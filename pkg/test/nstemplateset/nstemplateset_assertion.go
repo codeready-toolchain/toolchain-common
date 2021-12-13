@@ -93,11 +93,11 @@ func (a *Assertion) HasTierName(tierName string) *Assertion {
 	return a
 }
 
-func (a *Assertion) HasClusterResourcesTemplateRef(templateRef string) *Assertion {
+func (a *Assertion) HasClusterResourcesTemplateRef(expected string) *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
 	assert.NotNil(a.t, a.nsTmplSet.Spec.ClusterResources.TemplateRef)
-	assert.Equal(a.t, a.nsTmplSet.Spec.ClusterResources.TemplateRef, templateRef)
+	assert.Equal(a.t, expected, a.nsTmplSet.Spec.ClusterResources.TemplateRef)
 	return a
 }
 
