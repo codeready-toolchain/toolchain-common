@@ -22,6 +22,7 @@ func WithReadyCondition() Option {
 			{
 				Type:   toolchainv1alpha1.ConditionReady,
 				Status: corev1.ConditionTrue,
+				Reason: toolchainv1alpha1.NSTemplateSetProvisionedReason,
 			},
 		}
 	}
