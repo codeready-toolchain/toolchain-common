@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"testing"
+	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
@@ -65,6 +66,59 @@ func TestRefreshCacheInService(t *testing.T) {
 		// then
 		require.False(t, ok)
 		assert.Nil(t, cachedCluster)
+	})
+}
+
+func TestUpdateClientBasedOnRestConfig(t *testing.T) {
+	// given
+	defer gock.Off()
+	statusTrue := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
+	toolchainCluster1, sec1 := test.NewToolchainCluster("east", "secret1", statusTrue,
+		map[string]string{"type": string(Member)})
+
+	t.Run("don't update when RestConfig is the same", func(t *testing.T) {
+		// given
+		cl := test.NewFakeClient(t, sec1)
+		service := NewToolchainClusterService(cl, logf.Log, "test-namespace", 3*time.Second)
+		defer service.DeleteToolchainCluster("east")
+
+		err := service.AddOrUpdateToolchainCluster(toolchainCluster1)
+		require.NoError(t, err)
+		originalClient := clusterCache.clusters["east"].Client
+		clusterCache.clusters["east"].Client = cl
+
+		// when
+		err = service.AddOrUpdateToolchainCluster(toolchainCluster1)
+		require.NoError(t, err)
+
+		// then
+		require.NoError(t, err)
+		cachedToolchainCluster, ok := GetCachedToolchainCluster("east")
+		require.True(t, ok)
+		assert.NotEqual(t, originalClient, cachedToolchainCluster.Client)
+		assert.Equal(t, cl, cachedToolchainCluster.Client)
+	})
+
+	t.Run("update when RestConfig is not the same", func(t *testing.T) {
+		// given
+		cl := test.NewFakeClient(t, sec1)
+		service := NewToolchainClusterService(cl, logf.Log, "test-namespace", 3*time.Second)
+		defer service.DeleteToolchainCluster("east")
+
+		err := service.AddOrUpdateToolchainCluster(toolchainCluster1)
+		require.NoError(t, err)
+		clusterCache.clusters["east"].Client = cl
+		clusterCache.clusters["east"].RestConfig.BearerToken = "old-token"
+
+		// when
+		err = service.AddOrUpdateToolchainCluster(toolchainCluster1)
+		require.NoError(t, err)
+
+		// then
+		require.NoError(t, err)
+		cachedToolchainCluster, ok := GetCachedToolchainCluster("east")
+		require.True(t, ok)
+		assert.NotEqual(t, cl, cachedToolchainCluster.Client)
 	})
 }
 

@@ -76,7 +76,7 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 	cachedToolchainCluster, exists := clusterCache.getCachedToolchainCluster(toolchainCluster.Name, false)
 	if !exists ||
 		cachedToolchainCluster.Client == nil ||
-		!reflect.DeepEqual(clusterConfig.RestConfig, cachedToolchainCluster.Config) {
+		!reflect.DeepEqual(clusterConfig.RestConfig, cachedToolchainCluster.RestConfig) {
 
 		log.Info("creating new client for the cached ToolchainCluster")
 		scheme := runtime.NewScheme()
