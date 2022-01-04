@@ -1,6 +1,8 @@
 package nstemplateset
 
 import (
+	"time"
+
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 
@@ -38,6 +40,12 @@ func WithNotReadyCondition(reason, message string) Option {
 				Message: message,
 			},
 		}
+	}
+}
+
+func WithDeletionTimestamp(ts time.Time) Option {
+	return func(nstmplSet *toolchainv1alpha1.NSTemplateSet) {
+		nstmplSet.DeletionTimestamp = &metav1.Time{Time: ts}
 	}
 }
 
