@@ -267,6 +267,13 @@ func AdditionalAccounts(clusters ...string) MurModifier {
 	}
 }
 
+func TierName(tierName string) MurModifier {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
+		mur.Spec.TierName = tierName
+		return nil
+	}
+}
+
 func NsLimit(limit string) UaInMurModifier {
 	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
 		for i, ua := range mur.Spec.UserAccounts {
@@ -278,7 +285,7 @@ func NsLimit(limit string) UaInMurModifier {
 	}
 }
 
-func TierName(tierName string) UaInMurModifier {
+func UserAccountTierName(tierName string) UaInMurModifier {
 	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
 		for i, ua := range mur.Spec.UserAccounts {
 			if ua.TargetCluster == targetCluster {

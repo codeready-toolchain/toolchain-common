@@ -17,7 +17,7 @@ func TestUserAccountFromMur(t *testing.T) {
 		userAcc := uatest.NewUserAccountFromMur(mur)
 
 		// when
-		murtest.ModifyUaInMur(mur, test.MemberClusterName, murtest.TierName("admin"))
+		murtest.ModifyUaInMur(mur, test.MemberClusterName, murtest.UserAccountTierName("admin"))
 
 		// then
 		assert.Equal(t, "admin", mur.Spec.UserAccounts[0].Spec.NSTemplateSet.TierName) // modified

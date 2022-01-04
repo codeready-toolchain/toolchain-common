@@ -328,7 +328,7 @@ func TestTierNameModifier(t *testing.T) {
 		mur2 := murtest.NewMasterUserRecord(t, "jack", murtest.Finalizer("finalizer.toolchain.dev.openshift.com"))
 
 		// when
-		murtest.ModifyUaInMur(mur1, test.MemberClusterName, murtest.TierName("admin"))
+		murtest.ModifyUaInMur(mur1, test.MemberClusterName, murtest.UserAccountTierName("admin"))
 
 		// then
 		assert.Equal(t, "admin", mur1.Spec.UserAccounts[0].Spec.NSTemplateSet.TierName) // modified
