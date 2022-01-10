@@ -291,41 +291,6 @@ func (a *MasterUserRecordAssertion) HasTargetCluster(targetcluster string) *Mast
 	return a
 }
 
-// HasCustomNamespaceTemplate verifies that for the given target cluster, there's a namespace with the given templateRef,
-// but the latter is "overridden" by the given template
-func (a *MasterUserRecordAssertion) HasCustomNamespaceTemplate(targetCluster, templateRef, template string) *MasterUserRecordAssertion {
-	err := a.loadMasterUserRecord()
-	require.NoError(a.t, err)
-	for _, ua := range a.mur.Spec.UserAccounts {
-		if ua.TargetCluster == targetCluster {
-			for _, ns := range ua.Spec.NSTemplateSet.Namespaces {
-				if ns.TemplateRef == templateRef {
-					assert.Equal(a.t, template, ns.Template)
-					return a
-				}
-			}
-		}
-	}
-	a.t.Fatalf("no match for the given target cluster '%s' and templateRef '%s'", targetCluster, templateRef)
-	return a
-}
-
-// HasCustomClusterResourcesTemplate verifies that for the given target cluster, there's a namespace with the given templateRef,
-// but the latter is "overridden" by the given template
-func (a *MasterUserRecordAssertion) HasCustomClusterResourcesTemplate(targetCluster, template string) *MasterUserRecordAssertion {
-	err := a.loadMasterUserRecord()
-	require.NoError(a.t, err)
-	for _, ua := range a.mur.Spec.UserAccounts {
-		if ua.TargetCluster == targetCluster {
-			require.NotNil(a.t, ua.Spec.NSTemplateSet.ClusterResources)
-			assert.Equal(a.t, template, ua.Spec.NSTemplateSet.ClusterResources.Template)
-			return a
-		}
-	}
-	a.t.Fatalf("no match for the given target cluster and templateRef")
-	return a
-}
-
 func (a *MasterUserRecordAssertion) HasUserAccounts(count int) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
