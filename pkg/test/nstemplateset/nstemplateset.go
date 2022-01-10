@@ -22,9 +22,7 @@ func WithReferencesFor(nstemplateTier *toolchainv1alpha1.NSTemplateTier) Option 
 	return func(nstmplSet *toolchainv1alpha1.NSTemplateSet) {
 		namespaces := make([]toolchainv1alpha1.NSTemplateSetNamespace, len(nstemplateTier.Spec.Namespaces))
 		for i, ns := range nstemplateTier.Spec.Namespaces {
-			namespaces[i] = toolchainv1alpha1.NSTemplateSetNamespace{
-				TemplateRef: ns.TemplateRef,
-			}
+			namespaces[i] = toolchainv1alpha1.NSTemplateSetNamespace(ns)
 		}
 		var clusterResources *toolchainv1alpha1.NSTemplateSetClusterResources
 		if nstemplateTier.Spec.ClusterResources != nil {
