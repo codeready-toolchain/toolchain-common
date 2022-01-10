@@ -345,13 +345,10 @@ func AssertThatMasterUserRecords(t test.T, namespace string, client client.Clien
 }
 
 func (a *MasterUserRecordsAssertion) loadMasterUserRecords() error {
-	if a.client != nil {
-		murs := &toolchainv1alpha1.MasterUserRecordList{}
-		err := a.client.List(context.TODO(), murs, client.InNamespace(a.namespace))
-		a.murs = murs
-		return err
-	}
-	return nil
+	murs := &toolchainv1alpha1.MasterUserRecordList{}
+	err := a.client.List(context.TODO(), murs, client.InNamespace(a.namespace))
+	a.murs = murs
+	return err
 }
 
 func (a *MasterUserRecordsAssertion) HaveCount(count int) *MasterUserRecordsAssertion {

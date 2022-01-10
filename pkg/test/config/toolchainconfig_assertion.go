@@ -19,13 +19,10 @@ type ToolchainConfigAssertion struct {
 }
 
 func (a *ToolchainConfigAssertion) loadToolchainConfig() error {
-	if a.client != nil {
-		toolchainConfig := &toolchainv1alpha1.ToolchainConfig{}
-		err := a.client.Get(context.TODO(), a.namespacedName, toolchainConfig)
-		a.config = toolchainConfig
-		return err
-	}
-	return nil
+	toolchainConfig := &toolchainv1alpha1.ToolchainConfig{}
+	err := a.client.Get(context.TODO(), a.namespacedName, toolchainConfig)
+	a.config = toolchainConfig
+	return err
 }
 
 func AssertThatToolchainConfig(t test.T, namespace string, client client.Client) *ToolchainConfigAssertion {
