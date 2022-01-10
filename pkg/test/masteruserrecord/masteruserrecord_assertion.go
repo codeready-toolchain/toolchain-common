@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type MasterUserRecordAssertion struct {
+type MasterUserRecordAssertion struct { // nolint: golint
 	mur            *toolchainv1alpha1.MasterUserRecord
 	client         client.Client
 	namespacedName types.NamespacedName
