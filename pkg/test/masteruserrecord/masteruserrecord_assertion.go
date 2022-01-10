@@ -12,26 +12,44 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type Assertion struct {
-	masterUserRecord *toolchainv1alpha1.MasterUserRecord
-	client           client.Client
-	namespacedName   types.NamespacedName
-	t                test.T
+type MasterUserRecordAssertion struct {
+	mur            *toolchainv1alpha1.MasterUserRecord
+	client         client.Client
+	namespacedName types.NamespacedName
+	t              test.T
 }
 
-func (a *Assertion) loadUaAssertion() error {
+func (a *MasterUserRecordAssertion) loadMasterUserRecord() error {
 	mur := &toolchainv1alpha1.MasterUserRecord{}
 	err := a.client.Get(context.TODO(), a.namespacedName, mur)
-	a.masterUserRecord = mur
+	a.mur = mur
 	return err
 }
 
-func AssertThatMasterUserRecord(t test.T, name string, client client.Client) *Assertion {
-	return &Assertion{
+func AssertThatMasterUserRecord(t test.T, name string, client client.Client) *MasterUserRecordAssertion {
+	return &MasterUserRecordAssertion{
 		client:         client,
 		namespacedName: test.NamespacedName(test.HostOperatorNs, name),
 		t:              t,
 	}
+}
+
+func (a *MasterUserRecordAssertion) Exists() *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
+	require.NoError(a.t, err)
+	return a
+}
+
+func (a *MasterUserRecordAssertion) DoesNotExist() *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
+	require.EqualError(a.t, err, fmt.Sprintf("masteruserrecords.toolchain.dev.openshift.com \"%s\" not found", a.namespacedName.Name))
+	return a
+}
+
+func (a *MasterUserRecordAssertion) Get() *toolchainv1alpha1.MasterUserRecord {
+	err := a.loadMasterUserRecord()
+	require.NoError(a.t, err)
+	return a.mur
 }
 
 type NsTemplateSetSpecExp func(*toolchainv1alpha1.NSTemplateSetSpec)
@@ -60,14 +78,14 @@ func WithClusterRes(revision string) NsTemplateSetSpecExp {
 }
 
 // HasNSTemplateSet verifies that the MUR has NSTemplateSetSpec with the expected values
-func (a *Assertion) HasNSTemplateSet(targetCluster string, expectations ...NsTemplateSetSpecExp) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) HasNSTemplateSet(targetCluster string, expectations ...NsTemplateSetSpecExp) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	expectedTmplSetSpec := &toolchainv1alpha1.NSTemplateSetSpec{}
 	for _, modify := range expectations {
 		modify(expectedTmplSetSpec)
 	}
-	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
+	for _, ua := range a.mur.Spec.UserAccounts {
 		if ua.TargetCluster == targetCluster {
 			assert.Equal(a.t, *expectedTmplSetSpec, *ua.Spec.NSTemplateSet)
 			return a
@@ -77,32 +95,32 @@ func (a *Assertion) HasNSTemplateSet(targetCluster string, expectations ...NsTem
 	return a
 }
 
-func (a *Assertion) HasNoConditions() *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) HasNoConditions() *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	require.Empty(a.t, a.masterUserRecord.Status.Conditions)
+	require.Empty(a.t, a.mur.Status.Conditions)
 	return a
 }
 
-func (a *Assertion) HasConditions(expected ...toolchainv1alpha1.Condition) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) HasConditions(expected ...toolchainv1alpha1.Condition) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	test.AssertConditionsMatch(a.t, a.masterUserRecord.Status.Conditions, expected...)
+	test.AssertConditionsMatch(a.t, a.mur.Status.Conditions, expected...)
 	return a
 }
 
-func (a *Assertion) HasStatusUserAccounts(targetClusters ...string) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) HasStatusUserAccounts(targetClusters ...string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	require.Len(a.t, a.masterUserRecord.Status.UserAccounts, len(targetClusters))
+	require.Len(a.t, a.mur.Status.UserAccounts, len(targetClusters))
 	for _, cluster := range targetClusters {
 		a.hasUserAccount(cluster)
 	}
 	return a
 }
 
-func (a *Assertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.UserAccountStatusEmbedded {
-	for _, ua := range a.masterUserRecord.Status.UserAccounts {
+func (a *MasterUserRecordAssertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.UserAccountStatusEmbedded {
+	for _, ua := range a.mur.Status.UserAccounts {
 		if ua.Cluster.Name == targetCluster {
 			return &ua
 		}
@@ -111,53 +129,53 @@ func (a *Assertion) hasUserAccount(targetCluster string) *toolchainv1alpha1.User
 	return nil
 }
 
-func (a *Assertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	for _, ua := range a.masterUserRecord.Status.UserAccounts {
+	for _, ua := range a.mur.Status.UserAccounts {
 		assert.Equal(a.t, syncIndex, ua.SyncIndex)
 	}
 	return a
 }
 
-func (a *Assertion) AllUserAccountsHaveCluster(expected toolchainv1alpha1.Cluster) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) AllUserAccountsHaveCluster(expected toolchainv1alpha1.Cluster) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	for _, ua := range a.masterUserRecord.Status.UserAccounts {
+	for _, ua := range a.mur.Status.UserAccounts {
 		assert.Equal(a.t, expected, ua.Cluster)
 	}
 	return a
 }
 
-func (a *Assertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Condition) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) AllUserAccountsHaveCondition(expected toolchainv1alpha1.Condition) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	for _, ua := range a.masterUserRecord.Status.UserAccounts {
+	for _, ua := range a.mur.Status.UserAccounts {
 		test.AssertConditionsMatch(a.t, ua.Conditions, expected)
 	}
 	return a
 }
 
-func (a *Assertion) HasTier(tier toolchainv1alpha1.NSTemplateTier) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) HasTier(tier toolchainv1alpha1.NSTemplateTier) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	assert.Equal(a.t, tier.Name, a.masterUserRecord.Spec.TierName)
+	assert.Equal(a.t, tier.Name, a.mur.Spec.TierName)
 	return a
 }
 
-func (a *Assertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTier) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTier) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
+	for _, ua := range a.mur.Spec.UserAccounts {
 		a.userAccountHasTier(ua, tier)
 	}
 	return a
 }
 
-func (a *Assertion) UserAccountHasNoTier(targetCluster string) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) UserAccountHasNoTier(targetCluster string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
+	for _, ua := range a.mur.Spec.UserAccounts {
 		if ua.TargetCluster == targetCluster {
 			assert.Nil(a.t, ua.Spec.NSTemplateSet)
 		}
@@ -165,20 +183,20 @@ func (a *Assertion) UserAccountHasNoTier(targetCluster string) *Assertion {
 	return a
 }
 
-func (a *Assertion) UserAccountHasTier(targetCluster string, tier toolchainv1alpha1.NSTemplateTier) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) UserAccountHasTier(targetCluster string, tier toolchainv1alpha1.NSTemplateTier) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
+	for _, ua := range a.mur.Spec.UserAccounts {
 		if ua.TargetCluster == targetCluster {
 			a.userAccountHasTier(ua, tier)
 		}
 	}
 	// also verify the label on the master user record
-	assert.Contains(a.t, a.masterUserRecord.Labels, toolchainv1alpha1.LabelKeyPrefix+tier.Name+"-tier-hash")
+	assert.Contains(a.t, a.mur.Labels, toolchainv1alpha1.LabelKeyPrefix+tier.Name+"-tier-hash")
 	return a
 }
 
-func (a *Assertion) userAccountHasTier(ua toolchainv1alpha1.UserAccountEmbedded, tier toolchainv1alpha1.NSTemplateTier) {
+func (a *MasterUserRecordAssertion) userAccountHasTier(ua toolchainv1alpha1.UserAccountEmbedded, tier toolchainv1alpha1.NSTemplateTier) {
 	require.NotNil(a.t, ua.Spec.NSTemplateSet)
 	assert.Equal(a.t, tier.Name, ua.Spec.NSTemplateSet.TierName)
 	actualTemplateRefs := []string{}
@@ -201,60 +219,84 @@ func (a *Assertion) userAccountHasTier(ua toolchainv1alpha1.UserAccountEmbedded,
 	// also verify the labels at the MUR resource level
 	hash, err := computeTemplateRefsHash(tier)
 	require.NoError(a.t, err)
-	require.Contains(a.t, a.masterUserRecord.Labels, templateTierHashLabelKey(tier.Name))
-	assert.Equal(a.t, hash, a.masterUserRecord.Labels[templateTierHashLabelKey(tier.Name)])
+	require.Contains(a.t, a.mur.Labels, templateTierHashLabelKey(tier.Name))
+	assert.Equal(a.t, hash, a.mur.Labels[templateTierHashLabelKey(tier.Name)])
 }
 
-func (a *Assertion) HasFinalizer() *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) HasFinalizer() *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	assert.Len(a.t, a.masterUserRecord.Finalizers, 1)
-	assert.Contains(a.t, a.masterUserRecord.Finalizers, "finalizer.toolchain.dev.openshift.com")
+	assert.Len(a.t, a.mur.Finalizers, 1)
+	assert.Contains(a.t, a.mur.Finalizers, "finalizer.toolchain.dev.openshift.com")
 	return a
 }
 
-func (a *Assertion) DoesNotHaveFinalizer() *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) DoesNotHaveFinalizer() *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	assert.Len(a.t, a.masterUserRecord.Finalizers, 0)
+	assert.Len(a.t, a.mur.Finalizers, 0)
 	return a
 }
 
 // DoesNotHaveLabel verifies that the MasterUserRecord does not have
 // a label with the given key
-func (a *Assertion) DoesNotHaveLabel(key string) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) DoesNotHaveLabel(key string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	assert.NotContains(a.t, a.masterUserRecord.Labels, key)
+	assert.NotContains(a.t, a.mur.Labels, key)
 	return a
 }
 
 // HasLabel verifies that the MasterUserRecord has
 // a label with the given key
-func (a *Assertion) HasLabel(key string) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) HasLabel(key string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	require.Contains(a.t, a.masterUserRecord.Labels, key)
-	assert.NotEmpty(a.t, a.masterUserRecord.Labels[key])
+	require.Contains(a.t, a.mur.Labels, key)
+	assert.NotEmpty(a.t, a.mur.Labels[key])
+	return a
+}
+
+// HasLabelWithValue verifies that the MasterUserRecord has
+// a label with the given key and value
+func (a *MasterUserRecordAssertion) HasLabelWithValue(key, value string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
+	require.NoError(a.t, err)
+	assert.Equal(a.t, value, a.mur.Labels[key])
 	return a
 }
 
 // HasAnnotationWithValue verifies that the MasterUserRecord has
 // an annotation with the given key and value
-func (a *Assertion) HasAnnotationWithValue(key, value string) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) HasAnnotationWithValue(key, value string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	require.Contains(a.t, a.masterUserRecord.Annotations, key)
-	assert.Equal(a.t, value, a.masterUserRecord.Annotations[key])
+	require.Contains(a.t, a.mur.Annotations, key)
+	assert.Equal(a.t, value, a.mur.Annotations[key])
+	return a
+}
+
+func (a *MasterUserRecordAssertion) HasOriginalSub(sub string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
+	require.NoError(a.t, err)
+	assert.Equal(a.t, sub, a.mur.Spec.OriginalSub)
+	return a
+}
+
+func (a *MasterUserRecordAssertion) HasTargetCluster(targetcluster string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
+	require.NoError(a.t, err)
+	require.NotEmpty(a.t, a.mur.Spec.UserAccounts)
+	assert.Equal(a.t, targetcluster, a.mur.Spec.UserAccounts[0].TargetCluster)
 	return a
 }
 
 // HasCustomNamespaceTemplate verifies that for the given target cluster, there's a namespace with the given templateRef,
 // but the latter is "overridden" by the given template
-func (a *Assertion) HasCustomNamespaceTemplate(targetCluster, templateRef, template string) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) HasCustomNamespaceTemplate(targetCluster, templateRef, template string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
+	for _, ua := range a.mur.Spec.UserAccounts {
 		if ua.TargetCluster == targetCluster {
 			for _, ns := range ua.Spec.NSTemplateSet.Namespaces {
 				if ns.TemplateRef == templateRef {
@@ -270,10 +312,10 @@ func (a *Assertion) HasCustomNamespaceTemplate(targetCluster, templateRef, templ
 
 // HasCustomClusterResourcesTemplate verifies that for the given target cluster, there's a namespace with the given templateRef,
 // but the latter is "overridden" by the given template
-func (a *Assertion) HasCustomClusterResourcesTemplate(targetCluster, template string) *Assertion {
-	err := a.loadUaAssertion()
+func (a *MasterUserRecordAssertion) HasCustomClusterResourcesTemplate(targetCluster, template string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	for _, ua := range a.masterUserRecord.Spec.UserAccounts {
+	for _, ua := range a.mur.Spec.UserAccounts {
 		if ua.TargetCluster == targetCluster {
 			require.NotNil(a.t, ua.Spec.NSTemplateSet.ClusterResources)
 			assert.Equal(a.t, template, ua.Spec.NSTemplateSet.ClusterResources.Template)
@@ -281,5 +323,75 @@ func (a *Assertion) HasCustomClusterResourcesTemplate(targetCluster, template st
 		}
 	}
 	a.t.Fatalf("no match for the given target cluster and templateRef")
+	return a
+}
+
+func (a *MasterUserRecordAssertion) HasUserAccounts(count int) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
+	require.NoError(a.t, err)
+	require.Len(a.t, a.mur.Spec.UserAccounts, count)
+	return a
+}
+
+func (a *MasterUserRecordAssertion) HasUserAccountTierName(tiername string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
+	require.NoError(a.t, err)
+	assert.Equal(a.t, tiername, a.mur.Spec.UserAccounts[0].Spec.NSTemplateSet.TierName)
+	return a
+}
+
+func (a *MasterUserRecordAssertion) HasUserAccountNamespaceTemplateRefs(refs ...string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
+	require.NoError(a.t, err)
+	nsRefs := make([]toolchainv1alpha1.NSTemplateSetNamespace, len(refs))
+	for i, ref := range refs {
+		nsRefs[i] = toolchainv1alpha1.NSTemplateSetNamespace{
+			TemplateRef: ref,
+		}
+	}
+	assert.Equal(a.t, nsRefs, a.mur.Spec.UserAccounts[0].Spec.NSTemplateSet.Namespaces)
+	return a
+}
+
+func (a *MasterUserRecordAssertion) HasUserAccountClusterResourceTemplateRefs(ref string) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
+	require.NoError(a.t, err)
+	assert.Equal(a.t, &toolchainv1alpha1.NSTemplateSetClusterResources{
+		TemplateRef: ref,
+	}, a.mur.Spec.UserAccounts[0].Spec.NSTemplateSet.ClusterResources)
+	return a
+}
+
+// Assertions on multiple MasterUserRecords at once
+
+type MasterUserRecordsAssertion struct {
+	murs      *toolchainv1alpha1.MasterUserRecordList
+	client    client.Client
+	namespace string
+	t         test.T
+}
+
+func AssertThatMasterUserRecords(t test.T, namespace string, client client.Client) *MasterUserRecordsAssertion {
+	return &MasterUserRecordsAssertion{
+		client:    client,
+		namespace: namespace,
+		t:         t,
+	}
+}
+
+func (a *MasterUserRecordsAssertion) loadMasterUserRecords() error {
+	if a.client != nil {
+		murs := &toolchainv1alpha1.MasterUserRecordList{}
+		err := a.client.List(context.TODO(), murs, client.InNamespace(a.namespace))
+		a.murs = murs
+		return err
+	}
+	return nil
+}
+
+func (a *MasterUserRecordsAssertion) HaveCount(count int) *MasterUserRecordsAssertion {
+	err := a.loadMasterUserRecords()
+	require.NoError(a.t, err)
+	require.Len(a.t, a.murs.Items, count)
 	return a
 }
