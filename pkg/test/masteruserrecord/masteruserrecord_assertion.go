@@ -336,10 +336,10 @@ type MasterUserRecordsAssertion struct {
 	t         test.T
 }
 
-func AssertThatMasterUserRecords(t test.T, namespace string, client client.Client) *MasterUserRecordsAssertion {
+func AssertThatMasterUserRecords(t test.T, client client.Client) *MasterUserRecordsAssertion {
 	return &MasterUserRecordsAssertion{
 		client:    client,
-		namespace: namespace,
+		namespace: test.HostOperatorNs,
 		t:         t,
 	}
 }
