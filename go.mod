@@ -16,16 +16,16 @@ require (
 	github.com/openshift/api v0.0.0-20210428205234-a8389931bee7
 	github.com/openshift/library-go v0.0.0-20191121124438-7c776f7cc17a
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/common v0.28.0 // indirect
 	github.com/redhat-cop/operator-utils v1.1.3-0.20210602122509-2eaf121122d2
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20201012173705-84dcc777aaee // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
-	golang.org/x/sys v0.0.0-20210521090106-6ca3eb03dfc2 // indirect
 	golang.org/x/tools v0.1.1 // indirect
 	gopkg.in/h2non/gock.v1 v1.0.14
 	gopkg.in/square/go-jose.v2 v2.3.0
 	gotest.tools v2.2.0+incompatible
-	honnef.co/go/tools v0.0.1-2020.1.5 // indirect
+	honnef.co/go/tools v0.0.1-2020.1.6 // indirect
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v0.20.2

@@ -1,11 +1,7 @@
 package masteruserrecord
 
 import (
-	"crypto/md5"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -13,7 +9,8 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
-	uuid "github.com/gofrs/uuid"
+	testtier "github.com/codeready-toolchain/toolchain-common/pkg/test/tier"
+	"github.com/gofrs/uuid"
 	"github.com/redhat-cop/operator-utils/pkg/util"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -88,14 +85,15 @@ func NewMasterUserRecords(t *testing.T, size int, nameFmt string, modifiers ...M
 
 func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier) *toolchainv1alpha1.MasterUserRecord {
 	userID := uuid.Must(uuid.NewV4()).String()
-	hash, err := computeTemplateRefsHash(DefaultNSTemplateTier()) // we can assume the JSON marshalling will always work
+	defaultTier := DefaultNSTemplateTier()
+	hash, err := testtier.ComputeTemplateRefsHash(&defaultTier) // we can assume the JSON marshalling will always work
 	require.NoError(t, err)
 	mur := &toolchainv1alpha1.MasterUserRecord{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: test.HostOperatorNs,
 			Name:      userName,
 			Labels: map[string]string{
-				templateTierHashLabelKey(DefaultNSTemplateTierName): hash,
+				testtier.TemplateTierHashLabelKey(DefaultNSTemplateTierName): hash,
 			},
 			Annotations: map[string]string{
 				toolchainv1alpha1.MasterUserRecordEmailAnnotationKey: "joe@redhat.com",
@@ -110,36 +108,6 @@ func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier
 	err = Modify(mur, modifiers...)
 	require.NoError(t, err)
 	return mur
-}
-
-// templateTierHashLabel returns the label key to specify the version of the templates of the given tier
-func templateTierHashLabelKey(tierName string) string {
-	return toolchainv1alpha1.LabelKeyPrefix + tierName + "-tier-hash"
-}
-
-type templateRefs struct {
-	Refs []string `json:"refs"`
-}
-
-// computeTemplateRefsHash computes the hash of the `.spec.namespaces[].templateRef` + `.spec.clusteResource.TemplateRef`
-func computeTemplateRefsHash(tier toolchainv1alpha1.NSTemplateTier) (string, error) {
-	refs := []string{}
-	for _, ns := range tier.Spec.Namespaces {
-		refs = append(refs, ns.TemplateRef)
-	}
-	if tier.Spec.ClusterResources != nil {
-		refs = append(refs, tier.Spec.ClusterResources.TemplateRef)
-	}
-	sort.Strings(refs)
-	m, err := json.Marshal(templateRefs{Refs: refs})
-	if err != nil {
-		return "", err
-	}
-	md5hash := md5.New()
-	// Ignore the error, as this implementation cannot return one
-	_, _ = md5hash.Write(m)
-	hash := hex.EncodeToString(md5hash.Sum(nil))
-	return hash, nil
 }
 
 func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
@@ -235,7 +203,7 @@ func AdditionalAccount(cluster string, tier toolchainv1alpha1.NSTemplateTier, mo
 			modify(cluster, mur)
 		}
 		// set the labels for the tier templates in use
-		hash, err := computeTemplateRefsHash(tier)
+		hash, err := testtier.ComputeTemplateRefsHash(&tier)
 		if err != nil {
 			return err
 		}

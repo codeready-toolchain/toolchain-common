@@ -6,6 +6,7 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+	testtier "github.com/codeready-toolchain/toolchain-common/pkg/test/tier"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
@@ -217,10 +218,10 @@ func (a *MasterUserRecordAssertion) userAccountHasTier(ua toolchainv1alpha1.User
 	}
 
 	// also verify the labels at the MUR resource level
-	hash, err := computeTemplateRefsHash(tier)
+	hash, err := testtier.ComputeTemplateRefsHash(&tier)
 	require.NoError(a.t, err)
-	require.Contains(a.t, a.mur.Labels, templateTierHashLabelKey(tier.Name))
-	assert.Equal(a.t, hash, a.mur.Labels[templateTierHashLabelKey(tier.Name)])
+	require.Contains(a.t, a.mur.Labels, testtier.TemplateTierHashLabelKey(tier.Name))
+	assert.Equal(a.t, hash, a.mur.Labels[testtier.TemplateTierHashLabelKey(tier.Name)])
 }
 
 func (a *MasterUserRecordAssertion) HasFinalizer() *MasterUserRecordAssertion {
