@@ -2,7 +2,7 @@ package template
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand" //nolint:gosec
 	"time"
 
 	templatev1 "github.com/openshift/api/template/v1"
@@ -38,7 +38,7 @@ func (p Processor) Process(tmpl *templatev1.Template, values map[string]string, 
 	}
 	// convert the template into a set of objects
 	tmplProcessor := templateprocessing.NewProcessor(map[string]generator.Generator{
-		"expression": generator.NewExpressionValueGenerator(rand.New(rand.NewSource(time.Now().UnixNano()))),
+		"expression": generator.NewExpressionValueGenerator(rand.New(rand.NewSource(time.Now().UnixNano()))), //nolint:gosec
 	})
 	if err := tmplProcessor.Process(tmpl); len(err) > 0 {
 		return nil, errors.Wrap(err.ToAggregate(), "unable to process template")

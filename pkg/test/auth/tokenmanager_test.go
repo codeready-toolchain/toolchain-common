@@ -2,8 +2,11 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"crypto/rsa"
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
@@ -337,9 +340,13 @@ func TestTokenManagerKeyService(t *testing.T) {
 		defer ks.Close()
 		keysEndpointURL := ks.URL
 		httpClient := http.DefaultClient
-		req, err := http.NewRequest("GET", keysEndpointURL, nil)
+		req, err := http.NewRequestWithContext(context.TODO(), "GET", keysEndpointURL, nil)
 		require.NoError(t, err)
 		res, err := httpClient.Do(req)
+		defer func() {
+			io.Copy(ioutil.Discard, res.Body) //nolint: errcheck
+			defer res.Body.Close()
+		}()
 		require.NoError(t, err)
 		// read and parse response body
 		buf := new(bytes.Buffer)
