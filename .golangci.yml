@@ -18,6 +18,7 @@ linters:
   disable: 
     - golint # deprecated, use 'revive'
     - scopelint # deprecated, use 'exportloopref'
+    - contextcheck # too many false-positives
 
 # all available settings of specific linters
 linters-settings:
