@@ -344,7 +344,7 @@ func TestTokenManagerKeyService(t *testing.T) {
 		require.NoError(t, err)
 		res, err := httpClient.Do(req)
 		defer func() {
-			io.Copy(ioutil.Discard, res.Body) //nolint: errcheck
+			_, _ = io.Copy(ioutil.Discard, res.Body)
 			defer res.Body.Close()
 		}()
 		require.NoError(t, err)
