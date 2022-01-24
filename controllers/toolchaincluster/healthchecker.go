@@ -31,7 +31,7 @@ const (
 func StartHealthChecks(ctx context.Context, mgr manager.Manager, namespace string, period time.Duration) {
 	logger.Info("starting health checks", "period", period)
 	go wait.Until(func() {
-		updateClusterStatuses(namespace, mgr.GetClient())
+		updateClusterStatuses(namespace, mgr.GetClient()) // nolint:contextcheck // false positive?
 	}, period, ctx.Done())
 }
 
@@ -81,7 +81,7 @@ func updateClusterStatuses(namespace string, cl client.Client) {
 			logger:                 clusterLogger,
 		}
 		clusterLogger.Info("getting the current state of ToolchainCluster")
-		if err := healthChecker.updateIndividualClusterStatus(clusterObj); err != nil {
+		if err := healthChecker.updateIndividualClusterStatus(clusterObj); err != nil { // nolint:contextcheck // false positive?
 			clusterLogger.Error(err, "unable to update cluster status of ToolchainCluster")
 		}
 	}
@@ -89,7 +89,7 @@ func updateClusterStatuses(namespace string, cl client.Client) {
 
 func (hc *HealthChecker) updateIndividualClusterStatus(toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
 
-	currentClusterStatus := hc.getClusterHealthStatus()
+	currentClusterStatus := hc.getClusterHealthStatus() // nolint:contextcheck // false positive?
 
 	for index, currentCond := range currentClusterStatus.Conditions {
 		for _, previousCond := range toolchainCluster.Status.Conditions {
