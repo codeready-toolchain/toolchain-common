@@ -8,13 +8,10 @@ run:
 linters:
   enable:
     - megacheck
-    - govet
     - gocyclo
-    - unused
     - gofmt
     - revive
     - misspell
-    - exportloopref
   presets: # groups of linters. See https://golangci-lint.run/usage/linters/
     - bugs
     - unused
