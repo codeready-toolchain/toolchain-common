@@ -3,7 +3,7 @@ package condition
 import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 
-	apiv1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -62,7 +62,7 @@ func FindConditionByType(conditions []toolchainv1alpha1.Condition, conditionType
 // Returns false for unknown conditions and conditions with status set to False.
 func IsTrue(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType) bool {
 	c, found := FindConditionByType(conditions, conditionType)
-	return found && c.Status == apiv1.ConditionTrue
+	return found && c.Status == corev1.ConditionTrue
 }
 
 // IsFalse returns `true` if the condition with the given condition type is found among the conditions
@@ -70,31 +70,31 @@ func IsTrue(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1a
 // Returns false for unknown conditions and conditions with status set to True.
 func IsFalse(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType) bool {
 	c, found := FindConditionByType(conditions, conditionType)
-	return found && c.Status == apiv1.ConditionFalse
+	return found && c.Status == corev1.ConditionFalse
 }
 
 // IsNotTrue returns `true` if the condition with the given condition type has an Unknown or `false`` status
 func IsNotTrue(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType) bool {
 	c, found := FindConditionByType(conditions, conditionType)
-	return !found || c.Status != apiv1.ConditionTrue
+	return !found || c.Status != corev1.ConditionTrue
 }
 
 // IsFalseWithReason returns `true` if the condition with the given condition type is found among the conditions
 // and its status is set to `false` with the given reason.
 func IsFalseWithReason(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType, reason string) bool {
 	c, found := FindConditionByType(conditions, conditionType)
-	return found && c.Status == apiv1.ConditionFalse && c.Reason == reason
+	return found && c.Status == corev1.ConditionFalse && c.Reason == reason
 }
 
 // IsTrueWithReason returns `true` if the condition with the given condition type is found among the conditions
 // and its status is set to `true` with the given reason.
 func IsTrueWithReason(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType, reason string) bool {
 	c, found := FindConditionByType(conditions, conditionType)
-	return found && c.Status == apiv1.ConditionTrue && c.Reason == reason
+	return found && c.Status == corev1.ConditionTrue && c.Reason == reason
 }
 
 // Count counts the conditions that match the given type/status/reason
-func Count(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType, status apiv1.ConditionStatus, reason string) int {
+func Count(conditions []toolchainv1alpha1.Condition, conditionType toolchainv1alpha1.ConditionType, status corev1.ConditionStatus, reason string) int {
 	count := 0
 	for _, c := range conditions {
 		if c.Type == conditionType &&

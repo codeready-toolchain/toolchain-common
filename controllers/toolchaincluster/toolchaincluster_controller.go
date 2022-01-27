@@ -6,7 +6,8 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
-	"k8s.io/apimachinery/pkg/api/errors"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -53,7 +54,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	toolchainCluster := &toolchainv1alpha1.ToolchainCluster{}
 	err := r.client.Get(ctx, request.NamespacedName, toolchainCluster)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			r.clusterCacheService.DeleteToolchainCluster(request.Name)
 			return reconcile.Result{}, nil
 		}

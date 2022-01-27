@@ -2,9 +2,10 @@ package test
 
 import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -23,7 +24,7 @@ func NewToolchainClusterWithEndpoint(name, secName, apiEndpoint string, status t
 		Reply(200).
 		BodyString("{}")
 	secret := &corev1.Secret{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      secName,
 			Namespace: "test-namespace",
 		},
@@ -41,7 +42,7 @@ func NewToolchainClusterWithEndpoint(name, secName, apiEndpoint string, status t
 			APIEndpoint: apiEndpoint,
 			CABundle:    "",
 		},
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: "test-namespace",
 			Labels:    labels,

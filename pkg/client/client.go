@@ -5,16 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
+	errs "github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -35,7 +34,7 @@ func NewApplyClient(cl client.Client, scheme *runtime.Scheme) *ApplyClient {
 }
 
 type applyObjectConfiguration struct {
-	owner             v1.Object
+	owner             metav1.Object
 	forceUpdate       bool
 	saveConfiguration bool
 }
@@ -56,7 +55,7 @@ func newApplyObjectConfiguration(options ...ApplyObjectOption) applyObjectConfig
 type ApplyObjectOption func(*applyObjectConfiguration)
 
 // SetOwner sets the owner of the resource (default: `nil`)
-func SetOwner(owner v1.Object) ApplyObjectOption {
+func SetOwner(owner metav1.Object) ApplyObjectOption {
 	return func(config *applyObjectConfiguration) {
 		config.owner = owner
 	}
@@ -95,7 +94,7 @@ func (p ApplyClient) ApplyObject(obj client.Object, options ...ApplyObjectOption
 	gvk := obj.GetObjectKind().GroupVersionKind()
 	createdOrUpdated, err := p.applyObject(obj, options...)
 	if err != nil {
-		return createdOrUpdated, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
+		return createdOrUpdated, errs.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
 	}
 	return createdOrUpdated, nil
 }
@@ -125,7 +124,7 @@ func (p ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption
 		if apierrors.IsNotFound(err) {
 			return true, p.createObj(obj, config.owner)
 		}
-		return false, errors.Wrapf(err, "unable to get the resource '%v'", existing)
+		return false, errs.Wrapf(err, "unable to get the resource '%v'", existing)
 	}
 
 	// as it already exists, check using the UpdateStrategy if it should be updated
@@ -151,7 +150,7 @@ func (p ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption
 		return false, err
 	}
 	if err := p.Client.Update(context.TODO(), obj); err != nil {
-		return false, errors.Wrapf(err, "unable to update the resource '%v'", obj)
+		return false, errs.Wrapf(err, "unable to update the resource '%v'", obj)
 	}
 
 	// check if it was changed or not
@@ -210,11 +209,11 @@ func marshalObjectContent(newResource runtime.Object) ([]byte, error) {
 	return json.Marshal(newResource)
 }
 
-func (p ApplyClient) createObj(newResource client.Object, owner v1.Object) error {
+func (p ApplyClient) createObj(newResource client.Object, owner metav1.Object) error {
 	if owner != nil {
 		err := controllerutil.SetControllerReference(owner, newResource, p.scheme)
 		if err != nil {
-			return errors.Wrap(err, "unable to set controller references")
+			return errs.Wrap(err, "unable to set controller references")
 		}
 	}
 	return p.Client.Create(context.TODO(), newResource)
@@ -238,7 +237,7 @@ func (p ApplyClient) Apply(toolchainObjects []client.Object, newLabels map[strin
 
 		result, err := p.ApplyObject(toolchainObject, ForceUpdate(true))
 		if err != nil {
-			return false, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", toolchainObject.GetObjectKind().GroupVersionKind().Kind, toolchainObject.GetObjectKind().GroupVersionKind().Version)
+			return false, errs.Wrapf(err, "unable to create resource of kind: %s, version: %s", toolchainObject.GetObjectKind().GroupVersionKind().Kind, toolchainObject.GetObjectKind().GroupVersionKind().Version)
 		}
 		createdOrUpdated = createdOrUpdated || result
 	}

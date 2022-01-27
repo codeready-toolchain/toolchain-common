@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -334,8 +334,8 @@ func TestLoadSecrets(t *testing.T) {
 	})
 }
 
-func createConfigMap(name, namespace string, data map[string]string) *v1.ConfigMap { //nolint: unparam
-	return &v1.ConfigMap{
+func createConfigMap(name, namespace string, data map[string]string) *corev1.ConfigMap { //nolint: unparam
+	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,

@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
-	errs "k8s.io/apimachinery/pkg/api/errors"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,7 +34,7 @@ func TestNewClient(t *testing.T) {
 	t.Run("default methods OK", func(t *testing.T) {
 		t.Run("list", func(t *testing.T) {
 			created, _ := createAndGetSecret(t, fclient)
-			secretList := &v1.SecretList{}
+			secretList := &corev1.SecretList{}
 			assert.NoError(t, fclient.List(context.TODO(), secretList, client.InNamespace("somenamespace")))
 			require.Len(t, secretList.Items, 1)
 			assert.Equal(t, *created, secretList.Items[0])
@@ -61,7 +61,7 @@ func TestNewClient(t *testing.T) {
 			key := types.NamespacedName{Namespace: "somenamespace", Name: "somename" + uuid.Must(uuid.NewV4()).String()}
 			data := make(map[string][]byte)
 			data["key"] = []byte("value")
-			created := &v1.Secret{
+			created := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
 					Namespace: key.Namespace,
@@ -75,7 +75,7 @@ func TestNewClient(t *testing.T) {
 			// Create
 			assert.NoError(t, fclient.Create(context.TODO(), created))
 			// Get
-			secret := &v1.Secret{}
+			secret := &corev1.Secret{}
 			assert.NoError(t, fclient.Get(context.TODO(), key, secret))
 			assert.Equal(t, created, secret)
 			assert.EqualValues(t, 1, secret.Generation)
@@ -145,7 +145,7 @@ func TestNewClient(t *testing.T) {
 			assert.NoError(t, fclient.Delete(context.TODO(), created))
 			err := fclient.Get(context.TODO(), types.NamespacedName{Namespace: "somenamespace", Name: created.Name}, retrieved)
 			require.Error(t, err)
-			assert.True(t, errs.IsNotFound(err))
+			assert.True(t, apierrors.IsNotFound(err))
 		})
 
 		t.Run("deleteAllOf", func(t *testing.T) {
@@ -158,11 +158,11 @@ func TestNewClient(t *testing.T) {
 			assert.NoError(t, fclient.DeleteAllOf(context.TODO(), retrieved, client.InNamespace("somenamespace"), client.MatchingLabels(retrieved.ObjectMeta.Labels)))
 			err := fclient.Get(context.TODO(), types.NamespacedName{Namespace: "somenamespace", Name: created.Name}, retrieved)
 			require.Error(t, err)
-			assert.True(t, errs.IsNotFound(err))
+			assert.True(t, apierrors.IsNotFound(err))
 
 			err = fclient.Get(context.TODO(), types.NamespacedName{Namespace: "somenamespace", Name: dep2.Name}, dep2)
 			require.Error(t, err)
-			assert.True(t, errs.IsNotFound(err))
+			assert.True(t, apierrors.IsNotFound(err))
 		})
 	})
 
@@ -175,7 +175,7 @@ func TestNewClient(t *testing.T) {
 			fclient.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 				return expectedErr
 			}
-			assert.EqualError(t, fclient.Get(context.TODO(), types.NamespacedName{Namespace: "somenamespace", Name: created.Name}, &v1.Secret{}), expectedErr.Error())
+			assert.EqualError(t, fclient.Get(context.TODO(), types.NamespacedName{Namespace: "somenamespace", Name: created.Name}, &corev1.Secret{}), expectedErr.Error())
 		})
 
 		t.Run("mock List", func(t *testing.T) {
@@ -183,7 +183,7 @@ func TestNewClient(t *testing.T) {
 			fclient.MockList = func(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
 				return expectedErr
 			}
-			assert.EqualError(t, fclient.List(context.TODO(), &v1.SecretList{}, client.InNamespace("somenamespace")), expectedErr.Error())
+			assert.EqualError(t, fclient.List(context.TODO(), &corev1.SecretList{}, client.InNamespace("somenamespace")), expectedErr.Error())
 		})
 
 		t.Run("mock Create", func(t *testing.T) {
@@ -191,7 +191,7 @@ func TestNewClient(t *testing.T) {
 			fclient.MockCreate = func(ctx context.Context, obj client.Object, option ...client.CreateOption) error {
 				return expectedErr
 			}
-			assert.EqualError(t, fclient.Create(context.TODO(), &v1.Secret{}), expectedErr.Error())
+			assert.EqualError(t, fclient.Create(context.TODO(), &corev1.Secret{}), expectedErr.Error())
 		})
 
 		t.Run("mock Update", func(t *testing.T) {
@@ -199,7 +199,7 @@ func TestNewClient(t *testing.T) {
 			fclient.MockUpdate = func(ctx context.Context, obj client.Object, option ...client.UpdateOption) error {
 				return expectedErr
 			}
-			assert.EqualError(t, fclient.Update(context.TODO(), &v1.Secret{}), expectedErr.Error())
+			assert.EqualError(t, fclient.Update(context.TODO(), &corev1.Secret{}), expectedErr.Error())
 		})
 
 		t.Run("mock Patch", func(t *testing.T) {
@@ -207,7 +207,7 @@ func TestNewClient(t *testing.T) {
 			fclient.MockPatch = func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 				return expectedErr
 			}
-			assert.EqualError(t, fclient.Patch(context.TODO(), &v1.Secret{}, client.RawPatch(types.MergePatchType, []byte{})), expectedErr.Error())
+			assert.EqualError(t, fclient.Patch(context.TODO(), &corev1.Secret{}, client.RawPatch(types.MergePatchType, []byte{})), expectedErr.Error())
 		})
 
 		t.Run("mock Delete", func(t *testing.T) {
@@ -215,7 +215,7 @@ func TestNewClient(t *testing.T) {
 			fclient.MockDelete = func(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
 				return expectedErr
 			}
-			assert.EqualError(t, fclient.Delete(context.TODO(), &v1.Secret{}), expectedErr.Error())
+			assert.EqualError(t, fclient.Delete(context.TODO(), &corev1.Secret{}), expectedErr.Error())
 		})
 
 		t.Run("mock DeleteAllOf", func(t *testing.T) {
@@ -223,7 +223,7 @@ func TestNewClient(t *testing.T) {
 			fclient.MockDeleteAllOf = func(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
 				return expectedErr
 			}
-			assert.EqualError(t, fclient.DeleteAllOf(context.TODO(), &v1.Secret{}), expectedErr.Error())
+			assert.EqualError(t, fclient.DeleteAllOf(context.TODO(), &corev1.Secret{}), expectedErr.Error())
 		})
 
 		t.Run("mock Status Update", func(t *testing.T) {
@@ -231,7 +231,7 @@ func TestNewClient(t *testing.T) {
 			fclient.MockStatusUpdate = func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 				return expectedErr
 			}
-			assert.EqualError(t, fclient.MockStatusUpdate(context.TODO(), &v1.Secret{}), expectedErr.Error())
+			assert.EqualError(t, fclient.MockStatusUpdate(context.TODO(), &corev1.Secret{}), expectedErr.Error())
 		})
 
 		t.Run("mock Status Patch", func(t *testing.T) {
@@ -239,16 +239,16 @@ func TestNewClient(t *testing.T) {
 			fclient.MockStatusPatch = func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 				return expectedErr
 			}
-			assert.EqualError(t, fclient.MockStatusPatch(context.TODO(), &v1.Secret{}, client.RawPatch(types.MergePatchType, []byte{})), expectedErr.Error())
+			assert.EqualError(t, fclient.MockStatusPatch(context.TODO(), &corev1.Secret{}, client.RawPatch(types.MergePatchType, []byte{})), expectedErr.Error())
 		})
 	})
 }
 
-func createAndGetSecret(t *testing.T, fclient *FakeClient) (*v1.Secret, *v1.Secret) {
+func createAndGetSecret(t *testing.T, fclient *FakeClient) (*corev1.Secret, *corev1.Secret) {
 	key := types.NamespacedName{Namespace: "somenamespace", Name: "somename" + uuid.Must(uuid.NewV4()).String()}
 	data := make(map[string]string)
 	data["key"] = "value"
-	created := &v1.Secret{
+	created := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      key.Name,
 			Namespace: key.Namespace,
@@ -264,7 +264,7 @@ func createAndGetSecret(t *testing.T, fclient *FakeClient) (*v1.Secret, *v1.Secr
 	assert.NoError(t, fclient.Create(context.TODO(), created))
 
 	// Get
-	secret := &v1.Secret{}
+	secret := &corev1.Secret{}
 	assert.NoError(t, fclient.Get(context.TODO(), key, secret))
 	assert.Equal(t, created, secret)
 	assert.EqualValues(t, 1, secret.Generation)

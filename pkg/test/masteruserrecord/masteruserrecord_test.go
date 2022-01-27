@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -114,7 +114,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 		t.Run("ok", func(t *testing.T) {
 			// given
 			tier := toolchainv1alpha1.NSTemplateTier{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "basic",
 				},
 				Spec: toolchainv1alpha1.NSTemplateTierSpec{
@@ -159,7 +159,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 			t.Run("missing stage namespace", func(t *testing.T) {
 				// given
 				tier := toolchainv1alpha1.NSTemplateTier{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "basic",
 					},
 					Spec: toolchainv1alpha1.NSTemplateTierSpec{
@@ -196,7 +196,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 			t.Run("invalid stage namespace", func(t *testing.T) {
 				// given
 				tier := toolchainv1alpha1.NSTemplateTier{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "basic",
 					},
 					Spec: toolchainv1alpha1.NSTemplateTierSpec{
@@ -236,7 +236,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 			t.Run("missing cluster resources", func(t *testing.T) {
 				// given
 				tier := toolchainv1alpha1.NSTemplateTier{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "basic",
 					},
 					Spec: toolchainv1alpha1.NSTemplateTierSpec{
@@ -276,7 +276,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 			t.Run("invalid cluster resources", func(t *testing.T) {
 				// given
 				tier := toolchainv1alpha1.NSTemplateTier{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "basic",
 					},
 					Spec: toolchainv1alpha1.NSTemplateTierSpec{

@@ -6,9 +6,8 @@ import (
 	"os"
 	"strings"
 
-	errs "k8s.io/apimachinery/pkg/api/errors"
-
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -47,11 +46,11 @@ func LoadFromSecret(resourceKey string, cl client.Client) (map[string]string, er
 		return secretData, err
 	}
 
-	secret := &v1.Secret{}
+	secret := &corev1.Secret{}
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: secretName}
 	err = cl.Get(context.TODO(), namespacedName, secret)
 	if err != nil {
-		if !errs.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return secretData, err
 		}
 		logf.Log.Info("secret is not found")
@@ -86,11 +85,11 @@ func LoadFromConfigMap(prefix, resourceKey string, cl client.Client) error {
 		return err
 	}
 
-	configMap := &v1.ConfigMap{}
+	configMap := &corev1.ConfigMap{}
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: configMapName}
 	err = cl.Get(context.TODO(), namespacedName, configMap)
 	if err != nil {
-		if !errs.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return err
 		}
 		logf.Log.Info("configmap is not found")
@@ -133,7 +132,7 @@ func createOperatorEnvVarKey(prefix, key string) string {
 // Service account secrets are skipped.
 func LoadSecrets(cl client.Client, namespace string) (map[string]map[string]string, error) {
 	var allSecrets = make(map[string]map[string]string)
-	secretList := &v1.SecretList{}
+	secretList := &corev1.SecretList{}
 	err := cl.List(context.TODO(), secretList, client.InNamespace(namespace))
 	if err != nil {
 		return allSecrets, err

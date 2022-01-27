@@ -5,8 +5,9 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -36,7 +37,7 @@ func AssertThatToolchainConfig(t test.T, namespace string, client client.Client)
 func (a *ToolchainConfigAssertion) NotExists() *ToolchainConfigAssertion {
 	err := a.loadToolchainConfig()
 	require.Error(a.t, err)
-	require.True(a.t, errors.IsNotFound(err))
+	require.True(a.t, apierrors.IsNotFound(err))
 	return a
 }
 

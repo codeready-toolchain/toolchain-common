@@ -16,7 +16,7 @@ import (
 	uuid "github.com/gofrs/uuid"
 	"github.com/golang-jwt/jwt"
 	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/pkg/errors"
+	errs "github.com/pkg/errors"
 )
 
 const (
@@ -191,7 +191,7 @@ func (tg *TokenManager) RemovePrivateKey(kid string) {
 func (tg *TokenManager) Key(kid string) (*rsa.PrivateKey, error) {
 	key, ok := tg.keyMap[kid]
 	if !ok {
-		return nil, errors.New("given kid does not exist")
+		return nil, errs.New("given kid does not exist")
 	}
 	return key, nil
 }
@@ -268,7 +268,7 @@ func (tg *TokenManager) SignToken(token *jwt.Token, kid string) (string, error) 
 	}
 	tokenStr, err := token.SignedString(key)
 	if err != nil {
-		panic(errors.WithStack(err))
+		panic(errs.WithStack(err))
 	}
 	return tokenStr, nil
 }

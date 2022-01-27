@@ -8,7 +8,7 @@ import (
 	templatev1 "github.com/openshift/api/template/v1"
 	"github.com/openshift/library-go/pkg/template/generator"
 	"github.com/openshift/library-go/pkg/template/templateprocessing"
-	"github.com/pkg/errors"
+	errs "github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -41,11 +41,11 @@ func (p Processor) Process(tmpl *templatev1.Template, values map[string]string, 
 		"expression": generator.NewExpressionValueGenerator(rand.New(rand.NewSource(time.Now().UnixNano()))), //nolint:gosec
 	})
 	if err := tmplProcessor.Process(tmpl); len(err) > 0 {
-		return nil, errors.Wrap(err.ToAggregate(), "unable to process template")
+		return nil, errs.Wrap(err.ToAggregate(), "unable to process template")
 	}
 	var result templatev1.Template
 	if err := p.scheme.Convert(tmpl, &result, nil); err != nil {
-		return nil, errors.Wrap(err, "failed to convert template to external template object")
+		return nil, errs.Wrap(err, "failed to convert template to external template object")
 	}
 	filtered := Filter(result.Objects, filters...)
 	objects := make([]runtimeclient.Object, len(filtered))

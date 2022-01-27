@@ -7,9 +7,10 @@ import (
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
+	errs "github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
@@ -58,7 +59,7 @@ func (s *ToolchainClusterService) AddOrUpdateToolchainCluster(cluster *toolchain
 
 	err := s.addToolchainCluster(log, cluster)
 	if err != nil {
-		return errors.Wrap(err, "the cluster was not added nor updated")
+		return errs.Wrap(err, "the cluster was not added nor updated")
 	}
 	return nil
 }
@@ -67,7 +68,7 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 	// create the restclient of toolchainCluster
 	clusterConfig, err := NewClusterConfig(s.client, toolchainCluster, s.timeout)
 	if err != nil {
-		return errors.Wrap(err, "cannot create ToolchainCluster Config")
+		return errs.Wrap(err, "cannot create ToolchainCluster Config")
 	}
 
 	var cl client.Client
@@ -83,14 +84,14 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 		if err := toolchainv1alpha1.AddToScheme(scheme); err != nil {
 			return err
 		}
-		if err := v1.AddToScheme(scheme); err != nil {
+		if err := corev1.AddToScheme(scheme); err != nil {
 			return err
 		}
 		cl, err = client.New(clusterConfig.RestConfig, client.Options{
 			Scheme: scheme,
 		})
 		if err != nil {
-			return errors.Wrap(err, "cannot create ToolchainCluster client")
+			return errs.Wrap(err, "cannot create ToolchainCluster client")
 		}
 	} else {
 		log.Info("reusing the client for the cached ToolchainCluster")
@@ -149,26 +150,26 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 
 	apiEndpoint := toolchainCluster.Spec.APIEndpoint
 	if apiEndpoint == "" {
-		return nil, errors.Errorf("the api endpoint of cluster %s is empty", clusterName)
+		return nil, errs.Errorf("the api endpoint of cluster %s is empty", clusterName)
 	}
 
 	secretName := toolchainCluster.Spec.SecretRef.Name
 	if secretName == "" {
-		return nil, errors.Errorf("cluster %s does not have a secret name", clusterName)
+		return nil, errs.Errorf("cluster %s does not have a secret name", clusterName)
 	}
-	secret := &v1.Secret{}
+	secret := &corev1.Secret{}
 	name := types.NamespacedName{
 		Namespace: toolchainCluster.Namespace,
 		Name:      secretName,
 	}
 	err := cl.Get(context.TODO(), name, secret)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to get secret %s for cluster %s", name, clusterName)
+		return nil, errs.Wrapf(err, "unable to get secret %s for cluster %s", name, clusterName)
 	}
 
 	token, tokenFound := secret.Data[toolchainTokenKey]
 	if !tokenFound || len(token) == 0 {
-		return nil, errors.Errorf("the secret for cluster %s is missing a non-empty value for %q", clusterName, toolchainTokenKey)
+		return nil, errs.Errorf("the secret for cluster %s is missing a non-empty value for %q", clusterName, toolchainTokenKey)
 	}
 
 	restConfig, err := clientcmd.BuildConfigFromFlags(apiEndpoint, "")
@@ -199,7 +200,7 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 func IsReady(clusterStatus *toolchainv1alpha1.ToolchainClusterStatus) bool {
 	for _, condition := range clusterStatus.Conditions {
 		if condition.Type == toolchainv1alpha1.ToolchainClusterReady {
-			if condition.Status == v1.ConditionTrue {
+			if condition.Status == corev1.ConditionTrue {
 				return true
 			}
 		}

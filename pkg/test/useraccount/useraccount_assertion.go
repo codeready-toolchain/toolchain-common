@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,7 +43,7 @@ func AssertThatUserAccount(t *testing.T, name string, client client.Client) *Ass
 func (a *Assertion) DoesNotExist() *Assertion {
 	err := a.loadUaAssertion()
 	require.Error(a.t, err)
-	assert.IsType(a.t, metav1.StatusReasonNotFound, errors.ReasonForError(err))
+	assert.IsType(a.t, metav1.StatusReasonNotFound, apierrors.ReasonForError(err))
 	return a
 }
 

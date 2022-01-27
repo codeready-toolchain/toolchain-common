@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -201,12 +201,12 @@ func TestLoadLatest(t *testing.T) {
 	defer restore()
 	t.Run("config found", func(t *testing.T) {
 		initConfig := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(1100))
-		initSecret := &v1.Secret{
+		initSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "notification-secret",
 				Namespace: test.HostOperatorNs,
 			},
-			Type: v1.SecretTypeOpaque,
+			Type: corev1.SecretTypeOpaque,
 			Data: map[string][]byte{
 				"mailgunAPIKey": []byte("abc123"),
 			},
@@ -320,12 +320,12 @@ func TestMultipleExecutionsInParallel(t *testing.T) {
 	var waitForFinished sync.WaitGroup
 	initconfig := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(1, testconfig.PerMemberCluster("member", 1)))
 
-	secret := &v1.Secret{
+	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "notification-secret",
 			Namespace: test.HostOperatorNs,
 		},
-		Type: v1.SecretTypeOpaque,
+		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			"mailgunAPIKey": []byte("abc0"),
 		},

@@ -7,7 +7,7 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 
 	"github.com/stretchr/testify/assert"
-	apiv1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,17 +23,17 @@ func TestConditionsMatch(t *testing.T) {
 			assert.True(t, ConditionsMatch(actual(),
 				toolchainv1alpha1.Condition{
 					Type:               testType2,
-					Status:             apiv1.ConditionFalse,
+					Status:             corev1.ConditionFalse,
 					Reason:             "reason2",
 					LastTransitionTime: metav1.NewTime(time.Now()),
 				},
 				toolchainv1alpha1.Condition{
 					Type:   testType3,
-					Status: apiv1.ConditionUnknown,
+					Status: corev1.ConditionUnknown,
 				},
 				toolchainv1alpha1.Condition{
 					Type:    testType1,
-					Status:  apiv1.ConditionTrue,
+					Status:  corev1.ConditionTrue,
 					Reason:  "reason1",
 					Message: "message1",
 				},
@@ -61,7 +61,7 @@ func TestConditionsMatch(t *testing.T) {
 				conditions[1],
 				toolchainv1alpha1.Condition{
 					Type:    testType3,
-					Status:  apiv1.ConditionUnknown,
+					Status:  corev1.ConditionUnknown,
 					Message: "unexpected message",
 				},
 			))
@@ -75,7 +75,7 @@ func TestContainsCondition(t *testing.T) {
 		assert.True(t, ContainsCondition(actual(),
 			toolchainv1alpha1.Condition{
 				Type:    testType1,
-				Status:  apiv1.ConditionTrue,
+				Status:  corev1.ConditionTrue,
 				Reason:  "reason1",
 				Message: "message1",
 			}))
@@ -101,7 +101,7 @@ func TestContainsCondition(t *testing.T) {
 			assert.False(t, ContainsCondition(conditions,
 				toolchainv1alpha1.Condition{
 					Type:    conditions[0].Type,
-					Status:  apiv1.ConditionUnknown,
+					Status:  corev1.ConditionUnknown,
 					Reason:  conditions[0].Reason,
 					Message: conditions[0].Message,
 				}))
@@ -135,20 +135,20 @@ func actual() []toolchainv1alpha1.Condition {
 	return []toolchainv1alpha1.Condition{
 		{
 			Type:               testType1,
-			Status:             apiv1.ConditionTrue,
+			Status:             corev1.ConditionTrue,
 			Reason:             "reason1",
 			Message:            "message1",
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-time.Second)),
 		},
 		{
 			Type:               testType2,
-			Status:             apiv1.ConditionFalse,
+			Status:             corev1.ConditionFalse,
 			Reason:             "reason2",
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-time.Minute)),
 		},
 		{
 			Type:   testType3,
-			Status: apiv1.ConditionUnknown,
+			Status: corev1.ConditionUnknown,
 		},
 	}
 }

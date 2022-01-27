@@ -8,7 +8,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func getOrFetchCachedToolchainCluster() func(name string) (*CachedToolchainCluster, bool) {
@@ -462,7 +462,7 @@ type clusterOption func(*CachedToolchainCluster)
 var ready clusterOption = func(c *CachedToolchainCluster) {
 	c.ClusterStatus.Conditions = append(c.ClusterStatus.Conditions, toolchainv1alpha1.ToolchainClusterCondition{
 		Type:   toolchainv1alpha1.ToolchainClusterReady,
-		Status: v1.ConditionTrue,
+		Status: corev1.ConditionTrue,
 	})
 }
 
@@ -470,7 +470,7 @@ var ready clusterOption = func(c *CachedToolchainCluster) {
 var notReady clusterOption = func(c *CachedToolchainCluster) {
 	c.ClusterStatus.Conditions = append(c.ClusterStatus.Conditions, toolchainv1alpha1.ToolchainClusterCondition{
 		Type:   toolchainv1alpha1.ToolchainClusterReady,
-		Status: v1.ConditionFalse,
+		Status: corev1.ConditionFalse,
 	})
 }
 

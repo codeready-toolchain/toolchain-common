@@ -9,7 +9,7 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
+	errs "github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -101,7 +101,7 @@ func (hc *HealthChecker) updateIndividualClusterStatus(toolchainCluster *toolcha
 
 	toolchainCluster.Status = *currentClusterStatus
 	if err := hc.localClusterClient.Status().Update(context.TODO(), toolchainCluster); err != nil {
-		return errors.Wrapf(err, "Failed to update the status of cluster %s", toolchainCluster.Name)
+		return errs.Wrapf(err, "Failed to update the status of cluster %s", toolchainCluster.Name)
 	}
 	return nil
 }

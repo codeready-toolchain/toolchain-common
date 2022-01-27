@@ -7,11 +7,12 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -114,7 +115,7 @@ func AddToolchainClusterFailsBecauseOfEmptySecret(t *testing.T, functionToVerify
 	toolchainCluster, _ := test.NewToolchainCluster("east", "secret", status,
 		Labels("", "", test.NameHost))
 	secret := &corev1.Secret{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "test-namespace",
 		}}
