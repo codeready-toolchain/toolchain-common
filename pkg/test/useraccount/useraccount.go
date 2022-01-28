@@ -14,6 +14,9 @@ func NewUserAccountFromMur(mur *toolchainv1alpha1.MasterUserRecord, modifiers ..
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mur.Name,
 			Namespace: test.MemberOperatorNs,
+			Labels: map[string]string{
+				toolchainv1alpha1.TierLabelKey: mur.Spec.TierName,
+			},
 		},
 		Spec: toolchainv1alpha1.UserAccountSpec{
 			UserID:   mur.Spec.UserID,

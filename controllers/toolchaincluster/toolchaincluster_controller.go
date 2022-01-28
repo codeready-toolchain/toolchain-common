@@ -51,7 +51,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 
 	// Fetch the ToolchainCluster instance
 	toolchainCluster := &toolchainv1alpha1.ToolchainCluster{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, toolchainCluster)
+	err := r.client.Get(ctx, request.NamespacedName, toolchainCluster)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			r.clusterCacheService.DeleteToolchainCluster(request.Name)

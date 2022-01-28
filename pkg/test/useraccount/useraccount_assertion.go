@@ -90,6 +90,16 @@ func (a *Assertion) MatchMasterUserRecord(mur *toolchainv1alpha1.MasterUserRecor
 	return a
 }
 
+// HasLabelWithValue verifies that the UserAccount has
+// a label with the given key and value
+func (a *Assertion) HasLabelWithValue(key, value string) *Assertion {
+	err := a.loadUaAssertion()
+	require.NoError(a.t, err)
+	require.NotNil(a.t, a.userAccount.Labels)
+	assert.Equal(a.t, value, a.userAccount.Labels[key])
+	return a
+}
+
 func (a *Assertion) HasSpec(spec toolchainv1alpha1.UserAccountSpec) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)

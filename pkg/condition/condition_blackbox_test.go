@@ -534,11 +534,12 @@ func conditions(size int, prefix string) []toolchainv1alpha1.Condition {
 
 func reverseStatus(status apiv1.ConditionStatus) apiv1.ConditionStatus {
 	switch status {
-	case apiv1.ConditionTrue:
+	case apiv1.ConditionTrue, apiv1.ConditionUnknown:
 		return apiv1.ConditionFalse
 	case apiv1.ConditionFalse:
 		return apiv1.ConditionTrue
+	default:
+		// Unknown
+		return apiv1.ConditionFalse
 	}
-	// Unknown
-	return apiv1.ConditionFalse
 }
