@@ -1,7 +1,7 @@
 module github.com/codeready-toolchain/toolchain-common
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20220110101730-04d30e90a574
+	github.com/codeready-toolchain/api v0.0.0-20220128071955-6baa0dfc9574
 	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.7 // indirect
@@ -33,7 +33,5 @@ require (
 	k8s.io/kubectl v0.20.2 // indirect
 	sigs.k8s.io/controller-runtime v0.8.3
 )
-
-replace github.com/codeready-toolchain/api => github.com/xcoulon/api v0.0.0-20220127135604-0fab356f7a15
 
 go 1.16
