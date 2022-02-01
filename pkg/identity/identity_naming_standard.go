@@ -18,6 +18,8 @@ type identityNamingStandard struct {
 	provider string
 }
 
+// NewIdentityNamingStandard creates an identityNamingStandard instance that encapsulates the formal naming standards
+// required when creating Identity resources
 func NewIdentityNamingStandard(userID, provider string) *identityNamingStandard {
 	return &identityNamingStandard{
 		userID: userID,
@@ -25,6 +27,8 @@ func NewIdentityNamingStandard(userID, provider string) *identityNamingStandard 
 	}
 }
 
+// ApplyToIdentity sets the resource name, provider name and provider username properties to the correct values
+// for the specified identity resource
 func (s *identityNamingStandard) ApplyToIdentity(identity *userv1.Identity) {
 	identity.Name = s.IdentityName()
 	identity.ProviderName = s.provider
@@ -39,6 +43,7 @@ func (s *identityNamingStandard) username() string {
 	return value
 }
 
+// IdentityName returns a value that may be used to name an Identity resource
 func (s *identityNamingStandard) IdentityName() string {
 	return fmt.Sprintf("%s:%s", s.provider, s.username())
 }
