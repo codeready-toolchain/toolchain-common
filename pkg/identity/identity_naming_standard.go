@@ -14,7 +14,7 @@ const (
 var dns1123ValueRegexp = regexp.MustCompile("^" + dns1123Value + "$")
 
 type identityNamingStandard struct {
-	userID string
+	userID   string
 	provider string
 }
 
@@ -22,7 +22,7 @@ type identityNamingStandard struct {
 // required when creating Identity resources
 func NewIdentityNamingStandard(userID, provider string) *identityNamingStandard {
 	return &identityNamingStandard{
-		userID: userID,
+		userID:   userID,
 		provider: provider,
 	}
 }
