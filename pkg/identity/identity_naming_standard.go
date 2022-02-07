@@ -13,7 +13,7 @@ const (
 
 var dns1123ValueRegexp = regexp.MustCompile("^" + dns1123Value + "$")
 
-type IdentityNamingStandard interface {
+type NamingStandard interface {
 	ApplyToIdentity(identity *userv1.Identity)
 	IdentityName() string
 }
@@ -25,7 +25,7 @@ type identityNamingStandard struct {
 
 // NewIdentityNamingStandard creates an identityNamingStandard instance that encapsulates the formal naming standards
 // required when creating Identity resources
-func NewIdentityNamingStandard(userID, provider string) IdentityNamingStandard {
+func NewIdentityNamingStandard(userID, provider string) NamingStandard {
 	return &identityNamingStandard{
 		userID:   userID,
 		provider: provider,
