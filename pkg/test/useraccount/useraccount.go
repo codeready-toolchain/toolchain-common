@@ -19,6 +19,9 @@ func NewUserAccountFromMur(mur *toolchainv1alpha1.MasterUserRecord, modifiers ..
 			Labels: map[string]string{
 				toolchainv1alpha1.TierLabelKey: mur.Spec.TierName,
 			},
+			Annotations: map[string]string{
+				toolchainv1alpha1.UserEmailAnnotationKey: mur.Annotations[toolchainv1alpha1.MasterUserRecordEmailAnnotationKey],
+			},
 		},
 		Spec: toolchainv1alpha1.UserAccountSpec{
 			UserID:   mur.Spec.UserID,
