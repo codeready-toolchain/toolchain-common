@@ -13,20 +13,10 @@ func TestIdentityNamingStandard(t *testing.T) {
 		require.Equal(t, "rhd:john", identity.NewIdentityNamingStandard("john", "rhd").IdentityName())
 	})
 
-	t.Run("Check identity name with non-standard chars ok", func(t *testing.T) {
-		require.Equal(t, "rhd:b64:am9oblxi", identity.NewIdentityNamingStandard("john\\b", "rhd").IdentityName())
-	})
+	t.Run("Check identity name with non-standard chars encoded ok", func(t *testing.T) {
+		require.Equal(t, "rhd:b64:am9obi9i", identity.NewIdentityNamingStandard("john/b", "rhd").IdentityName())
 
-	t.Run("Check identity name with excessive length ok", func(t *testing.T) {
-		userID := "abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789" +
-			"abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789" +
-			"abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789"
-
-		require.Equal(t, "rhd:b64:YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5YWJjZGVmZ2hpamtsbW5vcHFyc3R1"+
-			"dnd4eXowMTIzNDU2Nzg5YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMT"+
-			"IzNDU2Nzg5YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5"+
-			"YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5YWJjZGVmZ2"+
-			"hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5", identity.NewIdentityNamingStandard(userID, "rhd").IdentityName())
+		require.Equal(t, "rhd:b64:amFjazphYmM", identity.NewIdentityNamingStandard("jack:abc", "rhd").IdentityName())
 	})
 
 	t.Run("Check apply to identity ok", func(t *testing.T) {
@@ -37,12 +27,12 @@ func TestIdentityNamingStandard(t *testing.T) {
 		require.Equal(t, "jill", id.ProviderUserName)
 	})
 
-	t.Run("Check apply to identity ok", func(t *testing.T) {
+	t.Run("Check apply to identity ok for userID with minus prefix", func(t *testing.T) {
 		id := &v1.Identity{}
-		identity.NewIdentityNamingStandard("jill", "rhd").ApplyToIdentity(id)
-		require.Equal(t, "rhd:jill", id.Name)
+		identity.NewIdentityNamingStandard("-194567", "rhd").ApplyToIdentity(id)
+		require.Equal(t, "rhd:-194567", id.Name)
 		require.Equal(t, "rhd", id.ProviderName)
-		require.Equal(t, "jill", id.ProviderUserName)
+		require.Equal(t, "-194567", id.ProviderUserName)
 	})
 
 	t.Run("Check apply to identity non-standard chars ok", func(t *testing.T) {

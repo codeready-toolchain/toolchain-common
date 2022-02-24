@@ -4,14 +4,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	userv1 "github.com/openshift/api/user/v1"
-	"regexp"
+	"strings"
 )
-
-const (
-	dns1123Value string = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
-)
-
-var dns1123ValueRegexp = regexp.MustCompile("^" + dns1123Value + "$")
 
 type NamingStandard interface {
 	ApplyToIdentity(identity *userv1.Identity)
@@ -53,10 +47,15 @@ func (s *identityNamingStandard) IdentityName() string {
 	return fmt.Sprintf("%s:%s", s.provider, s.username())
 }
 
-// isIdentityNameCompliant returns true if the specified name is RFC-1123 compliant, otherwise it returns false
+// isIdentityNameCompliant returns true if the specified name is compliant with the Openshift identity naming standard,
+// encapsulated in the code found in the urlEncodeIfNecessary() function, otherwise it returns false.
+//
+// The code at time of writing can be found at:
+//
+// https://github.com/openshift/oauth-server/blob/master/pkg/api/types.go#L108
+//
+// If this should change, then this function must be updated to reflect the changes.
+//
 func isIdentityNameCompliant(name string) bool {
-	if len(name) > 253 {
-		return false
-	}
-	return dns1123ValueRegexp.MatchString(name)
+	return !strings.ContainsAny(name, ":/")
 }
