@@ -52,7 +52,7 @@ func (s *identityNamingStandard) IdentityName() string {
 //
 // The code at time of writing can be found at:
 //
-// https://github.com/openshift/oauth-server/blob/master/pkg/api/types.go#L108
+// https://github.com/openshift/oauth-server/blob/ef385cc3c9d90ee52f6db211ceb751e04ae967f5/pkg/api/types.go#L108
 //
 // If this should change, then this function must be updated to reflect the changes.
 //
