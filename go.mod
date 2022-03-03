@@ -1,7 +1,7 @@
 module github.com/codeready-toolchain/toolchain-common
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20220215110522-1a78f33ee8fc
+	github.com/codeready-toolchain/api v0.0.0-20220224160109-6c2f447c08aa
 	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.7 // indirect
