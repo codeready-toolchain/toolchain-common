@@ -6,7 +6,6 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
-	testtier "github.com/codeready-toolchain/toolchain-common/pkg/test/tier"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
@@ -78,24 +77,6 @@ func WithClusterRes(revision string) NsTemplateSetSpecExp {
 	}
 }
 
-// HasNSTemplateSet verifies that the MUR has NSTemplateSetSpec with the expected values
-func (a *MasterUserRecordAssertion) HasNSTemplateSet(targetCluster string, expectations ...NsTemplateSetSpecExp) *MasterUserRecordAssertion {
-	err := a.loadMasterUserRecord()
-	require.NoError(a.t, err)
-	expectedTmplSetSpec := &toolchainv1alpha1.NSTemplateSetSpec{}
-	for _, modify := range expectations {
-		modify(expectedTmplSetSpec)
-	}
-	for _, ua := range a.mur.Spec.UserAccounts {
-		if ua.TargetCluster == targetCluster {
-			assert.Equal(a.t, *expectedTmplSetSpec, *ua.Spec.NSTemplateSet)
-			return a
-		}
-	}
-	a.t.Fatalf("unable to find an NSTemplateSet for the '%s' target cluster", targetCluster)
-	return a
-}
-
 func (a *MasterUserRecordAssertion) HasNoConditions() *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
@@ -164,15 +145,6 @@ func (a *MasterUserRecordAssertion) HasTier(tier toolchainv1alpha1.NSTemplateTie
 	return a
 }
 
-func (a *MasterUserRecordAssertion) AllUserAccountsHaveTier(tier toolchainv1alpha1.NSTemplateTier) *MasterUserRecordAssertion {
-	err := a.loadMasterUserRecord()
-	require.NoError(a.t, err)
-	for _, ua := range a.mur.Spec.UserAccounts {
-		a.userAccountHasTier(ua, tier)
-	}
-	return a
-}
-
 func (a *MasterUserRecordAssertion) UserAccountHasNoTier(targetCluster string) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
@@ -182,46 +154,6 @@ func (a *MasterUserRecordAssertion) UserAccountHasNoTier(targetCluster string) *
 		}
 	}
 	return a
-}
-
-func (a *MasterUserRecordAssertion) UserAccountHasTier(targetCluster string, tier toolchainv1alpha1.NSTemplateTier) *MasterUserRecordAssertion {
-	err := a.loadMasterUserRecord()
-	require.NoError(a.t, err)
-	for _, ua := range a.mur.Spec.UserAccounts {
-		if ua.TargetCluster == targetCluster {
-			a.userAccountHasTier(ua, tier)
-		}
-	}
-	// also verify the label on the master user record
-	assert.Contains(a.t, a.mur.Labels, toolchainv1alpha1.LabelKeyPrefix+tier.Name+"-tier-hash")
-	return a
-}
-
-func (a *MasterUserRecordAssertion) userAccountHasTier(ua toolchainv1alpha1.UserAccountEmbedded, tier toolchainv1alpha1.NSTemplateTier) {
-	require.NotNil(a.t, ua.Spec.NSTemplateSet)
-	assert.Equal(a.t, tier.Name, ua.Spec.NSTemplateSet.TierName)
-	actualTemplateRefs := []string{}
-	for _, ns := range ua.Spec.NSTemplateSet.Namespaces {
-		actualTemplateRefs = append(actualTemplateRefs, ns.TemplateRef)
-	}
-	expectedTemplateRefs := []string{}
-	for _, ns := range tier.Spec.Namespaces {
-		expectedTemplateRefs = append(expectedTemplateRefs, ns.TemplateRef)
-	}
-	a.t.Logf("expected templateRefs: %v vs actual: %v", expectedTemplateRefs, actualTemplateRefs)
-	assert.ElementsMatch(a.t, expectedTemplateRefs, actualTemplateRefs)
-	if tier.Spec.ClusterResources == nil {
-		// expect no ClusterResources or just a custom template (no template ref)
-		assert.True(a.t, ua.Spec.NSTemplateSet.ClusterResources == nil || ua.Spec.NSTemplateSet.ClusterResources.TemplateRef == "")
-	} else {
-		assert.Equal(a.t, tier.Spec.ClusterResources.TemplateRef, ua.Spec.NSTemplateSet.ClusterResources.TemplateRef)
-	}
-
-	// also verify the labels at the MUR resource level
-	hash, err := testtier.ComputeTemplateRefsHash(&tier)
-	require.NoError(a.t, err)
-	require.Contains(a.t, a.mur.Labels, testtier.TemplateTierHashLabelKey(tier.Name))
-	assert.Equal(a.t, hash, a.mur.Labels[testtier.TemplateTierHashLabelKey(tier.Name)])
 }
 
 func (a *MasterUserRecordAssertion) HasFinalizer() *MasterUserRecordAssertion {
@@ -296,35 +228,6 @@ func (a *MasterUserRecordAssertion) HasUserAccounts(count int) *MasterUserRecord
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	require.Len(a.t, a.mur.Spec.UserAccounts, count)
-	return a
-}
-
-func (a *MasterUserRecordAssertion) HasUserAccountTierName(tiername string) *MasterUserRecordAssertion {
-	err := a.loadMasterUserRecord()
-	require.NoError(a.t, err)
-	assert.Equal(a.t, tiername, a.mur.Spec.UserAccounts[0].Spec.NSTemplateSet.TierName)
-	return a
-}
-
-func (a *MasterUserRecordAssertion) HasUserAccountNamespaceTemplateRefs(refs ...string) *MasterUserRecordAssertion {
-	err := a.loadMasterUserRecord()
-	require.NoError(a.t, err)
-	nsRefs := make([]toolchainv1alpha1.NSTemplateSetNamespace, len(refs))
-	for i, ref := range refs {
-		nsRefs[i] = toolchainv1alpha1.NSTemplateSetNamespace{
-			TemplateRef: ref,
-		}
-	}
-	assert.Equal(a.t, nsRefs, a.mur.Spec.UserAccounts[0].Spec.NSTemplateSet.Namespaces)
-	return a
-}
-
-func (a *MasterUserRecordAssertion) HasUserAccountClusterResourceTemplateRefs(ref string) *MasterUserRecordAssertion {
-	err := a.loadMasterUserRecord()
-	require.NoError(a.t, err)
-	assert.Equal(a.t, &toolchainv1alpha1.NSTemplateSetClusterResources{
-		TemplateRef: ref,
-	}, a.mur.Spec.UserAccounts[0].Spec.NSTemplateSet.ClusterResources)
 	return a
 }
 
