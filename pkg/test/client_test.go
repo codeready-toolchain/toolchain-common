@@ -80,7 +80,6 @@ func TestNewClient(t *testing.T) {
 			assert.Equal(t, created, secret)
 			assert.EqualValues(t, 1, secret.Generation)
 
-			data = make(map[string][]byte)
 			data["newkey"] = []byte("newvalue")
 			created.Data = data
 			assert.NoError(t, fclient.Update(context.TODO(), created))

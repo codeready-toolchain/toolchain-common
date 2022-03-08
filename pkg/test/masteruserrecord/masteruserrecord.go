@@ -2,7 +2,6 @@ package masteruserrecord
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -85,16 +84,11 @@ func NewMasterUserRecords(t *testing.T, size int, nameFmt string, modifiers ...M
 
 func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier) *toolchainv1alpha1.MasterUserRecord {
 	userID := uuid.Must(uuid.NewV4()).String()
-	defaultTier := DefaultNSTemplateTier()
-	hash, err := testtier.ComputeTemplateRefsHash(&defaultTier) // we can assume the JSON marshalling will always work
-	require.NoError(t, err)
 	mur := &toolchainv1alpha1.MasterUserRecord{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: test.HostOperatorNs,
 			Name:      userName,
-			Labels: map[string]string{
-				testtier.TemplateTierHashLabelKey(DefaultNSTemplateTierName): hash,
-			},
+			Labels:    map[string]string{},
 			Annotations: map[string]string{
 				toolchainv1alpha1.MasterUserRecordEmailAnnotationKey: "joe@redhat.com",
 			},
@@ -105,7 +99,7 @@ func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier
 			UserAccounts: []toolchainv1alpha1.UserAccountEmbedded{newEmbeddedUa(test.MemberClusterName)},
 		},
 	}
-	err = Modify(mur, modifiers...)
+	err := Modify(mur, modifiers...)
 	require.NoError(t, err)
 	return mur
 }
@@ -114,12 +108,6 @@ func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
 	return toolchainv1alpha1.UserAccountEmbedded{
 		TargetCluster: targetCluster,
 		SyncIndex:     "123abc",
-		Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
-			UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
-				NSLimit:       "basic",
-				NSTemplateSet: &DefaultNSTemplateSet().Spec,
-			},
-		},
 	}
 }
 
@@ -186,16 +174,9 @@ func Account(cluster string, tier toolchainv1alpha1.NSTemplateTier, modifiers ..
 // AdditionalAccount sets an additional account on the MasterUserRecord
 func AdditionalAccount(cluster string, tier toolchainv1alpha1.NSTemplateTier, modifiers ...UaInMurModifier) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
-		templates := nstemplateSetFromTier(tier)
 		ua := toolchainv1alpha1.UserAccountEmbedded{
 			TargetCluster: cluster,
 			SyncIndex:     "123abc", // default value
-			Spec: toolchainv1alpha1.UserAccountSpecEmbedded{
-				UserAccountSpecBase: toolchainv1alpha1.UserAccountSpecBase{
-					NSLimit:       tier.Name,
-					NSTemplateSet: &templates,
-				},
-			},
 		}
 		// set the user account
 		mur.Spec.UserAccounts = append(mur.Spec.UserAccounts, ua)
@@ -214,18 +195,6 @@ func AdditionalAccount(cluster string, tier toolchainv1alpha1.NSTemplateTier, mo
 	}
 }
 
-func nstemplateSetFromTier(tier toolchainv1alpha1.NSTemplateTier) toolchainv1alpha1.NSTemplateSetSpec {
-	s := toolchainv1alpha1.NSTemplateSetSpec{}
-	s.TierName = tier.Name
-	s.Namespaces = make([]toolchainv1alpha1.NSTemplateSetNamespace, len(tier.Spec.Namespaces))
-	for i, ns := range tier.Spec.Namespaces {
-		s.Namespaces[i].TemplateRef = ns.TemplateRef
-	}
-	s.ClusterResources = &toolchainv1alpha1.NSTemplateSetClusterResources{}
-	s.ClusterResources.TemplateRef = tier.Spec.ClusterResources.TemplateRef
-	return s
-}
-
 func AdditionalAccounts(clusters ...string) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		for _, cluster := range clusters {
@@ -239,44 +208,6 @@ func TierName(tierName string) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		mur.Spec.TierName = tierName
 		return nil
-	}
-}
-
-func NsLimit(limit string) UaInMurModifier {
-	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
-		for i, ua := range mur.Spec.UserAccounts {
-			if ua.TargetCluster == targetCluster {
-				mur.Spec.UserAccounts[i].Spec.NSLimit = limit
-				return
-			}
-		}
-	}
-}
-
-func UserAccountTierName(tierName string) UaInMurModifier {
-	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
-		for i, ua := range mur.Spec.UserAccounts {
-			if ua.TargetCluster == targetCluster {
-				mur.Spec.UserAccounts[i].Spec.NSTemplateSet.TierName = tierName
-				return
-			}
-		}
-	}
-}
-
-func Namespace(nsType, revision string) UaInMurModifier {
-	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
-		for uaIndex, ua := range mur.Spec.UserAccounts {
-			if ua.TargetCluster == targetCluster {
-				for nsIndex, ns := range mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces {
-					if strings.Contains(ns.TemplateRef, nsType) {
-						templateRef := strings.ToLower(fmt.Sprintf("%s-%s-%s", mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.TierName, nsType, revision))
-						mur.Spec.UserAccounts[uaIndex].Spec.NSTemplateSet.Namespaces[nsIndex].TemplateRef = templateRef
-						return
-					}
-				}
-			}
-		}
 	}
 }
 

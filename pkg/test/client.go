@@ -113,6 +113,9 @@ func Update(ctx context.Context, cl *FakeClient, obj client.Object, opts ...clie
 	updatingMap["status"] = nil
 	updatingMap["kind"] = nil
 	updatingMap["apiVersion"] = nil
+	if updatingMap["spec"] == nil {
+		updatingMap["spec"] = map[string]interface{}{}
+	}
 
 	current, err := cleanObject(obj)
 	if err != nil {
@@ -129,6 +132,14 @@ func Update(ctx context.Context, cl *FakeClient, obj client.Object, opts ...clie
 	currentMap["status"] = nil
 	currentMap["kind"] = nil
 	currentMap["apiVersion"] = nil
+	if currentMap["spec"] == nil {
+		currentMap["spec"] = map[string]interface{}{}
+	}
+	for key, value := range currentMap {
+		if _, exist := updatingMap[key]; !exist && value == nil {
+			updatingMap[key] = nil
+		}
+	}
 
 	if !reflect.DeepEqual(updatingMap, currentMap) {
 		obj.SetGeneration(current.GetGeneration() + 1)
