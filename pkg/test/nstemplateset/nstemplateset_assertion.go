@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -61,7 +61,7 @@ func (a *Assertion) Get() *toolchainv1alpha1.NSTemplateSet {
 func (a *Assertion) DoesNotExist() *Assertion {
 	err := a.loadNSTemplateSet()
 	require.Error(a.t, err)
-	assert.IsType(a.t, v1.StatusReasonNotFound, errors.ReasonForError(err))
+	assert.IsType(a.t, metav1.StatusReasonNotFound, errors.ReasonForError(err))
 	return a
 }
 
@@ -131,6 +131,31 @@ func (a *Assertion) HasSpecNamespaces(types ...string) *Assertion {
 	require.Len(a.t, a.nsTmplSet.Spec.Namespaces, len(types))
 	for i, nstype := range types {
 		assert.Equal(a.t, NewTierTemplateName(a.nsTmplSet.Spec.TierName, nstype, "abcde11"), a.nsTmplSet.Spec.Namespaces[i].TemplateRef)
+	}
+	return a
+}
+
+func (a *Assertion) HasSpaceRoleForUser(templateRef, username string) *Assertion {
+	err := a.loadNSTemplateSet()
+	require.NoError(a.t, err)
+	for _, r := range a.nsTmplSet.Spec.SpaceRoles {
+		if r.TemplateRef == templateRef {
+			assert.Contains(a.t, r.Usernames, username)
+			return a
+		}
+	}
+	a.t.Fatalf("no spacerole found for user '%s' with templateRef '%s'", username, templateRef)
+	return a
+}
+
+func (a *Assertion) HasNoSpaceRoleForUser(templateRef, username string) *Assertion {
+	err := a.loadNSTemplateSet()
+	require.NoError(a.t, err)
+	for _, r := range a.nsTmplSet.Spec.SpaceRoles {
+		if r.TemplateRef == templateRef {
+			assert.NotContains(a.t, r.Usernames, username)
+			return a
+		}
 	}
 	return a
 }
