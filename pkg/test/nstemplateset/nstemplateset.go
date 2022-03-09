@@ -1,7 +1,6 @@
 package nstemplateset
 
 import (
-	"sort"
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
@@ -35,22 +34,6 @@ func WithReferencesFor(nstemplateTier *toolchainv1alpha1.NSTemplateTier) Option 
 			nstmplSet.Spec.Namespaces = make([]toolchainv1alpha1.NSTemplateSetNamespace, len(nstemplateTier.Spec.Namespaces))
 			for i, ns := range nstemplateTier.Spec.Namespaces {
 				nstmplSet.Spec.Namespaces[i] = toolchainv1alpha1.NSTemplateSetNamespace(ns)
-			}
-		}
-
-		// space roles
-		// append by alphabetical order of role names
-		if len(nstemplateTier.Spec.SpaceRoles) > 0 {
-			roles := []string{}
-			for r := range nstemplateTier.Spec.SpaceRoles {
-				roles = append(roles, r)
-			}
-			sort.Strings(roles)
-			for _, r := range roles {
-				nstmplSet.Spec.SpaceRoles = append(nstmplSet.Spec.SpaceRoles, toolchainv1alpha1.NSTemplateSetSpaceRole{
-					TemplateRef: nstemplateTier.Spec.SpaceRoles[r].TemplateRef,
-					// TODO: include usernames from SpaceBindings
-				})
 			}
 		}
 	}
