@@ -107,7 +107,6 @@ func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier
 func newEmbeddedUa(targetCluster string) toolchainv1alpha1.UserAccountEmbedded {
 	return toolchainv1alpha1.UserAccountEmbedded{
 		TargetCluster: targetCluster,
-		SyncIndex:     "123abc",
 	}
 }
 
@@ -176,7 +175,6 @@ func AdditionalAccount(cluster string, tier toolchainv1alpha1.NSTemplateTier, mo
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		ua := toolchainv1alpha1.UserAccountEmbedded{
 			TargetCluster: cluster,
-			SyncIndex:     "123abc", // default value
 		}
 		// set the user account
 		mur.Spec.UserAccounts = append(mur.Spec.UserAccounts, ua)
@@ -208,17 +206,6 @@ func TierName(tierName string) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		mur.Spec.TierName = tierName
 		return nil
-	}
-}
-
-func SyncIndex(index string) UaInMurModifier {
-	return func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord) {
-		for i, ua := range mur.Spec.UserAccounts {
-			if ua.TargetCluster == targetCluster {
-				mur.Spec.UserAccounts[i].SyncIndex = index
-				return
-			}
-		}
 	}
 }
 

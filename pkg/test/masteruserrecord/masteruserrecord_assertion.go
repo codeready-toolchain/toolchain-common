@@ -111,15 +111,6 @@ func (a *MasterUserRecordAssertion) hasUserAccount(targetCluster string) *toolch
 	return nil
 }
 
-func (a *MasterUserRecordAssertion) AllUserAccountsHaveStatusSyncIndex(syncIndex string) *MasterUserRecordAssertion {
-	err := a.loadMasterUserRecord()
-	require.NoError(a.t, err)
-	for _, ua := range a.mur.Status.UserAccounts {
-		assert.Equal(a.t, syncIndex, ua.SyncIndex)
-	}
-	return a
-}
-
 func (a *MasterUserRecordAssertion) AllUserAccountsHaveCluster(expected toolchainv1alpha1.Cluster) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
