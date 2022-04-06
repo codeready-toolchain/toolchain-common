@@ -73,13 +73,6 @@ func (a *Assertion) HasNoFinalizer() *Assertion {
 	return a
 }
 
-func (a *Assertion) MatchEmbeddedSpec(spec toolchainv1alpha1.UserAccountSpecEmbedded) *Assertion {
-	err := a.loadUaAssertion()
-	require.NoError(a.t, err)
-	assert.Equal(a.t, spec.UserAccountSpecBase, a.userAccount.Spec.UserAccountSpecBase)
-	return a
-}
-
 func (a *Assertion) MatchMasterUserRecord(mur *toolchainv1alpha1.MasterUserRecord) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
