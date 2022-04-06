@@ -145,17 +145,6 @@ func (a *MasterUserRecordAssertion) HasTier(tier toolchainv1alpha1.NSTemplateTie
 	return a
 }
 
-func (a *MasterUserRecordAssertion) UserAccountHasNoTier(targetCluster string) *MasterUserRecordAssertion {
-	err := a.loadMasterUserRecord()
-	require.NoError(a.t, err)
-	for _, ua := range a.mur.Spec.UserAccounts {
-		if ua.TargetCluster == targetCluster {
-			assert.Nil(a.t, ua.Spec.NSTemplateSet)
-		}
-	}
-	return a
-}
-
 func (a *MasterUserRecordAssertion) HasFinalizer() *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
