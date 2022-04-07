@@ -1,7 +1,7 @@
 module github.com/codeready-toolchain/toolchain-common
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20220407065959-2029a1f03cfc
+	github.com/codeready-toolchain/api v0.0.0-20220407172226-5247322e920d
 	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
 	github.com/go-logr/logr v0.4.0
 	github.com/gofrs/uuid v3.3.0+incompatible
@@ -23,7 +23,5 @@ require (
 	k8s.io/client-go v0.22.7
 	sigs.k8s.io/controller-runtime v0.10.3
 )
-
-replace github.com/codeready-toolchain/api => github.com/rajivnathan/api v0.0.0-20220407131342-1fc895f0c0bb
 
 go 1.16
