@@ -482,13 +482,6 @@ func (o TiersOption) DurationBeforeChangeTierRequestDeletion(value string) Tiers
 	return o
 }
 
-func (o TiersOption) TemplateUpdateRequestMaxPoolSize(value int) TiersOption {
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.Tiers.TemplateUpdateRequestMaxPoolSize = &value
-	})
-	return o
-}
-
 type ToolchainStatusOption struct {
 	*ToolchainConfigOptionImpl
 }
