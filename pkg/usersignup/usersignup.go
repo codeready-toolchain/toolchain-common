@@ -1,7 +1,7 @@
 package usersignup
 
 import (
-	"crypto/md5"
+	"crypto/md5" // nolint:gosec
 	"encoding/hex"
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
