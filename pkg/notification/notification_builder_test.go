@@ -6,7 +6,7 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/codeready-toolchain/api/api/v1alpha1"
-	test2 "github.com/codeready-toolchain/toolchain-common/pkg/usersignup"
+	test2 "github.com/codeready-toolchain/toolchain-common/pkg/test/usersignup"
 
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/require"
