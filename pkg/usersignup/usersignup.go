@@ -38,6 +38,7 @@ func TransformUsername(username string) string {
 	}
 	return newUsername
 }
+
 type Modifier func(*toolchainv1alpha1.UserSignup)
 
 func NewUserSignup(modifiers ...Modifier) *toolchainv1alpha1.UserSignup {
