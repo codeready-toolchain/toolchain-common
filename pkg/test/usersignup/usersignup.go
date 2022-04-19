@@ -1,16 +1,16 @@
 package usersignup
 
 import (
-	"crypto/md5"// nolint:gosec
+	"crypto/md5" // nolint:gosec
 	"encoding/hex"
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/codeready-toolchain/toolchain-common/pkg/states"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/gofrs/uuid"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
-	v1 "k8s.io/api/core/v1"
 )
 
 func WithTargetCluster(targetCluster string) UserSignupModifier {
