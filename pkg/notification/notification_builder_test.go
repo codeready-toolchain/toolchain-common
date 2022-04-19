@@ -6,7 +6,7 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/codeready-toolchain/api/api/v1alpha1"
-	test2 "github.com/codeready-toolchain/toolchain-common/pkg/test/usersignup"
+	testusersignup "github.com/codeready-toolchain/toolchain-common/pkg/test/usersignup"
 
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/require"
@@ -60,7 +60,7 @@ func TestNotificationBuilder(t *testing.T) {
 
 	t.Run("test notification builder with user context", func(t *testing.T) {
 		// when
-		userSignup := test2.NewUserSignup()
+		userSignup := testusersignup.NewUserSignup()
 		userSignup.Spec.GivenName = "John"
 		userSignup.Spec.FamilyName = "Smith"
 		userSignup.Spec.Company = "ACME Corp"
