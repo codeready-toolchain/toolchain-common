@@ -13,25 +13,25 @@ import (
 	"time"
 )
 
-func WithTargetCluster(targetCluster string) UserSignupModifier {
+func WithTargetCluster(targetCluster string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.Spec.TargetCluster = targetCluster
 	}
 }
 
-func WithOriginalSub(originalSub string) UserSignupModifier {
+func WithOriginalSub(originalSub string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.Spec.OriginalSub = originalSub
 	}
 }
 
-func Approved() UserSignupModifier {
+func Approved() Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		states.SetApproved(userSignup, true)
 	}
 }
 
-func ApprovedAutomatically(before time.Duration) UserSignupModifier {
+func ApprovedAutomatically(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		states.SetApproved(userSignup, true)
 		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
@@ -44,13 +44,13 @@ func ApprovedAutomatically(before time.Duration) UserSignupModifier {
 	}
 }
 
-func Deactivated() UserSignupModifier {
+func Deactivated() Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		states.SetDeactivated(userSignup, true)
 	}
 }
 
-func DeactivatedWithLastTransitionTime(before time.Duration) UserSignupModifier {
+func DeactivatedWithLastTransitionTime(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		states.SetDeactivated(userSignup, true)
 
@@ -65,7 +65,7 @@ func DeactivatedWithLastTransitionTime(before time.Duration) UserSignupModifier 
 	}
 }
 
-func VerificationRequired(before time.Duration) UserSignupModifier {
+func VerificationRequired(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		states.SetVerificationRequired(userSignup, true)
 
@@ -81,25 +81,25 @@ func VerificationRequired(before time.Duration) UserSignupModifier {
 	}
 }
 
-func WithUsername(username string) UserSignupModifier {
+func WithUsername(username string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.Spec.Username = username
 	}
 }
 
-func WithLabel(key, value string) UserSignupModifier {
+func WithLabel(key, value string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.Labels[key] = value
 	}
 }
 
-func WithStateLabel(stateValue string) UserSignupModifier {
+func WithStateLabel(stateValue string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.Labels[toolchainv1alpha1.UserSignupStateLabelKey] = stateValue
 	}
 }
 
-func WithEmail(email string) UserSignupModifier {
+func WithEmail(email string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		md5hash := md5.New() // nolint:gosec
 		// Ignore the error, as this implementation cannot return one
@@ -110,7 +110,7 @@ func WithEmail(email string) UserSignupModifier {
 	}
 }
 
-func SignupComplete(reason string) UserSignupModifier {
+func SignupComplete(reason string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
 			toolchainv1alpha1.Condition{
@@ -121,50 +121,50 @@ func SignupComplete(reason string) UserSignupModifier {
 	}
 }
 
-func CreatedBefore(before time.Duration) UserSignupModifier {
+func CreatedBefore(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now().Add(-before)}
 	}
 }
 
-func BeingDeleted() UserSignupModifier {
+func BeingDeleted() Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.ObjectMeta.DeletionTimestamp = &metav1.Time{Time: time.Now()}
 	}
 }
 
-func WithActivations(value string) UserSignupModifier {
+func WithActivations(value string) Modifier {
 	return WithAnnotation(toolchainv1alpha1.UserSignupActivationCounterAnnotationKey, value)
 }
 
-func WithAnnotation(key, value string) UserSignupModifier {
+func WithAnnotation(key, value string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.Annotations[key] = value
 	}
 }
 
-func WithoutAnnotation(key string) UserSignupModifier {
+func WithoutAnnotation(key string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		delete(userSignup.Annotations, key)
 	}
 }
 
-func WithoutAnnotations() UserSignupModifier {
+func WithoutAnnotations() Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.Annotations = map[string]string{}
 	}
 }
 
-func WithName(name string) UserSignupModifier {
+func WithName(name string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.Name = name
 		userSignup.Spec.Username = name
 	}
 }
 
-type UserSignupModifier func(*toolchainv1alpha1.UserSignup)
+type Modifier func(*toolchainv1alpha1.UserSignup)
 
-func NewUserSignup(modifiers ...UserSignupModifier) *toolchainv1alpha1.UserSignup {
+func NewUserSignup(modifiers ...Modifier) *toolchainv1alpha1.UserSignup {
 	signup := &toolchainv1alpha1.UserSignup{
 		ObjectMeta: NewUserSignupObjectMeta("", "foo@redhat.com"),
 		Spec: toolchainv1alpha1.UserSignupSpec{
