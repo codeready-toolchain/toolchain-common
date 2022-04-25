@@ -8,7 +8,6 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
-	testtier "github.com/codeready-toolchain/toolchain-common/pkg/test/tier"
 	"github.com/gofrs/uuid"
 	"github.com/redhat-cop/operator-utils/pkg/util"
 	"github.com/stretchr/testify/require"
@@ -163,15 +162,15 @@ func TargetCluster(targetCluster string) MurModifier {
 }
 
 // Account sets the first account on the MasterUserRecord
-func Account(cluster string, tier toolchainv1alpha1.NSTemplateTier, modifiers ...UaInMurModifier) MurModifier {
+func Account(cluster string, modifiers ...UaInMurModifier) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		mur.Spec.UserAccounts = []toolchainv1alpha1.UserAccountEmbedded{}
-		return AdditionalAccount(cluster, tier, modifiers...)(mur)
+		return AdditionalAccount(cluster, modifiers...)(mur)
 	}
 }
 
 // AdditionalAccount sets an additional account on the MasterUserRecord
-func AdditionalAccount(cluster string, tier toolchainv1alpha1.NSTemplateTier, modifiers ...UaInMurModifier) MurModifier {
+func AdditionalAccount(cluster string, modifiers ...UaInMurModifier) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		ua := toolchainv1alpha1.UserAccountEmbedded{
 			TargetCluster: cluster,
@@ -180,14 +179,6 @@ func AdditionalAccount(cluster string, tier toolchainv1alpha1.NSTemplateTier, mo
 		mur.Spec.UserAccounts = append(mur.Spec.UserAccounts, ua)
 		for _, modify := range modifiers {
 			modify(cluster, mur)
-		}
-		// set the labels for the tier templates in use
-		hash, err := testtier.ComputeTemplateRefsHash(&tier)
-		if err != nil {
-			return err
-		}
-		mur.ObjectMeta.Labels = map[string]string{
-			toolchainv1alpha1.LabelKeyPrefix + tier.Name + "-tier-hash": hash,
 		}
 		return nil
 	}
