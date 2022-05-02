@@ -135,29 +135,18 @@ func (a *Assertion) HasSpecNamespaces(types ...string) *Assertion {
 	return a
 }
 
-func (a *Assertion) HasSpaceRoleForUser(templateRef, username string) *Assertion {
+func (a *Assertion) HasSpaceRoles(expectedSpaceRoles ...toolchainv1alpha1.NSTemplateSetSpaceRole) *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
-	for _, r := range a.nsTmplSet.Spec.SpaceRoles {
-		if r.TemplateRef == templateRef {
-			assert.Contains(a.t, r.Usernames, username)
-			return a
-		}
-	}
-	a.t.Fatalf("no spacerole found for user '%s' with templateRef '%s'", username, templateRef)
+	assert.ElementsMatch(a.t, expectedSpaceRoles, a.nsTmplSet.Spec.SpaceRoles)
 	return a
 }
 
-func (a *Assertion) HasNoSpaceRoleForUser(templateRef, username string) *Assertion {
-	err := a.loadNSTemplateSet()
-	require.NoError(a.t, err)
-	for _, r := range a.nsTmplSet.Spec.SpaceRoles {
-		if r.TemplateRef == templateRef {
-			assert.NotContains(a.t, r.Usernames, username)
-			return a
-		}
+func SpaceRole(templateRef string, usernames ...string) toolchainv1alpha1.NSTemplateSetSpaceRole {
+	return toolchainv1alpha1.NSTemplateSetSpaceRole{
+		TemplateRef: templateRef,
+		Usernames:   usernames,
 	}
-	return a
 }
 
 // NewTierTemplateName: a utility func to generate a TierTemplate name, based on the given tier, type and revision.
