@@ -24,4 +24,6 @@ require (
 	sigs.k8s.io/controller-runtime v0.10.3
 )
 
+replace github.com/codeready-toolchain/api => github.com/xcoulon/api v0.0.0-20220428125831-fa01c515dd21
+
 go 1.16
