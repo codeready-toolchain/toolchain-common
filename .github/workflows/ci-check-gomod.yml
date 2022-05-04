@@ -1,4 +1,4 @@
-name: ci-check
+name: ci-check-gomod
 on:
   pull_request:
     branches:
