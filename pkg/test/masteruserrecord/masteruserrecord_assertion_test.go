@@ -41,7 +41,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 			}
 			// when
 			murtest.AssertThatMasterUserRecord(mockT, "foo", client).
-				HasTier(murtest.DefaultNSTemplateTier())
+				HasTier(murtest.DefaultUserTier())
 			// then: all good
 			assert.False(t, mockT.CalledFailNow())
 			assert.False(t, mockT.CalledFatalf())
@@ -63,7 +63,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 					}
 					return fmt.Errorf("unexpected object key: %v", key)
 				}
-				otherTier := murtest.DefaultNSTemplateTier()
+				otherTier := murtest.DefaultUserTier()
 				otherTier.Name = "other"
 				// when
 				murtest.AssertThatMasterUserRecord(mockT, "foo", client).

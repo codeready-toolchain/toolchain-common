@@ -129,7 +129,7 @@ func (a *MasterUserRecordAssertion) AllUserAccountsHaveCondition(expected toolch
 	return a
 }
 
-func (a *MasterUserRecordAssertion) HasTier(tier toolchainv1alpha1.NSTemplateTier) *MasterUserRecordAssertion {
+func (a *MasterUserRecordAssertion) HasTier(tier toolchainv1alpha1.UserTier) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
 	assert.Equal(a.t, tier.Name, a.mur.Spec.TierName)

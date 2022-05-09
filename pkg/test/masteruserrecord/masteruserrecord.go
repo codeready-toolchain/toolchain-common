@@ -18,57 +18,17 @@ import (
 type MurModifier func(mur *toolchainv1alpha1.MasterUserRecord) error
 type UaInMurModifier func(targetCluster string, mur *toolchainv1alpha1.MasterUserRecord)
 
-const DefaultNSTemplateTierName = "basic"
+const DefaultUserTierName = "deactivate30"
 
-// DefaultNSTemplateTier the default NSTemplateTier used to initialize the MasterUserRecord
-func DefaultNSTemplateTier() toolchainv1alpha1.NSTemplateTier {
-	return toolchainv1alpha1.NSTemplateTier{
+// DefaultUserTier the default UserTier used to initialize the MasterUserRecord
+func DefaultUserTier() toolchainv1alpha1.UserTier {
+	return toolchainv1alpha1.UserTier{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: test.HostOperatorNs,
-			Name:      DefaultNSTemplateTierName,
+			Name:      DefaultUserTierName,
 		},
-		Spec: toolchainv1alpha1.NSTemplateTierSpec{
-			Namespaces: []toolchainv1alpha1.NSTemplateTierNamespace{
-				{
-					TemplateRef: "basic-dev-123abc",
-				},
-				{
-					TemplateRef: "basic-code-123abc",
-				},
-				{
-					TemplateRef: "basic-stage-123abc",
-				},
-			},
-			ClusterResources: &toolchainv1alpha1.NSTemplateTierClusterResources{
-				TemplateRef: "basic-clusterresources-654321a",
-			},
-		},
-	}
-}
-
-// DefaultNSTemplateSet the default NSTemplateSet used to initialize the MasterUserRecord
-func DefaultNSTemplateSet() *toolchainv1alpha1.NSTemplateSet {
-	return &toolchainv1alpha1.NSTemplateSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: test.HostOperatorNs,
-			Name:      DefaultNSTemplateTierName,
-		},
-		Spec: toolchainv1alpha1.NSTemplateSetSpec{
-			TierName: DefaultNSTemplateTierName,
-			Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
-				{
-					TemplateRef: "basic-dev-123abc",
-				},
-				{
-					TemplateRef: "basic-code-123abc",
-				},
-				{
-					TemplateRef: "basic-stage-123abc",
-				},
-			},
-			ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
-				TemplateRef: "basic-clusterresources-654321a",
-			},
+		Spec: toolchainv1alpha1.UserTierSpec{
+			DeactivationTimeoutDays: 30,
 		},
 	}
 }
@@ -93,7 +53,7 @@ func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier
 			},
 		},
 		Spec: toolchainv1alpha1.MasterUserRecordSpec{
-			TierName:     DefaultNSTemplateSet().Spec.TierName,
+			TierName:     "deactivate30",
 			UserID:       userID,
 			UserAccounts: []toolchainv1alpha1.UserAccountEmbedded{newEmbeddedUa(test.MemberClusterName)},
 		},
