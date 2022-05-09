@@ -461,9 +461,9 @@ func Tiers() *TiersOption {
 	return o
 }
 
-func (o TiersOption) DefaultTier(value string) TiersOption {
+func (o TiersOption) DefaultUserTier(value string) TiersOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.Tiers.DefaultTier = &value
+		config.Spec.Host.Tiers.DefaultUserTier = &value
 	})
 	return o
 }
