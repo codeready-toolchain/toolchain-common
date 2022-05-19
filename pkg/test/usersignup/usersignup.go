@@ -171,11 +171,12 @@ func WithName(name string) Modifier {
 type Modifier func(*toolchainv1alpha1.UserSignup)
 
 func NewUserSignup(modifiers ...Modifier) *toolchainv1alpha1.UserSignup {
+	meta := NewUserSignupObjectMeta("", "foo@redhat.com")
 	signup := &toolchainv1alpha1.UserSignup{
-		ObjectMeta: NewUserSignupObjectMeta("", "foo@redhat.com"),
+		ObjectMeta: meta,
 		Spec: toolchainv1alpha1.UserSignupSpec{
 			Userid:   "UserID123",
-			Username: "foo@redhat.com",
+			Username: meta.Name,
 		},
 	}
 	for _, modify := range modifiers {
