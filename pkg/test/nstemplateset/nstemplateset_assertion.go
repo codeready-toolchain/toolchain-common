@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -61,7 +61,7 @@ func (a *Assertion) Get() *toolchainv1alpha1.NSTemplateSet {
 func (a *Assertion) DoesNotExist() *Assertion {
 	err := a.loadNSTemplateSet()
 	require.Error(a.t, err)
-	assert.IsType(a.t, v1.StatusReasonNotFound, errors.ReasonForError(err))
+	assert.IsType(a.t, metav1.StatusReasonNotFound, errors.ReasonForError(err))
 	return a
 }
 
@@ -133,6 +133,20 @@ func (a *Assertion) HasSpecNamespaces(types ...string) *Assertion {
 		assert.Equal(a.t, NewTierTemplateName(a.nsTmplSet.Spec.TierName, nstype, "abcde11"), a.nsTmplSet.Spec.Namespaces[i].TemplateRef)
 	}
 	return a
+}
+
+func (a *Assertion) HasSpaceRoles(expectedSpaceRoles ...toolchainv1alpha1.NSTemplateSetSpaceRole) *Assertion {
+	err := a.loadNSTemplateSet()
+	require.NoError(a.t, err)
+	assert.ElementsMatch(a.t, expectedSpaceRoles, a.nsTmplSet.Spec.SpaceRoles)
+	return a
+}
+
+func SpaceRole(templateRef string, usernames ...string) toolchainv1alpha1.NSTemplateSetSpaceRole {
+	return toolchainv1alpha1.NSTemplateSetSpaceRole{
+		TemplateRef: templateRef,
+		Usernames:   usernames,
+	}
 }
 
 // NewTierTemplateName: a utility func to generate a TierTemplate name, based on the given tier, type and revision.

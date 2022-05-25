@@ -104,7 +104,7 @@ func TestHasAnnotationWithValue(t *testing.T) {
 		// when
 		murtest.AssertThatMasterUserRecord(mockT, "john", client).HasAnnotationWithValue("toolchain/email", "john@example.com")
 
-		// then: all good
+		// then expect an error and test failure
 		assert.True(t, mockT.CalledFailNow())
 		assert.False(t, mockT.CalledFatalf())
 		assert.True(t, mockT.CalledErrorf())
@@ -119,7 +119,7 @@ func TestHasAnnotationWithValue(t *testing.T) {
 		// when
 		murtest.AssertThatMasterUserRecord(mockT, "john", client).HasAnnotationWithValue("toolchain/email", "john@example.com")
 
-		// then: all good
+		// then expect an error and test failure
 		assert.True(t, mockT.CalledFailNow())
 		assert.False(t, mockT.CalledFatalf())
 		assert.True(t, mockT.CalledErrorf())
@@ -134,7 +134,7 @@ func TestHasAnnotationWithValue(t *testing.T) {
 		// when
 		murtest.AssertThatMasterUserRecord(mockT, "john", client).HasAnnotationWithValue("toolchain/email", "other@example.com")
 
-		// then: all good
+		// then expect an error
 		assert.False(t, mockT.CalledFailNow())
 		assert.False(t, mockT.CalledFatalf())
 		assert.True(t, mockT.CalledErrorf())

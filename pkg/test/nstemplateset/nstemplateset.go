@@ -16,9 +16,37 @@ const (
 	codeTemplateRef             = "basic-code-abcde21"
 )
 
+func NewNSTemplateSet(name string, options ...Option) *toolchainv1alpha1.NSTemplateSet {
+	nstmplSet := &toolchainv1alpha1.NSTemplateSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: test.MemberOperatorNs,
+			Name:      name,
+		},
+		Spec: toolchainv1alpha1.NSTemplateSetSpec{
+			TierName: "basic",
+			ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
+				TemplateRef: clusterResourcesTemplateRef,
+			},
+			Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
+				{
+					TemplateRef: devTemplateRef,
+				},
+				{
+					TemplateRef: codeTemplateRef,
+				},
+			},
+		},
+		Status: toolchainv1alpha1.NSTemplateSetStatus{},
+	}
+	for _, apply := range options {
+		apply(nstmplSet)
+	}
+	return nstmplSet
+}
+
 type Option func(*toolchainv1alpha1.NSTemplateSet)
 
-func WithReferencesFor(nstemplateTier *toolchainv1alpha1.NSTemplateTier) Option {
+func WithReferencesFor(nstemplateTier *toolchainv1alpha1.NSTemplateTier, opts ...TierOption) Option {
 	return func(nstmplSet *toolchainv1alpha1.NSTemplateSet) {
 		nstmplSet.Spec.TierName = nstemplateTier.Name
 
@@ -35,6 +63,31 @@ func WithReferencesFor(nstemplateTier *toolchainv1alpha1.NSTemplateTier) Option 
 			for i, ns := range nstemplateTier.Spec.Namespaces {
 				nstmplSet.Spec.Namespaces[i] = toolchainv1alpha1.NSTemplateSetNamespace(ns)
 			}
+		}
+
+		for _, apply := range opts {
+			apply(nstemplateTier, nstmplSet)
+		}
+	}
+}
+
+type TierOption func(*toolchainv1alpha1.NSTemplateTier, *toolchainv1alpha1.NSTemplateSet)
+
+func WithSpaceRole(role, username string) TierOption {
+	return func(nstemplateTier *toolchainv1alpha1.NSTemplateTier, nstmplSet *toolchainv1alpha1.NSTemplateSet) {
+		if tierSpaceRole, found := nstemplateTier.Spec.SpaceRoles[role]; found {
+			// find the space role matching the templateref in the NSTemplateSet, and add the username
+			for i := range nstmplSet.Spec.SpaceRoles {
+				if nstmplSet.Spec.SpaceRoles[i].TemplateRef == tierSpaceRole.TemplateRef {
+					nstmplSet.Spec.SpaceRoles[i].Usernames = append(nstmplSet.Spec.SpaceRoles[i].Usernames, username)
+					return
+				}
+			}
+			// no entry for this space role yet, so let's add it
+			nstmplSet.Spec.SpaceRoles = append(nstmplSet.Spec.SpaceRoles, toolchainv1alpha1.NSTemplateSetSpaceRole{
+				TemplateRef: nstemplateTier.Spec.SpaceRoles[role].TemplateRef,
+				Usernames:   []string{username},
+			})
 		}
 	}
 }
@@ -68,32 +121,4 @@ func WithDeletionTimestamp(ts time.Time) Option {
 	return func(nstmplSet *toolchainv1alpha1.NSTemplateSet) {
 		nstmplSet.DeletionTimestamp = &metav1.Time{Time: ts}
 	}
-}
-
-func NewNSTemplateSet(name string, options ...Option) *toolchainv1alpha1.NSTemplateSet {
-	nstmplSet := &toolchainv1alpha1.NSTemplateSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: test.MemberOperatorNs,
-			Name:      name,
-		},
-		Spec: toolchainv1alpha1.NSTemplateSetSpec{
-			TierName: "basic",
-			ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
-				TemplateRef: clusterResourcesTemplateRef,
-			},
-			Namespaces: []toolchainv1alpha1.NSTemplateSetNamespace{
-				{
-					TemplateRef: devTemplateRef,
-				},
-				{
-					TemplateRef: codeTemplateRef,
-				},
-			},
-		},
-		Status: toolchainv1alpha1.NSTemplateSetStatus{},
-	}
-	for _, apply := range options {
-		apply(nstmplSet)
-	}
-	return nstmplSet
 }
