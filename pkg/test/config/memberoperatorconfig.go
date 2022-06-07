@@ -212,6 +212,20 @@ func (o MemberStatusOption) RefreshPeriod(value string) MemberStatusOption {
 	return o
 }
 
+type SkipUserCreationOption struct {
+	*MemberOperatorConfigOptionImpl
+}
+
+func SkipUserCreation(value bool) *SkipUserCreationOption {
+	o := &SkipUserCreationOption{
+		MemberOperatorConfigOptionImpl: &MemberOperatorConfigOptionImpl{},
+	}
+	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		config.Spec.SkipUserCreation = &value
+	})
+	return o
+}
+
 type ToolchainClusterOption struct {
 	*MemberOperatorConfigOptionImpl
 }
