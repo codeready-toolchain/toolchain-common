@@ -3,6 +3,9 @@ package usersignup
 import (
 	"crypto/md5" // nolint:gosec
 	"encoding/hex"
+	"strconv"
+	"time"
+
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/codeready-toolchain/toolchain-common/pkg/states"
@@ -10,7 +13,6 @@ import (
 	"github.com/gofrs/uuid"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 )
 
 func WithTargetCluster(targetCluster string) Modifier {
@@ -135,6 +137,10 @@ func BeingDeleted() Modifier {
 
 func WithActivations(value string) Modifier {
 	return WithAnnotation(toolchainv1alpha1.UserSignupActivationCounterAnnotationKey, value)
+}
+
+func WithVerificationAttempts(value int) Modifier {
+	return WithAnnotation(toolchainv1alpha1.UserVerificationAttemptsAnnotationKey, strconv.Itoa(value))
 }
 
 func WithAnnotation(key, value string) Modifier {
