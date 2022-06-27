@@ -16,7 +16,7 @@ func TestNewSocialEventName(t *testing.T) {
 		// when
 		code := socialevent.NewName()
 		// then
-		match, err := regexp.Match("^[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$", []byte(code))
+		match, err := regexp.Match("^[a-z0-9]{5}$", []byte(code))
 		require.NoError(t, err)
 		assert.True(t, match, "code '%s' did not match the expected format", code)
 	})
