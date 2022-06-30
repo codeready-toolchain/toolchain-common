@@ -19,7 +19,6 @@ func TestNewNSTemplateSet(t *testing.T) {
 			Name:      "basic",
 		},
 		Spec: toolchainv1alpha1.NSTemplateTierSpec{
-			DeactivationTimeoutDays: 30,
 			ClusterResources: &toolchainv1alpha1.NSTemplateTierClusterResources{
 				TemplateRef: "basic-clusterresources-123456new",
 			},
