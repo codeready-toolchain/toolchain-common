@@ -11,6 +11,8 @@ import (
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -23,7 +25,7 @@ func TestRefreshCacheInService(t *testing.T) {
 	err := toolchainv1alpha1.AddToScheme(s)
 	require.NoError(t, err)
 	cl := test.NewFakeClient(t, toolchainCluster, sec)
-	service := NewToolchainClusterService(cl, logf.Log, "test-namespace", 0)
+	service := newToolchainClusterService(cl, 0)
 
 	t.Run("the member cluster should be retrieved when refreshCache func is called", func(t *testing.T) {
 		// given
@@ -79,7 +81,7 @@ func TestUpdateClientBasedOnRestConfig(t *testing.T) {
 	t.Run("don't update when RestConfig is the same", func(t *testing.T) {
 		// given
 		cl := test.NewFakeClient(t, sec1)
-		service := NewToolchainClusterService(cl, logf.Log, "test-namespace", 3*time.Second)
+		service := newToolchainClusterService(cl, 3*time.Second)
 		defer service.DeleteToolchainCluster("east")
 
 		err := service.AddOrUpdateToolchainCluster(toolchainCluster1)
@@ -102,7 +104,7 @@ func TestUpdateClientBasedOnRestConfig(t *testing.T) {
 	t.Run("update when RestConfig is not the same", func(t *testing.T) {
 		// given
 		cl := test.NewFakeClient(t, sec1)
-		service := NewToolchainClusterService(cl, logf.Log, "test-namespace", 3*time.Second)
+		service := newToolchainClusterService(cl, 3*time.Second)
 		defer service.DeleteToolchainCluster("east")
 
 		err := service.AddOrUpdateToolchainCluster(toolchainCluster1)
@@ -119,6 +121,16 @@ func TestUpdateClientBasedOnRestConfig(t *testing.T) {
 		cachedToolchainCluster, ok := GetCachedToolchainCluster("east")
 		require.True(t, ok)
 		assert.NotEqual(t, cl, cachedToolchainCluster.Client)
+	})
+}
+
+func newToolchainClusterService(cl client.Client, timeout time.Duration) ToolchainClusterService {
+	return NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", timeout, func(config *rest.Config, options client.Options) (client.Client, error) {
+		// make sure that insecure is false to make Gock mocking working properly
+		// let's use a copy of the config, so it doesn't affect the cache logic
+		copiedConfig := rest.CopyConfig(config)
+		copiedConfig.Insecure = false
+		return client.New(copiedConfig, options)
 	})
 }
 

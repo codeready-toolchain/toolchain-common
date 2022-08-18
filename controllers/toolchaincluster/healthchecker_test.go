@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -97,7 +98,11 @@ func TestClusterHealthChecks(t *testing.T) {
 }
 
 func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolchainv1alpha1.ToolchainCluster) func() {
-	service := cluster.NewToolchainClusterService(cl, logf.Log, "test-namespace", 0)
+	service := cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", 0, func(config *rest.Config, options client.Options) (client.Client, error) {
+		// make sure that insecure is false to make Gock mocking working properly
+		config.Insecure = false
+		return client.New(config, options)
+	})
 	for _, clustr := range clusters {
 		err := service.AddOrUpdateToolchainCluster(clustr)
 		require.NoError(t, err)

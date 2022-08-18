@@ -8,6 +8,7 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/apis"
+	"k8s.io/client-go/rest"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -38,6 +39,17 @@ type ToolchainClusterService struct {
 	log       logr.Logger
 	namespace string
 	timeout   time.Duration
+	newClient NewClient
+}
+
+type NewClient func(config *rest.Config, options client.Options) (client.Client, error)
+
+// NewToolchainClusterServiceWithClient creates a new instance of ToolchainClusterService object and assigns the given newClient functione to be used for creating a client
+func NewToolchainClusterServiceWithClient(client client.Client, log logr.Logger, namespace string, timeout time.Duration, newClient NewClient) ToolchainClusterService {
+	service := NewToolchainClusterService(client, log, namespace, timeout)
+	service.newClient = newClient
+	clusterCache.refreshCache = service.refreshCache
+	return service
 }
 
 // NewToolchainClusterService creates a new instance of ToolchainClusterService object and assigns the refreshCache function to the cache instance
@@ -85,9 +97,15 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 		if err := apis.AddToScheme(scheme); err != nil {
 			return err
 		}
-		cl, err = client.New(clusterConfig.RestConfig, client.Options{
-			Scheme: scheme,
-		})
+		if s.newClient == nil {
+			cl, err = client.New(clusterConfig.RestConfig, client.Options{
+				Scheme: scheme,
+			})
+		} else {
+			cl, err = s.newClient(clusterConfig.RestConfig, client.Options{
+				Scheme: scheme,
+			})
+		}
 		if err != nil {
 			return errors.Wrap(err, "cannot create ToolchainCluster client")
 		}
@@ -175,11 +193,15 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 		return nil, err
 	}
 
-	ca, err := base64.StdEncoding.DecodeString(toolchainCluster.Spec.CABundle)
-	if err != nil {
-		return nil, err
+	if toolchainCluster.Spec.CABundle != "" {
+		ca, err := base64.StdEncoding.DecodeString(toolchainCluster.Spec.CABundle)
+		if err != nil {
+			return nil, err
+		}
+		restConfig.CAData = ca
+	} else {
+		restConfig.Insecure = true
 	}
-	restConfig.CAData = ca
 	restConfig.BearerToken = string(token)
 	restConfig.QPS = toolchainAPIQPS
 	restConfig.Burst = toolchainAPIBurst

@@ -12,6 +12,7 @@ import (
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -29,27 +30,32 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 	for _, labels := range memberLabels {
 
 		t.Run("add member ToolchainCluster", func(t *testing.T) {
-			toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, labels)
-			cl := test.NewFakeClient(t, toolchainCluster, sec)
-			service := newToolchainClusterService(cl)
-			defer service.DeleteToolchainCluster("east")
+			for _, withCA := range []bool{true, false} {
+				toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, labels)
+				if withCA {
+					toolchainCluster.Spec.CABundle = "ZHVtbXk="
+				}
+				cl := test.NewFakeClient(t, toolchainCluster, sec)
+				service := newToolchainClusterService(t, cl, withCA)
+				defer service.DeleteToolchainCluster("east")
 
-			// when
-			err := functionToVerify(toolchainCluster, cl, service)
+				// when
+				err := functionToVerify(toolchainCluster, cl, service)
 
-			// then
-			require.NoError(t, err)
-			cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
-			require.True(t, ok)
-			assert.Equal(t, cluster.Member, cachedToolchainCluster.Type)
-			if labels["namespace"] == "" {
-				assert.Equal(t, "toolchain-member-operator", cachedToolchainCluster.OperatorNamespace)
-			} else {
-				assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
+				// then
+				require.NoError(t, err)
+				cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
+				require.True(t, ok)
+				assert.Equal(t, cluster.Member, cachedToolchainCluster.Type)
+				if labels["namespace"] == "" {
+					assert.Equal(t, "toolchain-member-operator", cachedToolchainCluster.OperatorNamespace)
+				} else {
+					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
+				}
+				assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
+				assert.Equal(t, test.NameHost, cachedToolchainCluster.OwnerClusterName)
+				assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
 			}
-			assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
-			assert.Equal(t, test.NameHost, cachedToolchainCluster.OwnerClusterName)
-			assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
 		})
 	}
 }
@@ -64,27 +70,32 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 	for _, labels := range memberLabels {
 
 		t.Run("add host ToolchainCluster", func(t *testing.T) {
-			toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, labels)
-			cl := test.NewFakeClient(t, toolchainCluster, sec)
-			service := newToolchainClusterService(cl)
-			defer service.DeleteToolchainCluster("east")
+			for _, withCA := range []bool{true, false} {
+				toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, labels)
+				if withCA {
+					toolchainCluster.Spec.CABundle = "ZHVtbXk="
+				}
+				cl := test.NewFakeClient(t, toolchainCluster, sec)
+				service := newToolchainClusterService(t, cl, withCA)
+				defer service.DeleteToolchainCluster("east")
 
-			// when
-			err := functionToVerify(toolchainCluster, cl, service)
+				// when
+				err := functionToVerify(toolchainCluster, cl, service)
 
-			// then
-			require.NoError(t, err)
-			cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
-			require.True(t, ok)
-			assert.Equal(t, cluster.Host, cachedToolchainCluster.Type)
-			if labels["namespace"] == "" {
-				assert.Equal(t, "toolchain-host-operator", cachedToolchainCluster.OperatorNamespace)
-			} else {
-				assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
+				// then
+				require.NoError(t, err)
+				cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
+				require.True(t, ok)
+				assert.Equal(t, cluster.Host, cachedToolchainCluster.Type)
+				if labels["namespace"] == "" {
+					assert.Equal(t, "toolchain-host-operator", cachedToolchainCluster.OperatorNamespace)
+				} else {
+					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
+				}
+				assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
+				assert.Equal(t, test.NameMember, cachedToolchainCluster.OwnerClusterName)
+				assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
 			}
-			assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
-			assert.Equal(t, test.NameMember, cachedToolchainCluster.OwnerClusterName)
-			assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
 		})
 	}
 }
@@ -95,7 +106,7 @@ func AddToolchainClusterFailsBecauseOfMissingSecret(t *testing.T, functionToVeri
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster, _ := test.NewToolchainCluster("east", "secret", status, Labels("", "", test.NameHost))
 	cl := test.NewFakeClient(t, toolchainCluster)
-	service := newToolchainClusterService(cl)
+	service := newToolchainClusterService(t, cl, false)
 
 	// when
 	err := functionToVerify(toolchainCluster, cl, service)
@@ -119,7 +130,7 @@ func AddToolchainClusterFailsBecauseOfEmptySecret(t *testing.T, functionToVerify
 			Namespace: "test-namespace",
 		}}
 	cl := test.NewFakeClient(t, toolchainCluster, secret)
-	service := newToolchainClusterService(cl)
+	service := newToolchainClusterService(t, cl, false)
 
 	// when
 	err := functionToVerify(toolchainCluster, cl, service)
@@ -141,7 +152,7 @@ func UpdateToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	toolchainCluster2, sec2 := test.NewToolchainCluster("east", "secret2", statusFalse,
 		Labels(cluster.Host, "", test.NameMember))
 	cl := test.NewFakeClient(t, toolchainCluster2, sec1, sec2)
-	service := newToolchainClusterService(cl)
+	service := newToolchainClusterService(t, cl, false)
 	defer service.DeleteToolchainCluster("east")
 	err := service.AddOrUpdateToolchainCluster(toolchainCluster1)
 	require.NoError(t, err)
@@ -170,7 +181,7 @@ func DeleteToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	toolchainCluster, sec := test.NewToolchainCluster("east", "sec", status,
 		Labels("", "", test.NameHost))
 	cl := test.NewFakeClient(t, sec)
-	service := newToolchainClusterService(cl)
+	service := newToolchainClusterService(t, cl, false)
 	err := service.AddOrUpdateToolchainCluster(toolchainCluster)
 	require.NoError(t, err)
 
@@ -196,8 +207,20 @@ func Labels(clType cluster.Type, ns, ownerClusterName string) map[string]string 
 	return labels
 }
 
-func newToolchainClusterService(cl client.Client) cluster.ToolchainClusterService {
-	return cluster.NewToolchainClusterService(cl, logf.Log, "test-namespace", 3*time.Second)
+func newToolchainClusterService(t *testing.T, cl client.Client, withCA bool) cluster.ToolchainClusterService {
+	return cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", 3*time.Second, func(config *rest.Config, options client.Options) (client.Client, error) {
+		if withCA {
+			assert.False(t, config.Insecure)
+			assert.Equal(t, []byte("dummy"), config.CAData)
+		} else {
+			assert.True(t, config.Insecure)
+		}
+		// make sure that insecure is false to make Gock mocking working properly
+		config.Insecure = false
+		// reset the dummy certificate
+		config.CAData = []byte("")
+		return client.New(config, options)
+	})
 }
 
 type ClusterConfigAssertion struct {
