@@ -30,7 +30,7 @@ import (
 
 func TestApplySingle(t *testing.T) {
 	// given
-	s := addToScheme(t)
+	addToScheme(t)
 
 	defaultService := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -76,7 +76,7 @@ func TestApplySingle(t *testing.T) {
 
 				t.Run("it should not update when specs are same", func(t *testing.T) {
 					// given
-					cl, _ := newClient(t, s)
+					cl, _ := newClient(t)
 					obj := defaultService.DeepCopy()
 					_, err := cl.ApplyObject(obj, client.ForceUpdate(true))
 					require.NoError(t, err)
@@ -94,7 +94,7 @@ func TestApplySingle(t *testing.T) {
 
 				t.Run("it should not update when specs are same except ClusterIP", func(t *testing.T) {
 					// given
-					cl, _ := newClient(t, s)
+					cl, _ := newClient(t)
 					obj := defaultService.DeepCopy()
 					_, err := cl.ApplyObject(obj, client.ForceUpdate(true))
 					require.NoError(t, err)
@@ -113,7 +113,7 @@ func TestApplySingle(t *testing.T) {
 
 				t.Run("it should update when specs are different", func(t *testing.T) {
 					// given
-					cl, _ := newClient(t, s)
+					cl, _ := newClient(t)
 					obj := defaultService.DeepCopy()
 					_, err := cl.ApplyObject(obj, client.ForceUpdate(true))
 					require.NoError(t, err)
@@ -134,7 +134,7 @@ func TestApplySingle(t *testing.T) {
 
 				t.Run("it should update when specs are different including ClusterIP", func(t *testing.T) {
 					// given
-					cl, _ := newClient(t, s)
+					cl, _ := newClient(t)
 					obj := defaultService.DeepCopy()
 					_, err := cl.ApplyObject(obj, client.ForceUpdate(true))
 					require.NoError(t, err)
@@ -155,7 +155,7 @@ func TestApplySingle(t *testing.T) {
 
 				t.Run("when object is missing, it should create it", func(t *testing.T) {
 					// given
-					cl, cli := newClient(t, s)
+					cl, cli := newClient(t)
 
 					// when
 					createdOrChanged, err := cl.ApplyRuntimeObject(modifiedService.DeepCopyObject(), client.ForceUpdate(true), client.SetOwner(&appsv1.Deployment{}))
@@ -176,7 +176,7 @@ func TestApplySingle(t *testing.T) {
 
 				t.Run("it should update when spec is different", func(t *testing.T) {
 					// given
-					cl, cli := newClient(t, s)
+					cl, cli := newClient(t)
 					_, err := cl.ApplyRuntimeObject(defaultService.DeepCopyObject(), client.ForceUpdate(true))
 					require.NoError(t, err)
 
@@ -194,7 +194,7 @@ func TestApplySingle(t *testing.T) {
 
 				t.Run("it should not update when using same object", func(t *testing.T) {
 					// given
-					cl, _ := newClient(t, s)
+					cl, _ := newClient(t)
 					_, err := cl.ApplyRuntimeObject(defaultService.DeepCopyObject(), client.ForceUpdate(true))
 					require.NoError(t, err)
 
@@ -208,7 +208,7 @@ func TestApplySingle(t *testing.T) {
 
 				t.Run("when object is missing, it should create it", func(t *testing.T) {
 					// given
-					cl, cli := newClient(t, s)
+					cl, cli := newClient(t)
 
 					// when
 					createdOrChanged, err := cl.ApplyRuntimeObject(modifiedService.DeepCopyObject(), client.SetOwner(&appsv1.Deployment{}))
@@ -228,7 +228,7 @@ func TestApplySingle(t *testing.T) {
 
 				t.Run("when object is missing, it should create it", func(t *testing.T) {
 					// given
-					cl, cli := newClient(t, s)
+					cl, cli := newClient(t)
 
 					// when
 					createdOrChanged, err := cl.ApplyRuntimeObject(modifiedService.DeepCopyObject(), client.SaveConfiguration(false))
@@ -245,7 +245,7 @@ func TestApplySingle(t *testing.T) {
 
 				t.Run("it should update when spec is different", func(t *testing.T) {
 					// given
-					cl, cli := newClient(t, s)
+					cl, cli := newClient(t)
 					_, err := cl.ApplyRuntimeObject(defaultService.DeepCopyObject(), client.SaveConfiguration(false))
 					require.NoError(t, err)
 
@@ -265,7 +265,7 @@ func TestApplySingle(t *testing.T) {
 
 			t.Run("when object cannot be retrieved because of any error, then it should fail", func(t *testing.T) {
 				// given
-				cl, cli := newClient(t, s)
+				cl, cli := newClient(t)
 				cli.MockGet = func(ctx context.Context, key runtimeclient.ObjectKey, obj runtimeclient.Object) error {
 					return fmt.Errorf("unable to get")
 				}
@@ -289,7 +289,7 @@ func TestApplySingle(t *testing.T) {
 
 				t.Run("it should not update when specs are same except ClusterIP", func(t *testing.T) {
 					// given
-					cl, _ := newClient(t, s)
+					cl, _ := newClient(t)
 					// convert to unstructured
 					obj, err := toUnstructured(defaultService.DeepCopy())
 
@@ -320,7 +320,7 @@ func TestApplySingle(t *testing.T) {
 
 		t.Run("it should update ConfigMap when data field is different and forceUpdate=false", func(t *testing.T) {
 			// given
-			cl, cli := newClient(t, s)
+			cl, cli := newClient(t)
 			_, err := cl.ApplyRuntimeObject(defaultCm.DeepCopyObject(), client.ForceUpdate(true))
 			require.NoError(t, err)
 
@@ -532,7 +532,7 @@ func TestProcessAndApply(t *testing.T) {
 		labels := newLabels("", "john", "")
 
 		// when
-		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
+		createdOrUpdated, err := client.NewApplyClient(cl).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -552,7 +552,7 @@ func TestProcessAndApply(t *testing.T) {
 		labels := newLabels("basic", "john", "dev")
 
 		// when
-		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
+		createdOrUpdated, err := client.NewApplyClient(cl).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -572,7 +572,7 @@ func TestProcessAndApply(t *testing.T) {
 		labels := newLabels("", "john", "dev")
 
 		// when
-		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
+		createdOrUpdated, err := client.NewApplyClient(cl).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -599,7 +599,7 @@ func TestProcessAndApply(t *testing.T) {
 		require.NoError(t, err)
 		witoutType := newLabels("basic", "john", "")
 
-		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, witoutType)
+		createdOrUpdated, err := client.NewApplyClient(cl).Apply(objs, witoutType)
 		require.NoError(t, err)
 		assert.True(t, createdOrUpdated)
 		assertRoleBindingExists(t, cl, user, witoutType)
@@ -611,7 +611,7 @@ func TestProcessAndApply(t *testing.T) {
 		objs, err = p.Process(tmpl, values)
 		require.NoError(t, err)
 		complete := newLabels("advanced", "john", "dev")
-		createdOrUpdated, err = client.NewApplyClient(cl, s).Apply(objs, complete)
+		createdOrUpdated, err = client.NewApplyClient(cl).Apply(objs, complete)
 
 		// then
 		require.NoError(t, err)
@@ -634,14 +634,14 @@ func TestProcessAndApply(t *testing.T) {
 		objs, err := p.Process(tmpl, values)
 		require.NoError(t, err)
 		labels := newLabels("basic", "john", "dev")
-		created, err := client.NewApplyClient(cl, s).Apply(objs, labels)
+		created, err := client.NewApplyClient(cl).Apply(objs, labels)
 		require.NoError(t, err)
 		assert.True(t, created)
 		assertNamespaceExists(t, cl, user, labels, commit)
 		assertRoleBindingExists(t, cl, user, labels)
 
 		// when apply the same template again
-		updated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
+		updated, err := client.NewApplyClient(cl).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -664,7 +664,7 @@ func TestProcessAndApply(t *testing.T) {
 			// when
 			objs, err := p.Process(tmpl, values)
 			require.NoError(t, err)
-			createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, newLabels("", "", ""))
+			createdOrUpdated, err := client.NewApplyClient(cl).Apply(objs, newLabels("", "", ""))
 
 			// then
 			require.Error(t, err)
@@ -684,7 +684,7 @@ func TestProcessAndApply(t *testing.T) {
 			objs, err := p.Process(tmpl, values)
 			require.NoError(t, err)
 			labels := newLabels("", "", "")
-			createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
+			createdOrUpdated, err := client.NewApplyClient(cl).Apply(objs, labels)
 			require.NoError(t, err)
 			assert.True(t, createdOrUpdated)
 
@@ -694,7 +694,7 @@ func TestProcessAndApply(t *testing.T) {
 			require.NoError(t, err)
 			objs, err = p.Process(tmpl, values)
 			require.NoError(t, err)
-			createdOrUpdated, err = client.NewApplyClient(cl, s).Apply(objs, newLabels("advanced", "john", "dev"))
+			createdOrUpdated, err = client.NewApplyClient(cl).Apply(objs, newLabels("advanced", "john", "dev"))
 
 			// then
 			assert.Error(t, err)
@@ -726,7 +726,7 @@ func TestProcessAndApply(t *testing.T) {
 			},
 		})
 		labels := newLabels("basic", "john", "dev")
-		createdOrUpdated, err := client.NewApplyClient(cl, s).Apply(objs, labels)
+		createdOrUpdated, err := client.NewApplyClient(cl).Apply(objs, labels)
 
 		// then
 		require.NoError(t, err)
@@ -799,9 +799,9 @@ func getNameWithTimestamp(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
 }
 
-func newClient(t *testing.T, s *runtime.Scheme) (*client.ApplyClient, *FakeClient) {
-	cli := NewFakeClient(t)
-	return client.NewApplyClient(cli, s), cli
+func newClient(t *testing.T) (*client.ApplyClient, *FakeClient) {
+	cl := NewFakeClient(t)
+	return client.NewApplyClient(cl), cl
 }
 
 func addToScheme(t *testing.T) *runtime.Scheme {

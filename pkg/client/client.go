@@ -25,13 +25,14 @@ var log = logf.Log.WithName("apply_client")
 
 // ApplyClient the client to use when creating or updating objects
 type ApplyClient struct {
-	Client client.Client
-	scheme *runtime.Scheme
+	client.Client
 }
 
 // NewApplyClient returns a new ApplyClient
-func NewApplyClient(cl client.Client, scheme *runtime.Scheme) *ApplyClient {
-	return &ApplyClient{Client: cl, scheme: scheme}
+func NewApplyClient(cl client.Client) *ApplyClient {
+	return &ApplyClient{
+		Client: cl,
+	}
 }
 
 type applyObjectConfiguration struct {
@@ -78,12 +79,12 @@ func SaveConfiguration(saveConfiguration bool) ApplyObjectOption {
 }
 
 // ApplyRuntimeObject casts the provided object to client.Object and calls ApplyClient.ApplyObject method
-func (p ApplyClient) ApplyRuntimeObject(obj runtime.Object, options ...ApplyObjectOption) (bool, error) {
+func (c ApplyClient) ApplyRuntimeObject(obj runtime.Object, options ...ApplyObjectOption) (bool, error) {
 	clientObj, ok := obj.(client.Object)
 	if !ok {
 		return false, fmt.Errorf("unable to cast of the object to client.Object: %+v", obj)
 	}
-	return p.applyObject(clientObj, options...)
+	return c.applyObject(clientObj, options...)
 }
 
 // ApplyObject creates the object if is missing and if the owner object is provided, then it's set as a controller reference.
@@ -91,16 +92,16 @@ func (p ApplyClient) ApplyRuntimeObject(obj runtime.Object, options ...ApplyObje
 // is automatically updated. If it looks to be same then based on the value of forceUpdate param it updates the object or not.
 // The return boolean says if the object was either created or updated (`true`). If nothing changed (ie, the generation was not
 // incremented by the server), then it returns `false`.
-func (p ApplyClient) ApplyObject(obj client.Object, options ...ApplyObjectOption) (bool, error) {
+func (c ApplyClient) ApplyObject(obj client.Object, options ...ApplyObjectOption) (bool, error) {
 	gvk := obj.GetObjectKind().GroupVersionKind()
-	createdOrUpdated, err := p.applyObject(obj, options...)
+	createdOrUpdated, err := c.applyObject(obj, options...)
 	if err != nil {
 		return createdOrUpdated, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
 	}
 	return createdOrUpdated, nil
 }
 
-func (p ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption) (bool, error) {
+func (c ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption) (bool, error) {
 	// gets the meta accessor to the new resource
 	// gets the meta accessor to the new resource
 	config := newApplyObjectConfiguration(options...)
@@ -121,9 +122,9 @@ func (p ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption
 	}
 	// gets current object (if exists)
 	namespacedName := types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}
-	if err := p.Client.Get(context.TODO(), namespacedName, existing); err != nil {
+	if err := c.Client.Get(context.TODO(), namespacedName, existing); err != nil {
 		if apierrors.IsNotFound(err) {
-			return true, p.createObj(obj, config.owner)
+			return true, c.createObj(obj, config.owner)
 		}
 		return false, errors.Wrapf(err, "unable to get the resource '%v'", existing)
 	}
@@ -150,7 +151,7 @@ func (p ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption
 	if err := RetainClusterIP(obj, existing); err != nil {
 		return false, err
 	}
-	if err := p.Client.Update(context.TODO(), obj); err != nil {
+	if err := c.Client.Update(context.TODO(), obj); err != nil {
 		return false, errors.Wrapf(err, "unable to update the resource '%v'", obj)
 	}
 
@@ -210,20 +211,20 @@ func marshalObjectContent(newResource runtime.Object) ([]byte, error) {
 	return json.Marshal(newResource)
 }
 
-func (p ApplyClient) createObj(newResource client.Object, owner v1.Object) error {
+func (c ApplyClient) createObj(newResource client.Object, owner v1.Object) error {
 	if owner != nil {
-		err := controllerutil.SetControllerReference(owner, newResource, p.scheme)
+		err := controllerutil.SetControllerReference(owner, newResource, c.Client.Scheme())
 		if err != nil {
 			return errors.Wrap(err, "unable to set controller references")
 		}
 	}
-	return p.Client.Create(context.TODO(), newResource)
+	return c.Client.Create(context.TODO(), newResource)
 }
 
 // Apply applies the objects, ie, creates or updates them on the cluster
 // returns `true, nil` if at least one of the objects was created or modified,
 // `false, nil` if nothing changed, and `false, err` if an error occurred
-func (p ApplyClient) Apply(toolchainObjects []client.Object, newLabels map[string]string) (bool, error) {
+func (c ApplyClient) Apply(toolchainObjects []client.Object, newLabels map[string]string) (bool, error) {
 	createdOrUpdated := false
 	for _, toolchainObject := range toolchainObjects {
 		// set newLabels
@@ -236,7 +237,7 @@ func (p ApplyClient) Apply(toolchainObjects []client.Object, newLabels map[strin
 		}
 		toolchainObject.SetLabels(labels)
 
-		result, err := p.ApplyObject(toolchainObject, ForceUpdate(true))
+		result, err := c.ApplyObject(toolchainObject, ForceUpdate(true))
 		if err != nil {
 			return false, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", toolchainObject.GetObjectKind().GroupVersionKind().Kind, toolchainObject.GetObjectKind().GroupVersionKind().Version)
 		}
