@@ -7,6 +7,8 @@ import (
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	"github.com/codeready-toolchain/toolchain-common/pkg/apis"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -80,10 +82,7 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 
 		log.Info("creating new client for the cached ToolchainCluster")
 		scheme := runtime.NewScheme()
-		if err := toolchainv1alpha1.AddToScheme(scheme); err != nil {
-			return err
-		}
-		if err := v1.AddToScheme(scheme); err != nil {
+		if err := apis.AddToScheme(scheme); err != nil {
 			return err
 		}
 		cl, err = client.New(clusterConfig.RestConfig, client.Options{
