@@ -1,12 +1,11 @@
 package tier
 
 import (
-	"crypto/md5" // nolint:gosec
-	"encoding/hex"
 	"encoding/json"
 	"sort"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	"github.com/codeready-toolchain/toolchain-common/pkg/hash"
 )
 
 // ComputeTemplateRefsHash computes the hash of the `.spec.namespaces[].templateRef` + `.spec.clusteResource.TemplateRef`
@@ -23,11 +22,7 @@ func ComputeTemplateRefsHash(tier *toolchainv1alpha1.NSTemplateTier) (string, er
 	if err != nil {
 		return "", err
 	}
-	md5hash := md5.New() // nolint:gosec
-	// Ignore the error, as this implementation cannot return one
-	_, _ = md5hash.Write(m)
-	hash := hex.EncodeToString(md5hash.Sum(nil))
-	return hash, nil
+	return hash.Encode(m), nil
 }
 
 // TemplateTierHashLabel returns the label key to specify the version of the templates of the given tier

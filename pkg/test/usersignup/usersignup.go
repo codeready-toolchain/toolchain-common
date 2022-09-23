@@ -1,13 +1,12 @@
 package usersignup
 
 import (
-	"crypto/md5" // nolint:gosec
-	"encoding/hex"
 	"strconv"
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
+	"github.com/codeready-toolchain/toolchain-common/pkg/hash"
 	"github.com/codeready-toolchain/toolchain-common/pkg/states"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/gofrs/uuid"
@@ -103,10 +102,7 @@ func WithStateLabel(stateValue string) Modifier {
 
 func WithEmail(email string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
-		md5hash := md5.New() // nolint:gosec
-		// Ignore the error, as this implementation cannot return one
-		_, _ = md5hash.Write([]byte(email))
-		emailHash := hex.EncodeToString(md5hash.Sum(nil))
+		emailHash := hash.EncodeString(email)
 		userSignup.ObjectMeta.Labels[toolchainv1alpha1.UserSignupUserEmailHashLabelKey] = emailHash
 		userSignup.ObjectMeta.Annotations[toolchainv1alpha1.UserSignupUserEmailAnnotationKey] = email
 	}
@@ -189,11 +185,7 @@ func NewUserSignupObjectMeta(name, email string) metav1.ObjectMeta {
 	if name == "" {
 		name = uuid.Must(uuid.NewV4()).String()
 	}
-
-	md5hash := md5.New() // nolint:gosec
-	// Ignore the error, as this implementation cannot return one
-	_, _ = md5hash.Write([]byte(email))
-	emailHash := hex.EncodeToString(md5hash.Sum(nil))
+	emailHash := hash.EncodeString(email)
 
 	return metav1.ObjectMeta{
 		Name:      name,
