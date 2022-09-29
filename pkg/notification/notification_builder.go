@@ -74,8 +74,7 @@ func (b *notificationBuilderImpl) Create(recipient string) (*toolchainv1alpha1.N
 
 func generateName(notification *toolchainv1alpha1.Notification) {
 	if notification.ObjectMeta.Name == "" {
-		username, found := notification.Spec.Context["UserName"]
-		if found {
+		if username, found := notification.Spec.Context["UserName"]; found && username != "" {
 			notificationType, found := notification.Labels[toolchainv1alpha1.NotificationTypeLabelKey]
 			if found {
 				notification.ObjectMeta.GenerateName = fmt.Sprintf("%s-%s-", username, notificationType)
@@ -84,7 +83,6 @@ func generateName(notification *toolchainv1alpha1.Notification) {
 			notification.ObjectMeta.GenerateName = fmt.Sprintf("%s-untyped", username)
 			return
 		}
-
 		notification.ObjectMeta.GenerateName = fmt.Sprintf("%s-untyped", uuid.Must(uuid.NewV4()).String())
 	}
 }

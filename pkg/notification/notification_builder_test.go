@@ -1,14 +1,15 @@
 package notification
 
 import (
+	"strings"
 	"testing"
 
-	"github.com/gofrs/uuid"
-
-	"github.com/codeready-toolchain/api/api/v1alpha1"
+	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	testusersignup "github.com/codeready-toolchain/toolchain-common/pkg/test/usersignup"
 
-	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+	"github.com/gofrs/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,41 +17,43 @@ func TestNotificationBuilder(t *testing.T) {
 	// given
 	client := test.NewFakeClient(t)
 
-	t.Run("test create with no options", func(t *testing.T) {
+	t.Run("success with no options", func(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).Create("foo@acme.com")
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, "foo@acme.com", notification.Spec.Recipient)
+		assert.Equal(t, "foo@acme.com", notification.Spec.Recipient)
 	})
 
-	t.Run("test create fails with empty email address", func(t *testing.T) {
+	t.Run("fail with empty email address", func(t *testing.T) {
 		// when
 		_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create("")
 
 		// then
 		require.Error(t, err)
-		require.Equal(t, "The specified recipient [] is not a valid email address", err.Error())
+		assert.Equal(t, "The specified recipient [] is not a valid email address", err.Error())
 	})
 
-	t.Run("test create fails with invalid email address", func(t *testing.T) {
+	t.Run("fail with invalid email address", func(t *testing.T) {
 		// when
 		_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create("foo")
 
 		// then
 		require.Error(t, err)
-		require.Equal(t, "The specified recipient [foo] is not a valid email address", err.Error())
+		assert.Equal(t, "The specified recipient [foo] is not a valid email address", err.Error())
 	})
 
-	t.Run("test ok with multiple valid email addresses", func(t *testing.T) {
+	t.Run("success with multiple valid email addresses", func(t *testing.T) {
+		// given
 		emailsToTest := []string{
 			"john.wick@subdomain.domain.com",
 			"john-Wick@domain.com",
 		}
 
-		// when
 		for _, email := range emailsToTest {
+
+			// when
 			_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create(email)
 
 			// then
@@ -58,44 +61,46 @@ func TestNotificationBuilder(t *testing.T) {
 		}
 	})
 
-	t.Run("test notification builder with user context", func(t *testing.T) {
-		// when
+	t.Run("success with user context", func(t *testing.T) {
+		// given
 		userSignup := testusersignup.NewUserSignup()
 		userSignup.Spec.GivenName = "John"
 		userSignup.Spec.FamilyName = "Smith"
 		userSignup.Spec.Company = "ACME Corp"
-		userSignup.Status = v1alpha1.UserSignupStatus{
+		userSignup.Status = toolchainv1alpha1.UserSignupStatus{
 			CompliantUsername: "jsmith",
 		}
 
+		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithUserContext(userSignup).
-			Create(userSignup.Annotations[v1alpha1.UserSignupUserEmailAnnotationKey])
+			Create(userSignup.Annotations[toolchainv1alpha1.UserSignupUserEmailAnnotationKey])
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, userSignup.Annotations[v1alpha1.UserSignupUserEmailAnnotationKey], notification.Spec.Recipient)
-		require.Equal(t, userSignup.Annotations[v1alpha1.UserSignupUserEmailAnnotationKey], notification.Spec.Context["UserEmail"])
-		require.Equal(t, userSignup.Spec.GivenName, notification.Spec.Context["FirstName"])
-		require.Equal(t, userSignup.Spec.FamilyName, notification.Spec.Context["LastName"])
-		require.Equal(t, userSignup.Spec.Company, notification.Spec.Context["CompanyName"])
-		require.Equal(t, userSignup.Spec.Userid, notification.Spec.Context["UserID"])
-		require.Equal(t, userSignup.Status.CompliantUsername, notification.Spec.Context["UserName"])
+		assert.Equal(t, userSignup.Annotations[toolchainv1alpha1.UserSignupUserEmailAnnotationKey], notification.Spec.Recipient)
+		assert.Equal(t, userSignup.Annotations[toolchainv1alpha1.UserSignupUserEmailAnnotationKey], notification.Spec.Context["UserEmail"])
+		assert.Equal(t, userSignup.Spec.GivenName, notification.Spec.Context["FirstName"])
+		assert.Equal(t, userSignup.Spec.FamilyName, notification.Spec.Context["LastName"])
+		assert.Equal(t, userSignup.Spec.Company, notification.Spec.Context["CompanyName"])
+		assert.Equal(t, userSignup.Spec.Userid, notification.Spec.Context["UserID"])
+		assert.Equal(t, userSignup.Status.CompliantUsername, notification.Spec.Context["UserName"])
 	})
 
-	t.Run("test notification builder with hard coded notification name", func(t *testing.T) {
-		// when
+	t.Run("success with hard coded notification name", func(t *testing.T) {
+		// given
 		name := uuid.Must(uuid.NewV4()).String()
+		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithName(name).
 			Create("foo@bar.com")
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, name, notification.Name)
+		assert.Equal(t, name, notification.Name)
 	})
 
-	t.Run("test notification builder with template", func(t *testing.T) {
+	t.Run("success with template", func(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithTemplate("default").
@@ -103,10 +108,10 @@ func TestNotificationBuilder(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, "default", notification.Spec.Template)
+		assert.Equal(t, "default", notification.Spec.Template)
 	})
 
-	t.Run("test notification builder with subject and content", func(t *testing.T) {
+	t.Run("success with subject and content", func(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithSubjectAndContent("This is a test subject", "This is some test content").
@@ -114,11 +119,11 @@ func TestNotificationBuilder(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, "This is a test subject", notification.Spec.Subject)
-		require.Equal(t, "This is some test content", notification.Spec.Content)
+		assert.Equal(t, "This is a test subject", notification.Spec.Subject)
+		assert.Equal(t, "This is some test content", notification.Spec.Content)
 	})
 
-	t.Run("test notification builder with keys and values", func(t *testing.T) {
+	t.Run("success with keys and values", func(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithKeysAndValues(map[string]string{"foo": "bar"}).
@@ -126,10 +131,10 @@ func TestNotificationBuilder(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, "bar", notification.Spec.Context["foo"])
+		assert.Equal(t, "bar", notification.Spec.Context["foo"])
 	})
 
-	t.Run("test notification builder with notification type", func(t *testing.T) {
+	t.Run("success with notification type", func(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithNotificationType("TestNotificationType").
@@ -137,6 +142,28 @@ func TestNotificationBuilder(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, "TestNotificationType", notification.Labels[v1alpha1.NotificationTypeLabelKey])
+		assert.Equal(t, "TestNotificationType", notification.Labels[toolchainv1alpha1.NotificationTypeLabelKey])
+	})
+
+	t.Run("success with empty compliant username", func(t *testing.T) {
+		// given
+		userSignup := testusersignup.NewUserSignup()
+		userSignup.Spec.GivenName = "John"
+		userSignup.Spec.FamilyName = "Smith"
+		userSignup.Spec.Company = "ACME Corp"
+		userSignup.Status = toolchainv1alpha1.UserSignupStatus{
+			CompliantUsername: "",
+		}
+
+		// when
+		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
+			WithNotificationType("TestNotificationType").
+			WithUserContext(userSignup).
+			Create("foo@bar.com")
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, "TestNotificationType", notification.Labels[toolchainv1alpha1.NotificationTypeLabelKey])
+		assert.False(t, strings.HasPrefix(notification.Name, "-"))
 	})
 }
