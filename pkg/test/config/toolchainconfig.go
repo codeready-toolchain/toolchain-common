@@ -450,6 +450,13 @@ func (o RegistrationVerificationSecretOption) TwilioFromNumber(value string) *Re
 	return &o
 }
 
+func (o RegistrationVerificationSecretOption) AWSAccessKeyID(value string) *RegistrationVerificationSecretOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.Secret.AWSAccessKeyID = &value
+	})
+	return &o
+}
+
 type TiersOption struct {
 	*ToolchainConfigOptionImpl
 }
