@@ -411,6 +411,34 @@ func (o RegistrationServiceVerificationOption) CodeExpiresInMin(value int) Regis
 	return o.parent
 }
 
+func (o RegistrationServiceVerificationOption) NotificationSender(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.NotificationSender = &value
+	})
+	return o.parent
+}
+
+func (o RegistrationServiceVerificationOption) AWSRegion(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.AWSRegion = &value
+	})
+	return o.parent
+}
+
+func (o RegistrationServiceVerificationOption) AWSSenderID(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.AWSSenderID = &value
+	})
+	return o.parent
+}
+
+func (o RegistrationServiceVerificationOption) AWSSMSType(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.AWSSMSType = &value
+	})
+	return o.parent
+}
+
 func (o RegistrationServiceVerificationOption) Secret() *RegistrationVerificationSecretOption {
 	c := &RegistrationVerificationSecretOption{
 		ToolchainConfigOptionImpl: o.ToolchainConfigOptionImpl,
@@ -453,6 +481,13 @@ func (o RegistrationVerificationSecretOption) TwilioFromNumber(value string) *Re
 func (o RegistrationVerificationSecretOption) AWSAccessKeyID(value string) *RegistrationVerificationSecretOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Verification.Secret.AWSAccessKeyID = &value
+	})
+	return &o
+}
+
+func (o RegistrationVerificationSecretOption) AWSSecretAccessKey(value string) *RegistrationVerificationSecretOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.Secret.AWSSecretAccessKey = &value
 	})
 	return &o
 }
