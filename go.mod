@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/codeready-toolchain/api v0.0.0-20221005122855-03ee2dfdcf5c
+	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
 	github.com/go-logr/logr v1.2.0
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -35,7 +36,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-logr/zapr v1.2.0 // indirect
