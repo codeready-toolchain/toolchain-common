@@ -22,7 +22,7 @@ func TestNewSocialEventName(t *testing.T) {
 	})
 
 	t.Run("multiple codes", func(t *testing.T) {
-		// generate a bucket of activation codes and verifies that the fothere is no collision
+		// generate a bucket of activation codes and verifies that there is no collision
 		codes := make(map[string]bool, 10000)
 		for i := 0; i < 1000; i++ {
 			code := socialevent.NewName()
