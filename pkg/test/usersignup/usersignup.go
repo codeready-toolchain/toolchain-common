@@ -10,7 +10,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/states"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/gofrs/uuid"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,20 +26,50 @@ func WithOriginalSub(originalSub string) Modifier {
 	}
 }
 
-func Approved() Modifier {
+// ManuallyApproved sets the UserSignup states to [`approved`]
+func ManuallyApproved() Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
-		states.SetApproved(userSignup, true)
+		states.SetManuallyApproved(userSignup, true)
 	}
 }
 
-func ApprovedAutomatically(before time.Duration) Modifier {
+// ManuallyApproved sets the UserSignup state to `approved` and adds a status condition
+func ManuallyApprovedAgo(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
-		states.SetApproved(userSignup, true)
+		states.SetManuallyApproved(userSignup, true)
 		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
 			toolchainv1alpha1.Condition{
 				Type:               toolchainv1alpha1.UserSignupApproved,
-				Status:             v1.ConditionTrue,
-				Reason:             "ApprovedAutomatically",
+				Status:             corev1.ConditionTrue,
+				Reason:             toolchainv1alpha1.UserSignupApprovedByAdminReason,
+				LastTransitionTime: metav1.Time{Time: time.Now().Add(-before)},
+			})
+	}
+}
+
+// AutomaticallyApproved resets the UserSignup states
+func AutomaticallyApproved() Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		states.SetAutomaticallyApproved(userSignup, true)
+		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
+			toolchainv1alpha1.Condition{
+				Type:               toolchainv1alpha1.UserSignupApproved,
+				Status:             corev1.ConditionTrue,
+				Reason:             toolchainv1alpha1.UserSignupApprovedAutomaticallyReason,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+			})
+	}
+}
+
+// AutomaticallyApproved resets the UserSignup states and adds a status condition
+func AutomaticallyApprovedAgo(before time.Duration) Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		states.SetAutomaticallyApproved(userSignup, true)
+		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
+			toolchainv1alpha1.Condition{
+				Type:               toolchainv1alpha1.UserSignupApproved,
+				Status:             corev1.ConditionTrue,
+				Reason:             toolchainv1alpha1.UserSignupApprovedAutomaticallyReason,
 				LastTransitionTime: metav1.Time{Time: time.Now().Add(-before)},
 			})
 	}
@@ -57,7 +87,7 @@ func DeactivatedWithLastTransitionTime(before time.Duration) Modifier {
 
 		deactivatedCondition := toolchainv1alpha1.Condition{
 			Type:               toolchainv1alpha1.UserSignupComplete,
-			Status:             v1.ConditionTrue,
+			Status:             corev1.ConditionTrue,
 			Reason:             toolchainv1alpha1.UserSignupUserDeactivatedReason,
 			LastTransitionTime: metav1.Time{Time: time.Now().Add(-before)},
 		}
@@ -72,7 +102,7 @@ func VerificationRequired(before time.Duration) Modifier {
 
 		verificationRequired := toolchainv1alpha1.Condition{
 			Type:               toolchainv1alpha1.UserSignupComplete,
-			Status:             v1.ConditionFalse,
+			Status:             corev1.ConditionFalse,
 			Reason:             toolchainv1alpha1.UserSignupVerificationRequiredReason,
 			LastTransitionTime: metav1.Time{Time: time.Now().Add(-before)},
 		}
@@ -113,7 +143,7 @@ func SignupComplete(reason string) Modifier {
 		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
 			toolchainv1alpha1.Condition{
 				Type:   toolchainv1alpha1.UserSignupComplete,
-				Status: v1.ConditionTrue,
+				Status: corev1.ConditionTrue,
 				Reason: reason,
 			})
 	}

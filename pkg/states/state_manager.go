@@ -2,17 +2,30 @@ package states
 
 import toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 
-func Approved(userSignup *toolchainv1alpha1.UserSignup) bool {
+func ManuallyApproved(userSignup *toolchainv1alpha1.UserSignup) bool {
 	return contains(userSignup.Spec.States, toolchainv1alpha1.UserSignupStateApproved)
 }
 
-func SetApproved(userSignup *toolchainv1alpha1.UserSignup, val bool) {
-	setState(userSignup, toolchainv1alpha1.UserSignupStateApproved, val)
-
-	if val {
+// SetManuallyApproved when a user was manually approved by an admin
+// Note: when a user is manually approved, the `UserSignup.Spec.States` contains a single entry: `approved`
+func SetManuallyApproved(userSignup *toolchainv1alpha1.UserSignup, approved bool) {
+	setState(userSignup, toolchainv1alpha1.UserSignupStateApproved, approved)
+	if approved {
 		setState(userSignup, toolchainv1alpha1.UserSignupStateVerificationRequired, false)
 		setState(userSignup, toolchainv1alpha1.UserSignupStateDeactivating, false)
 		setState(userSignup, toolchainv1alpha1.UserSignupStateDeactivated, false)
+	}
+}
+
+func AutomaticallyApproved(userSignup *toolchainv1alpha1.UserSignup) bool {
+	return userSignup.Spec.States == nil
+}
+
+// SetAutomaticallyApproved when a user was automatically approved (verification passed, etc.)
+// Note: when a user is automatically approved, the `UserSignup.Spec.States` is reset
+func SetAutomaticallyApproved(userSignup *toolchainv1alpha1.UserSignup, approved bool) {
+	if approved {
+		userSignup.Spec.States = nil
 	}
 }
 
@@ -40,10 +53,9 @@ func Deactivated(userSignup *toolchainv1alpha1.UserSignup) bool {
 	return contains(userSignup.Spec.States, toolchainv1alpha1.UserSignupStateDeactivated)
 }
 
-func SetDeactivated(userSignup *toolchainv1alpha1.UserSignup, val bool) {
-	setState(userSignup, toolchainv1alpha1.UserSignupStateDeactivated, val)
-
-	if val {
+func SetDeactivated(userSignup *toolchainv1alpha1.UserSignup, deactivated bool) {
+	setState(userSignup, toolchainv1alpha1.UserSignupStateDeactivated, deactivated)
+	if deactivated {
 		setState(userSignup, toolchainv1alpha1.UserSignupStateApproved, false)
 		setState(userSignup, toolchainv1alpha1.UserSignupStateDeactivating, false)
 	}
