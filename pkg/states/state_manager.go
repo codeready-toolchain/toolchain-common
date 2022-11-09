@@ -2,30 +2,18 @@ package states
 
 import toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 
-func ManuallyApproved(userSignup *toolchainv1alpha1.UserSignup) bool {
+func ApprovedManually(userSignup *toolchainv1alpha1.UserSignup) bool {
 	return contains(userSignup.Spec.States, toolchainv1alpha1.UserSignupStateApproved)
 }
 
-// SetManuallyApproved when a user was manually approved by an admin
+// SetApprovedManually when a user was manually approved by an admin
 // Note: when a user is manually approved, the `UserSignup.Spec.States` contains a single entry: `approved`
-func SetManuallyApproved(userSignup *toolchainv1alpha1.UserSignup, approved bool) {
+func SetApprovedManually(userSignup *toolchainv1alpha1.UserSignup, approved bool) {
 	setState(userSignup, toolchainv1alpha1.UserSignupStateApproved, approved)
 	if approved {
 		setState(userSignup, toolchainv1alpha1.UserSignupStateVerificationRequired, false)
 		setState(userSignup, toolchainv1alpha1.UserSignupStateDeactivating, false)
 		setState(userSignup, toolchainv1alpha1.UserSignupStateDeactivated, false)
-	}
-}
-
-func AutomaticallyApproved(userSignup *toolchainv1alpha1.UserSignup) bool {
-	return userSignup.Spec.States == nil
-}
-
-// SetAutomaticallyApproved when a user was automatically approved (verification passed, etc.)
-// Note: when a user is automatically approved, the `UserSignup.Spec.States` is reset
-func SetAutomaticallyApproved(userSignup *toolchainv1alpha1.UserSignup, approved bool) {
-	if approved {
-		userSignup.Spec.States = nil
 	}
 }
 

@@ -26,50 +26,22 @@ func WithOriginalSub(originalSub string) Modifier {
 	}
 }
 
-// ManuallyApproved sets the UserSignup states to [`approved`]
-func ManuallyApproved() Modifier {
+// ApprovedManually sets the UserSignup states to [`approved`]
+func ApprovedManually() Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
-		states.SetManuallyApproved(userSignup, true)
+		states.SetApprovedManually(userSignup, true)
 	}
 }
 
-// ManuallyApproved sets the UserSignup state to `approved` and adds a status condition
-func ManuallyApprovedAgo(before time.Duration) Modifier {
+// ApprovedManuallyAgo sets the UserSignup state to `approved` and adds a status condition
+func ApprovedManuallyAgo(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
-		states.SetManuallyApproved(userSignup, true)
+		states.SetApprovedManually(userSignup, true)
 		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
 			toolchainv1alpha1.Condition{
 				Type:               toolchainv1alpha1.UserSignupApproved,
 				Status:             corev1.ConditionTrue,
 				Reason:             toolchainv1alpha1.UserSignupApprovedByAdminReason,
-				LastTransitionTime: metav1.Time{Time: time.Now().Add(-before)},
-			})
-	}
-}
-
-// AutomaticallyApproved resets the UserSignup states
-func AutomaticallyApproved() Modifier {
-	return func(userSignup *toolchainv1alpha1.UserSignup) {
-		states.SetAutomaticallyApproved(userSignup, true)
-		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
-			toolchainv1alpha1.Condition{
-				Type:               toolchainv1alpha1.UserSignupApproved,
-				Status:             corev1.ConditionTrue,
-				Reason:             toolchainv1alpha1.UserSignupApprovedAutomaticallyReason,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-			})
-	}
-}
-
-// AutomaticallyApproved resets the UserSignup states and adds a status condition
-func AutomaticallyApprovedAgo(before time.Duration) Modifier {
-	return func(userSignup *toolchainv1alpha1.UserSignup) {
-		states.SetAutomaticallyApproved(userSignup, true)
-		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
-			toolchainv1alpha1.Condition{
-				Type:               toolchainv1alpha1.UserSignupApproved,
-				Status:             corev1.ConditionTrue,
-				Reason:             toolchainv1alpha1.UserSignupApprovedAutomaticallyReason,
 				LastTransitionTime: metav1.Time{Time: time.Now().Add(-before)},
 			})
 	}

@@ -13,20 +13,20 @@ func TestStateManager(t *testing.T) {
 
 	t.Run("test manually approved", func(t *testing.T) {
 
-		SetManuallyApproved(u, true)
+		SetApprovedManually(u, true)
 
-		require.True(t, ManuallyApproved(u))
+		require.True(t, ApprovedManually(u))
 		require.Len(t, u.Spec.States, 1)
 		require.Equal(t, toolchainv1alpha1.UserSignupStateApproved, u.Spec.States[0])
 
-		SetManuallyApproved(u, false)
+		SetApprovedManually(u, false)
 
 		require.Empty(t, u.Spec.States)
-		require.False(t, ManuallyApproved(u))
+		require.False(t, ApprovedManually(u))
 
 		SetDeactivated(u, true)
 		SetVerificationRequired(u, true)
-		SetManuallyApproved(u, true)
+		SetApprovedManually(u, true)
 
 		// Setting approved should remove verification required
 		require.False(t, VerificationRequired(u))
@@ -34,46 +34,17 @@ func TestStateManager(t *testing.T) {
 		// Setting approved should remove deactivated
 		require.False(t, Deactivated(u))
 
-		SetManuallyApproved(u, false)
+		SetApprovedManually(u, false)
 
 		SetDeactivating(u, true)
-		SetManuallyApproved(u, true)
-
-		// Setting approved should remove deactivating
-		require.False(t, Deactivating(u))
-	})
-
-	t.Run("test automatically approved", func(t *testing.T) {
-
-		SetAutomaticallyApproved(u, true)
-
-		require.True(t, AutomaticallyApproved(u))
-		require.Empty(t, u.Spec.States)
-
-		SetAutomaticallyApproved(u, false)
-		require.Empty(t, u.Spec.States) // still empty
-
-		SetDeactivated(u, true)
-		SetVerificationRequired(u, true)
-		SetAutomaticallyApproved(u, true)
-
-		// Setting approved should remove verification required
-		require.False(t, VerificationRequired(u))
-
-		// Setting approved should remove deactivated
-		require.False(t, Deactivated(u))
-
-		SetAutomaticallyApproved(u, false)
-
-		SetDeactivating(u, true)
-		SetAutomaticallyApproved(u, true)
+		SetApprovedManually(u, true)
 
 		// Setting approved should remove deactivating
 		require.False(t, Deactivating(u))
 	})
 
 	t.Run("test verification required", func(t *testing.T) {
-		SetAutomaticallyApproved(u, false)
+		SetApprovedManually(u, false)
 		SetVerificationRequired(u, true)
 
 		require.True(t, VerificationRequired(u))
@@ -119,11 +90,11 @@ func TestStateManager(t *testing.T) {
 		require.Empty(t, u.Spec.States)
 
 		SetDeactivating(u, true)
-		SetAutomaticallyApproved(u, true)
+		SetApprovedManually(u, true)
 		SetDeactivated(u, true)
 
 		// Setting deactivated should also set approved and deactivating to false
-		require.False(t, ManuallyApproved(u))
+		require.False(t, ApprovedManually(u))
 		require.False(t, Deactivating(u))
 	})
 }
