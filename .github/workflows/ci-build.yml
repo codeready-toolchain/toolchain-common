@@ -54,28 +54,3 @@ jobs:
         skip-pkg-cache: true
         skip-build-cache: true
         args: --config=./.golangci.yml --verbose
-
-#   sonarcloud:
-#     name: SonarCloud
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v2
-#         with:
-#           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-#
-#       - name: Test
-#         run: |
-#           make test-with-coverage
-#
-#       - name: SonarCloud Scan
-#         uses: SonarSource/sonarcloud-github-action@master
-#         with:
-#           files: ./out/coverage/coverage.txt
-#           flags: unittests # optional
-#           fail_ci_if_error: true # optional (default = false)
-#           verbose: true # optional (default = false)
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-#           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        
-
