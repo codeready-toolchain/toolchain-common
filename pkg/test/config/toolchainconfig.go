@@ -107,6 +107,38 @@ func (o AutomaticApprovalOption) MaxNumberOfUsers(overall int, perMember ...PerM
 	return o
 }
 
+type CapacityThresholdsOption struct {
+	*ToolchainConfigOptionImpl
+}
+
+func CapacityThresholds() *CapacityThresholdsOption {
+	c := &CapacityThresholdsOption{
+		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
+	}
+	return c
+}
+
+func (c CapacityThresholdsOption) ResourceCapacityThreshold(defaultThreshold int, perMember ...PerMemberClusterOptionInt) CapacityThresholdsOption {
+	c.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.DefaultThreshold = &defaultThreshold
+		config.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.SpecificPerMemberCluster = map[string]int{}
+		for _, add := range perMember {
+			add(config.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.SpecificPerMemberCluster)
+		}
+	})
+	return c
+}
+
+func (c CapacityThresholdsOption) MaxNumberOfSpaces(perMember ...PerMemberClusterOptionInt) CapacityThresholdsOption {
+	c.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.CapacityThresholds.MaxNumberOfSpacesPerMemberCluster = map[string]int{}
+		for _, add := range perMember {
+			add(config.Spec.Host.CapacityThresholds.MaxNumberOfSpacesPerMemberCluster)
+		}
+	})
+	return c
+}
+
 type DeactivationOption struct {
 	*ToolchainConfigOptionImpl
 }
