@@ -59,3 +59,9 @@ func WithSpaceTier(tier string) Option {
 		event.Spec.SpaceTier = tier
 	}
 }
+
+func WithMaxAttendees(value int) Option {
+	return func(event *toolchainv1alpha1.SocialEvent) {
+		event.Spec.MaxAttendees = value
+	}
+}
