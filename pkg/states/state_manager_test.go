@@ -1,31 +1,32 @@
 package states
 
 import (
+	"testing"
+
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestStateManager(t *testing.T) {
 
 	u := &toolchainv1alpha1.UserSignup{}
 
-	t.Run("test approved", func(t *testing.T) {
+	t.Run("test manually approved", func(t *testing.T) {
 
-		SetApproved(u, true)
+		SetApprovedManually(u, true)
 
-		require.True(t, Approved(u))
+		require.True(t, ApprovedManually(u))
 		require.Len(t, u.Spec.States, 1)
 		require.Equal(t, toolchainv1alpha1.UserSignupStateApproved, u.Spec.States[0])
 
-		SetApproved(u, false)
+		SetApprovedManually(u, false)
 
-		require.Len(t, u.Spec.States, 0)
-		require.False(t, Approved(u))
+		require.Empty(t, u.Spec.States)
+		require.False(t, ApprovedManually(u))
 
 		SetDeactivated(u, true)
 		SetVerificationRequired(u, true)
-		SetApproved(u, true)
+		SetApprovedManually(u, true)
 
 		// Setting approved should remove verification required
 		require.False(t, VerificationRequired(u))
@@ -33,17 +34,17 @@ func TestStateManager(t *testing.T) {
 		// Setting approved should remove deactivated
 		require.False(t, Deactivated(u))
 
-		SetApproved(u, false)
+		SetApprovedManually(u, false)
 
 		SetDeactivating(u, true)
-		SetApproved(u, true)
+		SetApprovedManually(u, true)
 
 		// Setting approved should remove deactivating
 		require.False(t, Deactivating(u))
 	})
 
 	t.Run("test verification required", func(t *testing.T) {
-		SetApproved(u, false)
+		SetApprovedManually(u, false)
 		SetVerificationRequired(u, true)
 
 		require.True(t, VerificationRequired(u))
@@ -53,7 +54,7 @@ func TestStateManager(t *testing.T) {
 
 		SetVerificationRequired(u, false)
 
-		require.Len(t, u.Spec.States, 0)
+		require.Empty(t, u.Spec.States)
 		require.False(t, VerificationRequired(u))
 	})
 
@@ -68,7 +69,7 @@ func TestStateManager(t *testing.T) {
 
 		SetDeactivating(u, false)
 
-		require.Len(t, u.Spec.States, 0)
+		require.Empty(t, u.Spec.States)
 		require.False(t, Deactivating(u))
 
 		SetDeactivated(u, true)
@@ -86,14 +87,14 @@ func TestStateManager(t *testing.T) {
 		require.Equal(t, toolchainv1alpha1.UserSignupStateDeactivated, u.Spec.States[0])
 
 		SetDeactivated(u, false)
-		require.Len(t, u.Spec.States, 0)
+		require.Empty(t, u.Spec.States)
 
 		SetDeactivating(u, true)
-		SetApproved(u, true)
+		SetApprovedManually(u, true)
 		SetDeactivated(u, true)
 
 		// Setting deactivated should also set approved and deactivating to false
-		require.False(t, Approved(u))
+		require.False(t, ApprovedManually(u))
 		require.False(t, Deactivating(u))
 	})
 }
