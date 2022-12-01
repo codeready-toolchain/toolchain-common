@@ -16,7 +16,7 @@ func NewSocialEvent(namespace, name string, options ...Option) *toolchainv1alpha
 		},
 		Spec: toolchainv1alpha1.SocialEventSpec{
 			UserTier:     "deactivate30",
-			SpaceTier:    "base",
+			SpaceTier:    "base1ns",
 			MaxAttendees: 10,
 			StartTime:    metav1.NewTime(time.Now().Add(-1 * time.Hour)), // opened 1hr ago
 			EndTime:      metav1.NewTime(time.Now().Add(1 * time.Hour)),  // closing in 1hr
@@ -45,5 +45,23 @@ func WithEndTime(end time.Time) Option {
 func WithActivationCount(value int) Option {
 	return func(event *toolchainv1alpha1.SocialEvent) {
 		event.Status.ActivationCount = value
+	}
+}
+
+func WithUserTier(tier string) Option {
+	return func(event *toolchainv1alpha1.SocialEvent) {
+		event.Spec.UserTier = tier
+	}
+}
+
+func WithSpaceTier(tier string) Option {
+	return func(event *toolchainv1alpha1.SocialEvent) {
+		event.Spec.SpaceTier = tier
+	}
+}
+
+func WithMaxAttendees(value int) Option {
+	return func(event *toolchainv1alpha1.SocialEvent) {
+		event.Spec.MaxAttendees = value
 	}
 }
