@@ -85,28 +85,6 @@ func (o AutomaticApprovalOption) Enabled(value bool) AutomaticApprovalOption {
 	return o
 }
 
-func (o AutomaticApprovalOption) ResourceCapacityThreshold(defaultThreshold int, perMember ...PerMemberClusterOptionInt) AutomaticApprovalOption {
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.AutomaticApproval.ResourceCapacityThreshold.DefaultThreshold = &defaultThreshold
-		config.Spec.Host.AutomaticApproval.ResourceCapacityThreshold.SpecificPerMemberCluster = map[string]int{}
-		for _, add := range perMember {
-			add(config.Spec.Host.AutomaticApproval.ResourceCapacityThreshold.SpecificPerMemberCluster)
-		}
-	})
-	return o
-}
-
-func (o AutomaticApprovalOption) MaxNumberOfUsers(overall int, perMember ...PerMemberClusterOptionInt) AutomaticApprovalOption {
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.AutomaticApproval.MaxNumberOfUsers.Overall = &overall
-		config.Spec.Host.AutomaticApproval.MaxNumberOfUsers.SpecificPerMemberCluster = map[string]int{}
-		for _, add := range perMember {
-			add(config.Spec.Host.AutomaticApproval.MaxNumberOfUsers.SpecificPerMemberCluster)
-		}
-	})
-	return o
-}
-
 type CapacityThresholdsOption struct {
 	*ToolchainConfigOptionImpl
 }

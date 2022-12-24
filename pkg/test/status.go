@@ -40,7 +40,6 @@ func AssertContainsMember(t T, members []toolchainv1alpha1.Member, contains tool
 			AssertConditionsMatch(t, c.MemberStatus.Conditions, contains.MemberStatus.Conditions...)
 			assert.Equal(t, contains.APIEndpoint, c.APIEndpoint)
 			assert.Equal(t, contains.MemberStatus.ResourceUsage, c.MemberStatus.ResourceUsage)
-			assert.Equal(t, contains.UserAccountCount, c.UserAccountCount)
 			return
 		}
 	}

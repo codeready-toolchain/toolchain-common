@@ -47,7 +47,7 @@ func TestCache(t *testing.T) {
 
 	t.Run("return config that is stored in cache", func(t *testing.T) {
 		// given
-		originalConfig := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(123, testconfig.PerMemberCluster("member1", 321)))
+		originalConfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321)))
 		cl := test.NewFakeClient(t, originalConfig)
 
 		// when
@@ -62,7 +62,7 @@ func TestCache(t *testing.T) {
 
 		t.Run("returns the same when the cache hasn't been updated", func(t *testing.T) {
 			// given
-			newConfig := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(666))
+			newConfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 666)))
 			cl := test.NewFakeClient(t, newConfig)
 
 			// when
@@ -80,7 +80,7 @@ func TestCache(t *testing.T) {
 		t.Run("returns the new config when the cache was updated", func(t *testing.T) {
 			// given
 			newConfig := NewToolchainConfigObjWithReset(t,
-				testconfig.AutomaticApproval().MaxNumberOfUsers(666),
+				testconfig.CapacityThresholds().ResourceCapacityThreshold(666),
 				testconfig.Deactivation().DeactivatingNotificationDays(5),
 				testconfig.Notifications().Secret().
 					Ref("notification-secret").
@@ -112,7 +112,7 @@ func TestGetConfigFailed(t *testing.T) {
 	defer restore()
 	// given
 	t.Run("config not found", func(t *testing.T) {
-		config := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(123, testconfig.PerMemberCluster("member1", 321)))
+		config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321)))
 		cl := test.NewFakeClient(t, config)
 		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 			return apierrors.NewNotFound(schema.GroupResource{}, "config")
@@ -129,7 +129,7 @@ func TestGetConfigFailed(t *testing.T) {
 	})
 
 	t.Run("error getting config", func(t *testing.T) {
-		config := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(123, testconfig.PerMemberCluster("member1", 321)))
+		config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321)))
 		cl := test.NewFakeClient(t, config)
 		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 			return fmt.Errorf("some error")
@@ -145,7 +145,7 @@ func TestGetConfigFailed(t *testing.T) {
 	})
 
 	t.Run("load secrets error", func(t *testing.T) {
-		config := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(123, testconfig.PerMemberCluster("member1", 321)))
+		config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321)))
 		// given
 		cl := test.NewFakeClient(t, config)
 		cl.MockList = func(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
@@ -174,7 +174,7 @@ func TestGetCachedConfig(t *testing.T) {
 
 	t.Run("cache filled", func(t *testing.T) {
 		// given
-		original := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(1, testconfig.PerMemberCluster("member", 1)))
+		original := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member", 1)))
 
 		secretData := map[string]map[string]string{
 			"notification-secret": {
@@ -200,7 +200,7 @@ func TestLoadLatest(t *testing.T) {
 	restore := test.SetEnvVarAndRestore(t, "WATCH_NAMESPACE", test.HostOperatorNs)
 	defer restore()
 	t.Run("config found", func(t *testing.T) {
-		initConfig := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(1100))
+		initConfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().ResourceCapacityThreshold(1100))
 		initSecret := &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "notification-secret",
@@ -221,7 +221,7 @@ func TestLoadLatest(t *testing.T) {
 		require.NoError(t, err)
 		toolchaincfg, ok := actual.(*toolchainv1alpha1.ToolchainConfig)
 		require.True(t, ok)
-		assert.Equal(t, 1100, *toolchaincfg.Spec.Host.AutomaticApproval.MaxNumberOfUsers.Overall)
+		assert.Equal(t, 1100, *toolchaincfg.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.DefaultThreshold)
 		assert.Len(t, secrets, 1)
 		assert.Equal(t, secrets["notification-secret"]["mailgunAPIKey"], "abc123")
 
@@ -233,14 +233,14 @@ func TestLoadLatest(t *testing.T) {
 			require.NoError(t, err)
 			toolchaincfg, ok := actual.(*toolchainv1alpha1.ToolchainConfig)
 			require.True(t, ok)
-			assert.Equal(t, 1100, *toolchaincfg.Spec.Host.AutomaticApproval.MaxNumberOfUsers.Overall)
+			assert.Equal(t, 1100, *toolchaincfg.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.DefaultThreshold)
 			assert.Len(t, secrets, 1)
 			assert.Equal(t, secrets["notification-secret"]["mailgunAPIKey"], "abc123")
 		})
 
 		t.Run("returns the new value when the config has been updated", func(t *testing.T) {
 			// get
-			changedConfig := UpdateToolchainConfigObjWithReset(t, cl, testconfig.AutomaticApproval().MaxNumberOfUsers(2000))
+			changedConfig := UpdateToolchainConfigObjWithReset(t, cl, testconfig.CapacityThresholds().ResourceCapacityThreshold(2000))
 			err := cl.Update(context.TODO(), changedConfig)
 			require.NoError(t, err)
 
@@ -257,7 +257,7 @@ func TestLoadLatest(t *testing.T) {
 			require.NoError(t, err)
 			toolchaincfg, ok := actual.(*toolchainv1alpha1.ToolchainConfig)
 			require.True(t, ok)
-			assert.Equal(t, 2000, *toolchaincfg.Spec.Host.AutomaticApproval.MaxNumberOfUsers.Overall)
+			assert.Equal(t, 2000, *toolchaincfg.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.DefaultThreshold)
 			assert.Len(t, secrets, 1)
 			assert.Equal(t, secrets["notification-secret"]["mailgunAPIKey"], "abc456")
 		})
@@ -277,7 +277,7 @@ func TestLoadLatest(t *testing.T) {
 	})
 
 	t.Run("get config error", func(t *testing.T) {
-		initconfig := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(100))
+		initconfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().ResourceCapacityThreshold(100))
 		// given
 		cl := test.NewFakeClient(t, initconfig)
 		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
@@ -294,7 +294,7 @@ func TestLoadLatest(t *testing.T) {
 	})
 
 	t.Run("load secrets error", func(t *testing.T) {
-		initconfig := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(100))
+		initconfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().ResourceCapacityThreshold(100))
 		// given
 		cl := test.NewFakeClient(t, initconfig)
 		cl.MockList = func(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
@@ -318,7 +318,7 @@ func TestMultipleExecutionsInParallel(t *testing.T) {
 	var latch sync.WaitGroup
 	latch.Add(1)
 	var waitForFinished sync.WaitGroup
-	initconfig := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(1, testconfig.PerMemberCluster("member", 1)))
+	initconfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member", 1)))
 
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -351,7 +351,7 @@ func TestMultipleExecutionsInParallel(t *testing.T) {
 		go func(i int) {
 			defer waitForFinished.Done()
 			latch.Wait()
-			config := NewToolchainConfigObjWithReset(t, testconfig.AutomaticApproval().MaxNumberOfUsers(i+1, testconfig.PerMemberCluster(fmt.Sprintf("member%d", i), i)))
+			config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster(fmt.Sprintf("member%d", i), i)))
 
 			secretData := map[string]map[string]string{
 				"notification-secret": {
