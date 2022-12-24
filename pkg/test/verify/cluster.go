@@ -199,6 +199,7 @@ func Labels(clType cluster.Type, ns, ownerClusterName string) map[string]string 
 	labels := map[string]string{}
 	if clType != "" {
 		labels["type"] = string(clType)
+		labels["toolchain.dev.openshift.com/cluster-label/"+string(clType)] = ""
 	}
 	if ns != "" {
 		labels["namespace"] = ns
