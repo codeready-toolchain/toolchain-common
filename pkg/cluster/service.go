@@ -3,26 +3,27 @@ package cluster
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"reflect"
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/apis"
-	"k8s.io/client-go/rest"
-
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	labelType             = "type"
-	labelNamespace        = "namespace"
-	labelOwnerClusterName = "ownerClusterName"
+	labelType              = "type"
+	labelNamespace         = "namespace"
+	labelOwnerClusterName  = "ownerClusterName"
+	labelClusterTypePrefix = "toolchain.dev.openshift.com/cluster-label"
 
 	defaultHostOperatorNamespace   = "toolchain-host-operator"
 	defaultMemberOperatorNamespace = "toolchain-member-operator"
@@ -74,6 +75,19 @@ func (s *ToolchainClusterService) AddOrUpdateToolchainCluster(cluster *toolchain
 	if err != nil {
 		return errors.Wrap(err, "the cluster was not added nor updated")
 	}
+	return nil
+}
+
+func (s *ToolchainClusterService) addToolchainClusterLabelFromType(log logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
+	clusterLabelType := fmt.Sprintf("%s/%s", labelClusterTypePrefix, toolchainCluster.Labels[labelType])
+	if _, exists := toolchainCluster.Labels[clusterLabelType]; !exists {
+		log.Info("cluster label not found: " + clusterLabelType)
+		toolchainCluster.Labels[clusterLabelType] = ""
+	}
+	if err := s.client.Update(context.TODO(), toolchainCluster); err != nil {
+		return err
+	}
+	log.Info("cluster label updated: " + clusterLabelType)
 	return nil
 }
 
@@ -129,6 +143,12 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 			cluster.OperatorNamespace = defaultMemberOperatorNamespace
 		}
 	}
+	// update toolchaincluster CR labels with type
+	log.Info("adding cluster label based on type")
+	if err := s.addToolchainClusterLabelFromType(log, toolchainCluster); err != nil {
+		return errors.Wrap(err, "cannot update ToolchainCluster labels")
+	}
+
 	clusterCache.addCachedToolchainCluster(cluster)
 	return nil
 }
