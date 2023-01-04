@@ -80,8 +80,7 @@ func (s *ToolchainClusterService) AddOrUpdateToolchainCluster(cluster *toolchain
 }
 
 func ToolchainClusterRoleLabelHome() string {
-	clusterLabelType := fmt.Sprintf("%s/%s", LabelClusterTypePrefix, Home)
-	return clusterLabelType
+	return fmt.Sprintf("%s/%s", LabelClusterTypePrefix, Home)
 }
 
 func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {

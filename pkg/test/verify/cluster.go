@@ -52,11 +52,13 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 				} else {
 					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
 				}
+				// check that toolchain cluster label home was set only on member cluster type
+				expectedToolChainClusterLabelType := cluster.ToolchainClusterRoleLabelHome()
+				_, found := toolchainCluster.Labels[expectedToolChainClusterLabelType]
 				if labels["type"] == string(cluster.Member) {
-					// check that toolchain cluster label was created from type
-					expectedToolChainClusterLabelType := cluster.ToolchainClusterRoleLabelHome()
-					_, found := toolchainCluster.Labels[expectedToolChainClusterLabelType]
 					require.True(t, found)
+				} else {
+					require.False(t, found)
 				}
 				assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
 				assert.Equal(t, test.NameHost, cachedToolchainCluster.OwnerClusterName)
@@ -98,6 +100,10 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 				} else {
 					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
 				}
+				// check that toolchain cluster label is not set on host cluster
+				expectedToolChainClusterLabelType := cluster.ToolchainClusterRoleLabelHome()
+				_, found := toolchainCluster.Labels[expectedToolChainClusterLabelType]
+				require.False(t, found)
 				assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
 				assert.Equal(t, test.NameMember, cachedToolchainCluster.OwnerClusterName)
 				assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
