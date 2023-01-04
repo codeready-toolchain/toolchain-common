@@ -20,10 +20,11 @@ import (
 )
 
 const (
-	labelType              = "type"
-	labelNamespace         = "namespace"
-	labelOwnerClusterName  = "ownerClusterName"
-	labelClusterTypePrefix = "toolchain.dev.openshift.com/cluster-label"
+	labelNamespace        = "namespace"
+	labelOwnerClusterName = "ownerClusterName"
+	LabelType             = "type"
+	// LabelClusterTypePrefix is the prefix that defines the cluster type as label key
+	LabelClusterTypePrefix = "cluster-role.toolchain.dev.openshift.com"
 
 	defaultHostOperatorNamespace   = "toolchain-host-operator"
 	defaultMemberOperatorNamespace = "toolchain-member-operator"
@@ -78,17 +79,9 @@ func (s *ToolchainClusterService) AddOrUpdateToolchainCluster(cluster *toolchain
 	return nil
 }
 
-func (s *ToolchainClusterService) addToolchainClusterLabelFromType(log logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
-	clusterLabelType := fmt.Sprintf("%s/%s", labelClusterTypePrefix, toolchainCluster.Labels[labelType])
-	if _, exists := toolchainCluster.Labels[clusterLabelType]; !exists {
-		log.Info("cluster label not found: " + clusterLabelType)
-		toolchainCluster.Labels[clusterLabelType] = ""
-	}
-	if err := s.client.Update(context.TODO(), toolchainCluster); err != nil {
-		return err
-	}
-	log.Info("cluster label updated: " + clusterLabelType)
-	return nil
+func ToolchainClusterRoleLabelHome() string {
+	clusterLabelType := fmt.Sprintf("%s/%s", LabelClusterTypePrefix, Home)
+	return clusterLabelType
 }
 
 func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
@@ -142,11 +135,6 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 		} else {
 			cluster.OperatorNamespace = defaultMemberOperatorNamespace
 		}
-	}
-	// update toolchaincluster CR labels with type
-	log.Info("adding cluster label based on type")
-	if err := s.addToolchainClusterLabelFromType(log, toolchainCluster); err != nil {
-		return errors.Wrap(err, "cannot update ToolchainCluster labels")
 	}
 
 	clusterCache.addCachedToolchainCluster(cluster)
@@ -231,7 +219,7 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 		Name:              toolchainCluster.Name,
 		APIEndpoint:       toolchainCluster.Spec.APIEndpoint,
 		RestConfig:        restConfig,
-		Type:              Type(toolchainCluster.Labels[labelType]),
+		Type:              Type(toolchainCluster.Labels[LabelType]),
 		OperatorNamespace: toolchainCluster.Labels[labelNamespace],
 		OwnerClusterName:  toolchainCluster.Labels[labelOwnerClusterName],
 	}, nil
@@ -250,7 +238,7 @@ func IsReady(clusterStatus *toolchainv1alpha1.ToolchainClusterStatus) bool {
 
 func ListToolchainClusterConfigs(cl client.Client, namespace string, clusterType Type, timeout time.Duration) ([]*Config, error) {
 	toolchainClusters := &toolchainv1alpha1.ToolchainClusterList{}
-	if err := cl.List(context.TODO(), toolchainClusters, client.InNamespace(namespace), client.MatchingLabels{labelType: string(clusterType)}); err != nil {
+	if err := cl.List(context.TODO(), toolchainClusters, client.InNamespace(namespace), client.MatchingLabels{LabelType: string(clusterType)}); err != nil {
 		return nil, err
 	}
 	var configs []*Config

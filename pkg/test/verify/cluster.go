@@ -52,6 +52,12 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 				} else {
 					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
 				}
+				if labels["type"] == string(cluster.Member) {
+					// check that toolchain cluster label was created from type
+					expectedToolChainClusterLabelType := cluster.ToolchainClusterRoleLabelHome()
+					_, found := toolchainCluster.Labels[expectedToolChainClusterLabelType]
+					require.True(t, found)
+				}
 				assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
 				assert.Equal(t, test.NameHost, cachedToolchainCluster.OwnerClusterName)
 				assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
@@ -199,7 +205,10 @@ func Labels(clType cluster.Type, ns, ownerClusterName string) map[string]string 
 	labels := map[string]string{}
 	if clType != "" {
 		labels["type"] = string(clType)
-		labels["toolchain.dev.openshift.com/cluster-label/"+string(clType)] = ""
+		// set cluster role home label only for member clusters
+		if clType == cluster.Member {
+			labels[cluster.ToolchainClusterRoleLabelHome()] = ""
+		}
 	}
 	if ns != "" {
 		labels["namespace"] = ns
