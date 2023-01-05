@@ -52,9 +52,9 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 				} else {
 					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
 				}
-				// check that toolchain cluster label home was set only on member cluster type
-				expectedToolChainClusterLabelType := cluster.ToolchainClusterRoleLabelHome()
-				_, found := toolchainCluster.Labels[expectedToolChainClusterLabelType]
+				// check that toolchain cluster role label tenant was set only on member cluster type
+				expectedToolChainClusterRoleLabel := cluster.ToolchainClusterRoleLabelTenant()
+				_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
 				if labels["type"] == string(cluster.Member) {
 					require.True(t, found)
 				} else {
@@ -100,9 +100,9 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 				} else {
 					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
 				}
-				// check that toolchain cluster label is not set on host cluster
-				expectedToolChainClusterLabelType := cluster.ToolchainClusterRoleLabelHome()
-				_, found := toolchainCluster.Labels[expectedToolChainClusterLabelType]
+				// check that toolchain cluster role label tenant is not set on host cluster
+				expectedToolChainClusterRoleLabel := cluster.ToolchainClusterRoleLabelTenant()
+				_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
 				require.False(t, found)
 				assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
 				assert.Equal(t, test.NameMember, cachedToolchainCluster.OwnerClusterName)
@@ -211,9 +211,9 @@ func Labels(clType cluster.Type, ns, ownerClusterName string) map[string]string 
 	labels := map[string]string{}
 	if clType != "" {
 		labels["type"] = string(clType)
-		// set cluster role home label only for member clusters
+		// set cluster role tenant label only for member type clusters
 		if clType == cluster.Member {
-			labels[cluster.ToolchainClusterRoleLabelHome()] = ""
+			labels[cluster.ToolchainClusterRoleLabelTenant()] = ""
 		}
 	}
 	if ns != "" {

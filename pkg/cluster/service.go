@@ -23,8 +23,8 @@ const (
 	labelNamespace        = "namespace"
 	labelOwnerClusterName = "ownerClusterName"
 	LabelType             = "type"
-	// LabelClusterTypePrefix is the prefix that defines the cluster type as label key
-	LabelClusterTypePrefix = "cluster-role.toolchain.dev.openshift.com"
+	// labelClusterRolePrefix is the prefix that defines the cluster role as label key
+	labelClusterRolePrefix = "cluster-role.toolchain.dev.openshift.com"
 
 	defaultHostOperatorNamespace   = "toolchain-host-operator"
 	defaultMemberOperatorNamespace = "toolchain-member-operator"
@@ -79,8 +79,8 @@ func (s *ToolchainClusterService) AddOrUpdateToolchainCluster(cluster *toolchain
 	return nil
 }
 
-func ToolchainClusterRoleLabelHome() string {
-	return fmt.Sprintf("%s/%s", LabelClusterTypePrefix, Home)
+func ToolchainClusterRoleLabelTenant() string {
+	return fmt.Sprintf("%s/%s", labelClusterRolePrefix, Tenant)
 }
 
 func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {

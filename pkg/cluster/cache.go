@@ -150,5 +150,5 @@ type Type string
 const (
 	Member Type = "member"
 	Host   Type = "host"
-	Home   Type = "home"
+	Tenant Type = "tenant"
 )
