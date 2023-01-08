@@ -72,16 +72,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 }
 
 func (r *Reconciler) addToolchainClusterRoleLabelFromType(log logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
-	if _, clusterTypeFound := toolchainCluster.Labels[cluster.LabelType]; !clusterTypeFound {
+	if clusterType, found := toolchainCluster.Labels[cluster.LabelType]; !found {
 		log.Info("cluster `type` label not found, unable to add toolchain cluster role label from type")
 		return nil
-	}
-	if toolchainCluster.Labels[cluster.LabelType] != string(cluster.Member) {
+	} else if clusterType != string(cluster.Member) {
 		log.Info("cluster `type` is not member, skipping cluster role label setting")
 		return nil
 	}
-
-	clusterRoleLabel := cluster.ToolchainClusterRoleLabelTenant()
+	clusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
 	if _, exists := toolchainCluster.Labels[clusterRoleLabel]; !exists {
 		log.Info("setting cluster role label for toolchaincluster", clusterRoleLabel, toolchainCluster.Name)
 		toolchainCluster.Labels[clusterRoleLabel] = ""

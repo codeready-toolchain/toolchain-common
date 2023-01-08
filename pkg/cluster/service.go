@@ -24,7 +24,7 @@ const (
 	labelOwnerClusterName = "ownerClusterName"
 	LabelType             = "type"
 	// labelClusterRolePrefix is the prefix that defines the cluster role as label key
-	labelClusterRolePrefix = "cluster-role.toolchain.dev.openshift.com"
+	labelClusterRolePrefix = "cluster-role"
 
 	defaultHostOperatorNamespace   = "toolchain-host-operator"
 	defaultMemberOperatorNamespace = "toolchain-member-operator"
@@ -79,8 +79,9 @@ func (s *ToolchainClusterService) AddOrUpdateToolchainCluster(cluster *toolchain
 	return nil
 }
 
-func ToolchainClusterRoleLabelTenant() string {
-	return fmt.Sprintf("%s/%s", labelClusterRolePrefix, Tenant)
+// RoleLabel returns a label key that should be used to specific assign roles to clusters.
+func RoleLabel(role string) string {
+	return fmt.Sprintf("%s.%s%s", labelClusterRolePrefix, toolchainv1alpha1.LabelKeyPrefix, role)
 }
 
 func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {

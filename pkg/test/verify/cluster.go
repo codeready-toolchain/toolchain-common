@@ -53,7 +53,7 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
 				}
 				// check that toolchain cluster role label tenant was set only on member cluster type
-				expectedToolChainClusterRoleLabel := cluster.ToolchainClusterRoleLabelTenant()
+				expectedToolChainClusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
 				_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
 				if labels["type"] == string(cluster.Member) {
 					require.True(t, found)
@@ -101,7 +101,7 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
 				}
 				// check that toolchain cluster role label tenant is not set on host cluster
-				expectedToolChainClusterRoleLabel := cluster.ToolchainClusterRoleLabelTenant()
+				expectedToolChainClusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
 				_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
 				require.False(t, found)
 				assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
@@ -211,9 +211,10 @@ func Labels(clType cluster.Type, ns, ownerClusterName string) map[string]string 
 	labels := map[string]string{}
 	if clType != "" {
 		labels["type"] = string(clType)
-		// set cluster role tenant label only for member type clusters
+		// Set cluster role tenant label only for member type clusters.
 		if clType == cluster.Member {
-			labels[cluster.ToolchainClusterRoleLabelTenant()] = ""
+			// We use only the label key, the value can remain empty.
+			labels[cluster.RoleLabel(cluster.Tenant)] = ""
 		}
 	}
 	if ns != "" {
