@@ -80,8 +80,8 @@ func (s *ToolchainClusterService) AddOrUpdateToolchainCluster(cluster *toolchain
 }
 
 // RoleLabel returns a label key that should be used to specific assign roles to clusters.
-func RoleLabel(role string) string {
-	return fmt.Sprintf("%s.%s%s", labelClusterRolePrefix, toolchainv1alpha1.LabelKeyPrefix, role)
+func RoleLabel(role Type) string {
+	return fmt.Sprintf("%s.%s%s", labelClusterRolePrefix, toolchainv1alpha1.LabelKeyPrefix, string(role))
 }
 
 func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
