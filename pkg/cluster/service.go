@@ -136,7 +136,6 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 			cluster.OperatorNamespace = defaultMemberOperatorNamespace
 		}
 	}
-
 	clusterCache.addCachedToolchainCluster(cluster)
 	return nil
 }
