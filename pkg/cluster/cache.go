@@ -150,5 +150,12 @@ type Type string
 const (
 	Member Type = "member"
 	Host   Type = "host"
-	Tenant Type = "tenant"
+)
+
+// Role defines the role of the cluster.
+// Each type of cluster can have multiple roles (tenant for specific APIs, user workloads, others ... )
+type Role string
+
+const (
+	Tenant Role = "tenant"
 )
