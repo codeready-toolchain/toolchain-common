@@ -82,6 +82,7 @@ func (r *Reconciler) addToolchainClusterRoleLabelFromType(log logr.Logger, toolc
 	clusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
 	if _, exists := toolchainCluster.Labels[clusterRoleLabel]; !exists {
 		log.Info("setting cluster role label for toolchaincluster", clusterRoleLabel, toolchainCluster.Name)
+		// We use only the label key, the value can remain empty.
 		toolchainCluster.Labels[clusterRoleLabel] = ""
 		if err := r.client.Update(context.TODO(), toolchainCluster); err != nil {
 			return err
