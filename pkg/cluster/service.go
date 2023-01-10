@@ -68,7 +68,7 @@ func NewToolchainClusterService(client client.Client, log logr.Logger, namespace
 // creates CachedToolchainCluster with a kube client and stores it in a cache
 func (s *ToolchainClusterService) AddOrUpdateToolchainCluster(cluster *toolchainv1alpha1.ToolchainCluster) error {
 	log := s.enrichLogger(cluster)
-	log.Info("observed a cluster")
+	// log.Info("observed a cluster")
 
 	err := s.addToolchainCluster(log, cluster)
 	if err != nil {
@@ -110,7 +110,7 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 			return errors.Wrap(err, "cannot create ToolchainCluster client")
 		}
 	} else {
-		log.Info("reusing the client for the cached ToolchainCluster")
+		// log.Info("reusing the client for the cached ToolchainCluster")
 		cl = cachedToolchainCluster.Client
 	}
 
