@@ -80,7 +80,7 @@ func updateClusterStatuses(namespace string, cl client.Client) {
 			remoteClusterClientset: clientSet,
 			logger:                 clusterLogger,
 		}
-		clusterLogger.Info("getting the current state of ToolchainCluster")
+		// clusterLogger.Info("getting the current state of ToolchainCluster")
 		if err := healthChecker.updateIndividualClusterStatus(clusterObj); err != nil {
 			clusterLogger.Error(err, "unable to update cluster status of ToolchainCluster")
 		}
