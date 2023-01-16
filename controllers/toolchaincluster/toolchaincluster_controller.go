@@ -6,6 +6,7 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -61,5 +62,31 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		return reconcile.Result{}, err
 	}
 
+	// add toolchaincluster role label if not present
+	reqLogger.Info("adding cluster role label based on type")
+	if err := r.addToolchainClusterRoleLabelFromType(reqLogger, toolchainCluster); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	return reconcile.Result{}, r.clusterCacheService.AddOrUpdateToolchainCluster(toolchainCluster)
+}
+
+func (r *Reconciler) addToolchainClusterRoleLabelFromType(log logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
+	if clusterType, found := toolchainCluster.Labels[cluster.LabelType]; !found {
+		log.Info("cluster `type` label not found, unable to add toolchain cluster role label from type")
+		return nil
+	} else if clusterType != string(cluster.Member) {
+		log.Info("cluster `type` is not member, skipping cluster role label setting")
+		return nil
+	}
+	clusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
+	if _, exists := toolchainCluster.Labels[clusterRoleLabel]; !exists {
+		log.Info("setting cluster role label for toolchaincluster", clusterRoleLabel, toolchainCluster.Name)
+		// We use only the label key, the value can remain empty.
+		toolchainCluster.Labels[clusterRoleLabel] = ""
+		if err := r.client.Update(context.TODO(), toolchainCluster); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -3,26 +3,28 @@ package cluster
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"reflect"
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/apis"
-	"k8s.io/client-go/rest"
-
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	labelType             = "type"
 	labelNamespace        = "namespace"
 	labelOwnerClusterName = "ownerClusterName"
+	LabelType             = "type"
+	// labelClusterRolePrefix is the prefix that defines the cluster role as label key
+	labelClusterRolePrefix = "cluster-role"
 
 	defaultHostOperatorNamespace   = "toolchain-host-operator"
 	defaultMemberOperatorNamespace = "toolchain-member-operator"
@@ -75,6 +77,11 @@ func (s *ToolchainClusterService) AddOrUpdateToolchainCluster(cluster *toolchain
 		return errors.Wrap(err, "the cluster was not added nor updated")
 	}
 	return nil
+}
+
+// RoleLabel returns a label key that should be used to specific assign roles to clusters.
+func RoleLabel(role Role) string {
+	return fmt.Sprintf("%s.%s%s", labelClusterRolePrefix, toolchainv1alpha1.LabelKeyPrefix, string(role))
 }
 
 func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
@@ -211,7 +218,7 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 		Name:              toolchainCluster.Name,
 		APIEndpoint:       toolchainCluster.Spec.APIEndpoint,
 		RestConfig:        restConfig,
-		Type:              Type(toolchainCluster.Labels[labelType]),
+		Type:              Type(toolchainCluster.Labels[LabelType]),
 		OperatorNamespace: toolchainCluster.Labels[labelNamespace],
 		OwnerClusterName:  toolchainCluster.Labels[labelOwnerClusterName],
 	}, nil
@@ -230,7 +237,7 @@ func IsReady(clusterStatus *toolchainv1alpha1.ToolchainClusterStatus) bool {
 
 func ListToolchainClusterConfigs(cl client.Client, namespace string, clusterType Type, timeout time.Duration) ([]*Config, error) {
 	toolchainClusters := &toolchainv1alpha1.ToolchainClusterList{}
-	if err := cl.List(context.TODO(), toolchainClusters, client.InNamespace(namespace), client.MatchingLabels{labelType: string(clusterType)}); err != nil {
+	if err := cl.List(context.TODO(), toolchainClusters, client.InNamespace(namespace), client.MatchingLabels{LabelType: string(clusterType)}); err != nil {
 		return nil, err
 	}
 	var configs []*Config
