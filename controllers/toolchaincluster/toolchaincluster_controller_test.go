@@ -16,6 +16,8 @@ func TestAddToolchainClusterAsMember(t *testing.T) {
 	// given & then
 	verify.AddToolchainClusterAsMember(t, func(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService) error {
 		// given
+		// let's delete the tenant label to verify that it will be added by the controller
+		delete(toolchainCluster.Labels, cluster.RoleLabel(cluster.Tenant))
 		controller, req := prepareReconcile(toolchainCluster, cl, service)
 
 		// when

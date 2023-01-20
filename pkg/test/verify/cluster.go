@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -53,6 +54,7 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
 				}
 				// check that toolchain cluster role label tenant was set only on member cluster type
+				require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
 				expectedToolChainClusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
 				_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
 				if labels["type"] == string(cluster.Member) {
@@ -101,6 +103,7 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
 				}
 				// check that toolchain cluster role label tenant is not set on host cluster
+				require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
 				expectedToolChainClusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
 				_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
 				require.False(t, found)
