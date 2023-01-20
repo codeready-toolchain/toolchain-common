@@ -26,7 +26,7 @@ coverage:
     - "build/*"
     - "example/*"
     - "openshift-ci/*"
-    - "pkg/test/*"
+    - "pkg/test/**/*"
 
 # See http://docs.codecov.io/docs/pull-request-comments-1
 comment:
