@@ -221,6 +221,7 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 		Type:              Type(toolchainCluster.Labels[LabelType]),
 		OperatorNamespace: toolchainCluster.Labels[labelNamespace],
 		OwnerClusterName:  toolchainCluster.Labels[labelOwnerClusterName],
+		Labels:            toolchainCluster.Labels,
 	}, nil
 }
 
