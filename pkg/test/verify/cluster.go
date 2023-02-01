@@ -280,6 +280,11 @@ func (a *ClusterConfigAssertion) HasAPIEndpoint(apiEndpoint string) *ClusterConf
 	return a
 }
 
+func (a *ClusterConfigAssertion) ContainsLabel(label string) *ClusterConfigAssertion {
+	assert.Contains(a.t, a.clusterConfig.Labels, label)
+	return a
+}
+
 func (a *ClusterConfigAssertion) RestConfigHasHost(host string) *ClusterConfigAssertion {
 	require.NotNil(a.t, a.clusterConfig.RestConfig)
 	assert.Equal(a.t, host, a.clusterConfig.RestConfig.Host)
