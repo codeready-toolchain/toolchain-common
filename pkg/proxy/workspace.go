@@ -5,6 +5,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// This file contains helper functions for creating a Workspace object for use in the proxy
+// server and unit/e2e tests only. It is not meant for use in any operator code.
+// See https://github.com/codeready-toolchain/api/pull/337 for more details.
+
 type WorkspaceOption func(*toolchainv1alpha1.Workspace)
 
 func NewWorkspace(name string, options ...WorkspaceOption) *toolchainv1alpha1.Workspace {
@@ -23,7 +27,7 @@ func NewWorkspace(name string, options ...WorkspaceOption) *toolchainv1alpha1.Wo
 	return workspace
 }
 
-func WithNamespaces(namespaces []toolchainv1alpha1.WorkspaceNamespace) WorkspaceOption {
+func WithNamespaces(namespaces []toolchainv1alpha1.SpaceNamespace) WorkspaceOption {
 	return func(workspace *toolchainv1alpha1.Workspace) {
 		workspace.Status.Namespaces = namespaces
 	}
