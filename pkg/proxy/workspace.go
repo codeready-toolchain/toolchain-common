@@ -15,7 +15,7 @@ func NewWorkspace(name string, options ...WorkspaceOption) *toolchainv1alpha1.Wo
 	workspace := &toolchainv1alpha1.Workspace{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Workspace",
-			APIVersion: "toolchain.dev.openshift.com/v1alpha1",
+			APIVersion: toolchainv1alpha1.LabelKeyPrefix+"v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
