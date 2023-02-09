@@ -44,3 +44,18 @@ func WithRole(role string) WorkspaceOption {
 		workspace.Status.Role = role
 	}
 }
+
+func WithType(wsType string) WorkspaceOption {
+	return func(workspace *toolchainv1alpha1.Workspace) {
+		workspace.Status.Type = wsType
+	}
+}
+
+func WithObjectMetaFrom(from metav1.ObjectMeta) WorkspaceOption {
+	return func(workspace *toolchainv1alpha1.Workspace) {
+		workspace.ObjectMeta.ResourceVersion = from.ResourceVersion
+		workspace.ObjectMeta.UID = from.UID
+		workspace.ObjectMeta.Generation = from.Generation
+		workspace.ObjectMeta.CreationTimestamp = from.CreationTimestamp
+	}
+}
