@@ -89,6 +89,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 			HasOperatorNamespace("toolchain-member-operator").
 			HasOwnerClusterName("m1ClusterName").
 			HasAPIEndpoint("http://m1.com").
+			ContainsLabel(cluster.RoleLabel(cluster.Tenant)). // the value is not used only the key matters
 			RestConfigHasHost("http://m1.com")
 		verify.AssertClusterConfigThat(t, clusterConfigs[1]).
 			IsOfType(cluster.Member).
@@ -96,6 +97,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 			HasOperatorNamespace("toolchain-member-operator").
 			HasOwnerClusterName("m2ClusterName").
 			HasAPIEndpoint("http://m2.com").
+			ContainsLabel(cluster.RoleLabel(cluster.Tenant)). // the value is not used only the key matters
 			RestConfigHasHost("http://m2.com")
 	})
 

@@ -33,6 +33,10 @@ type Config struct {
 	// then the OwnerClusterName has a name of the member - it has to be same name as the name
 	// that is used for identifying the member in a Host cluster
 	OwnerClusterName string
+
+	// Labels contains all the labels of the corresponding ToolchainCluster.
+	// They will be used for filtering ToolchainCluster's based on a given list of cluster-role labels.
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // CachedToolchainCluster stores cluster client; cluster related info and previous health check probe results
