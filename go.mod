@@ -3,7 +3,7 @@ module github.com/codeready-toolchain/toolchain-common
 go 1.18
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20230208154642-e7b66da70ad4
+	github.com/codeready-toolchain/api v0.0.0-20230210095221-59de0ef9b59c
 	github.com/emicklei/go-restful v2.16.0+incompatible // indirect
 	github.com/go-logr/logr v1.2.0
 	github.com/gofrs/uuid v3.3.0+incompatible
@@ -95,5 +95,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/codeready-toolchain/api => github.com/rajivnathan/api v0.0.0-20230209221426-e105f1909f4d
