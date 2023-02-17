@@ -94,8 +94,7 @@ func (a *Assertion) HasLabelWithValue(key, value string) *Assertion {
 	return a
 }
 
-// HasAnnotationWithValue verifies that the UserAccount has
-// an annotation with the given key and value
+// HasAnnotationWithValue verifies that the UserAccount has an annotation with the given key and value
 func (a *Assertion) HasAnnotationWithValue(key, value string) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
