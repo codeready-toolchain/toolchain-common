@@ -136,6 +136,20 @@ func WithNotBeforeClaim(nbf time.Time) ExtraClaim {
 	}
 }
 
+// WithUserIDClaim sets the `user_id` claim in the token to generate
+func WithUserIDClaim(userID string) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(*MyClaims).UserID = userID
+	}
+}
+
+// WithAccountIDClaim sets the `account_id` claim in the token to generate
+func WithAccountIDClaim(accountID string) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(*MyClaims).AccountID = accountID
+	}
+}
+
 // Identity is a user identity
 type Identity struct {
 	ID       uuid.UUID
@@ -218,6 +232,8 @@ type MyClaims struct {
 	Email             string `json:"email,omitempty"`
 	EmailVerified     bool   `json:"email_verified,omitempty"`
 	OriginalSub       string `json:"original_sub"`
+	UserID            string `json:"user_id"`
+	AccountID         string `json:"account_id"`
 }
 
 func (c *MyClaims) Valid() error {

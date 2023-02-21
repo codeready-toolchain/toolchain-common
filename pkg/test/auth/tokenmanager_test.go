@@ -321,6 +321,44 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, "Jack:1234-FFFF", claims.OriginalSub)
 	})
+	t.Run("create token with user_id extra claim", func(t *testing.T) {
+		username := uuid.Must(uuid.NewV4()).String()
+		identity0 := &Identity{
+			ID:       uuid.Must(uuid.NewV4()),
+			Username: username,
+		}
+		// generate the token
+		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithUserIDClaim("123456789"))
+		require.NoError(t, err)
+		// unmarshall it again
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return &(key0.PublicKey), nil
+		})
+		require.NoError(t, err)
+		require.True(t, decodedToken.Valid)
+		claims, ok := decodedToken.Claims.(*MyClaims)
+		require.True(t, ok)
+		require.Equal(t, "123456789", claims.UserID)
+	})
+	t.Run("create token with account_id extra claim", func(t *testing.T) {
+		username := uuid.Must(uuid.NewV4()).String()
+		identity0 := &Identity{
+			ID:       uuid.Must(uuid.NewV4()),
+			Username: username,
+		}
+		// generate the token
+		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithAccountIDClaim("987654321"))
+		require.NoError(t, err)
+		// unmarshall it again
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return &(key0.PublicKey), nil
+		})
+		require.NoError(t, err)
+		require.True(t, decodedToken.Valid)
+		claims, ok := decodedToken.Claims.(*MyClaims)
+		require.True(t, ok)
+		require.Equal(t, "987654321", claims.AccountID)
+	})
 }
 
 func TestTokenManagerKeyService(t *testing.T) {
