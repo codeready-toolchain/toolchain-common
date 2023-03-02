@@ -206,6 +206,13 @@ func (o NotificationsOption) AdminEmail(value string) NotificationsOption {
 	return o
 }
 
+func (o NotificationsOption) NotificationEnvironment(value string) NotificationsOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.Notifications.NotificationEnvironment = &value
+	})
+	return o
+}
+
 type NotificationSecretOption struct {
 	*ToolchainConfigOptionImpl
 }
