@@ -72,55 +72,63 @@ func TestConditionsMatch(t *testing.T) {
 func TestContainsCondition(t *testing.T) {
 
 	t.Run("LastTransitionTime ignored", func(t *testing.T) {
-		assert.True(t, ContainsCondition(actual(),
+		c, found := ContainsCondition(actual(),
 			toolchainv1alpha1.Condition{
 				Type:    testType1,
 				Status:  apiv1.ConditionTrue,
 				Reason:  "reason1",
 				Message: "message1",
-			}))
+			})
+		assert.True(t, found)
+		assert.NotEmpty(t, c.LastTransitionTime)
 	})
 
 	t.Run("doesn't contain condition", func(t *testing.T) {
 		conditions := actual()
 		t.Run("empty list", func(t *testing.T) {
-			assert.False(t, ContainsCondition(nil, toolchainv1alpha1.Condition{}))
-			assert.False(t, ContainsCondition([]toolchainv1alpha1.Condition{}, toolchainv1alpha1.Condition{}))
+			_, found := ContainsCondition(nil, toolchainv1alpha1.Condition{})
+			assert.False(t, found)
+			_, found = ContainsCondition([]toolchainv1alpha1.Condition{}, toolchainv1alpha1.Condition{})
+			assert.False(t, found)
 		})
 		t.Run("missing type", func(t *testing.T) {
 			var testType toolchainv1alpha1.ConditionType = "unknown"
-			assert.False(t, ContainsCondition(conditions,
+			_, found := ContainsCondition(conditions,
 				toolchainv1alpha1.Condition{
 					Type:    testType,
 					Status:  conditions[0].Status,
 					Reason:  conditions[0].Reason,
 					Message: conditions[0].Message,
-				}))
+				})
+			assert.False(t, found)
 		})
 		t.Run("status doesn't match", func(t *testing.T) {
-			assert.False(t, ContainsCondition(conditions,
+			_, found := ContainsCondition(conditions,
 				toolchainv1alpha1.Condition{
 					Type:    conditions[0].Type,
 					Status:  apiv1.ConditionUnknown,
 					Reason:  conditions[0].Reason,
 					Message: conditions[0].Message,
-				}))
+				})
+			assert.False(t, found)
 		})
 		t.Run("reason doesn't match", func(t *testing.T) {
-			assert.False(t, ContainsCondition(conditions,
+			_, found := ContainsCondition(conditions,
 				toolchainv1alpha1.Condition{
 					Type:    conditions[0].Type,
 					Status:  conditions[0].Status,
 					Message: conditions[0].Message,
-				}))
+				})
+			assert.False(t, found)
 		})
 		t.Run("message doesn't match", func(t *testing.T) {
-			assert.False(t, ContainsCondition(conditions,
+			_, found := ContainsCondition(conditions,
 				toolchainv1alpha1.Condition{
 					Type:   conditions[0].Type,
 					Status: conditions[0].Status,
 					Reason: conditions[0].Reason,
-				}))
+				})
+			assert.False(t, found)
 		})
 	})
 }

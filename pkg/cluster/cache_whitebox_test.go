@@ -432,11 +432,11 @@ func TestMultipleActionsInParallel(t *testing.T) {
 					assert.Empty(t, clusters)
 				}
 			}()
-			go func() {
+			go func(clusterToTest *CachedToolchainCluster) {
 				defer waitForFinished.Done()
 				latch.Wait()
 				clusterCache.deleteCachedToolchainCluster(clusterToTest.Name)
-			}()
+			}(clusterToTest)
 		}
 	}
 

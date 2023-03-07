@@ -1,10 +1,11 @@
 package identity_test
 
 import (
+	"testing"
+
 	"github.com/codeready-toolchain/toolchain-common/pkg/identity"
 	v1 "github.com/openshift/api/user/v1"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestIdentityNamingStandard(t *testing.T) {

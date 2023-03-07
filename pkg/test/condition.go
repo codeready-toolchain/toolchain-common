@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,16 +24,12 @@ func AssertConditionsMatch(t T, actual []toolchainv1alpha1.Condition, expected .
 
 // AssertContainsCondition asserts that the specified list of conditions contains the specified condition.
 // LastTransitionTime is ignored.
-func AssertContainsCondition(t T, conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition) {
-	for _, c := range conditions {
-		if c.Type == contains.Type {
-			assert.Equal(t, contains.Status, c.Status)
-			assert.Equal(t, contains.Reason, c.Reason)
-			assert.Equal(t, contains.Message, c.Message)
-			return
-		}
+func AssertContainsCondition(t T, conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition) toolchainv1alpha1.Condition {
+	if c, found := ContainsCondition(conditions, contains); found {
+		return c
 	}
 	assert.FailNow(t, fmt.Sprintf("the list of conditions %v doesn't contain the expected condition %v", conditions, contains))
+	return toolchainv1alpha1.Condition{}
 }
 
 // AssertConditionsMatchAndRecentTimestamps asserts that the specified list of conditions match AND asserts that the timestamps are recent
@@ -60,12 +55,12 @@ func ConditionsMatch(actual []toolchainv1alpha1.Condition, expected ...toolchain
 		return false
 	}
 	for _, c := range expected {
-		if !ContainsCondition(actual, c) {
+		if _, found := ContainsCondition(actual, c); !found {
 			return false
 		}
 	}
 	for _, c := range actual {
-		if !ContainsCondition(expected, c) {
+		if _, found := ContainsCondition(expected, c); !found {
 			return false
 		}
 	}
@@ -74,11 +69,11 @@ func ConditionsMatch(actual []toolchainv1alpha1.Condition, expected ...toolchain
 
 // ContainsCondition returns true if the specified list of conditions contains the specified condition.
 // LastTransitionTime is ignored.
-func ContainsCondition(conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition) bool {
+func ContainsCondition(conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition) (toolchainv1alpha1.Condition, bool) {
 	for _, c := range conditions {
-		if c.Type == contains.Type {
-			return contains.Status == c.Status && contains.Reason == c.Reason && contains.Message == c.Message
+		if c.Type == contains.Type && contains.Status == c.Status && contains.Reason == c.Reason && contains.Message == c.Message {
+			return c, true
 		}
 	}
-	return false
+	return toolchainv1alpha1.Condition{}, false
 }

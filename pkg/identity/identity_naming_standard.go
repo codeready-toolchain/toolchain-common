@@ -3,8 +3,9 @@ package identity
 import (
 	"encoding/base64"
 	"fmt"
-	userv1 "github.com/openshift/api/user/v1"
 	"strings"
+
+	userv1 "github.com/openshift/api/user/v1"
 )
 
 type NamingStandard interface {
