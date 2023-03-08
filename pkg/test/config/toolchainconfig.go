@@ -206,9 +206,9 @@ func (o NotificationsOption) AdminEmail(value string) NotificationsOption {
 	return o
 }
 
-func (o NotificationsOption) NotificationTemplateSetName(value string) NotificationsOption {
+func (o NotificationsOption) TemplateSetName(value string) NotificationsOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.Notifications.NotificationTemplateSetName = &value
+		config.Spec.Host.Notifications.TemplateSetName = &value
 	})
 	return o
 }
