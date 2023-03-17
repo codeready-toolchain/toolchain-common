@@ -275,6 +275,21 @@ func (o WebhookOption) Deploy(value bool) WebhookOption {
 	return o
 }
 
+type WebConsoleConfigOption struct {
+	*MemberOperatorConfigOptionImpl
+}
+
+func WebConsoleConfig() *WebConsoleConfigOption {
+	o := &WebConsoleConfigOption{
+		&MemberOperatorConfigOptionImpl{},
+	}
+	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		config.Spec.WebConsolePlugin = toolchainv1alpha1.WebConsolePlugin{}
+	})
+
+	return o
+}
+
 func NewMemberOperatorConfigObj(options ...MemberOperatorConfigOption) *toolchainv1alpha1.MemberOperatorConfig {
 	memberOperatorConfig := &toolchainv1alpha1.MemberOperatorConfig{
 		ObjectMeta: metav1.ObjectMeta{
