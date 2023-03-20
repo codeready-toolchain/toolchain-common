@@ -275,18 +275,39 @@ func (o WebhookOption) Deploy(value bool) WebhookOption {
 	return o
 }
 
-type WebConsoleConfigOption struct {
+type WebConsolePluginOption struct {
 	*MemberOperatorConfigOptionImpl
 }
 
-func WebConsoleConfig() *WebConsoleConfigOption {
-	o := &WebConsoleConfigOption{
+func WebConsolePlugin() *WebConsolePluginOption {
+	o := &WebConsolePluginOption{
 		&MemberOperatorConfigOptionImpl{},
 	}
 	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
 		config.Spec.WebConsolePlugin = toolchainv1alpha1.WebConsolePlugin{}
 	})
 
+	return o
+}
+
+func (o WebConsolePluginOption) Deploy(value bool) WebConsolePluginOption {
+	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		config.Spec.WebConsolePlugin.Deploy = &value
+	})
+	return o
+}
+
+func (o WebConsolePluginOption) PendoKey(value string) WebConsolePluginOption {
+	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		config.Spec.WebConsolePlugin.PendoKey = &value
+	})
+	return o
+}
+
+func (o WebConsolePluginOption) PendoHost(value string) WebConsolePluginOption {
+	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		config.Spec.WebConsolePlugin.PendoHost = &value
+	})
 	return o
 }
 
