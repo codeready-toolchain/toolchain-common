@@ -13,13 +13,13 @@ import (
 //
 // In a test you can use this to temporarily set an environment variable:
 //
-//    func TestFoo(t *testing.T) {
-//        restoreFunc := UnsetEnvVarAndRestore(t, "foo")
-//        defer restoreFunc()
-//        os.Setenv(key, "bar")
+//	func TestFoo(t *testing.T) {
+//	    restoreFunc := UnsetEnvVarAndRestore(t, "foo")
+//	    defer restoreFunc()
+//	    os.Setenv(key, "bar")
 //
-//        // continue as if foo=bar
-//    }
+//	    // continue as if foo=bar
+//	}
 func UnsetEnvVarAndRestore(t *testing.T, key string) func() {
 	realEnvValue, present := os.LookupEnv(key)
 	err := os.Unsetenv(key)
@@ -41,11 +41,11 @@ func UnsetEnvVarAndRestore(t *testing.T, key string) func() {
 //
 // In a test you can use this to set an environment variable:
 //
-//    func TestFoo(t *testing.T) {
-//        restoreFunc := SetEnvVarAndRestore(t, "foo", "bar")
-//        defer restoreFunc()
-//        // continue as if foo=bar
-//    }
+//	func TestFoo(t *testing.T) {
+//	    restoreFunc := SetEnvVarAndRestore(t, "foo", "bar")
+//	    defer restoreFunc()
+//	    // continue as if foo=bar
+//	}
 func SetEnvVarAndRestore(t *testing.T, key, newValue string) func() {
 	oldEnvValue, present := os.LookupEnv(key)
 	err := os.Setenv(key, newValue)
@@ -69,11 +69,11 @@ type EnvVariable func() (key, value string)
 //
 // In a test you can use this to set an environment variables:
 //
-//    func TestFoo(t *testing.T) {
-//        restoreFunc := SetEnvVarsAndRestore(t, Env("foo", "bar"), Env("boo", "far"))
-//        defer restoreFunc()
-//        // continue as if foo=bar and boo=far
-//    }
+//	func TestFoo(t *testing.T) {
+//	    restoreFunc := SetEnvVarsAndRestore(t, Env("foo", "bar"), Env("boo", "far"))
+//	    defer restoreFunc()
+//	    // continue as if foo=bar and boo=far
+//	}
 func SetEnvVarsAndRestore(t *testing.T, envs ...EnvVariable) func() {
 	var restores []func()
 	for _, envVar := range envs {
