@@ -24,19 +24,19 @@ type MockT struct {
 	failCount    int
 }
 
-func (t *MockT) Log(args ...interface{}) {
+func (t *MockT) Log(_ ...interface{}) {
 	t.logfCount++
 }
 
-func (t *MockT) Logf(format string, args ...interface{}) {
+func (t *MockT) Logf(_ string, _ ...interface{}) {
 	t.logfCount++
 }
 
-func (t *MockT) Errorf(format string, args ...interface{}) {
+func (t *MockT) Errorf(_ string, _ ...interface{}) {
 	t.errorfCount++
 }
 
-func (t *MockT) Fatalf(format string, args ...interface{}) {
+func (t *MockT) Fatalf(_ string, _ ...interface{}) {
 	t.fatalfCount++
 }
 

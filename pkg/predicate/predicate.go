@@ -29,17 +29,17 @@ func (EitherUpdateWhenGenerationNotChangedOrDelete) Update(e event.UpdateEvent) 
 }
 
 // Create implements Predicate
-func (EitherUpdateWhenGenerationNotChangedOrDelete) Create(e event.CreateEvent) bool {
+func (EitherUpdateWhenGenerationNotChangedOrDelete) Create(_ event.CreateEvent) bool {
 	return false
 }
 
 // Delete implements Predicate
-func (EitherUpdateWhenGenerationNotChangedOrDelete) Delete(e event.DeleteEvent) bool {
+func (EitherUpdateWhenGenerationNotChangedOrDelete) Delete(_ event.DeleteEvent) bool {
 	return true
 }
 
 // Generic implements Predicate
-func (EitherUpdateWhenGenerationNotChangedOrDelete) Generic(e event.GenericEvent) bool {
+func (EitherUpdateWhenGenerationNotChangedOrDelete) Generic(_ event.GenericEvent) bool {
 	return false
 }
 

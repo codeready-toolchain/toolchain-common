@@ -594,6 +594,7 @@ func (o UsersOption) ForbiddenUsernameSuffixes(value string) UsersOption {
 //---End of Host Configurations---//
 
 //---Member Configurations---//
+
 type MembersOption struct {
 	*ToolchainConfigOptionImpl
 }

@@ -3,8 +3,9 @@ package identity
 import (
 	"encoding/base64"
 	"fmt"
-	userv1 "github.com/openshift/api/user/v1"
 	"strings"
+
+	userv1 "github.com/openshift/api/user/v1"
 )
 
 type NamingStandard interface {
@@ -55,7 +56,6 @@ func (s *identityNamingStandard) IdentityName() string {
 // https://github.com/openshift/oauth-server/blob/ef385cc3c9d90ee52f6db211ceb751e04ae967f5/pkg/api/types.go#L108
 //
 // If this should change, then this function must be updated to reflect the changes.
-//
 func isIdentityNameCompliant(name string) bool {
 	return !strings.ContainsAny(name, ":/")
 }
