@@ -393,6 +393,13 @@ func (o RegistrationServiceVerificationOption) Enabled(value bool) RegistrationS
 	return o.parent
 }
 
+func (o RegistrationServiceVerificationOption) CaptchaEnabled(value bool) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.Captcha.Enabled = &value
+	})
+	return o.parent
+}
+
 func (o RegistrationServiceVerificationOption) DailyLimit(value int) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Verification.DailyLimit = &value
