@@ -393,13 +393,6 @@ func (o RegistrationServiceVerificationOption) Enabled(value bool) RegistrationS
 	return o.parent
 }
 
-func (o RegistrationServiceVerificationOption) CaptchaEnabled(value bool) RegistrationServiceOption {
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.RegistrationService.Verification.Captcha.Enabled = &value
-	})
-	return o.parent
-}
-
 func (o RegistrationServiceVerificationOption) DailyLimit(value int) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Verification.DailyLimit = &value
@@ -463,6 +456,34 @@ func (o RegistrationServiceVerificationOption) AWSSMSType(value string) Registra
 	return o.parent
 }
 
+func (o RegistrationServiceVerificationOption) CaptchaEnabled(value bool) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.Captcha.Enabled = &value
+	})
+	return o.parent
+}
+
+func (o RegistrationServiceVerificationOption) CaptchaProjectID(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.Captcha.ProjectID = &value
+	})
+	return o.parent
+}
+
+func (o RegistrationServiceVerificationOption) CaptchaSiteKey(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.Captcha.SiteKey = &value
+	})
+	return o.parent
+}
+
+func (o RegistrationServiceVerificationOption) CaptchaScoreThreshold(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.Captcha.ScoreThreshold = &value
+	})
+	return o.parent
+}
+
 func (o RegistrationServiceVerificationOption) Secret() *RegistrationVerificationSecretOption {
 	c := &RegistrationVerificationSecretOption{
 		ToolchainConfigOptionImpl: o.ToolchainConfigOptionImpl,
@@ -512,6 +533,13 @@ func (o RegistrationVerificationSecretOption) AWSAccessKeyID(value string) *Regi
 func (o RegistrationVerificationSecretOption) AWSSecretAccessKey(value string) *RegistrationVerificationSecretOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Verification.Secret.AWSSecretAccessKey = &value
+	})
+	return &o
+}
+
+func (o RegistrationVerificationSecretOption) RecaptchaServiceAccountFile(value string) *RegistrationVerificationSecretOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.Secret.RecaptchaServiceAccountFile = &value
 	})
 	return &o
 }
