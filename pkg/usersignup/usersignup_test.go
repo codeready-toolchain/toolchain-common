@@ -37,7 +37,7 @@ func TestTransformUsername(t *testing.T) {
 	assertName(t, "isexactly21characte", "isexactly21characte-r")
 	assertName(t, "isexactly20charactr", "isexactly20charactr-")
 	assertName(t, "thisis19characters", "thisis19characters-")
-	assertName(t, "", "thisis19characters1-")
+	assertName(t, "thisis20characters1", "thisis20characters1-")
 }
 
 var dnsRegExp = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
