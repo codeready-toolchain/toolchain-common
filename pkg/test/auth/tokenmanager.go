@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -344,7 +344,7 @@ func GetE2ETestPublicKey() []*PublicKey {
 // getE2ETestPrivateKey returns the e2e private key from the PEM.
 func getE2ETestPrivateKey() *rsa.PrivateKey {
 	r := strings.NewReader(e2ePrivatePEM)
-	pemBytes, err := ioutil.ReadAll(r)
+	pemBytes, err := io.ReadAll(r)
 	if err != nil {
 		return nil
 	}

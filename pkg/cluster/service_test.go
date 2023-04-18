@@ -147,7 +147,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 	t.Run("when get secret fails", func(t *testing.T) {
 		//given
 		cl := test.NewFakeClient(t, m1, m2, host, noise, sec1, sec2, secHost, secNoise)
-		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 			return fmt.Errorf("some error")
 		}
 

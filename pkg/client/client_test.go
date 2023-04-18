@@ -266,7 +266,7 @@ func TestApplySingle(t *testing.T) {
 			t.Run("when object cannot be retrieved because of any error, then it should fail", func(t *testing.T) {
 				// given
 				cl, cli := newClient(t)
-				cli.MockGet = func(ctx context.Context, key runtimeclient.ObjectKey, obj runtimeclient.Object) error {
+				cli.MockGet = func(ctx context.Context, key runtimeclient.ObjectKey, obj runtimeclient.Object, opts ...runtimeclient.GetOption) error {
 					return fmt.Errorf("unable to get")
 				}
 

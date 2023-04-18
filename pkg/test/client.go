@@ -30,7 +30,7 @@ func NewFakeClient(t T, initObjs ...runtime.Object) *FakeClient {
 type FakeClient struct {
 	client.Client
 	T                T
-	MockGet          func(ctx context.Context, key client.ObjectKey, obj client.Object) error
+	MockGet          func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error
 	MockList         func(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error
 	MockCreate       func(ctx context.Context, obj client.Object, opts ...client.CreateOption) error
 	MockUpdate       func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
@@ -54,11 +54,11 @@ func (m *mockStatusUpdate) Patch(ctx context.Context, obj client.Object, patch c
 	return m.mockPatch(ctx, obj, patch, opts...)
 }
 
-func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 	if c.MockGet != nil {
-		return c.MockGet(ctx, key, obj)
+		return c.MockGet(ctx, key, obj, opts...)
 	}
-	return c.Client.Get(ctx, key, obj)
+	return c.Client.Get(ctx, key, obj, opts...)
 }
 
 func (c *FakeClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {

@@ -30,7 +30,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 			// given
 			mockT := test.NewMockT()
 			client := test.NewFakeClient(mockT, mur)
-			client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object) error {
+			client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object, opts ...runtimeclient.GetOption) error {
 				if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
 					if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
 						*obj = *mur
@@ -54,7 +54,7 @@ func TestMasterUserRecordAssertion(t *testing.T) {
 				// given
 				mockT := test.NewMockT()
 				client := test.NewFakeClient(mockT, mur)
-				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object) error {
+				client.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object, opts ...runtimeclient.GetOption) error {
 					if key.Namespace == test.HostOperatorNs && key.Name == "foo" {
 						if obj, ok := obj.(*toolchainv1alpha1.MasterUserRecord); ok {
 							*obj = *mur

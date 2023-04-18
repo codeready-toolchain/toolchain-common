@@ -171,7 +171,7 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("mock Get", func(t *testing.T) {
 			defer func() { fclient.MockGet = nil }()
-			fclient.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+			fclient.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 				return expectedErr
 			}
 			assert.EqualError(t, fclient.Get(context.TODO(), types.NamespacedName{Namespace: "somenamespace", Name: created.Name}, &v1.Secret{}), expectedErr.Error())

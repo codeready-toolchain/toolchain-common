@@ -30,7 +30,7 @@ func TestNSTemplateSetAssertion(t *testing.T) {
 			},
 		}
 		cl := test.NewFakeClient(t, nsTmplSet)
-		cl.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object) error {
+		cl.MockGet = func(ctx context.Context, key types.NamespacedName, obj runtimeclient.Object, opts ...runtimeclient.GetOption) error {
 			if key.Namespace == test.MemberOperatorNs && key.Name == "foo" {
 				if obj, ok := obj.(*toolchainv1alpha1.NSTemplateSet); ok {
 					*obj = *nsTmplSet

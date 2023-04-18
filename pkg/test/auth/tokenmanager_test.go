@@ -5,7 +5,6 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
@@ -381,7 +380,7 @@ func TestTokenManagerKeyService(t *testing.T) {
 		require.NoError(t, err)
 		res, err := httpClient.Do(req)
 		defer func() {
-			_, _ = io.Copy(ioutil.Discard, res.Body)
+			_, _ = io.Copy(io.Discard, res.Body)
 			defer res.Body.Close()
 		}()
 		require.NoError(t, err)

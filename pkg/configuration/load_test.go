@@ -60,7 +60,7 @@ func TestLoadFromConfigMap(t *testing.T) {
 		}
 		cl := test.NewFakeClient(t, createConfigMap("test-config", "toolchain-host-operator", data))
 
-		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 			return errors.New("oopsie woopsie")
 		}
 
@@ -140,7 +140,7 @@ func TestLoadFromSecret(t *testing.T) {
 		}
 		cl := test.NewFakeClient(t, test.CreateSecret("test-secret", "toolchain-host-operator", data))
 
-		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 			return errors.New("oopsie woopsie")
 		}
 

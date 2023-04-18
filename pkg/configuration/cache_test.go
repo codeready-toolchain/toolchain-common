@@ -114,7 +114,7 @@ func TestGetConfigFailed(t *testing.T) {
 	t.Run("config not found", func(t *testing.T) {
 		config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321)))
 		cl := test.NewFakeClient(t, config)
-		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 			return apierrors.NewNotFound(schema.GroupResource{}, "config")
 		}
 
@@ -131,7 +131,7 @@ func TestGetConfigFailed(t *testing.T) {
 	t.Run("error getting config", func(t *testing.T) {
 		config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321)))
 		cl := test.NewFakeClient(t, config)
-		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 			return fmt.Errorf("some error")
 		}
 
@@ -280,7 +280,7 @@ func TestLoadLatest(t *testing.T) {
 		initconfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().ResourceCapacityThreshold(100))
 		// given
 		cl := test.NewFakeClient(t, initconfig)
-		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 			return fmt.Errorf("get error")
 		}
 
