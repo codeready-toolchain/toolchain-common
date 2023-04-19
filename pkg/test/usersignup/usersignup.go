@@ -9,6 +9,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/hash"
 	"github.com/codeready-toolchain/toolchain-common/pkg/states"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+	"github.com/codeready-toolchain/toolchain-common/pkg/usersignup"
 	"github.com/gofrs/uuid"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -186,6 +187,8 @@ func NewUserSignup(modifiers ...Modifier) *toolchainv1alpha1.UserSignup {
 func NewUserSignupObjectMeta(name, email string) metav1.ObjectMeta {
 	if name == "" {
 		name = uuid.Must(uuid.NewV4()).String()
+		// limit to maxLength
+		name = usersignup.TransformUsername(name)
 	}
 	emailHash := hash.EncodeString(email)
 
