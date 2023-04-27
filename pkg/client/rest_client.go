@@ -26,9 +26,7 @@ func CreateTokenRequest(restClient *rest.RESTClient, namespacedName types.Namesp
 		Into(result); err != nil {
 		return "", err
 	}
-	if result == nil {
-		return "", fmt.Errorf("unable to create token, got nil response")
-	}
+
 	if len(result.Status.Token) == 0 {
 		return "", fmt.Errorf("unable to create token, got empty string")
 	}
