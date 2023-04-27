@@ -1,6 +1,7 @@
 package client_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -35,21 +36,28 @@ func TestCreateTokenRequest(t *testing.T) {
 		assert.Equal(t, "token-secret-for-jane", token) // `token-secret-for-jane` is the answered mock by Gock in `clienttest.SetupGockForServiceAccounts(...)`
 	})
 	t.Run("failure", func(t *testing.T) {
-		// given
-		// the api server returns an error an a nil token request
-		const apiEndpoint = "https://api.example.com"
-		clienttest.SetupGockWithCleanup(t, apiEndpoint, "api/v1/path/", "", http.StatusInternalServerError)
-		cl, err := clienttest.NewRESTClient("secret_token", apiEndpoint)
+		t.Run("empty token is returned", func(t *testing.T) {
+			// given
+			// the api server returns an error an a nil token request
+			const apiEndpoint = "https://api.example.com"
+			// setting an invalid response body so that client go library will return an empty token string
+			invalidResponseObject, err := json.Marshal(nil)
+			require.NoError(t, err)
+			clienttest.SetupGockWithCleanup(t, apiEndpoint, "/api/v1/namespaces/jane-env/serviceaccounts/jane/token", string(invalidResponseObject), http.StatusOK)
+			cl, err := clienttest.NewRESTClient("secret_token", apiEndpoint)
+			cl.Client.Transport = gock.DefaultTransport // make sure that the underlying client's request are intercepted by Gock
 
-		// when
-		require.NoError(t, err)
-		token, err := restclient.CreateTokenRequest(cl, types.NamespacedName{
-			Namespace: "jane-env",
-			Name:      "jane",
-		}, 1)
+			// when
+			require.NoError(t, err)
+			token, err := restclient.CreateTokenRequest(cl, types.NamespacedName{
+				Namespace: "jane-env",
+				Name:      "jane",
+			}, 1)
 
-		// then
-		require.Error(t, err)      // an error should be returned
-		assert.Equal(t, "", token) // token should be empty
+			// then
+			require.Error(t, err)                                                    // an error should be returned
+			assert.Equal(t, "unable to create token, got empty string", err.Error()) // error message should match expected one
+			assert.Equal(t, "", token)                                               // token should be empty
+		})
 	})
 }

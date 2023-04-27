@@ -11,6 +11,7 @@ import (
 )
 
 // CreateTokenRequest creates a TokenRequest for a service account using given expiration in seconds.
+// Returns the token string and nil if everything went fine, otherwise an empty string and an error is returned in case something went wrong.
 func CreateTokenRequest(restClient *rest.RESTClient, namespacedName types.NamespacedName, expirationInSeconds int) (string, error) {
 	tokenRequest := &authv1.TokenRequest{
 		Spec: authv1.TokenRequestSpec{
@@ -28,6 +29,10 @@ func CreateTokenRequest(restClient *rest.RESTClient, namespacedName types.Namesp
 	if result == nil {
 		return "", fmt.Errorf("unable to create token, got nil response")
 	}
+	if len(result.Status.Token) == 0 {
+		return "", fmt.Errorf("unable to create token, got empty string")
+	}
 
+	// return the token string
 	return result.Status.Token, nil
 }
