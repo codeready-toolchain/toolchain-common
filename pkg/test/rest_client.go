@@ -29,13 +29,18 @@ func SetupGockForServiceAccounts(t *testing.T, apiEndpoint string, sas ...types.
 		require.NoError(t, err)
 		path := fmt.Sprintf("api/v1/namespaces/%s/serviceaccounts/%s/token", sa.Namespace, sa.Name)
 		t.Logf("mocking access to POST %s/%s", apiEndpoint, path)
-		gock.New(apiEndpoint).
-			Post(path).
-			Persist().
-			Reply(200).
-			BodyString(string(resultTokenRequestStr))
+		SetupGockWithCleanup(t, apiEndpoint, path, string(resultTokenRequestStr), http.StatusOK)
 	}
+}
+
+func SetupGockWithCleanup(t *testing.T, apiEndpoint string, path string, body string, statusCode int) *gock.Response {
+	request := gock.New(apiEndpoint).
+		Post(path).
+		Persist().
+		Reply(statusCode).
+		BodyString(body)
 	t.Cleanup(gock.OffAll)
+	return request
 }
 
 // NewRESTClient returns a new kube api rest client.
