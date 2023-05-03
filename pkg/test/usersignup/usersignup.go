@@ -188,7 +188,7 @@ func NewUserSignupObjectMeta(name, email string) metav1.ObjectMeta {
 	if name == "" {
 		name = uuid.Must(uuid.NewV4()).String()
 		// limit to maxLength
-		name = usersignup.TransformUsername(name)
+		name = usersignup.TransformUsername(name, []string{"openshift", "kube", "default", "redhat", "sandbox"}, []string{"admin"})
 	}
 	emailHash := hash.EncodeString(email)
 
