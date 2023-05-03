@@ -244,8 +244,8 @@ func (c *MyClaims) Valid() error {
 }
 
 // GenerateToken generates a default token.
-func (tg *TokenManager) GenerateToken(identity Identity, kid string, extraClaims ...ExtraClaim) *jwt.Token {
-	token := jwt.New(jwt.SigningMethodRS256)
+func (tg *TokenManager) GenerateToken(method jwt.SigningMethod, identity Identity, kid string, extraClaims ...ExtraClaim) *jwt.Token {
+	token := jwt.New(method)
 
 	token.Claims = &MyClaims{StandardClaims: jwt.StandardClaims{
 		Id:        uuid.Must(uuid.NewV4()).String(),
@@ -291,7 +291,7 @@ func (tg *TokenManager) SignToken(token *jwt.Token, kid string) (string, error) 
 
 // GenerateSignedToken generates a JWT user token and signs it using the given private key.
 func (tg *TokenManager) GenerateSignedToken(identity Identity, kid string, extraClaims ...ExtraClaim) (string, error) {
-	token := tg.GenerateToken(identity, kid, extraClaims...)
+	token := tg.GenerateToken(jwt.SigningMethodRS256, identity, kid, extraClaims...)
 	return tg.SignToken(token, kid)
 }
 
