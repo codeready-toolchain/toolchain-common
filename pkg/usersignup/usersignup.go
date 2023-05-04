@@ -65,7 +65,7 @@ func TransformUsername(username string, ForbiddenUsernamePrefixes []string, Forb
 		if strings.HasSuffix(newUsername, suffix) {
 			if len(newUsername) > maxlengthWithPrefix {
 				// replace prefix instead of append
-				newUsername = newUsername[:len(newUsername)-4] + "-crt"
+				newUsername = newUsername[:maxlengthWithPrefix] + "-crt"
 			} else {
 				newUsername = fmt.Sprintf("%s%s", newUsername, "-crt")
 			}
