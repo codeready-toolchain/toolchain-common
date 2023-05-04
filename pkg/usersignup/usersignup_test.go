@@ -39,7 +39,7 @@ func TestTransformUsername(t *testing.T) {
 	assertName(t, "isexactly20charactr", "isexactly20charactr-")  // but ending in hyphen
 	assertName(t, "thisis19characters-c", "thisis19characters-")  // suffix -crt is added before truncating string
 	assertName(t, "john-crtadmin-crt", "john-crtadmin")           // forbidden suffix
-	assertName(t, "johny-long-crta-crt", "johny-long-crtadmin-")  // forbidden suffix with username exactly of maxLength
+	assertName(t, "johny-long-crtad-crt", "johny-long-crtadmin-") // forbidden suffix with username exactly of maxLength
 	assertName(t, "crt-nshift-test-user", "openshift-test-user")  // forbidden prefix in username, transforms to replace in place
 	assertName(t, "crt-kube-test-user", "kube-test-user")         // forbidden prefix username, transforms to prepend crt-
 }
