@@ -5,14 +5,17 @@ import (
 	"testing"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	commonclient "github.com/codeready-toolchain/toolchain-common/pkg/client"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -44,7 +47,7 @@ func TestClusterHealthChecks(t *testing.T) {
 		defer reset()
 
 		// when
-		updateClusterStatuses("test-namespace", cl)
+		updateClusterStatuses(logger, "test-namespace", cl)
 
 		// then
 		assertClusterStatus(t, cl, "unstable", notOffline(), unhealthy())
@@ -62,7 +65,7 @@ func TestClusterHealthChecks(t *testing.T) {
 		defer resetCache()
 
 		// when
-		updateClusterStatuses("test-namespace", cl)
+		updateClusterStatuses(logger, "test-namespace", cl)
 
 		// then
 		assertClusterStatus(t, cl, "unstable", notOffline(), unhealthy())
@@ -78,7 +81,7 @@ func TestClusterHealthChecks(t *testing.T) {
 		defer resetCache()
 
 		// when
-		updateClusterStatuses("test-namespace", cl)
+		updateClusterStatuses(logger, "test-namespace", cl)
 
 		// then
 		assertClusterStatus(t, cl, "stable", healthy())
@@ -90,7 +93,7 @@ func TestClusterHealthChecks(t *testing.T) {
 		cl := test.NewFakeClient(t, stable, sec)
 
 		// when
-		updateClusterStatuses("test-namespace", cl)
+		updateClusterStatuses(logger, "test-namespace", cl)
 
 		// then
 		assertClusterStatus(t, cl, "failing", offline())
@@ -98,10 +101,10 @@ func TestClusterHealthChecks(t *testing.T) {
 }
 
 func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolchainv1alpha1.ToolchainCluster) func() {
-	service := cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", 0, func(config *rest.Config, options client.Options) (client.Client, error) {
+	service := cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", 0, func(config *rest.Config, options client.Options) (commonclient.Client, error) {
 		// make sure that insecure is false to make Gock mocking working properly
 		config.Insecure = false
-		return client.New(config, options)
+		return commonclient.NewClientFromConfig(config, options)
 	})
 	for _, clustr := range clusters {
 		err := service.AddOrUpdateToolchainCluster(clustr)
@@ -128,7 +131,7 @@ func newToolchainCluster(name, apiEndpoint string, status toolchainv1alpha1.Tool
 	return toolchainCluster, secret
 }
 
-func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clusterConds ...toolchainv1alpha1.ToolchainClusterCondition) {
+func assertClusterStatus(t *testing.T, cl runtimeclient.Reader, clusterName string, clusterConds ...toolchainv1alpha1.ToolchainClusterCondition) {
 	tc := &toolchainv1alpha1.ToolchainCluster{}
 	err := cl.Get(context.TODO(), test.NamespacedName("test-namespace", clusterName), tc)
 	require.NoError(t, err)

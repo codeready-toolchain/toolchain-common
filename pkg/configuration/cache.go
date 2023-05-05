@@ -8,7 +8,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -45,7 +45,7 @@ func UpdateConfig(config runtime.Object, secrets map[string]map[string]string) {
 // loadLatest retrieves the latest configuration object and secrets using the provided client and updates the cache.
 // If the resource is not found, then returns nil for the configuration and secret.
 // If any failure happens while getting the configuration object or secrets, then returns an error.
-func LoadLatest(cl client.Client, configObj client.Object) (runtime.Object, map[string]map[string]string, error) {
+func LoadLatest(cl runtimeclient.Reader, configObj runtimeclient.Object) (runtime.Object, map[string]map[string]string, error) {
 	namespace, err := GetWatchNamespace()
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "failed to get watch namespace")
@@ -74,7 +74,7 @@ func LoadLatest(cl client.Client, configObj client.Object) (runtime.Object, map[
 // and stores in the cache.
 // If the resource is not found, then returns nil for the configuration and secret.
 // If any failure happens while getting the configuration object or secrets, then returns an error.
-func GetConfig(cl client.Client, configObj client.Object) (runtime.Object, map[string]map[string]string, error) {
+func GetConfig(cl runtimeclient.Reader, configObj runtimeclient.Object) (runtime.Object, map[string]map[string]string, error) {
 	config, secrets := configCache.get()
 	if config == nil {
 		return LoadLatest(cl, configObj)

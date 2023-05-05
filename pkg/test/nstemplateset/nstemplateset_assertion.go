@@ -14,12 +14,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Assertion struct {
 	nsTmplSet      *toolchainv1alpha1.NSTemplateSet
-	client         client.Client
+	client         runtimeclient.Reader
 	namespacedName types.NamespacedName
 	t              test.T
 }
@@ -31,7 +31,7 @@ func (a *Assertion) loadNSTemplateSet() error {
 	return err
 }
 
-func AssertThatNSTemplateSet(t test.T, namespace, name string, client client.Client) *Assertion {
+func AssertThatNSTemplateSet(t test.T, namespace, name string, client runtimeclient.Reader) *Assertion {
 	return &Assertion{
 		client:         client,
 		namespacedName: test.NamespacedName(namespace, name),

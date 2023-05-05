@@ -4,8 +4,9 @@ import (
 	"sync"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	commonclient "github.com/codeready-toolchain/toolchain-common/pkg/client"
+
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var clusterCache = toolchainClusterClients{clusters: map[string]*CachedToolchainCluster{}}
@@ -43,7 +44,7 @@ type Config struct {
 type CachedToolchainCluster struct {
 	*Config
 	// Client is the kube client for the cluster.
-	Client client.Client
+	Client commonclient.Client
 	// ClusterStatus is the cluster result as of the last health check probe.
 	ClusterStatus *toolchainv1alpha1.ToolchainClusterStatus
 }

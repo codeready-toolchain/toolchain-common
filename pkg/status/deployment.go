@@ -11,7 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -24,7 +24,7 @@ const (
 
 // GetDeploymentStatusConditions looks up a deployment with the given name within the given namespace and checks its status
 // and finally returns a condition summarizing the status
-func GetDeploymentStatusConditions(client client.Client, name, namespace string) []toolchainv1alpha1.Condition {
+func GetDeploymentStatusConditions(client runtimeclient.Reader, name, namespace string) []toolchainv1alpha1.Condition {
 	deploymentName := types.NamespacedName{Namespace: namespace, Name: name}
 	deployment := &appsv1.Deployment{}
 	err := client.Get(context.TODO(), deploymentName, deployment)

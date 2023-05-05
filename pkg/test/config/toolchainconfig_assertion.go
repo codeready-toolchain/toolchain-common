@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ToolchainConfigAssertion struct {
 	config         *toolchainv1alpha1.ToolchainConfig
-	client         client.Client
+	client         runtimeclient.Reader
 	namespacedName types.NamespacedName
 	t              test.T
 }
@@ -25,7 +25,7 @@ func (a *ToolchainConfigAssertion) loadToolchainConfig() error {
 	return err
 }
 
-func AssertThatToolchainConfig(t test.T, namespace string, client client.Client) *ToolchainConfigAssertion {
+func AssertThatToolchainConfig(t test.T, namespace string, client runtimeclient.Reader) *ToolchainConfigAssertion {
 	return &ToolchainConfigAssertion{
 		client:         client,
 		namespacedName: test.NamespacedName(namespace, "config"),

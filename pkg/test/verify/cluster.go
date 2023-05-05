@@ -6,15 +6,17 @@ import (
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	commonclient "github.com/codeready-toolchain/toolchain-common/pkg/client"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -54,7 +56,7 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
 				}
 				// check that toolchain cluster role label tenant was set only on member cluster type
-				require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
+				require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
 				expectedToolChainClusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
 				_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
 				if labels["type"] == string(cluster.Member) {
@@ -103,7 +105,7 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
 				}
 				// check that toolchain cluster role label tenant is not set on host cluster
-				require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
+				require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
 				expectedToolChainClusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
 				_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
 				require.False(t, found)
@@ -140,7 +142,7 @@ func AddToolchainClusterFailsBecauseOfEmptySecret(t *testing.T, functionToVerify
 	toolchainCluster, _ := test.NewToolchainCluster("east", "secret", status,
 		Labels("", "", test.NameHost))
 	secret := &corev1.Secret{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "test-namespace",
 		}}
@@ -227,8 +229,8 @@ func Labels(clType cluster.Type, ns, ownerClusterName string) map[string]string 
 	return labels
 }
 
-func newToolchainClusterService(t *testing.T, cl client.Client, withCA bool) cluster.ToolchainClusterService {
-	return cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", 3*time.Second, func(config *rest.Config, options client.Options) (client.Client, error) {
+func newToolchainClusterService(t *testing.T, cl commonclient.Client, withCA bool) cluster.ToolchainClusterService {
+	return cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", 3*time.Second, func(config *rest.Config, options runtimeclient.Options) (commonclient.Client, error) {
 		if withCA {
 			assert.False(t, config.Insecure)
 			assert.Equal(t, []byte("dummy"), config.CAData)
@@ -239,7 +241,7 @@ func newToolchainClusterService(t *testing.T, cl client.Client, withCA bool) clu
 		config.Insecure = false
 		// reset the dummy certificate
 		config.CAData = []byte("")
-		return client.New(config, options)
+		return commonclient.NewClientFromConfig(config, options)
 	})
 }
 

@@ -12,12 +12,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Assertion struct {
 	userAccount    *toolchainv1alpha1.UserAccount
-	client         client.Client
+	client         runtimeclient.Reader
 	namespacedName types.NamespacedName
 	t              *testing.T
 }
@@ -32,7 +32,7 @@ func (a *Assertion) loadUaAssertion() error {
 	return err
 }
 
-func AssertThatUserAccount(t *testing.T, name string, client client.Client) *Assertion {
+func AssertThatUserAccount(t *testing.T, name string, client runtimeclient.Reader) *Assertion {
 	return &Assertion{
 		client:         client,
 		namespacedName: test.NamespacedName(test.MemberOperatorNs, name),

@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	commonclient "github.com/codeready-toolchain/toolchain-common/pkg/client"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type EnvName string
@@ -678,7 +679,7 @@ func NewToolchainConfigObj(t *testing.T, options ...ToolchainConfigOption) *tool
 	return toolchainConfig
 }
 
-func ModifyToolchainConfigObj(t *testing.T, cl client.Client, options ...ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
+func ModifyToolchainConfigObj(t *testing.T, cl commonclient.Client, options ...ToolchainConfigOption) *toolchainv1alpha1.ToolchainConfig {
 	namespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	if !found {
 		t.Log("WATCH_NAMESPACE env var is not set")

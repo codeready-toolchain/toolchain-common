@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"regexp"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	commonclient "github.com/codeready-toolchain/toolchain-common/pkg/client"
+	"github.com/go-logr/logr"
+
 	"github.com/gofrs/uuid"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -23,13 +24,13 @@ type Builder interface {
 	WithTemplate(template string) Builder
 	WithSubjectAndContent(subject, content string) Builder
 	WithNotificationType(notificationType string) Builder
-	WithControllerReference(owner v1.Object, scheme *runtime.Scheme) Builder
+	WithControllerReference(owner metav1.Object, scheme *runtime.Scheme) Builder
 	WithKeysAndValues(keysAndValues map[string]string) Builder
 	WithUserContext(userSignup *toolchainv1alpha1.UserSignup) Builder
-	Create(recipient string) (*toolchainv1alpha1.Notification, error)
+	Create(logger logr.Logger, recipient string) (*toolchainv1alpha1.Notification, error)
 }
 
-func NewNotificationBuilder(client client.Client, namespace string) Builder {
+func NewNotificationBuilder(client commonclient.Client, namespace string) Builder {
 	return &notificationBuilderImpl{
 		client:    client,
 		namespace: namespace,
@@ -38,19 +39,19 @@ func NewNotificationBuilder(client client.Client, namespace string) Builder {
 }
 
 type notificationBuilderImpl struct {
-	client    client.Client
+	client    commonclient.Client
 	namespace string
 	options   []Option
 }
 
-func (b *notificationBuilderImpl) Create(recipient string) (*toolchainv1alpha1.Notification, error) {
+func (b *notificationBuilderImpl) Create(logger logr.Logger, recipient string) (*toolchainv1alpha1.Notification, error) {
 
 	if !emailRegex.MatchString(recipient) {
 		return nil, fmt.Errorf("The specified recipient [%s] is not a valid email address", recipient)
 	}
 
 	notification := &toolchainv1alpha1.Notification{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Namespace: b.namespace,
 			Labels:    map[string]string{},
 		},
@@ -69,7 +70,7 @@ func (b *notificationBuilderImpl) Create(recipient string) (*toolchainv1alpha1.N
 
 	generateName(notification)
 
-	return notification, b.client.Create(context.TODO(), notification)
+	return notification, b.client.Create(context.TODO(), logger, notification)
 }
 
 func generateName(notification *toolchainv1alpha1.Notification) {
@@ -120,7 +121,7 @@ func (b *notificationBuilderImpl) WithNotificationType(notificationType string) 
 	return b
 }
 
-func (b *notificationBuilderImpl) WithControllerReference(owner v1.Object, scheme *runtime.Scheme) Builder {
+func (b *notificationBuilderImpl) WithControllerReference(owner metav1.Object, scheme *runtime.Scheme) Builder {
 	b.options = append(b.options, func(n *toolchainv1alpha1.Notification) error {
 		return controllerutil.SetControllerReference(owner, n, scheme)
 	})

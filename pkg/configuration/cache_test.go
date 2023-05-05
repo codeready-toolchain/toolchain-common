@@ -10,6 +10,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	testconfig "github.com/codeready-toolchain/toolchain-common/pkg/test/config"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -197,6 +198,8 @@ func TestGetCachedConfig(t *testing.T) {
 }
 
 func TestLoadLatest(t *testing.T) {
+	logger := zap.New(zap.UseDevMode(true))
+
 	restore := test.SetEnvVarAndRestore(t, "WATCH_NAMESPACE", test.HostOperatorNs)
 	defer restore()
 	t.Run("config found", func(t *testing.T) {
@@ -241,13 +244,13 @@ func TestLoadLatest(t *testing.T) {
 		t.Run("returns the new value when the config has been updated", func(t *testing.T) {
 			// get
 			changedConfig := UpdateToolchainConfigObjWithReset(t, cl, testconfig.CapacityThresholds().ResourceCapacityThreshold(2000))
-			err := cl.Update(context.TODO(), changedConfig)
+			err := cl.Update(context.TODO(), logger, changedConfig)
 			require.NoError(t, err)
 
 			initSecret.Data = map[string][]byte{
 				"mailgunAPIKey": []byte("abc456"),
 			}
-			err = cl.Update(context.TODO(), initSecret)
+			err = cl.Update(context.TODO(), logger, initSecret)
 			require.NoError(t, err)
 
 			// when

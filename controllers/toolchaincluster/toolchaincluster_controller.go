@@ -5,12 +5,13 @@ import (
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	commonclient "github.com/codeready-toolchain/toolchain-common/pkg/client"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
+
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -19,9 +20,10 @@ import (
 // NewReconciler returns a new Reconciler
 func NewReconciler(mgr manager.Manager, namespace string, timeout time.Duration) *Reconciler {
 	cacheLog := log.Log.WithName("toolchaincluster_cache")
-	clusterCacheService := cluster.NewToolchainClusterService(mgr.GetClient(), cacheLog, namespace, timeout)
+	cl := commonclient.NewClient(mgr.GetClient())
+	clusterCacheService := cluster.NewToolchainClusterService(cl, cacheLog, namespace, timeout)
 	return &Reconciler{
-		client:              mgr.GetClient(),
+		client:              commonclient.NewClient(mgr.GetClient()),
 		scheme:              mgr.GetScheme(),
 		clusterCacheService: clusterCacheService,
 	}
@@ -36,7 +38,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // Reconciler reconciles a ToolchainCluster object
 type Reconciler struct {
-	client              client.Client
+	client              commonclient.Client
 	scheme              *runtime.Scheme
 	clusterCacheService cluster.ToolchainClusterService
 }
@@ -84,7 +86,7 @@ func (r *Reconciler) addToolchainClusterRoleLabelFromType(log logr.Logger, toolc
 		log.Info("setting cluster role label for toolchaincluster", clusterRoleLabel, toolchainCluster.Name)
 		// We use only the label key, the value can remain empty.
 		toolchainCluster.Labels[clusterRoleLabel] = ""
-		if err := r.client.Update(context.TODO(), toolchainCluster); err != nil {
+		if err := r.client.Update(context.TODO(), logger, toolchainCluster); err != nil {
 			return err
 		}
 	}

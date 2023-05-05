@@ -6,11 +6,10 @@ import (
 	"os"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	errs "k8s.io/apimachinery/pkg/api/errors"
-
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -32,7 +31,7 @@ const (
 //
 // resourceKey: is the env var which contains the secret resource name.
 // cl: is the client that should be used to retrieve the secret.
-func LoadFromSecret(resourceKey string, cl client.Client) (map[string]string, error) {
+func LoadFromSecret(resourceKey string, cl runtimeclient.Reader) (map[string]string, error) {
 	var secretData = make(map[string]string)
 
 	// get the secret name
@@ -47,7 +46,7 @@ func LoadFromSecret(resourceKey string, cl client.Client) (map[string]string, er
 		return secretData, err
 	}
 
-	secret := &v1.Secret{}
+	secret := &corev1.Secret{}
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: secretName}
 	err = cl.Get(context.TODO(), namespacedName, secret)
 	if err != nil {
@@ -73,7 +72,7 @@ func LoadFromSecret(resourceKey string, cl client.Client) (map[string]string, er
 // prefix: represents the operator prefix (HOST_OPERATOR/MEMBER_OPERATOR)
 // resourceKey: is the env var which contains the configmap resource name.
 // cl: is the client that should be used to retrieve the configmap.
-func LoadFromConfigMap(prefix, resourceKey string, cl client.Client) error {
+func LoadFromConfigMap(prefix, resourceKey string, cl runtimeclient.Reader) error {
 	// get the configMap name
 	configMapName := getResourceName(resourceKey)
 	if configMapName == "" {
@@ -86,7 +85,7 @@ func LoadFromConfigMap(prefix, resourceKey string, cl client.Client) error {
 		return err
 	}
 
-	configMap := &v1.ConfigMap{}
+	configMap := &corev1.ConfigMap{}
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: configMapName}
 	err = cl.Get(context.TODO(), namespacedName, configMap)
 	if err != nil {
@@ -131,10 +130,10 @@ func createOperatorEnvVarKey(prefix, key string) string {
 
 // LoadSecrets lists all secrets in the provided namespace and indexes them into a map by name along with its secret data.
 // Service account secrets are skipped.
-func LoadSecrets(cl client.Client, namespace string) (map[string]map[string]string, error) {
+func LoadSecrets(cl runtimeclient.Reader, namespace string) (map[string]map[string]string, error) {
 	var allSecrets = make(map[string]map[string]string)
-	secretList := &v1.SecretList{}
-	err := cl.List(context.TODO(), secretList, client.InNamespace(namespace))
+	secretList := &corev1.SecretList{}
+	err := cl.List(context.TODO(), secretList, runtimeclient.InNamespace(namespace))
 	if err != nil {
 		return allSecrets, err
 	}

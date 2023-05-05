@@ -2,246 +2,131 @@ package client
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
-	"github.com/pkg/errors"
+	"github.com/codeready-toolchain/toolchain-common/pkg/audit"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/types"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"k8s.io/client-go/rest"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// LastAppliedConfigurationAnnotationKey the key to save the last applied configuration in the resource annotations
-const LastAppliedConfigurationAnnotationKey = "toolchain.dev.openshift.com/last-applied-configuration"
+type Client interface {
+	runtimeclient.Reader
+	Scheme() *runtime.Scheme
+	Create(ctx context.Context, logger logr.Logger, obj runtimeclient.Object, opts ...runtimeclient.CreateOption) error
+	Delete(ctx context.Context, logger logr.Logger, obj runtimeclient.Object, opts ...runtimeclient.DeleteOption) error
+	Patch(ctx context.Context, logger logr.Logger, obj runtimeclient.Object, patch runtimeclient.Patch, opts ...runtimeclient.PatchOption) error
+	Update(ctx context.Context, logger logr.Logger, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error
 
-var log = logf.Log.WithName("apply_client")
-
-// ApplyClient the client to use when creating or updating objects
-type ApplyClient struct {
-	client.Client
+	Status() AuditStatusClient
 }
 
-// NewApplyClient returns a new ApplyClient
-func NewApplyClient(cl client.Client) *ApplyClient {
-	return &ApplyClient{
-		Client: cl,
-	}
+type client struct {
+	cl runtimeclient.Client
 }
 
-type applyObjectConfiguration struct {
-	owner             v1.Object
-	forceUpdate       bool
-	saveConfiguration bool
-}
-
-func newApplyObjectConfiguration(options ...ApplyObjectOption) applyObjectConfiguration {
-	config := applyObjectConfiguration{
-		owner:             nil,
-		forceUpdate:       false,
-		saveConfiguration: true,
-	}
-	for _, apply := range options {
-		apply(&config)
-	}
-	return config
-}
-
-// ApplyObjectOption an option when creating or updating a resource
-type ApplyObjectOption func(*applyObjectConfiguration)
-
-// SetOwner sets the owner of the resource (default: `nil`)
-func SetOwner(owner v1.Object) ApplyObjectOption {
-	return func(config *applyObjectConfiguration) {
-		config.owner = owner
+func NewClient(cl runtimeclient.Client) Client {
+	return client{
+		cl: cl,
 	}
 }
 
-// ForceUpdate forces the update of the resource (default: `false`)
-func ForceUpdate(forceUpdate bool) ApplyObjectOption {
-	return func(config *applyObjectConfiguration) {
-		config.forceUpdate = forceUpdate
-	}
+func NewClientFromConfig(config *rest.Config, options runtimeclient.Options) (Client, error) {
+	cl, err := runtimeclient.New(config, options)
+	return client{
+		cl: cl,
+	}, err
 }
 
-// SaveConfiguration saves the applied configuration
-// in the resource annotations (default: `true`)
-func SaveConfiguration(saveConfiguration bool) ApplyObjectOption {
-	return func(config *applyObjectConfiguration) {
-		config.saveConfiguration = saveConfiguration
-	}
+var _ Client = client{}
+
+// Get retrieves an obj for the given object key from the Kubernetes Cluster.
+// obj must be a struct pointer so that obj can be updated with the response
+// returned by the Server.
+func (c client) Get(ctx context.Context, key runtimeclient.ObjectKey, obj runtimeclient.Object, opts ...runtimeclient.GetOption) error {
+	return c.cl.Get(ctx, key, obj, opts...)
 }
 
-// ApplyRuntimeObject casts the provided object to client.Object and calls ApplyClient.ApplyObject method
-func (c ApplyClient) ApplyRuntimeObject(obj runtime.Object, options ...ApplyObjectOption) (bool, error) {
-	clientObj, ok := obj.(client.Object)
-	if !ok {
-		return false, fmt.Errorf("unable to cast of the object to client.Object: %+v", obj)
-	}
-	return c.applyObject(clientObj, options...)
+// List retrieves list of objects for a given namespace and list options. On a
+// successful call, Items field in the list will be populated with the
+// result returned from the server.
+func (c client) List(ctx context.Context, list runtimeclient.ObjectList, opts ...runtimeclient.ListOption) error {
+	return c.cl.List(ctx, list, opts...)
 }
 
-// ApplyObject creates the object if is missing and if the owner object is provided, then it's set as a controller reference.
-// If the objects exists then when the spec content has changed (based on the content of the annotation in the original object) then it
-// is automatically updated. If it looks to be same then based on the value of forceUpdate param it updates the object or not.
-// The return boolean says if the object was either created or updated (`true`). If nothing changed (ie, the generation was not
-// incremented by the server), then it returns `false`.
-func (c ApplyClient) ApplyObject(obj client.Object, options ...ApplyObjectOption) (bool, error) {
-	gvk := obj.GetObjectKind().GroupVersionKind()
-	createdOrUpdated, err := c.applyObject(obj, options...)
-	if err != nil {
-		return createdOrUpdated, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
-	}
-	return createdOrUpdated, nil
+// Scheme returns the scheme this client is using.
+func (c client) Scheme() *runtime.Scheme {
+	return c.cl.Scheme()
 }
 
-func (c ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption) (bool, error) {
-	// gets the meta accessor to the new resource
-	// gets the meta accessor to the new resource
-	config := newApplyObjectConfiguration(options...)
-
-	// creates a deepcopy of the new resource to be used to check if it already exists
-	existing := obj.DeepCopyObject().(client.Object)
-
-	var newConfiguration string
-	if config.saveConfiguration {
-		// set current object as annotation
-		annotations := obj.GetAnnotations()
-		newConfiguration = getNewConfiguration(obj)
-		if annotations == nil {
-			annotations = map[string]string{}
-		}
-		annotations[LastAppliedConfigurationAnnotationKey] = newConfiguration
-		obj.SetAnnotations(annotations)
-	}
-	// gets current object (if exists)
-	namespacedName := types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}
-	if err := c.Client.Get(context.TODO(), namespacedName, existing); err != nil {
-		if apierrors.IsNotFound(err) {
-			return true, c.createObj(obj, config.owner)
-		}
-		return false, errors.Wrapf(err, "unable to get the resource '%v'", existing)
-	}
-
-	// as it already exists, check using the UpdateStrategy if it should be updated
-	if !config.forceUpdate {
-		existingAnnotations := existing.GetAnnotations()
-		if existingAnnotations != nil {
-			if newConfiguration == existingAnnotations[LastAppliedConfigurationAnnotationKey] {
-				return false, nil
-			}
-		}
-	}
-
-	// retrieve the current 'resourceVersion' to set it in the resource passed to the `client.Update()`
-	// otherwise we would get an error with the following message:
-	// `nstemplatetiers.toolchain.dev.openshift.com "basic" is invalid: metadata.resourceVersion: Invalid value: 0x0: must be specified for an update`
-	originalGeneration := existing.GetGeneration()
-	obj.SetResourceVersion(existing.GetResourceVersion())
-
-	// also, if the resource to create is a Service and there's a previous version, we should retain its `spec.ClusterIP`, otherwise
-	// the update will fail with the following error:
-	// `Service "<name>" is invalid: spec.clusterIP: Invalid value: "": field is immutable`
-	if err := RetainClusterIP(obj, existing); err != nil {
-		return false, err
-	}
-	if err := c.Client.Update(context.TODO(), obj); err != nil {
-		return false, errors.Wrapf(err, "unable to update the resource '%v'", obj)
-	}
-
-	// check if it was changed or not
-	return originalGeneration != obj.GetGeneration(), nil
-}
-
-// RetainClusterIP sets the `spec.clusterIP` value from the given 'existing' object
-// into the 'newResource' object.
-func RetainClusterIP(newResource, existing runtime.Object) error {
-	clusterIP, found, err := clusterIP(existing)
-	if err != nil {
+// Create saves the object obj in the Kubernetes cluster.
+func (c client) Create(ctx context.Context, logger logr.Logger, obj runtimeclient.Object, opts ...runtimeclient.CreateOption) error {
+	if err := c.cl.Create(ctx, obj, opts...); err != nil {
 		return err
 	}
-	if !found {
-		// skip
-		return nil
-	}
-	switch newResource := newResource.(type) {
-	case *corev1.Service:
-		newResource.Spec.ClusterIP = clusterIP
-	case *unstructured.Unstructured:
-		if err := unstructured.SetNestedField(newResource.Object, clusterIP, "spec", "clusterIP"); err != nil {
-			return err
-		}
-	default:
-		// do nothing, object is not a service
-	}
+	audit.LogAPIResourceChangeEvent(logger, obj, audit.ResourceCreated)
 	return nil
 }
 
-func clusterIP(obj runtime.Object) (string, bool, error) {
-	switch obj := obj.(type) {
-	case *corev1.Service:
-		return obj.Spec.ClusterIP, obj.Spec.ClusterIP != "", nil
-	case *unstructured.Unstructured:
-		return unstructured.NestedString(obj.Object, "spec", "clusterIP")
-	default:
-		// do nothing, object is not a service
-		return "", false, nil
+// Delete deletes the given obj from Kubernetes cluster.
+func (c client) Delete(ctx context.Context, logger logr.Logger, obj runtimeclient.Object, opts ...runtimeclient.DeleteOption) error {
+	if err := c.cl.Delete(ctx, obj, opts...); err != nil {
+		return err
+	}
+	audit.LogAPIResourceChangeEvent(logger, obj, audit.ResourceDeleted)
+	return nil
+}
+
+// Update updates the given obj in the Kubernetes cluster. obj must be a
+// struct pointer so that obj can be updated with the content returned by the Server.
+func (c client) Update(ctx context.Context, logger logr.Logger, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
+	if err := c.cl.Update(ctx, obj, opts...); err != nil {
+		return err
+	}
+	audit.LogAPIResourceChangeEvent(logger, obj, audit.ResourceCreated)
+	return nil
+}
+
+// Patch patches the given obj in the Kubernetes cluster. obj must be a struct pointer so that obj can be updated with the content returned by the Server.
+func (c client) Patch(ctx context.Context, logger logr.Logger, obj runtimeclient.Object, patch runtimeclient.Patch, opts ...runtimeclient.PatchOption) error {
+	if err := c.cl.Patch(ctx, obj, patch, opts...); err != nil {
+		return err
+	}
+	audit.LogAPIResourceChangeEvent(logger, obj, audit.ResourcePatched)
+	return nil
+}
+
+func (c client) Status() AuditStatusClient {
+	return auditStatusClient{
+		cl: c.cl.Status(),
 	}
 }
 
-func getNewConfiguration(newResource runtime.Object) string {
-	newJSON, err := marshalObjectContent(newResource)
-	if err != nil {
-		log.Error(err, "unable to marshal the object", "object", newResource)
-		return fmt.Sprintf("%v", newResource)
-	}
-	return string(newJSON)
+type AuditStatusClient interface {
+	Update(ctx context.Context, logger logr.Logger, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error
+	Patch(ctx context.Context, logger logr.Logger, obj runtimeclient.Object, patch runtimeclient.Patch, opts ...runtimeclient.PatchOption) error
 }
 
-func marshalObjectContent(newResource runtime.Object) ([]byte, error) {
-	if newRes, ok := newResource.(runtime.Unstructured); ok {
-		return json.Marshal(newRes.UnstructuredContent())
-	}
-	return json.Marshal(newResource)
+type auditStatusClient struct {
+	cl runtimeclient.StatusWriter
 }
 
-func (c ApplyClient) createObj(newResource client.Object, owner v1.Object) error {
-	if owner != nil {
-		err := controllerutil.SetControllerReference(owner, newResource, c.Client.Scheme())
-		if err != nil {
-			return errors.Wrap(err, "unable to set controller references")
-		}
+// Update updates the fields corresponding to the status subresource for the
+// given obj. obj must be a struct pointer so that obj can be updated
+// with the content returned by the Server.
+func (c auditStatusClient) Update(ctx context.Context, logger logr.Logger, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
+	if err := c.cl.Update(ctx, obj, opts...); err != nil {
+		return err
 	}
-	return c.Client.Create(context.TODO(), newResource)
+	audit.LogAPIResourceChangeEvent(logger, obj, audit.ResourceStatusUpdated)
+	return nil
 }
 
-// Apply applies the objects, ie, creates or updates them on the cluster
-// returns `true, nil` if at least one of the objects was created or modified,
-// `false, nil` if nothing changed, and `false, err` if an error occurred
-func (c ApplyClient) Apply(toolchainObjects []client.Object, newLabels map[string]string) (bool, error) {
-	createdOrUpdated := false
-	for _, toolchainObject := range toolchainObjects {
-		// set newLabels
-		labels := toolchainObject.GetLabels()
-		if labels == nil {
-			labels = make(map[string]string)
-		}
-		for key, value := range newLabels {
-			labels[key] = value
-		}
-		toolchainObject.SetLabels(labels)
-
-		result, err := c.ApplyObject(toolchainObject, ForceUpdate(true))
-		if err != nil {
-			return false, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", toolchainObject.GetObjectKind().GroupVersionKind().Kind, toolchainObject.GetObjectKind().GroupVersionKind().Version)
-		}
-		createdOrUpdated = createdOrUpdated || result
+// Patch patches the given object's subresource. obj must be a struct pointer so that obj can be updated with the content returned by the Server.
+func (c auditStatusClient) Patch(ctx context.Context, logger logr.Logger, obj runtimeclient.Object, patch runtimeclient.Patch, opts ...runtimeclient.PatchOption) error {
+	if err := c.cl.Patch(ctx, obj, patch, opts...); err != nil {
+		return err
 	}
-	return createdOrUpdated, nil
+	audit.LogAPIResourceChangeEvent(logger, obj, audit.ResourceStatusPatched)
+	return nil
 }

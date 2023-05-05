@@ -9,14 +9,16 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/apis"
+	commonclient "github.com/codeready-toolchain/toolchain-common/pkg/client"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -37,28 +39,28 @@ const (
 // ToolchainClusterService manages cached cluster kube clients and related ToolchainCluster CRDs
 // it's used for adding/updating/deleting
 type ToolchainClusterService struct {
-	client    client.Client
+	client    commonclient.Client
 	log       logr.Logger
 	namespace string
 	timeout   time.Duration
 	newClient NewClient
 }
 
-type NewClient func(config *rest.Config, options client.Options) (client.Client, error)
+type NewClient func(config *rest.Config, options runtimeclient.Options) (commonclient.Client, error)
 
 // NewToolchainClusterServiceWithClient creates a new instance of ToolchainClusterService object and assigns the given newClient functione to be used for creating a client
-func NewToolchainClusterServiceWithClient(client client.Client, log logr.Logger, namespace string, timeout time.Duration, newClient NewClient) ToolchainClusterService {
-	service := NewToolchainClusterService(client, log, namespace, timeout)
+func NewToolchainClusterServiceWithClient(client commonclient.Client, logger logr.Logger, namespace string, timeout time.Duration, newClient NewClient) ToolchainClusterService {
+	service := NewToolchainClusterService(client, logger, namespace, timeout)
 	service.newClient = newClient
 	clusterCache.refreshCache = service.refreshCache
 	return service
 }
 
 // NewToolchainClusterService creates a new instance of ToolchainClusterService object and assigns the refreshCache function to the cache instance
-func NewToolchainClusterService(client client.Client, log logr.Logger, namespace string, timeout time.Duration) ToolchainClusterService {
+func NewToolchainClusterService(client commonclient.Client, logger logr.Logger, namespace string, timeout time.Duration) ToolchainClusterService {
 	service := ToolchainClusterService{
 		client:    client,
-		log:       log,
+		log:       logger,
 		namespace: namespace,
 		timeout:   timeout,
 	}
@@ -69,10 +71,10 @@ func NewToolchainClusterService(client client.Client, log logr.Logger, namespace
 // AddOrUpdateToolchainCluster takes the ToolchainCluster CR object,
 // creates CachedToolchainCluster with a kube client and stores it in a cache
 func (s *ToolchainClusterService) AddOrUpdateToolchainCluster(cluster *toolchainv1alpha1.ToolchainCluster) error {
-	log := s.enrichLogger(cluster)
+	logger := s.enrichLogger(cluster)
 	// log.Info("observed a cluster")
 
-	err := s.addToolchainCluster(log, cluster)
+	err := s.addToolchainCluster(logger, cluster)
 	if err != nil {
 		return errors.Wrap(err, "the cluster was not added nor updated")
 	}
@@ -91,7 +93,7 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 		return errors.Wrap(err, "cannot create ToolchainCluster Config")
 	}
 
-	var cl client.Client
+	var cl commonclient.Client
 	// check if there is already a cached ToolchainCluster so we could reuse the client
 	// we cannot allow to refresh the cache, because the refresh function calls this addToolchainCluster method which results in a recursive loop
 	cachedToolchainCluster, exists := clusterCache.getCachedToolchainCluster(toolchainCluster.Name, false)
@@ -105,11 +107,11 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 			return err
 		}
 		if s.newClient == nil {
-			cl, err = client.New(clusterConfig.RestConfig, client.Options{
+			cl, err = commonclient.NewClientFromConfig(clusterConfig.RestConfig, runtimeclient.Options{
 				Scheme: scheme,
 			})
 		} else {
-			cl, err = s.newClient(clusterConfig.RestConfig, client.Options{
+			cl, err = s.newClient(clusterConfig.RestConfig, runtimeclient.Options{
 				Scheme: scheme,
 			})
 		}
@@ -149,7 +151,7 @@ func (s *ToolchainClusterService) DeleteToolchainCluster(name string) {
 
 func (s *ToolchainClusterService) refreshCache() {
 	toolchainClusters := &toolchainv1alpha1.ToolchainClusterList{}
-	if err := s.client.List(context.TODO(), toolchainClusters, &client.ListOptions{Namespace: s.namespace}); err != nil {
+	if err := s.client.List(context.TODO(), toolchainClusters, &runtimeclient.ListOptions{Namespace: s.namespace}); err != nil {
 		s.log.Error(err, "the cluster cache was not refreshed")
 	}
 	for i := range toolchainClusters.Items {
@@ -168,7 +170,7 @@ func (s *ToolchainClusterService) enrichLogger(cluster *toolchainv1alpha1.Toolch
 }
 
 // NewClusterConfig generate a new cluster config by fetching the necessary info the given ToolchainCluster's associated Secret and taking all data from ToolchainCluster CR
-func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.ToolchainCluster, timeout time.Duration) (*Config, error) {
+func NewClusterConfig(cl commonclient.Client, toolchainCluster *toolchainv1alpha1.ToolchainCluster, timeout time.Duration) (*Config, error) {
 	clusterName := toolchainCluster.Name
 
 	apiEndpoint := toolchainCluster.Spec.APIEndpoint
@@ -180,7 +182,7 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 	if secretName == "" {
 		return nil, errors.Errorf("cluster %s does not have a secret name", clusterName)
 	}
-	secret := &v1.Secret{}
+	secret := &corev1.Secret{}
 	name := types.NamespacedName{
 		Namespace: toolchainCluster.Namespace,
 		Name:      secretName,
@@ -228,7 +230,7 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 func IsReady(clusterStatus *toolchainv1alpha1.ToolchainClusterStatus) bool {
 	for _, condition := range clusterStatus.Conditions {
 		if condition.Type == toolchainv1alpha1.ToolchainClusterReady {
-			if condition.Status == v1.ConditionTrue {
+			if condition.Status == corev1.ConditionTrue {
 				return true
 			}
 		}
@@ -236,9 +238,9 @@ func IsReady(clusterStatus *toolchainv1alpha1.ToolchainClusterStatus) bool {
 	return false
 }
 
-func ListToolchainClusterConfigs(cl client.Client, namespace string, clusterType Type, timeout time.Duration) ([]*Config, error) {
+func ListToolchainClusterConfigs(cl commonclient.Client, namespace string, clusterType Type, timeout time.Duration) ([]*Config, error) {
 	toolchainClusters := &toolchainv1alpha1.ToolchainClusterList{}
-	if err := cl.List(context.TODO(), toolchainClusters, client.InNamespace(namespace), client.MatchingLabels{LabelType: string(clusterType)}); err != nil {
+	if err := cl.List(context.TODO(), toolchainClusters, runtimeclient.InNamespace(namespace), runtimeclient.MatchingLabels{LabelType: string(clusterType)}); err != nil {
 		return nil, err
 	}
 	var configs []*Config

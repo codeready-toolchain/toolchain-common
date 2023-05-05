@@ -5,6 +5,7 @@ import (
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	commonclient "github.com/codeready-toolchain/toolchain-common/pkg/client"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -124,13 +125,13 @@ func TestUpdateClientBasedOnRestConfig(t *testing.T) {
 	})
 }
 
-func newToolchainClusterService(cl client.Client, timeout time.Duration) ToolchainClusterService {
-	return NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", timeout, func(config *rest.Config, options client.Options) (client.Client, error) {
+func newToolchainClusterService(cl commonclient.Client, timeout time.Duration) ToolchainClusterService {
+	return NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", timeout, func(config *rest.Config, options runtimeclient.Options) (commonclient.Client, error) {
 		// make sure that insecure is false to make Gock mocking working properly
 		// let's use a copy of the config, so it doesn't affect the cache logic
 		copiedConfig := rest.CopyConfig(config)
 		copiedConfig.Insecure = false
-		return client.New(copiedConfig, options)
+		return commonclient.NewClientFromConfig(copiedConfig, options)
 	})
 }
 

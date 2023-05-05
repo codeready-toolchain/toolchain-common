@@ -6,15 +6,16 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type MasterUserRecordAssertion struct { // nolint: revive
 	mur            *toolchainv1alpha1.MasterUserRecord
-	client         client.Client
+	client         runtimeclient.Reader
 	namespacedName types.NamespacedName
 	t              test.T
 }
@@ -26,7 +27,7 @@ func (a *MasterUserRecordAssertion) loadMasterUserRecord() error {
 	return err
 }
 
-func AssertThatMasterUserRecord(t test.T, name string, client client.Client) *MasterUserRecordAssertion {
+func AssertThatMasterUserRecord(t test.T, name string, client runtimeclient.Reader) *MasterUserRecordAssertion {
 	return &MasterUserRecordAssertion{
 		client:         client,
 		namespacedName: test.NamespacedName(test.HostOperatorNs, name),
@@ -215,12 +216,12 @@ func (a *MasterUserRecordAssertion) HasUserAccounts(count int) *MasterUserRecord
 
 type MasterUserRecordsAssertion struct {
 	murs      *toolchainv1alpha1.MasterUserRecordList
-	client    client.Client
+	client    runtimeclient.Reader
 	namespace string
 	t         test.T
 }
 
-func AssertThatMasterUserRecords(t test.T, client client.Client) *MasterUserRecordsAssertion {
+func AssertThatMasterUserRecords(t test.T, client runtimeclient.Reader) *MasterUserRecordsAssertion {
 	return &MasterUserRecordsAssertion{
 		client:    client,
 		namespace: test.HostOperatorNs,
@@ -230,7 +231,7 @@ func AssertThatMasterUserRecords(t test.T, client client.Client) *MasterUserReco
 
 func (a *MasterUserRecordsAssertion) loadMasterUserRecords() error {
 	murs := &toolchainv1alpha1.MasterUserRecordList{}
-	err := a.client.List(context.TODO(), murs, client.InNamespace(a.namespace))
+	err := a.client.List(context.TODO(), murs, runtimeclient.InNamespace(a.namespace))
 	a.murs = murs
 	return err
 }

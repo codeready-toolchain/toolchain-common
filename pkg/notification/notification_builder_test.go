@@ -7,6 +7,7 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	testusersignup "github.com/codeready-toolchain/toolchain-common/pkg/test/usersignup"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
@@ -16,10 +17,11 @@ import (
 func TestNotificationBuilder(t *testing.T) {
 	// given
 	client := test.NewFakeClient(t)
+	logger := zap.New(zap.UseDevMode(true))
 
 	t.Run("success with no options", func(t *testing.T) {
 		// when
-		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).Create("foo@acme.com")
+		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).Create(logger, "foo@acme.com")
 
 		// then
 		require.NoError(t, err)
@@ -28,7 +30,7 @@ func TestNotificationBuilder(t *testing.T) {
 
 	t.Run("fail with empty email address", func(t *testing.T) {
 		// when
-		_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create("")
+		_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create(logger, "")
 
 		// then
 		require.Error(t, err)
@@ -37,7 +39,7 @@ func TestNotificationBuilder(t *testing.T) {
 
 	t.Run("fail with invalid email address", func(t *testing.T) {
 		// when
-		_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create("foo")
+		_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create(logger, "foo")
 
 		// then
 		require.Error(t, err)
@@ -54,7 +56,7 @@ func TestNotificationBuilder(t *testing.T) {
 		for _, email := range emailsToTest {
 
 			// when
-			_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create(email)
+			_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create(logger, email)
 
 			// then
 			require.NoError(t, err)
@@ -74,7 +76,7 @@ func TestNotificationBuilder(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithUserContext(userSignup).
-			Create(userSignup.Annotations[toolchainv1alpha1.UserSignupUserEmailAnnotationKey])
+			Create(logger, userSignup.Annotations[toolchainv1alpha1.UserSignupUserEmailAnnotationKey])
 
 		// then
 		require.NoError(t, err)
@@ -93,7 +95,7 @@ func TestNotificationBuilder(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithName(name).
-			Create("foo@bar.com")
+			Create(logger, "foo@bar.com")
 
 		// then
 		require.NoError(t, err)
@@ -104,7 +106,7 @@ func TestNotificationBuilder(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithTemplate("default").
-			Create("foo@bar.com")
+			Create(logger, "foo@bar.com")
 
 		// then
 		require.NoError(t, err)
@@ -115,7 +117,7 @@ func TestNotificationBuilder(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithSubjectAndContent("This is a test subject", "This is some test content").
-			Create("foo@bar.com")
+			Create(logger, "foo@bar.com")
 
 		// then
 		require.NoError(t, err)
@@ -127,7 +129,7 @@ func TestNotificationBuilder(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithKeysAndValues(map[string]string{"foo": "bar"}).
-			Create("foo@bar.com")
+			Create(logger, "foo@bar.com")
 
 		// then
 		require.NoError(t, err)
@@ -138,7 +140,7 @@ func TestNotificationBuilder(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithNotificationType("TestNotificationType").
-			Create("foo@bar.com")
+			Create(logger, "foo@bar.com")
 
 		// then
 		require.NoError(t, err)
@@ -159,7 +161,7 @@ func TestNotificationBuilder(t *testing.T) {
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithNotificationType("TestNotificationType").
 			WithUserContext(userSignup).
-			Create("foo@bar.com")
+			Create(logger, "foo@bar.com")
 
 		// then
 		require.NoError(t, err)
