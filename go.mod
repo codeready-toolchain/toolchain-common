@@ -97,3 +97,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace github.com/codeready-toolchain/api v0.0.0-20230519194615-a232ef147925 => github.com/ranakan19/api v0.0.0-20230525171416-2effb7b92cb3

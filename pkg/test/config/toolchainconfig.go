@@ -341,12 +341,6 @@ func (o RegistrationServiceAnalyticsOption) SegmentWriteKey(value string) Regist
 	return o.parent
 }
 
-func (o RegistrationServiceAnalyticsOption) DevSpacesWoopraDomain(value string) RegistrationServiceOption {
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.RegistrationService.Analytics.DevSpaces.WoopraDomain = &value
-	})
-	return o.parent
-}
 func (o RegistrationServiceAnalyticsOption) DevSpacesSegmentWriteKey(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Analytics.DevSpaces.SegmentWriteKey = &value
