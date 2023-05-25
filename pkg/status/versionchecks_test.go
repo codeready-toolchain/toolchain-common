@@ -17,9 +17,9 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 	t.Run("check deployed version status conditions", func(t *testing.T) {
 
 		t.Run("deployment version is up to date", func(t *testing.T) {
-			mockedHTTPClient := mockGithubRepositoryCommits(
-				newMockedGithubCommit("1234abcd", time.Now().Add(-time.Hour*1)), // latest commit is already deployed
-				newMockedGithubCommit("5678efgh", time.Now().Add(-time.Hour*2)),
+			mockedHTTPClient := MockGithubRepositoryCommits(
+				NewMockedGithubCommit("1234abcd", time.Now().Add(-time.Hour*1)), // latest commit is already deployed
+				NewMockedGithubCommit("5678efgh", time.Now().Add(-time.Hour*2)),
 			)
 			githubClient := github.NewClient(mockedHTTPClient)
 			conditions := CheckDeployedVersionIsUpToDate(githubClient, "host-operator", "master", "1234abcd") // deployed commit matches latest commit SHA in github
@@ -36,9 +36,9 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 		t.Run("deployment version is not up to date", func(t *testing.T) {
 
 			t.Run("but we are still within the given 30 minutes threshold", func(t *testing.T) {
-				mockedHTTPClient := mockGithubRepositoryCommits(
-					newMockedGithubCommit("1234abcd", time.Now().Add(-time.Minute*29)), // the latest commit was submitted 29 minutes ago, so still within the threshold.
-					newMockedGithubCommit("5678efgh", time.Now().Add(-time.Hour*2)),
+				mockedHTTPClient := MockGithubRepositoryCommits(
+					NewMockedGithubCommit("1234abcd", time.Now().Add(-time.Minute*29)), // the latest commit was submitted 29 minutes ago, so still within the threshold.
+					NewMockedGithubCommit("5678efgh", time.Now().Add(-time.Hour*2)),
 				)
 				githubClient := github.NewClient(mockedHTTPClient)
 				conditions := CheckDeployedVersionIsUpToDate(githubClient, "host-operator", "master", "5678efgh") // deployed SHA is still at previous commit
@@ -54,9 +54,9 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 
 			t.Run("30 minutes threshold expired, deployment is not up to date", func(t *testing.T) {
 				latestCommitTimestamp := time.Now().Add(-time.Minute * 31)
-				mockedHTTPClient := mockGithubRepositoryCommits(
-					newMockedGithubCommit("1234abcd", latestCommitTimestamp), // the latest commit was submitted 31 minutes ago, threshold has expired and deployment is not up to date.
-					newMockedGithubCommit("5678efgh", time.Now().Add(-time.Hour*2)),
+				mockedHTTPClient := MockGithubRepositoryCommits(
+					NewMockedGithubCommit("1234abcd", latestCommitTimestamp), // the latest commit was submitted 31 minutes ago, threshold has expired and deployment is not up to date.
+					NewMockedGithubCommit("5678efgh", time.Now().Add(-time.Hour*2)),
 				)
 				githubClient := github.NewClient(mockedHTTPClient)
 				conditions := CheckDeployedVersionIsUpToDate(githubClient, "host-operator", "master", "5678efgh") // deployed SHA is still at previous commit
@@ -124,7 +124,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 		})
 
 		t.Run("response with no commits", func(t *testing.T) {
-			mockedHTTPClient := mockGithubRepositoryCommits([]*github.RepositoryCommit{}...)
+			mockedHTTPClient := MockGithubRepositoryCommits([]*github.RepositoryCommit{}...)
 			githubClient := github.NewClient(mockedHTTPClient)
 			conditions := CheckDeployedVersionIsUpToDate(githubClient, "host-operator", "master", "5678efgh")
 
@@ -139,7 +139,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 	})
 }
 
-func newMockedGithubCommit(commitSHA string, commitTimestamp time.Time) *github.RepositoryCommit {
+func NewMockedGithubCommit(commitSHA string, commitTimestamp time.Time) *github.RepositoryCommit {
 	return &github.RepositoryCommit{
 		SHA: github.String(commitSHA),
 		Commit: &github.Commit{
@@ -150,7 +150,7 @@ func newMockedGithubCommit(commitSHA string, commitTimestamp time.Time) *github.
 	}
 }
 
-func mockGithubRepositoryCommits(repositoryCommits ...*github.RepositoryCommit) *http.Client {
+func MockGithubRepositoryCommits(repositoryCommits ...*github.RepositoryCommit) *http.Client {
 	return mock.NewMockedHTTPClient(
 		mock.WithRequestMatchHandler(
 			mock.GetReposCommitsByOwnerByRepo,
