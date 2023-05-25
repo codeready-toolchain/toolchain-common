@@ -2,8 +2,12 @@ package test
 
 import (
 	"fmt"
+	"net/http"
+	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	"github.com/google/go-github/v52/github"
+	"github.com/migueleliasweb/go-github-mock/src/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -67,4 +71,28 @@ func AssertRegistrationServiceResourcesStatusMatch(t T, actual toolchainv1alpha1
 // AssertRegistrationServiceHealthStatusMatch asserts that the specified registration service health status matches the expected one
 func AssertRegistrationServiceHealthStatusMatch(t T, actual toolchainv1alpha1.RegistrationServiceHealth, expected toolchainv1alpha1.RegistrationServiceHealth) {
 	AssertConditionsMatch(t, actual.Conditions, expected.Conditions...)
+}
+
+// NewMockedGithubCommit create a GitHub.Commit object with given SHA and timestamp
+func NewMockedGithubCommit(commitSHA string, commitTimestamp time.Time) *github.RepositoryCommit {
+	return &github.RepositoryCommit{
+		SHA: github.String(commitSHA),
+		Commit: &github.Commit{
+			Author: &github.CommitAuthor{
+				Date: &github.Timestamp{Time: commitTimestamp},
+			},
+		},
+	}
+}
+
+// MockGithubRepositoryCommits creates a http handler that returns a list of commits for a given org/repo.
+func MockGithubRepositoryCommits(repositoryCommits ...*github.RepositoryCommit) *http.Client {
+	return mock.NewMockedHTTPClient(
+		mock.WithRequestMatchHandler(
+			mock.GetReposCommitsByOwnerByRepo,
+			http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Write(mock.MustMarshal(repositoryCommits))
+			}),
+		),
+	)
 }
