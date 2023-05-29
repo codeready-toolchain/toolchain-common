@@ -191,6 +191,20 @@ func (o ConsoleOption) RouteName(value string) ConsoleOption {
 	return o
 }
 
+type MemberEnvironmentOption struct {
+	*MemberOperatorConfigOptionImpl
+}
+
+func MemberEnvironment(value string) *MemberEnvironmentOption {
+	o := &MemberEnvironmentOption{
+		MemberOperatorConfigOptionImpl: &MemberOperatorConfigOptionImpl{},
+	}
+	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		config.Spec.Environment = &value
+	})
+	return o
+}
+
 type MemberStatusOption struct {
 	*MemberOperatorConfigOptionImpl
 }
