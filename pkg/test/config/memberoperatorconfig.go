@@ -163,6 +163,31 @@ func (o CheSecretOption) CheAdminPasswordKey(value string) CheSecretOption {
 	return o
 }
 
+type MemberGithubSecretOption struct {
+	*MemberOperatorConfigOptionImpl
+}
+
+func MemberGitHubSecret() *MemberGithubSecretOption {
+	gs := &MemberGithubSecretOption{
+		MemberOperatorConfigOptionImpl: &MemberOperatorConfigOptionImpl{},
+	}
+	return gs
+}
+
+func (g MemberGithubSecretOption) Ref(value string) MemberGithubSecretOption {
+	g.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		config.Spec.GitHubSecret.Ref = &value
+	})
+	return g
+}
+
+func (g MemberGithubSecretOption) AccessTokenKey(value string) MemberGithubSecretOption {
+	g.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		config.Spec.GitHubSecret.AccessTokenKey = &value
+	})
+	return g
+}
+
 type ConsoleOption struct {
 	*MemberOperatorConfigOptionImpl
 }
