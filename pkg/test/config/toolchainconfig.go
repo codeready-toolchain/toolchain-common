@@ -178,9 +178,9 @@ type GithubSecretOption struct {
 	*ToolchainConfigOptionImpl
 }
 
-func (g GithubSecretOption) GitHubSecret() *GithubSecretOption {
+func GitHubSecret() *GithubSecretOption {
 	gs := &GithubSecretOption{
-		ToolchainConfigOptionImpl: g.ToolchainConfigOptionImpl,
+		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
 	}
 	return gs
 }
