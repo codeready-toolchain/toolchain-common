@@ -174,6 +174,31 @@ func (o MetricsOption) ForceSynchronization(value bool) MetricsOption {
 	return o
 }
 
+type GithubSecretOption struct {
+	*ToolchainConfigOptionImpl
+}
+
+func (g GithubSecretOption) GitHubSecret() *GithubSecretOption {
+	gs := &GithubSecretOption{
+		ToolchainConfigOptionImpl: g.ToolchainConfigOptionImpl,
+	}
+	return gs
+}
+
+func (g GithubSecretOption) Ref(value string) GithubSecretOption {
+	g.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.GitHubSecret.Ref = &value
+	})
+	return g
+}
+
+func (g GithubSecretOption) AccessTokenKey(value string) GithubSecretOption {
+	g.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.GitHubSecret.AccessTokenKey = &value
+	})
+	return g
+}
+
 type NotificationsOption struct {
 	*ToolchainConfigOptionImpl
 }
