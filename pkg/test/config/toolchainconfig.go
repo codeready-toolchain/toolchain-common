@@ -174,31 +174,6 @@ func (o MetricsOption) ForceSynchronization(value bool) MetricsOption {
 	return o
 }
 
-type GithubSecretOption struct {
-	*ToolchainConfigOptionImpl
-}
-
-func GitHubSecret() *GithubSecretOption {
-	gs := &GithubSecretOption{
-		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
-	}
-	return gs
-}
-
-func (g GithubSecretOption) Ref(value string) GithubSecretOption {
-	g.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.GitHubSecret.Ref = &value
-	})
-	return g
-}
-
-func (g GithubSecretOption) AccessTokenKey(value string) GithubSecretOption {
-	g.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.GitHubSecret.AccessTokenKey = &value
-	})
-	return g
-}
-
 type NotificationsOption struct {
 	*ToolchainConfigOptionImpl
 }
@@ -615,6 +590,20 @@ func ToolchainStatus() *ToolchainStatusOption {
 func (o ToolchainStatusOption) ToolchainStatusRefreshTime(value string) ToolchainStatusOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.ToolchainStatus.ToolchainStatusRefreshTime = &value
+	})
+	return o
+}
+
+func (o ToolchainStatusOption) GitHubSecretRef(value string) ToolchainStatusOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.ToolchainStatus.GitHubSecret.Ref = &value
+	})
+	return o
+}
+
+func (o ToolchainStatusOption) GitHubSecretAccessTokenKey(value string) ToolchainStatusOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.ToolchainStatus.GitHubSecret.AccessTokenKey = &value
 	})
 	return o
 }

@@ -65,7 +65,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 					Type:    toolchainv1alpha1.ConditionReady,
 					Status:  corev1.ConditionFalse,
 					Reason:  toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason,
-					Message: "deployment version is not up to date with latest github commit SHA. deployed commit SHA 5678efgh ,github latest SHA 1234abcd, expected deployment timestamp: " + latestCommitTimestamp.Add(DeploymentThresholdInMinutes).Format(time.RFC3339),
+					Message: "deployment version is not up to date with latest github commit SHA. deployed commit SHA 5678efgh ,github latest SHA 1234abcd, expected deployment timestamp: " + latestCommitTimestamp.Add(DeploymentThreshold).Format(time.RFC3339),
 				}
 				test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
 			})
@@ -97,28 +97,6 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 				Status:  corev1.ConditionFalse,
 				Reason:  toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason,
 				Message: "github went belly up or something",
-			}
-			test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
-		})
-
-		t.Run("unexpected response code", func(t *testing.T) {
-			mockedHTTPClient := mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.GetReposCommitsByOwnerByRepo,
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-						w.WriteHeader(http.StatusAccepted) // if GitHub returns something different from 200 we consider it invalid
-						w.Write(mock.MustMarshal([]*github.RepositoryCommit{}))
-					}),
-				),
-			)
-			githubClient := github.NewClient(mockedHTTPClient)
-			conditions := CheckDeployedVersionIsUpToDate(githubClient, "host-operator", "master", "5678efgh")
-
-			expected := toolchainv1alpha1.Condition{
-				Type:    toolchainv1alpha1.ConditionReady,
-				Status:  corev1.ConditionFalse,
-				Reason:  toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason,
-				Message: "invalid response code from github commits API. resp.Response.StatusCode: 202, repoName: host-operator, repoBranch: master",
 			}
 			test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
 		})

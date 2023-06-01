@@ -163,31 +163,6 @@ func (o CheSecretOption) CheAdminPasswordKey(value string) CheSecretOption {
 	return o
 }
 
-type MemberGithubSecretOption struct {
-	*MemberOperatorConfigOptionImpl
-}
-
-func MemberGitHubSecret() *MemberGithubSecretOption {
-	gs := &MemberGithubSecretOption{
-		MemberOperatorConfigOptionImpl: &MemberOperatorConfigOptionImpl{},
-	}
-	return gs
-}
-
-func (g MemberGithubSecretOption) Ref(value string) MemberGithubSecretOption {
-	g.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.GitHubSecret.Ref = &value
-	})
-	return g
-}
-
-func (g MemberGithubSecretOption) AccessTokenKey(value string) MemberGithubSecretOption {
-	g.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.GitHubSecret.AccessTokenKey = &value
-	})
-	return g
-}
-
 type ConsoleOption struct {
 	*MemberOperatorConfigOptionImpl
 }
@@ -247,6 +222,20 @@ func MemberStatus() *MemberStatusOption {
 func (o MemberStatusOption) RefreshPeriod(value string) MemberStatusOption {
 	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
 		config.Spec.MemberStatus.RefreshPeriod = &value
+	})
+	return o
+}
+
+func (o MemberStatusOption) GitHubSecretRef(value string) MemberStatusOption {
+	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		config.Spec.MemberStatus.GitHubSecret.Ref = &value
+	})
+	return o
+}
+
+func (o MemberStatusOption) GitHubSecretAccessTokenKey(value string) MemberStatusOption {
+	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		config.Spec.MemberStatus.GitHubSecret.AccessTokenKey = &value
 	})
 	return o
 }

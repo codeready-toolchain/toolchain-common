@@ -91,7 +91,7 @@ func MockGithubRepositoryCommits(repositoryCommits ...*github.RepositoryCommit) 
 		mock.WithRequestMatchHandler(
 			mock.GetReposCommitsByOwnerByRepo,
 			http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Write(mock.MustMarshal(repositoryCommits))
+				w.Write(mock.MustMarshal(repositoryCommits)) //nolint: errcheck
 			}),
 		),
 	)
