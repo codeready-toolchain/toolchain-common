@@ -26,8 +26,10 @@ require (
 )
 
 require (
+	github.com/gofri/go-github-ratelimit v1.0.3
 	github.com/google/go-github/v52 v52.0.0
 	github.com/migueleliasweb/go-github-mock v0.0.18
+	golang.org/x/oauth2 v0.7.0
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
 )
 
@@ -85,7 +87,6 @@ require (
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/term v0.7.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
