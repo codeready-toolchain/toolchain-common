@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/codeready-toolchain/toolchain-common/pkg/client"
 	"github.com/google/go-github/v52/github"
 	"github.com/migueleliasweb/go-github-mock/src/mock"
 )
@@ -14,12 +15,14 @@ var GetReposCommitsByOwnerByRepoByRef mock.EndpointPattern = mock.EndpointPatter
 }
 
 // MockGitHubClientForRepositoryCommits provides a GitHub client which will return the given commit and commit timestamp as a response.
-func MockGitHubClientForRepositoryCommits(githubCommitSHA string, commitTimestamp time.Time) *github.Client {
+func MockGitHubClientForRepositoryCommits(githubCommitSHA string, commitTimestamp time.Time) client.GetGitHubClientFunc {
 	mockedHTTPClient := MockGithubRepositoryCommit(
 		NewMockedGithubCommit(githubCommitSHA, commitTimestamp),
 	)
 	mockedGitHubClient := github.NewClient(mockedHTTPClient)
-	return mockedGitHubClient
+	return func(apiToken string) (*github.Client, error) {
+		return mockedGitHubClient, nil
+	}
 }
 
 // NewMockedGithubCommit create a GitHub.Commit object with given SHA and timestamp

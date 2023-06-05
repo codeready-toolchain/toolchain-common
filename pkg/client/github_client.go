@@ -2,11 +2,18 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/gofri/go-github-ratelimit/github_ratelimit"
 	"github.com/google/go-github/v52/github"
 	"golang.org/x/oauth2"
 )
+
+// GitHubAPICallDelay it's used to "slow" down the number of requests we perform to GitHub API , in order to avoid rate limit issues.
+const GitHubAPICallDelay = 1 * time.Minute
+
+// GetGitHubClientFunc a func that returns a GitHub client instance
+type GetGitHubClientFunc func(accessToken string) (*github.Client, error)
 
 // NewGitHubClient return a client that interacts with GitHub and has rate limiter configured.
 // With authenticated GitHub api you can make 5,000 requests per hour.
