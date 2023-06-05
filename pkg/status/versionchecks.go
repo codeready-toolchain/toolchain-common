@@ -24,10 +24,10 @@ const (
 // There is some preconfigured delay/threshold that we keep in account before returning an `error condition`.
 func CheckDeployedVersionIsUpToDate(githubClient *github.Client, repoName, repoBranch, deployedCommitSHA string) *toolchainv1alpha1.Condition {
 	// get the latest commit from given repository and branch
-	commits, commitsResponse, err := githubClient.Repositories.ListCommits(context.TODO(), toolchainv1alpha1.ProviderLabelValue, repoName, &github.CommitsListOptions{
-		SHA: repoBranch,
-	})
-	defer commitsResponse.Body.Close()
+	latestCommit, commitResponse, err := githubClient.Repositories.GetCommit(context.TODO(), toolchainv1alpha1.ProviderLabelValue, repoName, repoBranch, &github.ListOptions{})
+	fmt.Printf("github commits response statusCode: %d", commitResponse.Response.StatusCode)
+
+	defer commitResponse.Body.Close()
 	if err != nil {
 		errMsg := err.Error()
 		if ghErr, ok := err.(*github.ErrorResponse); ok { //nolint:errorlint
@@ -35,20 +35,20 @@ func CheckDeployedVersionIsUpToDate(githubClient *github.Client, repoName, repoB
 		}
 		return NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason, errMsg)
 	}
-	if commitsResponse.StatusCode != http.StatusOK {
-		err = errs.New(fmt.Sprintf("invalid response code from github commits API. resp.Response.StatusCode: %d, repoName: %s, repoBranch: %s", commitsResponse.Response.StatusCode, repoName, repoBranch))
+	if commitResponse.StatusCode != http.StatusOK {
+		err = errs.New(fmt.Sprintf("invalid response code from github commits API. resp.Response.StatusCode: %d, repoName: %s, repoBranch: %s", commitResponse.Response.StatusCode, repoName, repoBranch))
 		return NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason, err.Error())
 	}
 
-	if len(commits) == 0 {
+	if latestCommit == nil {
 		err = errs.New(fmt.Sprintf("no commits returned. repoName: %s, repoBranch: %s", repoName, repoBranch))
 		return NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason, err.Error())
 	}
 	// check if there is a mismatch between the commit id of the running version and latest commit id from the source code repo (deployed version according to Github actions)
 	// we also consider some delay ( time that usually takes the deployment to happen on all our environments)
-	githubCommitTimestamp := commits[0].Commit.Author.GetDate()
+	githubCommitTimestamp := latestCommit.Commit.Author.GetDate()
 	expectedDeploymentTime := githubCommitTimestamp.Add(DeploymentThreshold) // let's consider some threshold for the deployment to happen
-	githubCommitSHA := *commits[0].SHA
+	githubCommitSHA := *latestCommit.SHA
 	if githubCommitSHA != deployedCommitSHA && time.Now().After(expectedDeploymentTime) {
 		// deployed version is not up-to-date after expected threshold
 		err := fmt.Errorf("%s. deployed commit SHA %s ,github latest SHA %s, expected deployment timestamp: %s", ErrMsgDeploymentIsNotUpToDate, deployedCommitSHA, githubCommitSHA, expectedDeploymentTime.Format(time.RFC3339))

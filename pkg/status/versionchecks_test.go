@@ -15,40 +15,46 @@ import (
 func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 
 	t.Run("check deployed version status conditions", func(t *testing.T) {
-
 		t.Run("deployment version is up to date", func(t *testing.T) {
+			// given
 			mockedHTTPClient := test.MockGithubRepositoryCommits(
 				test.NewMockedGithubCommit("1234abcd", time.Now().Add(-time.Hour*1)), // latest commit is already deployed
 				test.NewMockedGithubCommit("5678efgh", time.Now().Add(-time.Hour*2)),
 			)
-			githubClient := github.NewClient(mockedHTTPClient)
-			conditions := CheckDeployedVersionIsUpToDate(githubClient, "host-operator", "master", "1234abcd") // deployed commit matches latest commit SHA in github
-
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
 				Status:  corev1.ConditionTrue,
 				Reason:  toolchainv1alpha1.ToolchainStatusDeploymentUpToDateReason,
 				Message: "",
 			}
+			githubClient := github.NewClient(mockedHTTPClient)
+
+			// when
+			conditions := CheckDeployedVersionIsUpToDate(githubClient, "host-operator", "master", "1234abcd") // deployed commit matches latest commit SHA in github
+
+			// then
 			test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
 		})
 
 		t.Run("deployment version is not up to date", func(t *testing.T) {
-
 			t.Run("but we are still within the given 30 minutes threshold", func(t *testing.T) {
+				// given
 				mockedHTTPClient := test.MockGithubRepositoryCommits(
 					test.NewMockedGithubCommit("1234abcd", time.Now().Add(-time.Minute*29)), // the latest commit was submitted 29 minutes ago, so still within the threshold.
 					test.NewMockedGithubCommit("5678efgh", time.Now().Add(-time.Hour*2)),
 				)
-				githubClient := github.NewClient(mockedHTTPClient)
-				conditions := CheckDeployedVersionIsUpToDate(githubClient, "host-operator", "master", "5678efgh") // deployed SHA is still at previous commit
-
 				expected := toolchainv1alpha1.Condition{
 					Type:    toolchainv1alpha1.ConditionReady,
 					Status:  corev1.ConditionTrue,
 					Reason:  toolchainv1alpha1.ToolchainStatusDeploymentUpToDateReason,
 					Message: "",
 				}
+				githubClient := github.NewClient(mockedHTTPClient)
+
+				// when
+				conditions := CheckDeployedVersionIsUpToDate(githubClient, "host-operator", "master", "5678efgh") // deployed SHA is still at previous commit
+
+				// then
 				test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
 			})
 
