@@ -8,9 +8,14 @@ import (
 	"github.com/migueleliasweb/go-github-mock/src/mock"
 )
 
+var GetReposCommitsByOwnerByRepoByRef mock.EndpointPattern = mock.EndpointPattern{
+	Pattern: "/repos/{owner}/{repo}/commits/{ref}",
+	Method:  "GET",
+}
+
 // MockGitHubClientForRepositoryCommits provides a GitHub client which will return the given commit and commit timestamp as a response.
 func MockGitHubClientForRepositoryCommits(githubCommitSHA string, commitTimestamp time.Time) *github.Client {
-	mockedHTTPClient := MockGithubRepositoryCommits(
+	mockedHTTPClient := MockGithubRepositoryCommit(
 		NewMockedGithubCommit(githubCommitSHA, commitTimestamp),
 	)
 	mockedGitHubClient := github.NewClient(mockedHTTPClient)
@@ -29,13 +34,13 @@ func NewMockedGithubCommit(commitSHA string, commitTimestamp time.Time) *github.
 	}
 }
 
-// MockGithubRepositoryCommits creates a http handler that returns a list of commits for a given org/repo.
-func MockGithubRepositoryCommits(repositoryCommits ...*github.RepositoryCommit) *http.Client {
+// MockGithubRepositoryCommit creates a http handler that returns a commit for a given org/repo.
+func MockGithubRepositoryCommit(repositoryCommit *github.RepositoryCommit) *http.Client {
 	return mock.NewMockedHTTPClient(
 		mock.WithRequestMatchHandler(
-			mock.GetReposCommitsByOwnerByRepo,
+			GetReposCommitsByOwnerByRepoByRef,
 			http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Write(mock.MustMarshal(repositoryCommits)) //nolint: errcheck
+				w.Write(mock.MustMarshal(repositoryCommit)) //nolint: errcheck
 			}),
 		),
 	)

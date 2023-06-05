@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
@@ -40,7 +41,7 @@ func CheckDeployedVersionIsUpToDate(githubClient *github.Client, repoName, repoB
 		return NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason, err.Error())
 	}
 
-	if latestCommit == nil {
+	if reflect.DeepEqual(latestCommit, &github.RepositoryCommit{}) {
 		err = errs.New(fmt.Sprintf("no commits returned. repoName: %s, repoBranch: %s", repoName, repoBranch))
 		return NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason, err.Error())
 	}
