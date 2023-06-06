@@ -20,8 +20,8 @@ func MockGitHubClientForRepositoryCommits(githubCommitSHA string, commitTimestam
 		NewMockedGithubCommit(githubCommitSHA, commitTimestamp),
 	)
 	mockedGitHubClient := github.NewClient(mockedHTTPClient)
-	return func(apiToken string) (*github.Client, error) {
-		return mockedGitHubClient, nil
+	return func(apiToken string) *github.Client {
+		return mockedGitHubClient
 	}
 }
 
