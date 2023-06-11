@@ -106,4 +106,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/codeready-toolchain/api => /Users/fmuntean/go/src/github.com/codeready-toolchain/api
+replace github.com/codeready-toolchain/api => github.com/mfrancisc/api v0.0.0-20230611084154-fa1444438438
