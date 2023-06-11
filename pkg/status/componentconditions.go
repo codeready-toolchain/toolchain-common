@@ -10,6 +10,41 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewDeploymentVersionCondition(reason string) *toolchainv1alpha1.Condition {
+	currentTime := metav1.Now()
+	return &toolchainv1alpha1.Condition{
+		Type:               toolchainv1alpha1.ConditionDeploymentVersion,
+		Status:             corev1.ConditionTrue,
+		Reason:             reason,
+		LastTransitionTime: currentTime,
+		LastUpdatedTime:    &currentTime,
+	}
+}
+
+func NewDeploymentErrorVersionCondition(reason, msg string) *toolchainv1alpha1.Condition {
+	currentTime := metav1.Now()
+	return &toolchainv1alpha1.Condition{
+		Type:               toolchainv1alpha1.ConditionDeploymentVersion,
+		Status:             corev1.ConditionFalse,
+		Reason:             reason,
+		Message:            msg,
+		LastTransitionTime: currentTime,
+		LastUpdatedTime:    &currentTime,
+	}
+}
+
+// ValidateDeploymentVersionCondition checks whether the provided conditions signal that the deployment is up-to-date, returns an error otherwise
+func ValidateDeploymentVersionCondition(conditions ...toolchainv1alpha1.Condition) error {
+	c, found := condition.FindConditionByType(conditions, toolchainv1alpha1.ConditionDeploymentVersion)
+	if !found {
+		return fmt.Errorf("a deployment version condition was not found")
+	} else if c.Status != corev1.ConditionTrue {
+		return fmt.Errorf(c.Message) // return an error with the message from the condition
+	}
+
+	return nil
+}
+
 func NewComponentReadyCondition(reason string) *toolchainv1alpha1.Condition {
 	currentTime := metav1.Now()
 	return &toolchainv1alpha1.Condition{

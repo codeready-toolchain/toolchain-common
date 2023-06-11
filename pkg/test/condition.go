@@ -27,8 +27,9 @@ func AssertConditionsMatch(t T, actual []toolchainv1alpha1.Condition, expected .
 // LastTransitionTime is ignored.
 func AssertContainsCondition(t T, conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition) {
 	for _, c := range conditions {
-		if c.Type == contains.Type && c.Reason == contains.Reason {
+		if c.Type == contains.Type {
 			assert.Equal(t, contains.Status, c.Status)
+			assert.Equal(t, contains.Reason, c.Reason)
 			assert.Equal(t, contains.Message, c.Message)
 			return
 		}

@@ -26,7 +26,6 @@ require (
 )
 
 require (
-	github.com/gofri/go-github-ratelimit v1.0.3
 	github.com/google/go-github/v52 v52.0.0
 	github.com/migueleliasweb/go-github-mock v0.0.18
 	golang.org/x/oauth2 v0.7.0
@@ -106,3 +105,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace github.com/codeready-toolchain/api => /Users/fmuntean/go/src/github.com/codeready-toolchain/api
