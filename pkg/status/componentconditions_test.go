@@ -84,3 +84,77 @@ func TestValidateComponentConditionReady(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateDeploymentVersionUpToDateCondition(t *testing.T) {
+
+	conditionDeploymentIsUpToDate := toolchainv1alpha1.Condition{
+		Type:    toolchainv1alpha1.ConditionDeploymentVersionUpToDate,
+		Status:  corev1.ConditionTrue,
+		Reason:  toolchainv1alpha1.ToolchainStatusDeploymentUpToDateReason,
+		Message: "",
+	}
+
+	conditionDeploymentIsNotUpToDate := toolchainv1alpha1.Condition{
+		Type:    toolchainv1alpha1.ConditionDeploymentVersionUpToDate,
+		Status:  corev1.ConditionFalse,
+		Reason:  toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason,
+		Message: "deployment version is not up-to-date",
+	}
+
+	conditionOtherType := toolchainv1alpha1.Condition{
+		Type:    toolchainv1alpha1.MasterUserRecordProvisioning,
+		Status:  corev1.ConditionTrue,
+		Reason:  "Provisioned",
+		Message: "",
+	}
+
+	conditionOtherType2 := toolchainv1alpha1.Condition{
+		Type:    toolchainv1alpha1.MasterUserRecordUserProvisionedNotificationCreated,
+		Status:  corev1.ConditionTrue,
+		Reason:  "NotificationCreated",
+		Message: "",
+	}
+
+	t.Run("single conditions", func(t *testing.T) {
+
+		t.Run("no deployment version up-to-date condition", func(t *testing.T) {
+			err := ValidateDeploymentVersionUpToDateCondition(conditionOtherType)
+			require.Error(t, err)
+			assert.EqualError(t, err, "a deployment version up-to-date condition was not found")
+		})
+
+		t.Run("condition deployment version is not up-to-date", func(t *testing.T) {
+			err := ValidateDeploymentVersionUpToDateCondition(conditionDeploymentIsNotUpToDate)
+			require.Error(t, err)
+			assert.EqualError(t, err, "deployment version is not up-to-date")
+		})
+
+		t.Run("condition deployment version is up-to-date", func(t *testing.T) {
+			err := ValidateDeploymentVersionUpToDateCondition(conditionDeploymentIsUpToDate)
+			assert.NoError(t, err)
+		})
+	})
+
+	t.Run("multiple conditions", func(t *testing.T) {
+
+		t.Run("multiple - no deployment version up-to-date condition", func(t *testing.T) {
+			conditions := []toolchainv1alpha1.Condition{conditionOtherType, conditionOtherType2}
+			err := ValidateDeploymentVersionUpToDateCondition(conditions...)
+			require.Error(t, err)
+			assert.EqualError(t, err, "a deployment version up-to-date condition was not found")
+		})
+
+		t.Run("multiple - condition deployment version is not up-to-date", func(t *testing.T) {
+			conditions := []toolchainv1alpha1.Condition{conditionDeploymentIsNotUpToDate, conditionOtherType}
+			err := ValidateDeploymentVersionUpToDateCondition(conditions...)
+			require.Error(t, err)
+			assert.EqualError(t, err, "deployment version is not up-to-date")
+		})
+
+		t.Run("multiple - condition deployment version is up-to-date", func(t *testing.T) {
+			conditions := []toolchainv1alpha1.Condition{conditionDeploymentIsUpToDate, conditionOtherType}
+			err := ValidateDeploymentVersionUpToDateCondition(conditions...)
+			require.NoError(t, err)
+		})
+	})
+}

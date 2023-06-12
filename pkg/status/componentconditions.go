@@ -10,10 +10,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewDeploymentVersionCondition(reason string) *toolchainv1alpha1.Condition {
+func NewDeploymentVersionUpToDateCondition(reason string) *toolchainv1alpha1.Condition {
 	currentTime := metav1.Now()
 	return &toolchainv1alpha1.Condition{
-		Type:               toolchainv1alpha1.ConditionDeploymentVersion,
+		Type:               toolchainv1alpha1.ConditionDeploymentVersionUpToDate,
 		Status:             corev1.ConditionTrue,
 		Reason:             reason,
 		LastTransitionTime: currentTime,
@@ -21,11 +21,11 @@ func NewDeploymentVersionCondition(reason string) *toolchainv1alpha1.Condition {
 	}
 }
 
-func NewDeploymentErrorVersionCondition(reason, msg string) *toolchainv1alpha1.Condition {
+func NewDeploymentVersionUpToDateErrorCondition(reason, msg string, status corev1.ConditionStatus) *toolchainv1alpha1.Condition {
 	currentTime := metav1.Now()
 	return &toolchainv1alpha1.Condition{
-		Type:               toolchainv1alpha1.ConditionDeploymentVersion,
-		Status:             corev1.ConditionFalse,
+		Type:               toolchainv1alpha1.ConditionDeploymentVersionUpToDate,
+		Status:             status,
 		Reason:             reason,
 		Message:            msg,
 		LastTransitionTime: currentTime,
@@ -33,11 +33,11 @@ func NewDeploymentErrorVersionCondition(reason, msg string) *toolchainv1alpha1.C
 	}
 }
 
-// ValidateDeploymentVersionCondition checks whether the provided conditions signal that the deployment is up-to-date, returns an error otherwise
-func ValidateDeploymentVersionCondition(conditions ...toolchainv1alpha1.Condition) error {
-	c, found := condition.FindConditionByType(conditions, toolchainv1alpha1.ConditionDeploymentVersion)
+// ValidateDeploymentVersionUpToDateCondition checks whether the provided conditions signal that the deployment is up-to-date, returns an error otherwise
+func ValidateDeploymentVersionUpToDateCondition(conditions ...toolchainv1alpha1.Condition) error {
+	c, found := condition.FindConditionByType(conditions, toolchainv1alpha1.ConditionDeploymentVersionUpToDate)
 	if !found {
-		return fmt.Errorf("a deployment version condition was not found")
+		return fmt.Errorf("a deployment version up-to-date condition was not found")
 	} else if c.Status != corev1.ConditionTrue {
 		return fmt.Errorf(c.Message) // return an error with the message from the condition
 	}

@@ -10,6 +10,7 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/google/go-github/v52/github"
 	errs "github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -32,18 +33,18 @@ func CheckDeployedVersionIsUpToDate(githubClient *github.Client, repoName, repoB
 		if ghErr, ok := err.(*github.ErrorResponse); ok { //nolint:errorlint
 			errMsg = ghErr.Message // this strips out the URL called, useful when unit testing since the port changes with each test execution.
 		}
-		return NewDeploymentErrorVersionCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason, errMsg)
+		return NewDeploymentVersionUpToDateErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentVersionCheckGitHubErrorReason, errMsg, corev1.ConditionUnknown)
 	}
 	if commitResponse.StatusCode != http.StatusOK {
 		err = errs.New(fmt.Sprintf("invalid response code from github commits API. resp.Response.StatusCode: %d, repoName: %s, repoBranch: %s", commitResponse.Response.StatusCode, repoName, repoBranch))
-		return NewDeploymentErrorVersionCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason, err.Error())
+		return NewDeploymentVersionUpToDateErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentVersionCheckGitHubErrorReason, err.Error(), corev1.ConditionUnknown)
 	}
 
 	if reflect.DeepEqual(latestCommit, &github.RepositoryCommit{}) {
 		err = errs.New(fmt.Sprintf("no commits returned. repoName: %s, repoBranch: %s", repoName, repoBranch))
-		return NewDeploymentErrorVersionCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason, err.Error())
+		return NewDeploymentVersionUpToDateErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentVersionCheckGitHubErrorReason, err.Error(), corev1.ConditionUnknown)
 	}
-	// check if there is a mismatch between the commit id of the running version and latest commit id from the source code repo (deployed version according to Github actions)
+	// check if there is a mismatch between the commit id of the running version and latest commit id from the source code repo (deployed version according to GitHub actions)
 	// we also consider some delay ( time that usually takes the deployment to happen on all our environments)
 	githubCommitTimestamp := latestCommit.Commit.Author.GetDate()
 	expectedDeploymentTime := githubCommitTimestamp.Add(DeploymentThreshold) // let's consider some threshold for the deployment to happen
@@ -51,9 +52,9 @@ func CheckDeployedVersionIsUpToDate(githubClient *github.Client, repoName, repoB
 	if githubCommitSHA != deployedCommitSHA && time.Now().After(expectedDeploymentTime) {
 		// deployed version is not up-to-date after expected threshold
 		err := fmt.Errorf("%s. deployed commit SHA %s ,github latest SHA %s, expected deployment timestamp: %s", ErrMsgDeploymentIsNotUpToDate, deployedCommitSHA, githubCommitSHA, expectedDeploymentTime.Format(time.RFC3339))
-		return NewDeploymentErrorVersionCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason, err.Error())
+		return NewDeploymentVersionUpToDateErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason, err.Error(), corev1.ConditionFalse)
 	}
 
 	// no problems with the deployment version, return a ready condition
-	return NewDeploymentVersionCondition(toolchainv1alpha1.ToolchainStatusDeploymentUpToDateReason)
+	return NewDeploymentVersionUpToDateCondition(toolchainv1alpha1.ToolchainStatusDeploymentUpToDateReason)
 }

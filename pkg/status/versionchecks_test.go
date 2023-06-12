@@ -21,7 +21,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 				test.NewMockedGithubCommit("1234abcd", time.Now().Add(-time.Hour*1)), // latest commit is already deployed
 			)
 			expected := toolchainv1alpha1.Condition{
-				Type:    toolchainv1alpha1.ConditionDeploymentVersion,
+				Type:    toolchainv1alpha1.ConditionDeploymentVersionUpToDate,
 				Status:  corev1.ConditionTrue,
 				Reason:  toolchainv1alpha1.ToolchainStatusDeploymentUpToDateReason,
 				Message: "",
@@ -42,7 +42,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 					test.NewMockedGithubCommit("1234abcd", time.Now().Add(-time.Minute*29)), // the latest commit was submitted 29 minutes ago, so still within the threshold.
 				)
 				expected := toolchainv1alpha1.Condition{
-					Type:    toolchainv1alpha1.ConditionDeploymentVersion,
+					Type:    toolchainv1alpha1.ConditionDeploymentVersionUpToDate,
 					Status:  corev1.ConditionTrue,
 					Reason:  toolchainv1alpha1.ToolchainStatusDeploymentUpToDateReason,
 					Message: "",
@@ -63,7 +63,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 					test.NewMockedGithubCommit("1234abcd", latestCommitTimestamp), // the latest commit was submitted 31 minutes ago, threshold has expired and deployment is not up to date.
 				)
 				expected := toolchainv1alpha1.Condition{
-					Type:    toolchainv1alpha1.ConditionDeploymentVersion,
+					Type:    toolchainv1alpha1.ConditionDeploymentVersionUpToDate,
 					Status:  corev1.ConditionFalse,
 					Reason:  toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason,
 					Message: "deployment version is not up to date with latest github commit SHA. deployed commit SHA 5678efgh ,github latest SHA 1234abcd, expected deployment timestamp: " + latestCommitTimestamp.Add(DeploymentThreshold).Format(time.RFC3339),
@@ -98,9 +98,9 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 				),
 			)
 			expected := toolchainv1alpha1.Condition{
-				Type:    toolchainv1alpha1.ConditionDeploymentVersion,
-				Status:  corev1.ConditionFalse,
-				Reason:  toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason,
+				Type:    toolchainv1alpha1.ConditionDeploymentVersionUpToDate,
+				Status:  corev1.ConditionUnknown,
+				Reason:  toolchainv1alpha1.ToolchainStatusDeploymentVersionCheckGitHubErrorReason,
 				Message: "github went belly up or something",
 			}
 			githubClient := github.NewClient(mockedHTTPClient)
@@ -116,9 +116,9 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 			// given
 			mockedHTTPClient := test.MockGithubRepositoryCommit(nil)
 			expected := toolchainv1alpha1.Condition{
-				Type:    toolchainv1alpha1.ConditionDeploymentVersion,
-				Status:  corev1.ConditionFalse,
-				Reason:  toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason,
+				Type:    toolchainv1alpha1.ConditionDeploymentVersionUpToDate,
+				Status:  corev1.ConditionUnknown,
+				Reason:  toolchainv1alpha1.ToolchainStatusDeploymentVersionCheckGitHubErrorReason,
 				Message: "no commits returned. repoName: host-operator, repoBranch: HEAD",
 			}
 			githubClient := github.NewClient(mockedHTTPClient)
