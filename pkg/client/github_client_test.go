@@ -21,7 +21,7 @@ func TestCanIssueGitHubRequest(t *testing.T) {
 
 	t.Run("delay threshold expired", func(t *testing.T) {
 		// given
-		lastGitHubAPICall := time.Now().Add(-time.Minute * 1) // last call was 1 minute, delay exipred
+		lastGitHubAPICall := time.Now().Add(-time.Minute * 1) // last call was 1 minute, delay expired
 
 		// when
 		ok := CanIssueGitHubRequest(lastGitHubAPICall)
