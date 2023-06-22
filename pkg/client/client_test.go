@@ -773,7 +773,7 @@ func TestMergeLabels(t *testing.T) {
 func TestMergeAnnotations(t *testing.T) {
 	// given
 	additionalAnnotation := map[string]string{
-		"new": "label",
+		"new": "annotation",
 	}
 	sa := &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -793,7 +793,7 @@ func TestMergeAnnotations(t *testing.T) {
 	client.MergeAnnotations(sa, additionalAnnotation)
 
 	// then
-	assert.True(t, reflect.DeepEqual(sa.Annotations, map[string]string{"new": "label", "foo": "bar"}))
+	assert.True(t, reflect.DeepEqual(sa.Annotations, map[string]string{"new": "annotation", "foo": "bar"}))
 }
 
 func assertNamespaceExists(t *testing.T, c runtimeclient.Client, nsName string, labels map[string]string, version string) corev1.Namespace {
