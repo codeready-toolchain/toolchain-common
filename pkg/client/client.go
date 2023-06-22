@@ -227,15 +227,7 @@ func (c ApplyClient) createObj(newResource client.Object, owner v1.Object) error
 func (c ApplyClient) Apply(toolchainObjects []client.Object, newLabels map[string]string) (bool, error) {
 	createdOrUpdated := false
 	for _, toolchainObject := range toolchainObjects {
-		// set newLabels
-		labels := toolchainObject.GetLabels()
-		if labels == nil {
-			labels = make(map[string]string)
-		}
-		for key, value := range newLabels {
-			labels[key] = value
-		}
-		toolchainObject.SetLabels(labels)
+		MergeLabels(toolchainObject, newLabels)
 
 		result, err := c.ApplyObject(toolchainObject, ForceUpdate(true))
 		if err != nil {
@@ -244,4 +236,28 @@ func (c ApplyClient) Apply(toolchainObjects []client.Object, newLabels map[strin
 		createdOrUpdated = createdOrUpdated || result
 	}
 	return createdOrUpdated, nil
+}
+
+// MergeLabels gets current exiting labels and merges them with the new ones provided
+func MergeLabels(toolchainObject client.Object, newLabels map[string]string) {
+	labels := toolchainObject.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	for key, value := range newLabels {
+		labels[key] = value
+	}
+	toolchainObject.SetLabels(labels)
+}
+
+// MergeAnnotations gets current exiting annotations and merges them with the new ones provided
+func MergeAnnotations(toolchainObject client.Object, newAnnotations map[string]string) {
+	annotations := toolchainObject.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	for key, value := range newAnnotations {
+		annotations[key] = value
+	}
+	toolchainObject.SetAnnotations(annotations)
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -741,6 +742,58 @@ func TestProcessAndApply(t *testing.T) {
 			},
 		}, ns.OwnerReferences)
 	})
+}
+
+func TestMergeLabels(t *testing.T) {
+	// given
+	additionalLabel := map[string]string{
+		"new": "label",
+	}
+	sa := &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ServiceAccount",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "appstudio-user-sa",
+			Labels: map[string]string{
+				"foo": "bar",
+			},
+			Namespace: "john-dev",
+		},
+	}
+
+	// when
+	client.MergeLabels(sa, additionalLabel)
+
+	// then
+	assert.True(t, reflect.DeepEqual(sa.Labels, map[string]string{"new": "label", "foo": "bar"}))
+}
+
+func TestMergeAnnotations(t *testing.T) {
+	// given
+	additionalAnnotation := map[string]string{
+		"new": "label",
+	}
+	sa := &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ServiceAccount",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "appstudio-user-sa",
+			Annotations: map[string]string{
+				"foo": "bar",
+			},
+			Namespace: "john-dev",
+		},
+	}
+
+	// when
+	client.MergeAnnotations(sa, additionalAnnotation)
+
+	// then
+	assert.True(t, reflect.DeepEqual(sa.Annotations, map[string]string{"new": "label", "foo": "bar"}))
 }
 
 func assertNamespaceExists(t *testing.T, c runtimeclient.Client, nsName string, labels map[string]string, version string) corev1.Namespace {
