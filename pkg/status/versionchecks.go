@@ -8,9 +8,10 @@ import (
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	"github.com/codeready-toolchain/toolchain-common/pkg/client"
+	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/google/go-github/v52/github"
 	errs "github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -22,39 +23,71 @@ const (
 	DeploymentThreshold = 30 * time.Minute
 )
 
-// CheckDeployedVersionIsUpToDate verifies if there is a match between the latest commit in Github for a given repo and branch matches the provided commit SHA.
+type VersionCheckManager struct {
+	GetGithubClientFunc client.GetGitHubClientFunc
+	LastGHCallsPerRepo  map[string]time.Time
+}
+
+// CheckDeployedVersionIsUpToDate verifies if there is a match between the latest commit in GitHub for a given repo and branch matches the provided commit SHA.
 // There is some preconfigured delay/threshold that we keep in account before returning an `error condition`.
-func CheckDeployedVersionIsUpToDate(githubClient *github.Client, repoName, repoBranch, deployedCommitSHA string) *toolchainv1alpha1.Condition {
+func (m *VersionCheckManager) CheckDeployedVersionIsUpToDate(isProd bool, accessTokenKey string, alreadyExistingConditions []toolchainv1alpha1.Condition, githubRepo client.GitHubRepository) *toolchainv1alpha1.Condition {
+	// the first two checks are pretty much the same for all components
+	if !isProd {
+		cond := NewComponentReadyCondition(toolchainv1alpha1.ToolchainStatusDeploymentRevisionCheckDisabledReason)
+		cond.Message = "is not running in prod environment"
+		return cond
+	}
+	if accessTokenKey == "" {
+		cond := NewComponentReadyCondition(toolchainv1alpha1.ToolchainStatusDeploymentRevisionCheckDisabledReason)
+		cond.Message = "access token key is not provided"
+		return cond
+	}
+	// we can store the last call per repo name, so it will solve the gaps between calls for host & reg-service which is done form the same controller
+	if m.LastGHCallsPerRepo == nil {
+		m.LastGHCallsPerRepo = map[string]time.Time{}
+	}
+	lastCall, present := m.LastGHCallsPerRepo[githubRepo.Name]
+	if present && !client.CanIssueGitHubRequest(lastCall) {
+		// return existing condition when we cannot make a new GitHub api call due to rate limiting issues.
+		previouslySet, found := condition.FindConditionByType(alreadyExistingConditions, toolchainv1alpha1.ConditionReady)
+		if !found {
+			cond := NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentRevisionCheckOperatorErrorReason, "unable to find ConditionReady type in existing conditions. Waiting for next attempt ...")
+			return cond
+		}
+		return &previouslySet
+	}
+	m.LastGHCallsPerRepo[githubRepo.Name] = time.Now()
+	githubClient := m.GetGithubClientFunc(accessTokenKey)
 	// get the latest commit from given repository and branch
-	latestCommit, commitResponse, err := githubClient.Repositories.GetCommit(context.TODO(), toolchainv1alpha1.ProviderLabelValue, repoName, repoBranch, &github.ListOptions{})
+	latestCommit, commitResponse, err := githubClient.Repositories.GetCommit(context.TODO(), githubRepo.Org, githubRepo.Name, githubRepo.Branch, &github.ListOptions{})
 	defer commitResponse.Body.Close()
 	if err != nil {
 		errMsg := err.Error()
 		if ghErr, ok := err.(*github.ErrorResponse); ok { //nolint:errorlint
 			errMsg = ghErr.Message // this strips out the URL called, useful when unit testing since the port changes with each test execution.
 		}
-		return NewDeploymentVersionUpToDateErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentVersionCheckGitHubErrorReason, errMsg, corev1.ConditionUnknown)
+		return NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentRevisionCheckGitHubErrorReason, errMsg)
 	}
 	if commitResponse.StatusCode != http.StatusOK {
-		err = errs.New(fmt.Sprintf("invalid response code from github commits API. resp.Response.StatusCode: %d, repoName: %s, repoBranch: %s", commitResponse.Response.StatusCode, repoName, repoBranch))
-		return NewDeploymentVersionUpToDateErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentVersionCheckGitHubErrorReason, err.Error(), corev1.ConditionUnknown)
+		err = errs.New(fmt.Sprintf("invalid response code from github commits API. resp.Response.StatusCode: %d, repoName: %s, repoBranch: %s", commitResponse.Response.StatusCode, githubRepo.Name, githubRepo.Branch))
+		return NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentRevisionCheckGitHubErrorReason, err.Error())
 	}
 
 	if reflect.DeepEqual(latestCommit, &github.RepositoryCommit{}) {
-		err = errs.New(fmt.Sprintf("no commits returned. repoName: %s, repoBranch: %s", repoName, repoBranch))
-		return NewDeploymentVersionUpToDateErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentVersionCheckGitHubErrorReason, err.Error(), corev1.ConditionUnknown)
+		err = errs.New(fmt.Sprintf("no commits returned. repoName: %s, repoBranch: %s", githubRepo.Name, githubRepo.Branch))
+		return NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentRevisionCheckGitHubErrorReason, err.Error())
 	}
 	// check if there is a mismatch between the commit id of the running version and latest commit id from the source code repo (deployed version according to GitHub actions)
 	// we also consider some delay ( time that usually takes the deployment to happen on all our environments)
 	githubCommitTimestamp := latestCommit.Commit.Author.GetDate()
 	expectedDeploymentTime := githubCommitTimestamp.Add(DeploymentThreshold) // let's consider some threshold for the deployment to happen
 	githubCommitSHA := *latestCommit.SHA
-	if githubCommitSHA != deployedCommitSHA && time.Now().After(expectedDeploymentTime) {
+	if githubCommitSHA != githubRepo.DeployedCommitSHA && time.Now().After(expectedDeploymentTime) {
 		// deployed version is not up-to-date after expected threshold
-		err := fmt.Errorf("%s. deployed commit SHA %s ,github latest SHA %s, expected deployment timestamp: %s", ErrMsgDeploymentIsNotUpToDate, deployedCommitSHA, githubCommitSHA, expectedDeploymentTime.Format(time.RFC3339))
-		return NewDeploymentVersionUpToDateErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason, err.Error(), corev1.ConditionFalse)
+		err := fmt.Errorf("%s. deployed commit SHA %s ,github latest SHA %s, expected deployment timestamp: %s", ErrMsgDeploymentIsNotUpToDate, githubRepo.DeployedCommitSHA, githubCommitSHA, expectedDeploymentTime.Format(time.RFC3339))
+		return NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotUpToDateReason, err.Error())
 	}
 
 	// no problems with the deployment version, return a ready condition
-	return NewDeploymentVersionUpToDateCondition(toolchainv1alpha1.ToolchainStatusDeploymentUpToDateReason)
+	return NewComponentReadyCondition(toolchainv1alpha1.ToolchainStatusDeploymentUpToDateReason)
 }

@@ -14,6 +14,10 @@ const GitHubAPICallDelay = 1 * time.Minute
 // GetGitHubClientFunc a func that returns a GitHub client instance
 type GetGitHubClientFunc func(string) *github.Client
 
+type GitHubRepository struct {
+	Org, Name, Branch, DeployedCommitSHA string
+}
+
 // NewGitHubClient return a client that interacts with GitHub and has rate limiter configured.
 // With authenticated GitHub api you can make 5,000 requests per hour.
 // see: https://github.com/google/go-github#rate-limiting
