@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -741,6 +742,78 @@ func TestProcessAndApply(t *testing.T) {
 			},
 		}, ns.OwnerReferences)
 	})
+}
+
+func TestMergeLabels(t *testing.T) {
+	// given
+	additionalLabel := map[string]string{
+		"new": "label",
+	}
+
+	t.Run("original object has labels", func(t *testing.T) {
+		// when
+		sa := newSA()
+		// SA has some initial labels
+		sa.Labels = map[string]string{
+			"foo": "bar",
+		}
+		client.MergeLabels(sa, additionalLabel)
+
+		// then
+		assert.True(t, reflect.DeepEqual(sa.Labels, map[string]string{"new": "label", "foo": "bar"}))
+	})
+
+	t.Run("original object has no labels", func(t *testing.T) {
+		// when
+		sa := newSA()
+		client.MergeLabels(sa, additionalLabel)
+
+		// then
+		assert.True(t, reflect.DeepEqual(sa.Labels, additionalLabel))
+	})
+}
+
+func TestMergeAnnotations(t *testing.T) {
+	// given
+	additionalAnnotation := map[string]string{
+		"new": "annotation",
+	}
+
+	t.Run("original object has annotations", func(t *testing.T) {
+		// when
+		sa := newSA()
+		// SA has some initial annotations
+		sa.Annotations = map[string]string{
+			"foo": "bar",
+		}
+		client.MergeAnnotations(sa, additionalAnnotation)
+
+		// then
+		assert.True(t, reflect.DeepEqual(sa.Annotations, map[string]string{"new": "annotation", "foo": "bar"}))
+	})
+
+	t.Run("original object has no annotations", func(t *testing.T) {
+		// when
+		sa := newSA()
+		client.MergeAnnotations(sa, additionalAnnotation)
+
+		// then
+		assert.True(t, reflect.DeepEqual(sa.Annotations, additionalAnnotation))
+	})
+}
+
+func newSA() *corev1.ServiceAccount {
+	sa := &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ServiceAccount",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "appstudio-user-sa",
+			Namespace: "john-dev",
+		},
+	}
+	return sa
 }
 
 func assertNamespaceExists(t *testing.T, c runtimeclient.Client, nsName string, labels map[string]string, version string) corev1.Namespace {
