@@ -6,7 +6,6 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/hash"
-	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -137,11 +136,11 @@ func CreatedBefore(before time.Duration) Option {
 	}
 }
 
-func NewSpace(name string, options ...Option) *toolchainv1alpha1.Space {
+func NewSpace(namespace, name string, options ...Option) *toolchainv1alpha1.Space {
 	space := &toolchainv1alpha1.Space{
 		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
 			Name:      name,
-			Namespace: test.HostOperatorNs,
 		},
 		Spec: toolchainv1alpha1.SpaceSpec{
 			TierName: "basic",
@@ -153,10 +152,26 @@ func NewSpace(name string, options ...Option) *toolchainv1alpha1.Space {
 	return space
 }
 
-func NewSpaces(size int, nameFmt string, options ...Option) []runtime.Object {
+func NewSpaceWithGeneratedName(namespace, prefix string, options ...Option) *toolchainv1alpha1.Space {
+	space := &toolchainv1alpha1.Space{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:    namespace,
+			GenerateName: prefix,
+		},
+		Spec: toolchainv1alpha1.SpaceSpec{
+			TierName: "basic",
+		},
+	}
+	for _, apply := range options {
+		apply(space)
+	}
+	return space
+}
+
+func NewSpaces(size int, namespace, nameFmt string, options ...Option) []runtime.Object {
 	murs := make([]runtime.Object, size)
 	for i := 0; i < size; i++ {
-		murs[i] = NewSpace(fmt.Sprintf(nameFmt, i), options...)
+		murs[i] = NewSpace(namespace, fmt.Sprintf(nameFmt, i), options...)
 	}
 	return murs
 }
