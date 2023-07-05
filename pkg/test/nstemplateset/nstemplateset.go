@@ -23,7 +23,7 @@ func NewNSTemplateSet(name string, options ...Option) *toolchainv1alpha1.NSTempl
 			Name:      name,
 		},
 		Spec: toolchainv1alpha1.NSTemplateSetSpec{
-			TierName: "basic",
+			TierName: "base1ns",
 			ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
 				TemplateRef: clusterResourcesTemplateRef,
 			},

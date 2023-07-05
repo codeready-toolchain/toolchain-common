@@ -16,7 +16,7 @@ func TestNewNSTemplateSet(t *testing.T) {
 	tier := &toolchainv1alpha1.NSTemplateTier{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "toolchain-host-operator",
-			Name:      "basic",
+			Name:      "base1ns",
 		},
 		Spec: toolchainv1alpha1.NSTemplateTierSpec{
 			ClusterResources: &toolchainv1alpha1.NSTemplateTierClusterResources{

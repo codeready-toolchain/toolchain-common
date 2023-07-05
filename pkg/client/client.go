@@ -141,7 +141,7 @@ func (c ApplyClient) applyObject(obj client.Object, options ...ApplyObjectOption
 
 	// retrieve the current 'resourceVersion' to set it in the resource passed to the `client.Update()`
 	// otherwise we would get an error with the following message:
-	// `nstemplatetiers.toolchain.dev.openshift.com "basic" is invalid: metadata.resourceVersion: Invalid value: 0x0: must be specified for an update`
+	// `nstemplatetiers.toolchain.dev.openshift.com "base1ns" is invalid: metadata.resourceVersion: Invalid value: 0x0: must be specified for an update`
 	originalGeneration := existing.GetGeneration()
 	obj.SetResourceVersion(existing.GetResourceVersion())
 

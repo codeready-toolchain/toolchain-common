@@ -550,7 +550,7 @@ func TestProcessAndApply(t *testing.T) {
 		require.NoError(t, err)
 		objs, err := p.Process(tmpl, values)
 		require.NoError(t, err)
-		labels := newLabels("basic", "john", "dev")
+		labels := newLabels("base1ns", "john", "dev")
 
 		// when
 		createdOrUpdated, err := client.NewApplyClient(cl).Apply(objs, labels)
@@ -598,7 +598,7 @@ func TestProcessAndApply(t *testing.T) {
 		require.NoError(t, err)
 		objs, err := p.Process(tmpl, values)
 		require.NoError(t, err)
-		witoutType := newLabels("basic", "john", "")
+		witoutType := newLabels("base1ns", "john", "")
 
 		createdOrUpdated, err := client.NewApplyClient(cl).Apply(objs, witoutType)
 		require.NoError(t, err)
@@ -634,7 +634,7 @@ func TestProcessAndApply(t *testing.T) {
 		require.NoError(t, err)
 		objs, err := p.Process(tmpl, values)
 		require.NoError(t, err)
-		labels := newLabels("basic", "john", "dev")
+		labels := newLabels("base1ns", "john", "dev")
 		created, err := client.NewApplyClient(cl).Apply(objs, labels)
 		require.NoError(t, err)
 		assert.True(t, created)
@@ -726,7 +726,7 @@ func TestProcessAndApply(t *testing.T) {
 				Name:       "foo",
 			},
 		})
-		labels := newLabels("basic", "john", "dev")
+		labels := newLabels("base1ns", "john", "dev")
 		createdOrUpdated, err := client.NewApplyClient(cl).Apply(objs, labels)
 
 		// then

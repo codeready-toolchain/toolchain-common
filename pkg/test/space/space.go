@@ -60,6 +60,12 @@ func WithLabel(key, value string) Option {
 	}
 }
 
+func WithDefaultTier() Option {
+	return func(space *toolchainv1alpha1.Space) {
+		space.Spec.TierName = ""
+	}
+}
+
 func WithTierName(tierName string) Option {
 	return func(space *toolchainv1alpha1.Space) {
 		space.Spec.TierName = tierName
@@ -151,7 +157,7 @@ func NewSpace(namespace, name string, options ...Option) *toolchainv1alpha1.Spac
 			Name:      name,
 		},
 		Spec: toolchainv1alpha1.SpaceSpec{
-			TierName: "basic",
+			TierName: "base1ns",
 		},
 	}
 	for _, apply := range options {
@@ -167,7 +173,7 @@ func NewSpaceWithGeneratedName(namespace, prefix string, options ...Option) *too
 			GenerateName: prefix,
 		},
 		Spec: toolchainv1alpha1.SpaceSpec{
-			TierName: "basic",
+			TierName: "base1ns",
 		},
 	}
 	for _, apply := range options {
