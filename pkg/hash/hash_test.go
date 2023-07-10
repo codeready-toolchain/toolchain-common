@@ -1,7 +1,7 @@
 package hash_test
 
 import (
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec
 	"encoding/hex"
 	"testing"
 
