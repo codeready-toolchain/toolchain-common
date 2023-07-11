@@ -32,6 +32,14 @@ func TestNewSpaceBinding(t *testing.T) {
 	assert.Equal(t, userSignup.Name, actualSpaceBinding.Labels[toolchainv1alpha1.SpaceCreatorLabelKey])
 	assert.Equal(t, "johny", actualSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingMasterUserRecordLabelKey])
 	assert.Equal(t, "smith", actualSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingSpaceLabelKey])
+
+	t.Run("with role", func(t *testing.T) {
+		// when
+		actualSpaceBinding := NewSpaceBinding(mur, space, userSignup.Name, WithRole("custom-role"))
+
+		// then
+		assert.Equal(t, "custom-role", actualSpaceBinding.Spec.SpaceRole)
+	})
 }
 
 func newSpace(userSignup *toolchainv1alpha1.UserSignup, targetCluster, compliantUserName, tier string) *toolchainv1alpha1.Space {

@@ -11,14 +11,14 @@ import (
 
 const defaultSpaceRole = "admin"
 
-func NewSpaceBinding(mur *toolchainv1alpha1.MasterUserRecord, space *toolchainv1alpha1.Space, creator string) *toolchainv1alpha1.SpaceBinding {
+func NewSpaceBinding(mur *toolchainv1alpha1.MasterUserRecord, space *toolchainv1alpha1.Space, creator string, options ...Option) *toolchainv1alpha1.SpaceBinding {
 	labels := map[string]string{
 		toolchainv1alpha1.SpaceCreatorLabelKey:                 creator,
 		toolchainv1alpha1.SpaceBindingMasterUserRecordLabelKey: mur.Name,
 		toolchainv1alpha1.SpaceBindingSpaceLabelKey:            space.Name,
 	}
 
-	return &toolchainv1alpha1.SpaceBinding{
+	sb := &toolchainv1alpha1.SpaceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: mur.Namespace,
 			Name:      spaceBindingName(space.Name, mur.Name),
@@ -30,6 +30,12 @@ func NewSpaceBinding(mur *toolchainv1alpha1.MasterUserRecord, space *toolchainv1
 			SpaceRole:        defaultSpaceRole,
 		},
 	}
+
+	for _, option := range options {
+		option(sb)
+	}
+
+	return sb
 }
 
 // spaceBindingName generates a unique name for the SpaceBinding resource to create,
@@ -40,4 +46,12 @@ func spaceBindingName(spaceName, murName string) string {
 		return fmt.Sprintf("%s-%x", spaceName[:50], c)
 	}
 	return fmt.Sprintf("%s-%x", spaceName, c)
+}
+
+type Option func(spacebinding *toolchainv1alpha1.SpaceBinding)
+
+func WithRole(role string) Option {
+	return func(sb *toolchainv1alpha1.SpaceBinding) {
+		sb.Spec.SpaceRole = role
+	}
 }
