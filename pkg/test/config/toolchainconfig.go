@@ -640,6 +640,31 @@ func (o UsersOption) ForbiddenUsernameSuffixes(value string) UsersOption {
 	return o
 }
 
+type SpaceConfigOption struct {
+	*ToolchainConfigOptionImpl
+}
+
+func SpaceConfig() *SpaceConfigOption {
+	o := &SpaceConfigOption{
+		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
+	}
+	return o
+}
+
+func (o SpaceConfigOption) SpaceRequestEnabled(value bool) SpaceConfigOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.SpaceConfig.SpaceRequestEnabled = &value
+	})
+	return o
+}
+
+func (o SpaceConfigOption) SpaceBindingRequestEnabled(value bool) SpaceConfigOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.SpaceConfig.SpaceBindingRequestEnabled = &value
+	})
+	return o
+}
+
 //---End of Host Configurations---//
 
 //---Member Configurations---//
