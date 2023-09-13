@@ -176,6 +176,19 @@ func NewUserSignup(modifiers ...Modifier) *toolchainv1alpha1.UserSignup {
 		Spec: toolchainv1alpha1.UserSignupSpec{
 			Userid:   "UserID123",
 			Username: meta.Name,
+			IdentityClaims: toolchainv1alpha1.IdentityClaimsEmbedded{
+				PropagatedClaims: toolchainv1alpha1.PropagatedClaims{
+					Sub:         "0192837465",
+					UserID:      "UserID123",
+					AccountID:   "5647382910",
+					OriginalSub: "original-sub-value",
+					Email:       "foo@redhat.com",
+				},
+				PreferredUsername: "foo-username",
+				GivenName:         "Foo",
+				FamilyName:        "Bar",
+				Company:           "Red Hat",
+			},
 		},
 	}
 	for _, modify := range modifiers {
