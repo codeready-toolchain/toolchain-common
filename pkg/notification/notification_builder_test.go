@@ -32,7 +32,7 @@ func TestNotificationBuilder(t *testing.T) {
 
 		// then
 		require.Error(t, err)
-		assert.Equal(t, "The specified recipient [] is not a valid email address", err.Error())
+		assert.Equal(t, "The specified recipient [] is not a valid email address: mail: no address", err.Error())
 	})
 
 	t.Run("fail with invalid email address", func(t *testing.T) {
@@ -41,7 +41,7 @@ func TestNotificationBuilder(t *testing.T) {
 
 		// then
 		require.Error(t, err)
-		assert.Equal(t, "The specified recipient [foo] is not a valid email address", err.Error())
+		assert.Equal(t, "The specified recipient [foo] is not a valid email address: mail: missing '@' or angle-addr", err.Error())
 	})
 
 	t.Run("success with multiple valid email addresses", func(t *testing.T) {
@@ -49,6 +49,9 @@ func TestNotificationBuilder(t *testing.T) {
 		emailsToTest := []string{
 			"john.wick@subdomain.domain.com",
 			"john-Wick@domain.com",
+			"john@domain.com,another-john@some.com",
+			"john@domain.com, with-comma@some.com, ",
+			"john@domain.com,another-john@some.com, with-space@john.com",
 		}
 
 		for _, email := range emailsToTest {
