@@ -62,6 +62,8 @@ func TestNotificationBuilder(t *testing.T) {
 			"john@domain.com,another-john@some.com",
 			"john@domain.com, with-comma@some.com, ",
 			"john@domain.com,another-john@some.com, with-space@john.com",
+			"Alice <alice@example.com>",
+			"Alice <alice@example.com>, Bob <bob@example.com>, Eve <eve@example.com>",
 		}
 
 		for _, email := range emailsToTest {
