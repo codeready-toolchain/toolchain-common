@@ -51,6 +51,12 @@ func WithType(wsType string) WorkspaceOption {
 	}
 }
 
+func WithAvailableRoles(roles []string) WorkspaceOption {
+	return func(workspace *toolchainv1alpha1.Workspace) {
+		workspace.Status.AvailableRoles = roles
+	}
+}
+
 func WithObjectMetaFrom(from metav1.ObjectMeta) WorkspaceOption {
 	return func(workspace *toolchainv1alpha1.Workspace) {
 		workspace.ObjectMeta.ResourceVersion = from.ResourceVersion
