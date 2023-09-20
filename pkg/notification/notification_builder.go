@@ -3,8 +3,9 @@ package notification
 import (
 	"context"
 	"fmt"
-	"regexp"
+	"net/mail"
 
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
@@ -13,8 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
-
-var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 type Option = func(notification *toolchainv1alpha1.Notification) error
 
@@ -45,8 +44,8 @@ type notificationBuilderImpl struct {
 
 func (b *notificationBuilderImpl) Create(recipient string) (*toolchainv1alpha1.Notification, error) {
 
-	if !emailRegex.MatchString(recipient) {
-		return nil, fmt.Errorf("The specified recipient [%s] is not a valid email address", recipient)
+	if list, err := mail.ParseAddressList(recipient); err != nil || len(list) == 0 {
+		return nil, errors.Wrap(err, fmt.Sprintf("The specified recipient [%s] is not a valid email address", recipient))
 	}
 
 	notification := &toolchainv1alpha1.Notification{
