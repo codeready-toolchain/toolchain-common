@@ -25,12 +25,14 @@ func TestNewWorkspace(t *testing.T) {
 	t.Run("with options", func(t *testing.T) {
 		// given
 		// when
-		workspace := proxy.NewWorkspace("test", proxy.WithOwner("john"), proxy.WithRole("admin"), proxy.WithNamespaces([]toolchainv1alpha1.SpaceNamespace{
-			{
-				Name: "john-tenant",
-				Type: "default",
-			},
-		}))
+		expectedAvailableRoles := []string{"admin", "viewer"}
+		workspace := proxy.NewWorkspace("test", proxy.WithOwner("john"), proxy.WithRole("admin"), proxy.WithAvailableRoles(expectedAvailableRoles),
+			proxy.WithNamespaces([]toolchainv1alpha1.SpaceNamespace{
+				{
+					Name: "john-tenant",
+					Type: "default",
+				},
+			}))
 
 		// then
 		require.Equal(t, "Workspace", workspace.Kind)
@@ -40,5 +42,6 @@ func TestNewWorkspace(t *testing.T) {
 		require.Len(t, workspace.Status.Namespaces, 1)
 		require.Equal(t, "john-tenant", workspace.Status.Namespaces[0].Name)
 		require.Equal(t, "default", workspace.Status.Namespaces[0].Type)
+		require.Equal(t, expectedAvailableRoles, workspace.Status.AvailableRoles)
 	})
 }
