@@ -129,6 +129,19 @@ func (a *MasterUserRecordAssertion) AllUserAccountsHaveCondition(expected toolch
 	return a
 }
 
+func (a *MasterUserRecordAssertion) HasStatusUserAccountsWithCondition(targetCluster string, expected toolchainv1alpha1.Condition) *MasterUserRecordAssertion {
+	err := a.loadMasterUserRecord()
+	require.NoError(a.t, err)
+	for _, ua := range a.mur.Status.UserAccounts {
+		if ua.Cluster.Name == targetCluster {
+			test.AssertConditionsMatch(a.t, ua.Conditions, expected)
+			return a
+		}
+	}
+	assert.Fail(a.t, "unable to find status UserAccount with the given targetCluster", "targetCluster", targetCluster)
+	return a
+}
+
 func (a *MasterUserRecordAssertion) HasTier(tier toolchainv1alpha1.UserTier) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
