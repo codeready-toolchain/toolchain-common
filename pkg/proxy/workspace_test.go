@@ -26,7 +26,23 @@ func TestNewWorkspace(t *testing.T) {
 		// given
 		// when
 		expectedAvailableRoles := []string{"admin", "viewer"}
-		workspace := proxy.NewWorkspace("test", proxy.WithOwner("john"), proxy.WithRole("admin"), proxy.WithAvailableRoles(expectedAvailableRoles),
+		expectedBindings := []toolchainv1alpha1.Binding{
+			{
+				MasterUserRecord: "john",
+				Role:             "admin",
+				AvailableActions: []string{"update", "delete"},
+			},
+			{
+				MasterUserRecord: "batman",
+				Role:             "maintainer",
+				AvailableActions: []string{"override"},
+			},
+		}
+		workspace := proxy.NewWorkspace("test",
+			proxy.WithOwner("john"),
+			proxy.WithRole("admin"),
+			proxy.WithAvailableRoles(expectedAvailableRoles),
+			proxy.WithBindings(expectedBindings),
 			proxy.WithNamespaces([]toolchainv1alpha1.SpaceNamespace{
 				{
 					Name: "john-tenant",
@@ -43,5 +59,6 @@ func TestNewWorkspace(t *testing.T) {
 		require.Equal(t, "john-tenant", workspace.Status.Namespaces[0].Name)
 		require.Equal(t, "default", workspace.Status.Namespaces[0].Type)
 		require.Equal(t, expectedAvailableRoles, workspace.Status.AvailableRoles)
+		require.Equal(t, expectedBindings, workspace.Status.Bindings)
 	})
 }

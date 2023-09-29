@@ -57,6 +57,12 @@ func WithAvailableRoles(roles []string) WorkspaceOption {
 	}
 }
 
+func WithBindings(bindings []toolchainv1alpha1.Binding) WorkspaceOption {
+	return func(workspace *toolchainv1alpha1.Workspace) {
+		workspace.Status.Bindings = bindings
+	}
+}
+
 func WithObjectMetaFrom(from metav1.ObjectMeta) WorkspaceOption {
 	return func(workspace *toolchainv1alpha1.Workspace) {
 		workspace.ObjectMeta.ResourceVersion = from.ResourceVersion
