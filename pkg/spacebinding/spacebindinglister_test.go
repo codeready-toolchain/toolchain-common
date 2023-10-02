@@ -1,10 +1,11 @@
-package spacebinding
+package spacebinding_test
 
 import (
 	"fmt"
 	"testing"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	"github.com/codeready-toolchain/toolchain-common/pkg/spacebinding"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	. "github.com/codeready-toolchain/toolchain-common/pkg/test/masteruserrecord"
 	spacetest "github.com/codeready-toolchain/toolchain-common/pkg/test/space"
@@ -31,7 +32,7 @@ func TestNewSpaceBindingLister(t *testing.T) {
 			mur := NewMasterUserRecord(t, "johnny", TargetCluster(test.MemberClusterName), TierName("deactivate90"))
 			listSpaceBindingsFunc := func(spaceName string) ([]toolchainv1alpha1.SpaceBinding, error) {
 				return []toolchainv1alpha1.SpaceBinding{
-					*NewSpaceBinding(mur, space, "johnny", WithRole("admin")),
+					*spacebinding.NewSpaceBinding(mur, space, "johnny", spacebinding.WithRole("admin")),
 				}, nil
 			}
 			getSpaceFunc := func(spaceName string) (*toolchainv1alpha1.Space, error) {
@@ -39,11 +40,11 @@ func TestNewSpaceBindingLister(t *testing.T) {
 			}
 
 			// when
-			spaceBindingLister := NewLister(listSpaceBindingsFunc, getSpaceFunc)
+			spaceBindingLister := spacebinding.NewLister(listSpaceBindingsFunc, getSpaceFunc)
 
 			// then
 			// listing the spacebindings for the sub-space should return the spacebinding from parent-space
-			spaceBindings, err := spaceBindingLister.RecursiveListForSpace(subSpace, []toolchainv1alpha1.SpaceBinding{})
+			spaceBindings, err := spaceBindingLister.ListForSpace(subSpace, []toolchainv1alpha1.SpaceBinding{})
 			assert.NoError(t, err)
 			assert.Len(t, spaceBindings, 1, "invalid number of spacebidings")
 
@@ -69,10 +70,10 @@ func TestNewSpaceBindingLister(t *testing.T) {
 			}
 
 			// when
-			spaceBindingLister := NewLister(listSpaceBindingsFunc, getSpaceFunc)
+			spaceBindingLister := spacebinding.NewLister(listSpaceBindingsFunc, getSpaceFunc)
 
 			// then
-			spaceBindings, err := spaceBindingLister.RecursiveListForSpace(myspace, []toolchainv1alpha1.SpaceBinding{})
+			spaceBindings, err := spaceBindingLister.ListForSpace(myspace, []toolchainv1alpha1.SpaceBinding{})
 			assert.EqualError(t, err, "error listing spacebindings")
 			assert.Len(t, spaceBindings, 0, "invalid number of spacebindings")
 		})
@@ -83,7 +84,7 @@ func TestNewSpaceBindingLister(t *testing.T) {
 			myspace := spacetest.NewSpace(test.HostOperatorNs, "myspace", spacetest.WithSpecParentSpace("myparentspace"))
 			listSpaceBindingsFunc := func(spaceName string) ([]toolchainv1alpha1.SpaceBinding, error) {
 				return []toolchainv1alpha1.SpaceBinding{
-					*NewSpaceBinding(mur, myspace, "johnny", WithRole("admin")),
+					*spacebinding.NewSpaceBinding(mur, myspace, "johnny", spacebinding.WithRole("admin")),
 				}, nil
 			}
 			getSpaceFunc := func(spaceName string) (*toolchainv1alpha1.Space, error) {
@@ -91,10 +92,10 @@ func TestNewSpaceBindingLister(t *testing.T) {
 			}
 
 			// when
-			spaceBindingLister := NewLister(listSpaceBindingsFunc, getSpaceFunc)
+			spaceBindingLister := spacebinding.NewLister(listSpaceBindingsFunc, getSpaceFunc)
 
 			// then
-			spaceBindings, err := spaceBindingLister.RecursiveListForSpace(myspace, []toolchainv1alpha1.SpaceBinding{})
+			spaceBindings, err := spaceBindingLister.ListForSpace(myspace, []toolchainv1alpha1.SpaceBinding{})
 			assert.EqualError(t, err, "unable to get parent-space: mock error")
 			assert.Len(t, spaceBindings, 1, "invalid number of spacebindings") // expect 1 spacebinding to be returned
 		})

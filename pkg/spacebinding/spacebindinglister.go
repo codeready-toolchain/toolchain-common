@@ -18,9 +18,9 @@ func NewLister(listSpaceBindingsFunc func(spaceName string) ([]toolchainv1alpha1
 	}
 }
 
-// RecursiveListForSpace recursively searches all the SpaceBindings of a given Space,
+// ListForSpace recursively searches all the SpaceBindings of a given Space,
 // it will use the name of the parentSpace for the research if there is one.
-func (l *Lister) RecursiveListForSpace(space *toolchainv1alpha1.Space, foundBindings []toolchainv1alpha1.SpaceBinding) ([]toolchainv1alpha1.SpaceBinding, error) {
+func (l *Lister) ListForSpace(space *toolchainv1alpha1.Space, foundBindings []toolchainv1alpha1.SpaceBinding) ([]toolchainv1alpha1.SpaceBinding, error) {
 	parentBindings, err := l.ListSpaceBindingsFunc(space.Name)
 	if err != nil {
 		return foundBindings, err
@@ -42,7 +42,7 @@ func (l *Lister) RecursiveListForSpace(space *toolchainv1alpha1.Space, foundBind
 		return foundBindings, errs.Wrap(err, "unable to get parent-space")
 	}
 
-	return l.RecursiveListForSpace(parentSpace, foundBindings)
+	return l.ListForSpace(parentSpace, foundBindings)
 }
 
 func mergeSpaceBindings(foundBindings []toolchainv1alpha1.SpaceBinding, parentBindings []toolchainv1alpha1.SpaceBinding) []toolchainv1alpha1.SpaceBinding {
