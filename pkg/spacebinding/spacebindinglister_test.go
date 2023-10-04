@@ -93,7 +93,7 @@ func TestNewSpaceBindingLister(t *testing.T) {
 					switch spaceName {
 					case parentSpace.GetName():
 						return []toolchainv1alpha1.SpaceBinding{
-							*spacebinding.NewSpaceBinding(mur, grandChildSpace1, grandChildSpace1.Name, spacebinding.WithRole("admin")),
+							*spacebinding.NewSpaceBinding(mur, parentSpace, parentSpace.Name, spacebinding.WithRole("admin")),
 						}, nil
 					case childSpace2.GetName():
 						return []toolchainv1alpha1.SpaceBinding{
@@ -139,7 +139,7 @@ func TestNewSpaceBindingLister(t *testing.T) {
 					*spacebinding.NewSpaceBinding(mur, grandChildSpace1, grandChildSpace1.Name, spacebinding.WithRole("viewer")),
 				},
 			},
-			" spacebinding on grandChildSpace1 overrides child1-binding and parentSpace-binding": {
+			"spacebinding on grandChildSpace1 overrides child1-binding and parentSpace-binding": {
 				space:        grandChildSpace1,
 				getSpaceFunc: defaultGetSpaceFunc,
 				listSpaceBindingsFunc: func(spaceName string) ([]toolchainv1alpha1.SpaceBinding, error) {
