@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Check pkg/spacebinding/spacebindinglister_test.md for more details about this test
 func TestNewSpaceBindingLister(t *testing.T) {
 
 	t.Run("recursive list for space", func(t *testing.T) {
