@@ -47,7 +47,7 @@ func TestNewSpaceBindingLister(t *testing.T) {
 		spaceC := spacetest.NewSpace(test.HostOperatorNs, "Space-C",
 			spacetest.WithTierName("advanced"),
 			spacetest.WithSpecTargetCluster(test.MemberClusterName),
-			spacetest.WithSpecParentSpace(spaceA.GetName()),
+			spacetest.WithSpecParentSpace(spaceB.GetName()),
 		)
 		spaceF := spacetest.NewSpace(test.HostOperatorNs, "Space-F",
 			spacetest.WithTierName("advanced"),
@@ -143,7 +143,7 @@ func TestNewSpaceBindingLister(t *testing.T) {
 				expectedSpaceBindings: []toolchainv1alpha1.SpaceBinding{
 					// we expect spacebinding inherited from space-A
 					*spacebinding.NewSpaceBinding(catwomenMur, spaceA, spaceA.Name, spacebinding.WithRole("admin")),
-					// and specific one from space-C
+					// and specific one from space-C (which overrides the one from space-B even if it has the same role)
 					*spacebinding.NewSpaceBinding(batmanMur, spaceC, spaceC.Name, spacebinding.WithRole("maintainer")),
 				},
 			},
