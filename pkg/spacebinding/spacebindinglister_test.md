@@ -28,5 +28,5 @@ Given the above hierarchy the expected result for each space should be:
 |          |  Space-A  |   Space-B   |  Space-C  | Space-D | Space-E |  Space-F  |
 |:--------:|:---------:|:-----------:|:---------:|:-------:|:-------:|:---------:|
 | catwomen |   admin   |    admin    |   admin   | admin | admin |   admin   |
-|  batman  | no access |  maintainer | no access | admin | admin | no access | 
+|  batman  | no access |  maintainer | maintainer | admin | admin | no access | 
 |  robin   | no access | no access | no access | no access | no access | viewer |
