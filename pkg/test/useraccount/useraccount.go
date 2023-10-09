@@ -23,8 +23,9 @@ func NewUserAccountFromMur(mur *toolchainv1alpha1.MasterUserRecord, modifiers ..
 			},
 		},
 		Spec: toolchainv1alpha1.UserAccountSpec{
-			UserID:   mur.Spec.UserID,
-			Disabled: mur.Spec.Disabled,
+			UserID:           mur.Spec.UserID,
+			Disabled:         mur.Spec.Disabled,
+			PropagatedClaims: mur.Spec.PropagatedClaims,
 		},
 	}
 	Modify(ua, modifiers...)
