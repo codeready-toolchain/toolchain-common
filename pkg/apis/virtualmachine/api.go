@@ -5,13 +5,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type VirtualMachine struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-	// Spec contains the specification of VirtualMachineInstance created
-	Spec VirtualMachineSpec `json:"spec" valid:"required"`
-}
-
 // VirtualMachineSpec describes how the proper VirtualMachine
 // should look like
 type VirtualMachineSpec struct {
@@ -124,4 +117,20 @@ type CloudInitConfigDriveSource struct {
 	// NetworkData contains config drive inline cloud-init networkdata.
 	// + optional
 	NetworkData string `json:"networkData,omitempty"`
+}
+
+// VirtualMachineList is a list of virtualmachines
+//
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type VirtualMachineList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []VirtualMachine `json:"items"`
+}
+
+type VirtualMachine struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	// Spec contains the specification of VirtualMachineInstance created
+	Spec VirtualMachineSpec `json:"spec" valid:"required"`
 }
