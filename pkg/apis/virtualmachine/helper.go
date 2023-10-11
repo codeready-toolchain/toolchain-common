@@ -2,6 +2,7 @@ package virtualmachine
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -42,4 +43,15 @@ func WithLimits(limits corev1.ResourceList) VMOption {
 	return func(vm *VirtualMachine) {
 		vm.Spec.Template.Spec.Domain.Resources.Limits = limits
 	}
+}
+
+func ResourceList(mem, cpu string) corev1.ResourceList {
+	req := corev1.ResourceList{}
+	if mem != "" {
+		req["memory"] = resource.MustParse(mem)
+	}
+	if cpu != "" {
+		req["cpu"] = resource.MustParse(cpu)
+	}
+	return req
 }
