@@ -160,6 +160,20 @@ func AdditionalAccounts(clusters ...string) MurModifier {
 	}
 }
 
+func StatusUserAccount(cluster string, conditions ...toolchainv1alpha1.Condition) MurModifier {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
+		mur.Status.UserAccounts = append(mur.Status.UserAccounts, toolchainv1alpha1.UserAccountStatusEmbedded{
+			Cluster: toolchainv1alpha1.Cluster{
+				Name: cluster,
+			},
+			UserAccountStatus: toolchainv1alpha1.UserAccountStatus{
+				Conditions: conditions,
+			},
+		})
+		return nil
+	}
+}
+
 func TierName(tierName string) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		mur.Spec.TierName = tierName

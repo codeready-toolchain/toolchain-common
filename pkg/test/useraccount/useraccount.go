@@ -4,6 +4,7 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+	"github.com/redhat-cop/operator-utils/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -61,5 +62,12 @@ func DeletedUa() UaModifier {
 	return func(ua *toolchainv1alpha1.UserAccount) {
 		now := metav1.Now()
 		ua.DeletionTimestamp = &now
+	}
+}
+
+// WithFinalizer creates a UaModifier to add an finalizer on the UserAccount
+func WithFinalizer() UaModifier {
+	return func(ua *toolchainv1alpha1.UserAccount) {
+		util.AddFinalizer(ua, toolchainv1alpha1.FinalizerName)
 	}
 }
