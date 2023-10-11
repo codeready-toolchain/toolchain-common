@@ -1,24 +1,26 @@
-package virtualmachine
+package api
 
 import (
+	vmapi "github.com/codeready-toolchain/toolchain-common/pkg/virtualmachine/api/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewVM(name, namespace string, options ...VMOption) *VirtualMachine {
-	vm := &VirtualMachine{
+func NewVM(name, namespace string, options ...VMOption) *vmapi.VirtualMachine {
+	vm := &vmapi.VirtualMachine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: VirtualMachineSpec{
-			Template: &VirtualMachineInstanceTemplateSpec{
+		Spec: vmapi.VirtualMachineSpec{
+			Template: &vmapi.VirtualMachineInstanceTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: name,
 				},
-				Spec: VirtualMachineInstanceSpec{
-					Domain: DomainSpec{},
+				Spec: vmapi.VirtualMachineInstanceSpec{
+					Domain: vmapi.DomainSpec{},
 				},
 			},
 		},
@@ -31,16 +33,16 @@ func NewVM(name, namespace string, options ...VMOption) *VirtualMachine {
 	return vm
 }
 
-type VMOption func(*VirtualMachine)
+type VMOption func(*vmapi.VirtualMachine)
 
 func WithRequests(requests corev1.ResourceList) VMOption {
-	return func(vm *VirtualMachine) {
+	return func(vm *vmapi.VirtualMachine) {
 		vm.Spec.Template.Spec.Domain.Resources.Requests = requests
 	}
 }
 
 func WithLimits(limits corev1.ResourceList) VMOption {
-	return func(vm *VirtualMachine) {
+	return func(vm *vmapi.VirtualMachine) {
 		vm.Spec.Template.Spec.Domain.Resources.Limits = limits
 	}
 }
