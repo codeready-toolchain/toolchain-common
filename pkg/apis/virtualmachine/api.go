@@ -134,3 +134,7 @@ type VirtualMachine struct {
 	// Spec contains the specification of VirtualMachineInstance created
 	Spec VirtualMachineSpec `json:"spec" valid:"required"`
 }
+
+func init() {
+	SchemeBuilder.Register(&VirtualMachine{}, &VirtualMachineList{})
+}
