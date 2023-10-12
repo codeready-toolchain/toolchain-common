@@ -1,1 +1,3 @@
-This repo contains code specific to kubevirt apis required for the webhook code in member operator and for e2e tests.
+This repo contains code specific to kubevirt apis required for the virtualmachine webhook code in member operator and for e2e tests.
+
+The code is copied directly from https://github.com/kubevirt/api/blob/main/core/v1/
