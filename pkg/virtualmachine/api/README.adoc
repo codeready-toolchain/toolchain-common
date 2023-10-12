@@ -2,4 +2,4 @@ This repo contains code specific to kubevirt apis required for the virtualmachin
 
 The code is copied directly from https://github.com/kubevirt/api/blob/main/core/v1/ and modified by removing some functions that require dependencies on "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1".
 
-The code that was removed is commented with `// modified for sandbox testing``
+The code that was removed is commented with `// modified for sandbox testing`
