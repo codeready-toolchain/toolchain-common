@@ -49,6 +49,7 @@ var (
 	}
 )
 
+// modified for sandbox testing
 const GroupName = "kubevirt.io"
 
 var (

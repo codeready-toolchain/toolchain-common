@@ -20,7 +20,7 @@
 package v1
 
 /*
-  ATTENTION: Rerun code generators when comments on structs or fields are modified.
+   ATTENTION: Rerun code generators when comments on structs or fields are modified.
 */
 
 import (
@@ -32,6 +32,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	// modified for sandbox testing
+	// cdiv1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 )
 
 const DefaultGracePeriodSeconds int64 = 30
@@ -308,6 +310,11 @@ type PersistentVolumeClaimInfo struct {
 	// Preallocated indicates if the PVC's storage is preallocated or not
 	// +optional
 	Preallocated bool `json:"preallocated,omitempty"`
+
+	// Percentage of filesystem's size to be reserved when resizing the PVC
+	// +optional
+	// modified for sandbox testing
+	// FilesystemOverhead *cdiv1.Percent `json:"filesystemOverhead,omitempty"`
 }
 
 // VolumeStatus represents information about the status of volumes attached to the VirtualMachineInstance.
@@ -1206,6 +1213,7 @@ type DataVolumeTemplateSpec struct {
 	// +nullable
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// DataVolumeSpec contains the DataVolume specification.
+	// modified for sandbox testing
 	// Spec cdiv1.DataVolumeSpec `json:"spec"`
 
 	// DataVolumeTemplateDummyStatus is here simply for backwards compatibility with
@@ -1862,10 +1870,12 @@ type KubeVirtSpec struct {
 
 	// selectors and tolerations that should apply to KubeVirt infrastructure components
 	// +optional
+	// modified for sandbox testing
 	// Infra *ComponentConfig `json:"infra,omitempty"`
 
 	// selectors and tolerations that should apply to KubeVirt workloads
 	// +optional
+	// modified for sandbox testing
 	// Workloads *ComponentConfig `json:"workloads,omitempty"`
 
 	CustomizeComponents CustomizeComponents `json:"customizeComponents,omitempty"`

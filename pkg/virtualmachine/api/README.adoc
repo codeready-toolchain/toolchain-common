@@ -1,3 +1,5 @@
 This repo contains code specific to kubevirt apis required for the virtualmachine webhook code in member operator and for e2e tests.
 
-The code is copied directly from https://github.com/kubevirt/api/blob/main/core/v1/
+The code is copied directly from https://github.com/kubevirt/api/blob/main/core/v1/ and modified by removing some functions that require dependencies on "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1".
+
+The code that was removed is commented with `// modified for sandbox testing``
