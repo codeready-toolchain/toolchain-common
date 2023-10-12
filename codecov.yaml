@@ -1,3 +1,4 @@
+# Config can be validated before merging: curl -X POST --data-binary @codecov.yaml https://codecov.io/validate
 # See http://docs.codecov.io/docs/coverage-configuration
 coverage:
   # 2 = xx.xx%, 0 = xx%
@@ -9,10 +10,14 @@ coverage:
   # solid green color.
   range: "20...60"
 
+# See https://docs.codecov.com/docs/commit-status
   status:
     # project will give us the diff in the total code coverage between a commit
     # and its parent
-    project: true
+    project:
+       default:
+         # Allow the coverage to drop by 1% and posting a success status.
+         threshold: 1%
     # Patch gives just the coverage of the patch
     patch: true
     # changes tells us if there are unexpected code coverage changes in other files
