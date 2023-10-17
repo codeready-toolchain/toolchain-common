@@ -218,12 +218,12 @@ func TestNoWatchNamespaceSetWhenLoadingConfigMap(t *testing.T) {
 
 func TestLoadSecrets(t *testing.T) {
 	secretData := map[string][]byte{
-		"admin-username": []byte("cheadmin"),
-		"admin-password": []byte("password"),
+		"key-1": []byte("value-1"),
+		"key-2": []byte("value-2"),
 	}
 	secretData2 := map[string][]byte{
-		"admin-username2": []byte("cheadmin2"),
-		"admin-password2": []byte("password2"),
+		"key-3": []byte("value-3"),
+		"key-4": []byte("value-4"),
 	}
 
 	t.Run("one secret found", func(t *testing.T) {
@@ -236,8 +236,8 @@ func TestLoadSecrets(t *testing.T) {
 
 		// then
 		expected := map[string]string{
-			"admin-username": "cheadmin",
-			"admin-password": "password",
+			"key-1": "value-1",
+			"key-2": "value-2",
 		}
 		require.NoError(t, err)
 		require.Equal(t, expected, secrets["secret"])
@@ -254,12 +254,12 @@ func TestLoadSecrets(t *testing.T) {
 
 		// then
 		expected := map[string]string{
-			"admin-username": "cheadmin",
-			"admin-password": "password",
+			"key-1": "value-1",
+			"key-2": "value-2",
 		}
 		expected2 := map[string]string{
-			"admin-username2": "cheadmin2",
-			"admin-password2": "password2",
+			"key-3": "value-3",
+			"key-4": "value-4",
 		}
 		require.NoError(t, err)
 		require.Equal(t, expected, secrets["secret"])
