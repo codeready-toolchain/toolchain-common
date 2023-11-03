@@ -151,6 +151,9 @@ func LoadSecrets(cl client.Client, namespace string) (map[string]map[string]stri
 		for key, value := range secret.Data {
 			secretData[key] = string(value)
 		}
+		for key, value := range secret.StringData {
+			secretData[key] = string(value)
+		}
 		allSecrets[secret.Name] = secretData
 	}
 	return allSecrets, err
