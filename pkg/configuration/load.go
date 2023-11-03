@@ -61,6 +61,10 @@ func LoadFromSecret(resourceKey string, cl client.Client) (map[string]string, er
 		secretData[key] = string(value)
 	}
 
+	for key, value := range secret.StringData {
+		secretData[key] = string(value)
+	}
+
 	return secretData, nil
 }
 
