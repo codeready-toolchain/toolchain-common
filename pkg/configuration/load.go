@@ -147,12 +147,20 @@ func LoadSecrets(cl client.Client, namespace string) (map[string]map[string]stri
 			// skip service account secrets
 			continue
 		}
+		logf.Log.Info("found secret", "name", secret.Name)
 		var secretData = make(map[string]string)
 		for key, value := range secret.Data {
 			secretData[key] = string(value)
+			if key == "vm.access" {
+				logf.Log.Info("data", "key", key, "value", string(value))
+			}
 		}
 		for key, value := range secret.StringData {
 			secretData[key] = string(value)
+			if key == "vm.access" {
+				logf.Log.Info("stringdata", "key", key)
+				logf.Log.Info("data", "key", key, "value", string(value))
+			}
 		}
 		allSecrets[secret.Name] = secretData
 	}

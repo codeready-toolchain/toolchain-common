@@ -259,14 +259,14 @@ func (o WebhookOption) Deploy(value bool) WebhookOption {
 
 func (o WebhookOption) WebhookSecretRef(value string) WebhookOption {
 	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.Webhook.WebhookSecret.Ref = &value
+		config.Spec.Webhook.Secret.Ref = &value
 	})
 	return o
 }
 
 func (o WebhookOption) VMSSHKey(value string) WebhookOption {
 	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.Webhook.WebhookSecret.VirtualMachineSSHKey = &value
+		config.Spec.Webhook.Secret.VirtualMachineAccessKey = &value
 	})
 	return o
 }

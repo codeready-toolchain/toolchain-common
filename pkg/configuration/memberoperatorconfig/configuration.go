@@ -234,7 +234,7 @@ type WebhookConfig struct {
 }
 
 func (a WebhookConfig) webhookSecret(webhookSecretKey string) string {
-	webhookSecret := commonconfig.GetString(a.w.WebhookSecret.Ref, "")
+	webhookSecret := commonconfig.GetString(a.w.Secret.Ref, "")
 	return a.secrets[webhookSecret][webhookSecretKey]
 }
 
@@ -243,8 +243,8 @@ func (a WebhookConfig) Deploy() bool {
 }
 
 func (a WebhookConfig) VMSSHKey() string {
-	vmSSHKey := commonconfig.GetString(a.w.WebhookSecret.VirtualMachineSSHKey, "")
-	return a.webhookSecret(vmSSHKey)
+	vmAccessKey := commonconfig.GetString(a.w.Secret.VirtualMachineAccessKey, "")
+	return a.webhookSecret(vmAccessKey)
 }
 
 type WebConsolePluginConfig struct {
