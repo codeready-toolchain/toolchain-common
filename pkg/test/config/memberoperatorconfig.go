@@ -259,6 +259,9 @@ func (o WebhookOption) Deploy(value bool) WebhookOption {
 
 func (o WebhookOption) WebhookSecretRef(value string) WebhookOption {
 	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		if config.Spec.Webhook.Secret == nil {
+			config.Spec.Webhook.Secret = &toolchainv1alpha1.WebhookSecret{}
+		}
 		config.Spec.Webhook.Secret.Ref = &value
 	})
 	return o
@@ -266,6 +269,9 @@ func (o WebhookOption) WebhookSecretRef(value string) WebhookOption {
 
 func (o WebhookOption) VMSSHKey(value string) WebhookOption {
 	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		if config.Spec.Webhook.Secret == nil {
+			config.Spec.Webhook.Secret = &toolchainv1alpha1.WebhookSecret{}
+		}
 		config.Spec.Webhook.Secret.VirtualMachineAccessKey = &value
 	})
 	return o
