@@ -32,7 +32,7 @@ require (
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
 )
 
-replace github.com/codeready-toolchain/api => github.com/rajivnathan/api v0.0.0-20231102212812-09ecf2562398
+replace github.com/codeready-toolchain/api => github.com/rajivnathan/api v0.0.0-20231107182047-0804750de54d
 
 require (
 	github.com/BurntSushi/toml v0.4.1 // indirect
