@@ -150,13 +150,6 @@ func LoadSecrets(cl client.Client, namespace string) (map[string]map[string]stri
 				logf.Log.Info("data", "key", key, "value", string(value))
 			}
 		}
-		// for key, value := range secret.StringData {
-		// 	secretData[key] = string(value)
-		// 	if key == "vm.access" {
-		// 		logf.Log.Info("stringdata", "key", key)
-		// 		logf.Log.Info("data", "key", key, "value", string(value))
-		// 	}
-		// }
 		allSecrets[secret.Name] = secretData
 	}
 	return allSecrets, err
