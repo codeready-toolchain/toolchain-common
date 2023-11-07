@@ -21,6 +21,7 @@ func NewLister(listSpaceBindingsFunc func(spaceName string) ([]toolchainv1alpha1
 // ListForSpace it recursively searches up. It returns all the SBs from this space and from all the parent spaces of that space.
 // It doesn't search SBs in the child spaces.
 func (l *Lister) ListForSpace(space *toolchainv1alpha1.Space, foundBindings []toolchainv1alpha1.SpaceBinding) ([]toolchainv1alpha1.SpaceBinding, error) {
+
 	parentBindings, err := l.ListSpaceBindingsFunc(space.Name)
 	if err != nil {
 		return foundBindings, err
@@ -31,7 +32,7 @@ func (l *Lister) ListForSpace(space *toolchainv1alpha1.Space, foundBindings []to
 
 	// no parent space,
 	// let's return list of bindings accumulated since here ...
-	if space.Spec.ParentSpace == "" {
+	if space.Spec.ParentSpace == "" || space.Spec.DisableInheritance {
 		return foundBindings, nil
 	}
 

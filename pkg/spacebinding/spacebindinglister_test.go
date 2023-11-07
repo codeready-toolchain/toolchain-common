@@ -235,4 +235,207 @@ func TestNewSpaceBindingLister(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("recursive list for space with disable Inheritance", func(t *testing.T) {
+		// given
+		spaceAMur := NewMasterUserRecord(t, "space-a-user", TargetCluster(test.MemberClusterName), TierName("deactivate90"))
+		spaceBMur := NewMasterUserRecord(t, "space-b-user", TargetCluster(test.MemberClusterName), TierName("deactivate90"))
+		spaceCMur := NewMasterUserRecord(t, "space-c-user", TargetCluster(test.MemberClusterName), TierName("deactivate90"))
+		spaceDMur := NewMasterUserRecord(t, "space-d-user", TargetCluster(test.MemberClusterName), TierName("deactivate90"))
+		spaceFMur := NewMasterUserRecord(t, "space-f-user", TargetCluster(test.MemberClusterName), TierName("deactivate90"))
+		// we have a parent space
+		spaceA := spacetest.NewSpace(test.HostOperatorNs, "Space-A",
+			spacetest.WithTierName("advanced"),
+			spacetest.WithSpecTargetCluster(test.MemberClusterName),
+			spacetest.WithDisableInheritance(false),
+			spacetest.WithLabel(toolchainv1alpha1.SpaceCreatorLabelKey, "space-a-user"),
+		)
+		spaceB := spacetest.NewSpace(test.HostOperatorNs, "Space-B",
+			spacetest.WithTierName("advanced"),
+			spacetest.WithSpecTargetCluster(test.MemberClusterName),
+			spacetest.WithSpecParentSpace(spaceA.GetName()),
+			spacetest.WithDisableInheritance(true),
+		)
+		spaceC := spacetest.NewSpace(test.HostOperatorNs, "Space-C",
+			spacetest.WithTierName("advanced"),
+			spacetest.WithSpecTargetCluster(test.MemberClusterName),
+			spacetest.WithSpecParentSpace(spaceB.GetName()),
+			spacetest.WithDisableInheritance(false),
+		)
+		spaceD := spacetest.NewSpace(test.HostOperatorNs, "Space-D",
+			spacetest.WithTierName("advanced"),
+			spacetest.WithSpecTargetCluster(test.MemberClusterName),
+			spacetest.WithSpecParentSpace(spaceC.GetName()),
+			spacetest.WithDisableInheritance(false),
+		)
+		spaceE := spacetest.NewSpace(test.HostOperatorNs, "Space-E",
+			spacetest.WithTierName("advanced"),
+			spacetest.WithSpecTargetCluster(test.MemberClusterName),
+			spacetest.WithSpecParentSpace(spaceD.GetName()),
+			spacetest.WithDisableInheritance(true),
+		)
+		spaceF := spacetest.NewSpace(test.HostOperatorNs, "Space-F",
+			spacetest.WithTierName("advanced"),
+			spacetest.WithSpecTargetCluster(test.MemberClusterName),
+			spacetest.WithSpecParentSpace(spaceE.GetName()),
+			spacetest.WithDisableInheritance(false),
+		)
+		spaces := map[string]*toolchainv1alpha1.Space{
+			spaceA.GetName(): spaceA,
+			spaceB.GetName(): spaceB,
+			spaceC.GetName(): spaceC,
+			spaceD.GetName(): spaceD,
+			spaceE.GetName(): spaceE,
+			spaceF.GetName(): spaceF,
+		}
+		// the getSpaceFunc returns the space based on the given name
+		getSpaceFunc := func(spaceName string) (*toolchainv1alpha1.Space, error) {
+			if space, found := spaces[spaceName]; found {
+				return space, nil
+			}
+			return nil, fmt.Errorf("space not found: %s", spaceName)
+		}
+
+		// listSpaceBindingFunc returns the specific spacebindings for the given space
+		listSpaceBindingFunc := func(spaceName string) ([]toolchainv1alpha1.SpaceBinding, error) {
+			switch spaceName {
+			case spaceA.GetName():
+				fmt.Println("return binding for SpaceA")
+				return []toolchainv1alpha1.SpaceBinding{
+					*spacebinding.NewSpaceBinding(spaceAMur, spaceA, spaceA.Name, spacebinding.WithRole("admin")),
+				}, nil
+			case spaceB.GetName():
+				fmt.Println("return binding for SpaceB")
+				return []toolchainv1alpha1.SpaceBinding{
+					*spacebinding.NewSpaceBinding(spaceBMur, spaceB, spaceB.Name, spacebinding.WithRole("viewer")),
+				}, nil
+			case spaceC.GetName():
+				fmt.Println("return binding for SpaceC")
+				return []toolchainv1alpha1.SpaceBinding{
+					*spacebinding.NewSpaceBinding(spaceCMur, spaceC, spaceC.Name, spacebinding.WithRole("maintainer")),
+				}, nil
+			case spaceD.GetName():
+				fmt.Println("return binding for SpaceD")
+				return []toolchainv1alpha1.SpaceBinding{
+					*spacebinding.NewSpaceBinding(spaceDMur, spaceD, spaceD.Name, spacebinding.WithRole("admin")),
+				}, nil
+			case spaceE.GetName():
+				fmt.Println("return no binding for SpaceE")
+				return []toolchainv1alpha1.SpaceBinding{}, nil
+			case spaceF.GetName():
+				fmt.Println("return binding for SpaceF")
+				return []toolchainv1alpha1.SpaceBinding{
+					*spacebinding.NewSpaceBinding(spaceFMur, spaceF, spaceF.Name, spacebinding.WithRole("viewer")),
+				}, nil
+			default:
+				return nil, nil
+			}
+		}
+
+		tests := map[string]struct {
+			space                 *toolchainv1alpha1.Space
+			getSpaceFunc          func(spaceName string) (*toolchainv1alpha1.Space, error)
+			listSpaceBindingsFunc func(spaceName string) ([]toolchainv1alpha1.SpaceBinding, error)
+			expectedSpaceBindings []toolchainv1alpha1.SpaceBinding
+			expectedErr           string
+		}{
+			"for Space-A": {
+				space:                 spaceA,
+				getSpaceFunc:          getSpaceFunc,
+				listSpaceBindingsFunc: listSpaceBindingFunc,
+				expectedSpaceBindings: []toolchainv1alpha1.SpaceBinding{
+					// we expect to have one spacebinding for the root space
+					*spacebinding.NewSpaceBinding(spaceAMur, spaceA, spaceA.Name, spacebinding.WithRole("admin")),
+				},
+			},
+			"for Space-B": {
+				space:                 spaceB,
+				getSpaceFunc:          getSpaceFunc,
+				listSpaceBindingsFunc: listSpaceBindingFunc,
+				expectedSpaceBindings: []toolchainv1alpha1.SpaceBinding{
+					// only expect space binding form space-B
+					*spacebinding.NewSpaceBinding(spaceBMur, spaceB, spaceB.Name, spacebinding.WithRole("viewer")),
+				},
+			},
+			"for Space-C": {
+				space:                 spaceC,
+				getSpaceFunc:          getSpaceFunc,
+				listSpaceBindingsFunc: listSpaceBindingFunc,
+				expectedSpaceBindings: []toolchainv1alpha1.SpaceBinding{
+					// we expect spacebinding inherited from space-B
+					*spacebinding.NewSpaceBinding(spaceBMur, spaceB, spaceB.Name, spacebinding.WithRole("viewer")),
+					// and specific one from space-C (which overrides the one from space-B even if it has the same role)
+					*spacebinding.NewSpaceBinding(spaceCMur, spaceC, spaceC.Name, spacebinding.WithRole("maintainer")),
+				},
+			},
+			"for Space-D": {
+				space:                 spaceD,
+				getSpaceFunc:          getSpaceFunc,
+				listSpaceBindingsFunc: listSpaceBindingFunc,
+				expectedSpaceBindings: []toolchainv1alpha1.SpaceBinding{
+					// we expect spacebinding inherited from space-B
+					*spacebinding.NewSpaceBinding(spaceBMur, spaceB, spaceB.Name, spacebinding.WithRole("viewer")),
+					// we expect spacebinding inherited from space-C
+					*spacebinding.NewSpaceBinding(spaceCMur, spaceC, spaceC.Name, spacebinding.WithRole("maintainer")),
+					// and the one from space-D
+					*spacebinding.NewSpaceBinding(spaceDMur, spaceD, spaceD.Name, spacebinding.WithRole("admin")),
+				},
+			},
+			"for Space-E": {
+				space:                 spaceE,
+				getSpaceFunc:          getSpaceFunc,
+				listSpaceBindingsFunc: listSpaceBindingFunc,
+				expectedSpaceBindings: []toolchainv1alpha1.SpaceBinding{},
+			},
+			"for Space-F": {
+				space:                 spaceF,
+				getSpaceFunc:          getSpaceFunc,
+				listSpaceBindingsFunc: listSpaceBindingFunc,
+				expectedSpaceBindings: []toolchainv1alpha1.SpaceBinding{
+					// specific one only for this space
+					*spacebinding.NewSpaceBinding(spaceFMur, spaceF, spaceF.Name, spacebinding.WithRole("viewer")),
+				},
+			},
+		}
+		fmt.Println("\nStart DI test")
+		for k, tc := range tests {
+			t.Run(k, func(t *testing.T) {
+
+				fmt.Println(fmt.Sprintf("\nCheck space %s", tc.space.GetName()))
+				// when
+				spaceBindingLister := spacebinding.NewLister(tc.listSpaceBindingsFunc, tc.getSpaceFunc)
+
+				// then
+				spaceBindings, err := spaceBindingLister.ListForSpace(tc.space, []toolchainv1alpha1.SpaceBinding{})
+				if tc.expectedErr != "" {
+					assert.EqualError(t, err, tc.expectedErr)
+				} else {
+					assert.NoError(t, err)
+					assert.Len(t, spaceBindings, len(tc.expectedSpaceBindings), "invalid number of spacebindings for %s", tc.space.GetName())
+					for _, expectedSpaceBinding := range tc.expectedSpaceBindings {
+						found := false
+						for _, actualSpaceBinding := range spaceBindings {
+							if actualSpaceBinding.GetName() != expectedSpaceBinding.GetName() {
+								continue
+							}
+							found = true
+							assert.Equal(t, expectedSpaceBinding.Spec.MasterUserRecord, actualSpaceBinding.Spec.MasterUserRecord)
+							assert.Equal(t, expectedSpaceBinding.Spec.Space, actualSpaceBinding.Spec.Space)
+							assert.Equal(t, expectedSpaceBinding.Spec.SpaceRole, actualSpaceBinding.Spec.SpaceRole)
+
+							require.NotNil(t, actualSpaceBinding.Labels)
+							assert.Equal(t, expectedSpaceBinding.Labels[toolchainv1alpha1.SpaceCreatorLabelKey], actualSpaceBinding.Labels[toolchainv1alpha1.SpaceCreatorLabelKey])
+							assert.Equal(t, expectedSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingMasterUserRecordLabelKey], actualSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingMasterUserRecordLabelKey])
+							assert.Equal(t, expectedSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingSpaceLabelKey], actualSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingSpaceLabelKey])
+
+						}
+						if !found {
+							t.Logf("expected spacebinding %s not found.", expectedSpaceBinding.GetName())
+							t.FailNow()
+						}
+					}
+				}
+			})
+		}
+	})
 }
