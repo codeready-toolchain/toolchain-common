@@ -234,6 +234,9 @@ type WebhookConfig struct {
 }
 
 func (a WebhookConfig) webhookSecret(webhookSecretKey string) string {
+	if a.w.Secret == nil {
+		return ""
+	}
 	webhookSecret := commonconfig.GetString(a.w.Secret.Ref, "")
 	return a.secrets[webhookSecret][webhookSecretKey]
 }
@@ -243,6 +246,9 @@ func (a WebhookConfig) Deploy() bool {
 }
 
 func (a WebhookConfig) VMSSHKey() string {
+	if a.w.Secret == nil {
+		return ""
+	}
 	vmAccessKey := commonconfig.GetString(a.w.Secret.VirtualMachineAccessKey, "")
 	return a.webhookSecret(vmAccessKey)
 }
