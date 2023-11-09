@@ -44,7 +44,7 @@ func TestClusterHealthChecks(t *testing.T) {
 		defer reset()
 
 		// when
-		updateClusterStatuses("test-namespace", cl)
+		updateClusterStatuses(context.TODO(), "test-namespace", cl)
 
 		// then
 		assertClusterStatus(t, cl, "unstable", notOffline(), unhealthy())
@@ -62,7 +62,7 @@ func TestClusterHealthChecks(t *testing.T) {
 		defer resetCache()
 
 		// when
-		updateClusterStatuses("test-namespace", cl)
+		updateClusterStatuses(context.TODO(), "test-namespace", cl)
 
 		// then
 		assertClusterStatus(t, cl, "unstable", notOffline(), unhealthy())
@@ -78,7 +78,7 @@ func TestClusterHealthChecks(t *testing.T) {
 		defer resetCache()
 
 		// when
-		updateClusterStatuses("test-namespace", cl)
+		updateClusterStatuses(context.TODO(), "test-namespace", cl)
 
 		// then
 		assertClusterStatus(t, cl, "stable", healthy())
@@ -90,7 +90,7 @@ func TestClusterHealthChecks(t *testing.T) {
 		cl := test.NewFakeClient(t, stable, sec)
 
 		// when
-		updateClusterStatuses("test-namespace", cl)
+		updateClusterStatuses(context.TODO(), "test-namespace", cl)
 
 		// then
 		assertClusterStatus(t, cl, "failing", offline())
