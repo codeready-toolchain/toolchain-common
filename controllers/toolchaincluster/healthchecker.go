@@ -31,7 +31,7 @@ const (
 func StartHealthChecks(ctx context.Context, mgr manager.Manager, namespace string, period time.Duration) {
 	logger.Info("starting health checks", "period", period)
 	go wait.Until(func() {
-		updateClusterStatuses(namespace, mgr.GetClient())
+		updateClusterStatuses(ctx, namespace, mgr.GetClient())
 	}, period, ctx.Done())
 }
 
@@ -43,9 +43,9 @@ type HealthChecker struct {
 }
 
 // updateClusterStatuses checks cluster health and updates status of all ToolchainClusters
-func updateClusterStatuses(namespace string, cl client.Client) {
+func updateClusterStatuses(ctx context.Context, namespace string, cl client.Client) {
 	clusters := &toolchainv1alpha1.ToolchainClusterList{}
-	err := cl.List(context.TODO(), clusters, client.InNamespace(namespace))
+	err := cl.List(ctx, clusters, client.InNamespace(namespace))
 	if err != nil {
 		logger.Error(err, "unable to list existing ToolchainClusters")
 		return
@@ -62,7 +62,7 @@ func updateClusterStatuses(namespace string, cl client.Client) {
 		if !ok {
 			clusterLogger.Error(fmt.Errorf("cluster %s not found in cache", clusterObj.Name), "failed to retrieve stored data for cluster")
 			clusterObj.Status.Conditions = []toolchainv1alpha1.ToolchainClusterCondition{clusterOfflineCondition()}
-			if err := cl.Status().Update(context.TODO(), clusterObj); err != nil {
+			if err := cl.Status().Update(ctx, clusterObj); err != nil {
 				clusterLogger.Error(err, "failed to update the status of ToolchainCluster")
 			}
 			continue
@@ -81,15 +81,15 @@ func updateClusterStatuses(namespace string, cl client.Client) {
 			logger:                 clusterLogger,
 		}
 		// clusterLogger.Info("getting the current state of ToolchainCluster")
-		if err := healthChecker.updateIndividualClusterStatus(clusterObj); err != nil {
+		if err := healthChecker.updateIndividualClusterStatus(ctx, clusterObj); err != nil {
 			clusterLogger.Error(err, "unable to update cluster status of ToolchainCluster")
 		}
 	}
 }
 
-func (hc *HealthChecker) updateIndividualClusterStatus(toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
+func (hc *HealthChecker) updateIndividualClusterStatus(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
 
-	currentClusterStatus := hc.getClusterHealthStatus()
+	currentClusterStatus := hc.getClusterHealthStatus(ctx)
 
 	for index, currentCond := range currentClusterStatus.Conditions {
 		for _, previousCond := range toolchainCluster.Status.Conditions {
@@ -100,16 +100,16 @@ func (hc *HealthChecker) updateIndividualClusterStatus(toolchainCluster *toolcha
 	}
 
 	toolchainCluster.Status = *currentClusterStatus
-	if err := hc.localClusterClient.Status().Update(context.TODO(), toolchainCluster); err != nil {
+	if err := hc.localClusterClient.Status().Update(ctx, toolchainCluster); err != nil {
 		return errors.Wrapf(err, "Failed to update the status of cluster %s", toolchainCluster.Name)
 	}
 	return nil
 }
 
 // getClusterHealthStatus gets the kubernetes cluster health status by requesting "/healthz"
-func (hc *HealthChecker) getClusterHealthStatus() *toolchainv1alpha1.ToolchainClusterStatus {
+func (hc *HealthChecker) getClusterHealthStatus(ctx context.Context) *toolchainv1alpha1.ToolchainClusterStatus {
 	clusterStatus := toolchainv1alpha1.ToolchainClusterStatus{}
-	body, err := hc.remoteClusterClientset.DiscoveryClient.RESTClient().Get().AbsPath("/healthz").Do(context.TODO()).Raw()
+	body, err := hc.remoteClusterClientset.DiscoveryClient.RESTClient().Get().AbsPath("/healthz").Do(ctx).Raw()
 	if err != nil {
 		hc.logger.Error(err, "Failed to do cluster health check for a ToolchainCluster")
 		clusterStatus.Conditions = append(clusterStatus.Conditions, clusterOfflineCondition())
