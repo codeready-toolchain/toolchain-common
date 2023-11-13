@@ -300,30 +300,24 @@ func TestNewSpaceBindingLister(t *testing.T) {
 		listSpaceBindingFunc := func(spaceName string) ([]toolchainv1alpha1.SpaceBinding, error) {
 			switch spaceName {
 			case spaceA.GetName():
-				fmt.Println("return binding for SpaceA")
 				return []toolchainv1alpha1.SpaceBinding{
 					*spacebinding.NewSpaceBinding(spaceAMur, spaceA, spaceA.Name, spacebinding.WithRole("admin")),
 				}, nil
 			case spaceB.GetName():
-				fmt.Println("return binding for SpaceB")
 				return []toolchainv1alpha1.SpaceBinding{
 					*spacebinding.NewSpaceBinding(spaceBMur, spaceB, spaceB.Name, spacebinding.WithRole("viewer")),
 				}, nil
 			case spaceC.GetName():
-				fmt.Println("return binding for SpaceC")
 				return []toolchainv1alpha1.SpaceBinding{
 					*spacebinding.NewSpaceBinding(spaceCMur, spaceC, spaceC.Name, spacebinding.WithRole("maintainer")),
 				}, nil
 			case spaceD.GetName():
-				fmt.Println("return binding for SpaceD")
 				return []toolchainv1alpha1.SpaceBinding{
 					*spacebinding.NewSpaceBinding(spaceDMur, spaceD, spaceD.Name, spacebinding.WithRole("admin")),
 				}, nil
-			case spaceE.GetName():
-				fmt.Println("return no binding for SpaceE")
+			case spaceE.GetName():fmt.Println("return no binding for SpaceE")
 				return []toolchainv1alpha1.SpaceBinding{}, nil
 			case spaceF.GetName():
-				fmt.Println("return binding for SpaceF")
 				return []toolchainv1alpha1.SpaceBinding{
 					*spacebinding.NewSpaceBinding(spaceFMur, spaceF, spaceF.Name, spacebinding.WithRole("viewer")),
 				}, nil
@@ -364,7 +358,7 @@ func TestNewSpaceBindingLister(t *testing.T) {
 				expectedSpaceBindings: []toolchainv1alpha1.SpaceBinding{
 					// we expect spacebinding inherited from space-B
 					*spacebinding.NewSpaceBinding(spaceBMur, spaceB, spaceB.Name, spacebinding.WithRole("viewer")),
-					// and specific one from space-C (which overrides the one from space-B even if it has the same role)
+					// and specific one from space-C
 					*spacebinding.NewSpaceBinding(spaceCMur, spaceC, spaceC.Name, spacebinding.WithRole("maintainer")),
 				},
 			},
@@ -397,11 +391,9 @@ func TestNewSpaceBindingLister(t *testing.T) {
 				},
 			},
 		}
-		fmt.Println("\nStart DI test")
 		for k, tc := range tests {
 			t.Run(k, func(t *testing.T) {
 
-				fmt.Println(fmt.Sprintf("\nCheck space %s", tc.space.GetName()))
 				// when
 				spaceBindingLister := spacebinding.NewLister(tc.listSpaceBindingsFunc, tc.getSpaceFunc)
 
