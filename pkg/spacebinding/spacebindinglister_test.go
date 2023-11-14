@@ -316,7 +316,6 @@ func TestNewSpaceBindingLister(t *testing.T) {
 					*spacebinding.NewSpaceBinding(spaceDMur, spaceD, spaceD.Name, spacebinding.WithRole("admin")),
 				}, nil
 			case spaceE.GetName():
-			        fmt.Println("return no binding for SpaceE")
 				return []toolchainv1alpha1.SpaceBinding{}, nil
 			case spaceF.GetName():
 				return []toolchainv1alpha1.SpaceBinding{
@@ -332,7 +331,6 @@ func TestNewSpaceBindingLister(t *testing.T) {
 			getSpaceFunc          func(spaceName string) (*toolchainv1alpha1.Space, error)
 			listSpaceBindingsFunc func(spaceName string) ([]toolchainv1alpha1.SpaceBinding, error)
 			expectedSpaceBindings []toolchainv1alpha1.SpaceBinding
-			expectedErr           string
 		}{
 			"for Space-A": {
 				space:                 spaceA,
@@ -400,32 +398,28 @@ func TestNewSpaceBindingLister(t *testing.T) {
 
 				// then
 				spaceBindings, err := spaceBindingLister.ListForSpace(tc.space, []toolchainv1alpha1.SpaceBinding{})
-				if tc.expectedErr != "" {
-					assert.EqualError(t, err, tc.expectedErr)
-				} else {
-					assert.NoError(t, err)
-					assert.Len(t, spaceBindings, len(tc.expectedSpaceBindings), "invalid number of spacebindings for %s", tc.space.GetName())
-					for _, expectedSpaceBinding := range tc.expectedSpaceBindings {
-						found := false
-						for _, actualSpaceBinding := range spaceBindings {
-							if actualSpaceBinding.GetName() != expectedSpaceBinding.GetName() {
-								continue
-							}
-							found = true
-							assert.Equal(t, expectedSpaceBinding.Spec.MasterUserRecord, actualSpaceBinding.Spec.MasterUserRecord)
-							assert.Equal(t, expectedSpaceBinding.Spec.Space, actualSpaceBinding.Spec.Space)
-							assert.Equal(t, expectedSpaceBinding.Spec.SpaceRole, actualSpaceBinding.Spec.SpaceRole)
-
-							require.NotNil(t, actualSpaceBinding.Labels)
-							assert.Equal(t, expectedSpaceBinding.Labels[toolchainv1alpha1.SpaceCreatorLabelKey], actualSpaceBinding.Labels[toolchainv1alpha1.SpaceCreatorLabelKey])
-							assert.Equal(t, expectedSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingMasterUserRecordLabelKey], actualSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingMasterUserRecordLabelKey])
-							assert.Equal(t, expectedSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingSpaceLabelKey], actualSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingSpaceLabelKey])
-
+				assert.NoError(t, err)
+				assert.Len(t, spaceBindings, len(tc.expectedSpaceBindings), "invalid number of spacebindings for %s", tc.space.GetName())
+				for _, expectedSpaceBinding := range tc.expectedSpaceBindings {
+					found := false
+					for _, actualSpaceBinding := range spaceBindings {
+						if actualSpaceBinding.GetName() != expectedSpaceBinding.GetName() {
+							continue
 						}
-						if !found {
-							t.Logf("expected spacebinding %s not found.", expectedSpaceBinding.GetName())
-							t.FailNow()
-						}
+						found = true
+						assert.Equal(t, expectedSpaceBinding.Spec.MasterUserRecord, actualSpaceBinding.Spec.MasterUserRecord)
+						assert.Equal(t, expectedSpaceBinding.Spec.Space, actualSpaceBinding.Spec.Space)
+						assert.Equal(t, expectedSpaceBinding.Spec.SpaceRole, actualSpaceBinding.Spec.SpaceRole)
+
+						require.NotNil(t, actualSpaceBinding.Labels)
+						assert.Equal(t, expectedSpaceBinding.Labels[toolchainv1alpha1.SpaceCreatorLabelKey], actualSpaceBinding.Labels[toolchainv1alpha1.SpaceCreatorLabelKey])
+						assert.Equal(t, expectedSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingMasterUserRecordLabelKey], actualSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingMasterUserRecordLabelKey])
+						assert.Equal(t, expectedSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingSpaceLabelKey], actualSpaceBinding.Labels[toolchainv1alpha1.SpaceBindingSpaceLabelKey])
+
+					}
+					if !found {
+						t.Logf("expected spacebinding %s not found.", expectedSpaceBinding.GetName())
+						t.FailNow()
 					}
 				}
 			})
