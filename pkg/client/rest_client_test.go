@@ -1,6 +1,7 @@
 package client_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -26,7 +27,7 @@ func TestCreateTokenRequest(t *testing.T) {
 
 		// when
 		require.NoError(t, err)
-		token, err := restclient.CreateTokenRequest(cl, types.NamespacedName{
+		token, err := restclient.CreateTokenRequest(context.TODO(), cl, types.NamespacedName{
 			Namespace: "jane-env",
 			Name:      "jane",
 		}, 1)
@@ -49,7 +50,7 @@ func TestCreateTokenRequest(t *testing.T) {
 
 			// when
 			require.NoError(t, err)
-			token, err := restclient.CreateTokenRequest(cl, types.NamespacedName{
+			token, err := restclient.CreateTokenRequest(context.TODO(), cl, types.NamespacedName{
 				Namespace: "jane-env",
 				Name:      "jane",
 			}, 1)
