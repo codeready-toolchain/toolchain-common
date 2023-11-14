@@ -315,7 +315,8 @@ func TestNewSpaceBindingLister(t *testing.T) {
 				return []toolchainv1alpha1.SpaceBinding{
 					*spacebinding.NewSpaceBinding(spaceDMur, spaceD, spaceD.Name, spacebinding.WithRole("admin")),
 				}, nil
-			case spaceE.GetName():fmt.Println("return no binding for SpaceE")
+			case spaceE.GetName():
+			        fmt.Println("return no binding for SpaceE")
 				return []toolchainv1alpha1.SpaceBinding{}, nil
 			case spaceF.GetName():
 				return []toolchainv1alpha1.SpaceBinding{
