@@ -12,7 +12,7 @@ import (
 const GitHubAPICallDelay = 1 * time.Minute
 
 // GetGitHubClientFunc a func that returns a GitHub client instance
-type GetGitHubClientFunc func(string) *github.Client
+type GetGitHubClientFunc func(context.Context, string) *github.Client
 
 type GitHubRepository struct {
 	Org, Name, Branch, DeployedCommitSHA string
