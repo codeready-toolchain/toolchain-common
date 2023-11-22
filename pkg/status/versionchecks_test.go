@@ -1,6 +1,7 @@
 package status
 
 import (
+	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -37,7 +38,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 			}
 
 			// when
-			conditions := versionCheckMgr.CheckDeployedVersionIsUpToDate(false, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo)
+			conditions := versionCheckMgr.CheckDeployedVersionIsUpToDate(context.TODO(), false, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo)
 
 			// then
 			test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
@@ -52,7 +53,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 			}
 
 			// when
-			conditions := versionCheckMgr.CheckDeployedVersionIsUpToDate(true, "", []toolchainv1alpha1.Condition{}, githubRepo)
+			conditions := versionCheckMgr.CheckDeployedVersionIsUpToDate(context.TODO(), true, "", []toolchainv1alpha1.Condition{}, githubRepo)
 
 			// then
 			test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
@@ -77,7 +78,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 			}
 
 			// when
-			conditions := versionCheckMgrLastCAll.CheckDeployedVersionIsUpToDate(true, "githubToken", alreadyExistingConditions, githubRepo)
+			conditions := versionCheckMgrLastCAll.CheckDeployedVersionIsUpToDate(context.TODO(), true, "githubToken", alreadyExistingConditions, githubRepo)
 
 			// then
 			test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
@@ -93,7 +94,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 			}
 
 			// when
-			conditions := versionCheckMgr.CheckDeployedVersionIsUpToDate(true, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo) // deployed commit matches latest commit SHA in github
+			conditions := versionCheckMgr.CheckDeployedVersionIsUpToDate(context.TODO(), true, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo) // deployed commit matches latest commit SHA in github
 
 			// then
 			test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
@@ -116,7 +117,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 				githubRepo.DeployedCommitSHA = "5678efgh" // deployed SHA is still at previous commit
 
 				// when
-				conditions := versionCheckMgrThreshold.CheckDeployedVersionIsUpToDate(true, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo)
+				conditions := versionCheckMgrThreshold.CheckDeployedVersionIsUpToDate(context.TODO(), true, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo)
 
 				// then
 				test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
@@ -138,7 +139,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 				githubRepo.DeployedCommitSHA = "5678efgh" // deployed SHA is still at previous commit
 
 				// when
-				conditions := versionCheckMgrThresholdExpired.CheckDeployedVersionIsUpToDate(true, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo)
+				conditions := versionCheckMgrThresholdExpired.CheckDeployedVersionIsUpToDate(context.TODO(), true, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo)
 
 				// when
 				test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
@@ -152,7 +153,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 		t.Run("internal server error from github", func(t *testing.T) {
 			// given
 			versionCheckMgrError := VersionCheckManager{
-				GetGithubClientFunc: func(string) *github.Client {
+				GetGithubClientFunc: func(context.Context, string) *github.Client {
 					mockedHTTPClient := mock.NewMockedHTTPClient(
 						mock.WithRequestMatchHandler(
 							test.GetReposCommitsByOwnerByRepoByRef,
@@ -177,7 +178,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 			}
 
 			// when
-			conditions := versionCheckMgrError.CheckDeployedVersionIsUpToDate(true, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo)
+			conditions := versionCheckMgrError.CheckDeployedVersionIsUpToDate(context.TODO(), true, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo)
 
 			// then
 			test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
@@ -186,7 +187,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 		t.Run("response with no commits", func(t *testing.T) {
 			// given
 			versionCheckMgrError := VersionCheckManager{
-				GetGithubClientFunc: func(string) *github.Client {
+				GetGithubClientFunc: func(context.Context, string) *github.Client {
 					mockedHTTPClient := test.MockGithubRepositoryCommit(nil)
 					return github.NewClient(mockedHTTPClient)
 				},
@@ -200,7 +201,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 			}
 
 			// when
-			conditions := versionCheckMgrError.CheckDeployedVersionIsUpToDate(true, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo)
+			conditions := versionCheckMgrError.CheckDeployedVersionIsUpToDate(context.TODO(), true, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo)
 
 			// then
 			test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
@@ -221,7 +222,7 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 			}
 
 			// when
-			conditions := versionCheckMgrNoCond.CheckDeployedVersionIsUpToDate(true, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo)
+			conditions := versionCheckMgrNoCond.CheckDeployedVersionIsUpToDate(context.TODO(), true, "githubToken", []toolchainv1alpha1.Condition{}, githubRepo)
 
 			// then
 			test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)

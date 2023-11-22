@@ -30,7 +30,7 @@ type VersionCheckManager struct {
 
 // CheckDeployedVersionIsUpToDate verifies if there is a match between the latest commit in GitHub for a given repo and branch matches the provided commit SHA.
 // There is some preconfigured delay/threshold that we keep in account before returning an `error condition`.
-func (m *VersionCheckManager) CheckDeployedVersionIsUpToDate(isProd bool, accessTokenKey string, alreadyExistingConditions []toolchainv1alpha1.Condition, githubRepo client.GitHubRepository) *toolchainv1alpha1.Condition {
+func (m *VersionCheckManager) CheckDeployedVersionIsUpToDate(ctx context.Context, isProd bool, accessTokenKey string, alreadyExistingConditions []toolchainv1alpha1.Condition, githubRepo client.GitHubRepository) *toolchainv1alpha1.Condition {
 	// the first two checks are pretty much the same for all components
 	if !isProd {
 		cond := NewComponentReadyCondition(toolchainv1alpha1.ToolchainStatusDeploymentRevisionCheckDisabledReason)
@@ -57,7 +57,7 @@ func (m *VersionCheckManager) CheckDeployedVersionIsUpToDate(isProd bool, access
 		return &previouslySet
 	}
 	m.LastGHCallsPerRepo[githubRepo.Name] = time.Now()
-	githubClient := m.GetGithubClientFunc(accessTokenKey)
+	githubClient := m.GetGithubClientFunc(ctx, accessTokenKey)
 	// get the latest commit from given repository and branch
 	latestCommit, commitResponse, err := githubClient.Repositories.GetCommit(context.TODO(), githubRepo.Org, githubRepo.Name, githubRepo.Branch, &github.ListOptions{})
 	defer commitResponse.Body.Close()

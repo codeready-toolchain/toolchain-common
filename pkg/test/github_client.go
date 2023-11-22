@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -20,7 +21,7 @@ func MockGitHubClientForRepositoryCommits(githubCommitSHA string, commitTimestam
 		NewMockedGithubCommit(githubCommitSHA, commitTimestamp),
 	)
 	mockedGitHubClient := github.NewClient(mockedHTTPClient)
-	return func(string) *github.Client {
+	return func(context.Context, string) *github.Client {
 		return mockedGitHubClient
 	}
 }
