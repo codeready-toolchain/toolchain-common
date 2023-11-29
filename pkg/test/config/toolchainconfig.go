@@ -484,9 +484,16 @@ func (o RegistrationServiceVerificationOption) CaptchaScoreThreshold(value strin
 	return o.parent
 }
 
-func (o RegistrationServiceVerificationOption) AutomaticVerificationThreshold(value string) RegistrationServiceOption {
+func (o RegistrationServiceVerificationOption) CaptchaRequiredScore(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.RegistrationService.Verification.Captcha.AutomaticVerificationThreshold = &value
+		config.Spec.Host.RegistrationService.Verification.Captcha.RequiredScore = &value
+	})
+	return o.parent
+}
+
+func (o RegistrationServiceVerificationOption) CaptchaAllowLowScoreReactivation(value bool) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.Captcha.AllowLowScoreReactivation = &value
 	})
 	return o.parent
 }
