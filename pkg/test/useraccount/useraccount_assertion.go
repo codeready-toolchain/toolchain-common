@@ -76,11 +76,9 @@ func (a *Assertion) HasNoFinalizer() *Assertion {
 func (a *Assertion) MatchMasterUserRecord(mur *toolchainv1alpha1.MasterUserRecord) *Assertion {
 	err := a.loadUaAssertion()
 	require.NoError(a.t, err)
-	assert.Equal(a.t, mur.Spec.UserID, a.userAccount.Spec.UserID)
+	assert.Equal(a.t, mur.Spec.PropagatedClaims, a.userAccount.Spec.PropagatedClaims)
 	assert.Equal(a.t, mur.Spec.Disabled, a.userAccount.Spec.Disabled)
-	assert.Equal(a.t, mur.Spec.OriginalSub, a.userAccount.Spec.OriginalSub)
 	assert.NotNil(a.t, a.userAccount.Annotations)
-	assert.Equal(a.t, mur.Annotations[toolchainv1alpha1.MasterUserRecordEmailAnnotationKey], a.userAccount.Annotations[toolchainv1alpha1.UserEmailAnnotationKey])
 	return a
 }
 
