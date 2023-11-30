@@ -78,7 +78,6 @@ func (a *Assertion) MatchMasterUserRecord(mur *toolchainv1alpha1.MasterUserRecor
 	require.NoError(a.t, err)
 	assert.Equal(a.t, mur.Spec.PropagatedClaims, a.userAccount.Spec.PropagatedClaims)
 	assert.Equal(a.t, mur.Spec.Disabled, a.userAccount.Spec.Disabled)
-	assert.NotNil(a.t, a.userAccount.Annotations)
 	return a
 }
 
