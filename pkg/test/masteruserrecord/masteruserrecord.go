@@ -54,11 +54,10 @@ func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier
 		},
 		Spec: toolchainv1alpha1.MasterUserRecordSpec{
 			TierName:     "deactivate30",
-			UserID:       userID,
 			UserAccounts: []toolchainv1alpha1.UserAccountEmbedded{newEmbeddedUa(test.MemberClusterName)},
 			PropagatedClaims: toolchainv1alpha1.PropagatedClaims{
 				Sub:         "44332211",
-				UserID:      "135246",
+				UserID:      userID,
 				AccountID:   "357468",
 				OriginalSub: "11223344",
 				Email:       "joe@redhat.com",
