@@ -8,7 +8,6 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
-	"github.com/gofrs/uuid"
 	"github.com/redhat-cop/operator-utils/pkg/util"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,7 +41,6 @@ func NewMasterUserRecords(t *testing.T, size int, nameFmt string, modifiers ...M
 }
 
 func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier) *toolchainv1alpha1.MasterUserRecord {
-	userID := uuid.Must(uuid.NewV4()).String()
 	mur := &toolchainv1alpha1.MasterUserRecord{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   test.HostOperatorNs,
@@ -54,8 +52,8 @@ func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier
 			TierName:     "deactivate30",
 			UserAccounts: []toolchainv1alpha1.UserAccountEmbedded{newEmbeddedUa(test.MemberClusterName)},
 			PropagatedClaims: toolchainv1alpha1.PropagatedClaims{
-				Sub:         "44332211",
-				UserID:      userID,
+				Sub:         "UserID123",
+				UserID:      "135246",
 				AccountID:   "357468",
 				OriginalSub: "11223344",
 				Email:       "joe@redhat.com",
