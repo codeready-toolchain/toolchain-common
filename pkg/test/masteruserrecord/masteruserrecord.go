@@ -45,12 +45,10 @@ func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier
 	userID := uuid.Must(uuid.NewV4()).String()
 	mur := &toolchainv1alpha1.MasterUserRecord{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: test.HostOperatorNs,
-			Name:      userName,
-			Labels:    map[string]string{},
-			Annotations: map[string]string{
-				toolchainv1alpha1.MasterUserRecordEmailAnnotationKey: "joe@redhat.com",
-			},
+			Namespace:   test.HostOperatorNs,
+			Name:        userName,
+			Labels:      map[string]string{},
+			Annotations: map[string]string{},
 		},
 		Spec: toolchainv1alpha1.MasterUserRecordSpec{
 			TierName:     "deactivate30",
