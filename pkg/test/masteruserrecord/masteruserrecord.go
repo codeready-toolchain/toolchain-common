@@ -93,7 +93,7 @@ func ModifyUaInMur(mur *toolchainv1alpha1.MasterUserRecord, targetCluster string
 
 func UserID(userID string) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
-		mur.Spec.UserID = userID
+		mur.Spec.PropagatedClaims.UserID = userID
 		return nil
 	}
 }
