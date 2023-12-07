@@ -93,6 +93,13 @@ func UserID(userID string) MurModifier {
 	}
 }
 
+func Sub(sub string) MurModifier {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
+		mur.Spec.PropagatedClaims.Sub = sub
+		return nil
+	}
+}
+
 func StatusCondition(con toolchainv1alpha1.Condition) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		mur.Status.Conditions, _ = condition.AddOrUpdateStatusConditions(mur.Status.Conditions, con)
