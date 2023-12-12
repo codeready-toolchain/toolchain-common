@@ -210,7 +210,7 @@ func ProvisionedMur(provisionedTime *metav1.Time) MurModifier {
 // UserIDFromUserSignup creates a MurModifier to change the userID value to match the provided usersignup
 func UserIDFromUserSignup(userSignup *toolchainv1alpha1.UserSignup) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
-		mur.Spec.UserID = userSignup.Name
+		mur.Spec.PropagatedClaims.UserID = userSignup.Name
 		return nil
 	}
 }
