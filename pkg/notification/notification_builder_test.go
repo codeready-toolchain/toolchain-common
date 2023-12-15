@@ -49,9 +49,9 @@ func TestNotificationBuilder(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// given
 		userSignup := testusersignup.NewUserSignup()
-		userSignup.Spec.GivenName = "John"
-		userSignup.Spec.FamilyName = "Smith"
-		userSignup.Spec.Company = "ACME Corp"
+		userSignup.Spec.IdentityClaims.GivenName = "John"
+		userSignup.Spec.IdentityClaims.FamilyName = "Smith"
+		userSignup.Spec.IdentityClaims.Company = "ACME Corp"
 		userSignup.Status = toolchainv1alpha1.UserSignupStatus{
 			CompliantUsername: "jsmith",
 		}
@@ -160,9 +160,9 @@ func TestNotificationBuilder(t *testing.T) {
 	t.Run("success with empty compliant username", func(t *testing.T) {
 		// given
 		userSignup := testusersignup.NewUserSignup()
-		userSignup.Spec.GivenName = "John"
-		userSignup.Spec.FamilyName = "Smith"
-		userSignup.Spec.Company = "ACME Corp"
+		userSignup.Spec.IdentityClaims.GivenName = "John"
+		userSignup.Spec.IdentityClaims.FamilyName = "Smith"
+		userSignup.Spec.IdentityClaims.Company = "ACME Corp"
 		userSignup.Status = toolchainv1alpha1.UserSignupStatus{
 			CompliantUsername: "",
 		}

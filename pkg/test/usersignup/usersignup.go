@@ -23,7 +23,7 @@ func WithTargetCluster(targetCluster string) Modifier {
 
 func WithOriginalSub(originalSub string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
-		userSignup.Spec.OriginalSub = originalSub
+		userSignup.Spec.IdentityClaims.OriginalSub = originalSub
 	}
 }
 
