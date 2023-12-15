@@ -27,6 +27,18 @@ func WithOriginalSub(originalSub string) Modifier {
 	}
 }
 
+func WithUserID(userID string) Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		userSignup.Spec.IdentityClaims.UserID = userID
+	}
+}
+
+func WithAccountID(accountID string) Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		userSignup.Spec.IdentityClaims.AccountID = accountID
+	}
+}
+
 // ApprovedManually sets the UserSignup states to [`approved`]
 func ApprovedManually() Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
