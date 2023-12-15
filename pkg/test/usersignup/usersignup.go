@@ -87,7 +87,7 @@ func VerificationRequired(before time.Duration) Modifier {
 
 func WithUsername(username string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
-		userSignup.Spec.Username = username
+		userSignup.Spec.IdentityClaims.PreferredUsername = username
 	}
 }
 
@@ -163,7 +163,7 @@ func WithoutAnnotations() Modifier {
 func WithName(name string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.Name = name
-		userSignup.Spec.Username = name
+		userSignup.Spec.IdentityClaims.PreferredUsername = name
 	}
 }
 
