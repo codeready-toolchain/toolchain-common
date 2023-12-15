@@ -85,10 +85,10 @@ func TestNotificationBuilder(t *testing.T) {
 
 				assert.Equal(t, email, notification.Spec.Recipient)
 				assert.Equal(t, userSignup.Annotations[toolchainv1alpha1.UserSignupUserEmailAnnotationKey], notification.Spec.Context["UserEmail"])
-				assert.Equal(t, userSignup.Spec.GivenName, notification.Spec.Context["FirstName"])
-				assert.Equal(t, userSignup.Spec.FamilyName, notification.Spec.Context["LastName"])
-				assert.Equal(t, userSignup.Spec.Company, notification.Spec.Context["CompanyName"])
-				assert.Equal(t, userSignup.Spec.Userid, notification.Spec.Context["UserID"])
+				assert.Equal(t, userSignup.Spec.IdentityClaims.GivenName, notification.Spec.Context["FirstName"])
+				assert.Equal(t, userSignup.Spec.IdentityClaims.FamilyName, notification.Spec.Context["LastName"])
+				assert.Equal(t, userSignup.Spec.IdentityClaims.Company, notification.Spec.Context["CompanyName"])
+				assert.Equal(t, userSignup.Spec.IdentityClaims.Sub, notification.Spec.Context["Sub"])
 				assert.Equal(t, userSignup.Status.CompliantUsername, notification.Spec.Context["UserName"])
 				assert.Equal(t, userSignup.Status.CompliantUsername, notification.Labels[toolchainv1alpha1.NotificationUserNameLabelKey])
 

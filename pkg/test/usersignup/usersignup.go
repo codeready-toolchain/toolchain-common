@@ -174,17 +174,15 @@ func NewUserSignup(modifiers ...Modifier) *toolchainv1alpha1.UserSignup {
 	signup := &toolchainv1alpha1.UserSignup{
 		ObjectMeta: meta,
 		Spec: toolchainv1alpha1.UserSignupSpec{
-			Userid:   "UserID123",
-			Username: meta.Name,
 			IdentityClaims: toolchainv1alpha1.IdentityClaimsEmbedded{
 				PropagatedClaims: toolchainv1alpha1.PropagatedClaims{
-					Sub:         "0192837465",
-					UserID:      "UserID123",
+					Sub:         "UserID123",
+					UserID:      "0192837465",
 					AccountID:   "5647382910",
 					OriginalSub: "original-sub-value",
 					Email:       "foo@redhat.com",
 				},
-				PreferredUsername: "foo-username",
+				PreferredUsername: meta.Name,
 				GivenName:         "Foo",
 				FamilyName:        "Bar",
 				Company:           "Red Hat",
@@ -208,9 +206,6 @@ func NewUserSignupObjectMeta(name, email string) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      name,
 		Namespace: test.HostOperatorNs,
-		Annotations: map[string]string{
-			toolchainv1alpha1.UserSignupUserEmailAnnotationKey: email,
-		},
 		Labels: map[string]string{
 			toolchainv1alpha1.UserSignupUserEmailHashLabelKey: emailHash,
 		},
