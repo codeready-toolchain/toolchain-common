@@ -221,7 +221,7 @@ func NewUserSignupObjectMeta(name, email string) metav1.ObjectMeta {
 		Labels: map[string]string{
 			toolchainv1alpha1.UserSignupUserEmailHashLabelKey: emailHash,
 		},
-		Annotations:       map[string]string{},
+		Annotations:       make(map[string]string),
 		CreationTimestamp: metav1.Now(),
 	}
 }
