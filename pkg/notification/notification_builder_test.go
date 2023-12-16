@@ -56,7 +56,7 @@ func TestNotificationBuilder(t *testing.T) {
 			CompliantUsername: "jsmith",
 		}
 		emailsToTest := []string{
-			userSignup.Annotations[toolchainv1alpha1.UserSignupUserEmailAnnotationKey],
+			userSignup.Spec.IdentityClaims.Email,
 			"john.wick@subdomain.domain.com",
 			"john-Wick@domain.com",
 			"john@domain.com,another-john@some.com",
@@ -84,7 +84,7 @@ func TestNotificationBuilder(t *testing.T) {
 				notification := notifications.Items[0]
 
 				assert.Equal(t, email, notification.Spec.Recipient)
-				assert.Equal(t, userSignup.Annotations[toolchainv1alpha1.UserSignupUserEmailAnnotationKey], notification.Spec.Context["UserEmail"])
+				assert.Equal(t, userSignup.Spec.IdentityClaims.Email, notification.Spec.Context["UserEmail"])
 				assert.Equal(t, userSignup.Spec.IdentityClaims.GivenName, notification.Spec.Context["FirstName"])
 				assert.Equal(t, userSignup.Spec.IdentityClaims.FamilyName, notification.Spec.Context["LastName"])
 				assert.Equal(t, userSignup.Spec.IdentityClaims.Company, notification.Spec.Context["CompanyName"])

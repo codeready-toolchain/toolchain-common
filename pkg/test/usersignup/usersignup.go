@@ -119,7 +119,7 @@ func WithEmail(email string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		emailHash := hash.EncodeString(email)
 		userSignup.ObjectMeta.Labels[toolchainv1alpha1.UserSignupUserEmailHashLabelKey] = emailHash
-		userSignup.ObjectMeta.Annotations[toolchainv1alpha1.UserSignupUserEmailAnnotationKey] = email
+		userSignup.Spec.IdentityClaims.Email = email
 	}
 }
 
