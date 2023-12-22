@@ -381,6 +381,20 @@ func (o RegistrationServiceAuthOption) AuthClientPublicKeysURL(value string) Reg
 	return o.parent
 }
 
+func (o RegistrationServiceAuthOption) SsoBaseURL(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Auth.SsoBaseURL = &value
+	})
+	return o.parent
+}
+
+func (o RegistrationServiceAuthOption) SsoRealm(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Auth.SsoRealm = &value
+	})
+	return o.parent
+}
+
 type RegistrationServiceVerificationOption struct {
 	*ToolchainConfigOptionImpl
 	parent RegistrationServiceOption
