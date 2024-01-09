@@ -24,10 +24,10 @@ const (
 
 // GetDeploymentStatusConditions looks up a deployment with the given name within the given namespace and checks its status
 // and finally returns a condition summarizing the status
-func GetDeploymentStatusConditions(client client.Client, name, namespace string) []toolchainv1alpha1.Condition {
+func GetDeploymentStatusConditions(ctx context.Context, client client.Client, name, namespace string) []toolchainv1alpha1.Condition {
 	deploymentName := types.NamespacedName{Namespace: namespace, Name: name}
 	deployment := &appsv1.Deployment{}
-	err := client.Get(context.TODO(), deploymentName, deployment)
+	err := client.Get(ctx, deploymentName, deployment)
 	if err != nil {
 		err = errs.Wrap(err, ErrMsgCannotGetDeployment)
 		errCondition := NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentNotFoundReason, err.Error())
