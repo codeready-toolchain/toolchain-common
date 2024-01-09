@@ -381,6 +381,20 @@ func (o RegistrationServiceAuthOption) AuthClientPublicKeysURL(value string) Reg
 	return o.parent
 }
 
+func (o RegistrationServiceAuthOption) SSOBaseURL(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Auth.SSOBaseURL = &value
+	})
+	return o.parent
+}
+
+func (o RegistrationServiceAuthOption) SSORealm(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Auth.SSORealm = &value
+	})
+	return o.parent
+}
+
 type RegistrationServiceVerificationOption struct {
 	*ToolchainConfigOptionImpl
 	parent RegistrationServiceOption
@@ -480,6 +494,20 @@ func (o RegistrationServiceVerificationOption) CaptchaSiteKey(value string) Regi
 func (o RegistrationServiceVerificationOption) CaptchaScoreThreshold(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Verification.Captcha.ScoreThreshold = &value
+	})
+	return o.parent
+}
+
+func (o RegistrationServiceVerificationOption) CaptchaRequiredScore(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.Captcha.RequiredScore = &value
+	})
+	return o.parent
+}
+
+func (o RegistrationServiceVerificationOption) CaptchaAllowLowScoreReactivation(value bool) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.Captcha.AllowLowScoreReactivation = &value
 	})
 	return o.parent
 }

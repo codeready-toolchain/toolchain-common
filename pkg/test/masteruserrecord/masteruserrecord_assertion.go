@@ -202,13 +202,6 @@ func (a *MasterUserRecordAssertion) HasAnnotationWithValue(key, value string) *M
 	return a
 }
 
-func (a *MasterUserRecordAssertion) HasOriginalSub(sub string) *MasterUserRecordAssertion {
-	err := a.loadMasterUserRecord()
-	require.NoError(a.t, err)
-	assert.Equal(a.t, sub, a.mur.Spec.OriginalSub)
-	return a
-}
-
 func (a *MasterUserRecordAssertion) HasTargetCluster(targetcluster string) *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)

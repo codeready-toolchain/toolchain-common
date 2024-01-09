@@ -86,6 +86,13 @@ func (a *Assertion) HasTier(tierName string) *Assertion {
 	return a
 }
 
+func (a *Assertion) HasDisableInheritance(disableInheritance bool) *Assertion {
+	err := a.loadResource()
+	require.NoError(a.t, err)
+	assert.Equal(a.t, disableInheritance, a.space.Spec.DisableInheritance)
+	return a
+}
+
 func (a *Assertion) HasParentSpace(parentSpaceName string) *Assertion {
 	err := a.loadResource()
 	require.NoError(a.t, err)
