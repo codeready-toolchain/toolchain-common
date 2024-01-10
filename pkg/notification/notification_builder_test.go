@@ -21,7 +21,7 @@ func TestNotificationBuilder(t *testing.T) {
 
 	t.Run("success with no options", func(t *testing.T) {
 		// when
-		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).Create("foo@acme.com")
+		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).Create(context.TODO(), "foo@acme.com")
 
 		// then
 		require.NoError(t, err)
@@ -30,7 +30,7 @@ func TestNotificationBuilder(t *testing.T) {
 
 	t.Run("fail with empty email address", func(t *testing.T) {
 		// when
-		_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create("")
+		_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create(context.TODO(), "")
 
 		// then
 		require.Error(t, err)
@@ -39,7 +39,7 @@ func TestNotificationBuilder(t *testing.T) {
 
 	t.Run("fail with invalid email address", func(t *testing.T) {
 		// when
-		_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create("foo")
+		_, err := NewNotificationBuilder(client, test.HostOperatorNs).Create(context.TODO(), "foo")
 
 		// then
 		require.Error(t, err)
@@ -74,7 +74,7 @@ func TestNotificationBuilder(t *testing.T) {
 				// and when
 				not, err := NewNotificationBuilder(client, test.HostOperatorNs).
 					WithUserContext(userSignup).
-					Create(email)
+					Create(context.TODO(), email)
 
 				// then
 				require.NoError(t, err)
@@ -105,7 +105,7 @@ func TestNotificationBuilder(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithName(name).
-			Create("foo@bar.com")
+			Create(context.TODO(), "foo@bar.com")
 
 		// then
 		require.NoError(t, err)
@@ -116,7 +116,7 @@ func TestNotificationBuilder(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithTemplate("default").
-			Create("foo@bar.com")
+			Create(context.TODO(), "foo@bar.com")
 
 		// then
 		require.NoError(t, err)
@@ -127,7 +127,7 @@ func TestNotificationBuilder(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithSubjectAndContent("This is a test subject", "This is some test content").
-			Create("foo@bar.com")
+			Create(context.TODO(), "foo@bar.com")
 
 		// then
 		require.NoError(t, err)
@@ -139,7 +139,7 @@ func TestNotificationBuilder(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithKeysAndValues(map[string]string{"foo": "bar"}).
-			Create("foo@bar.com")
+			Create(context.TODO(), "foo@bar.com")
 
 		// then
 		require.NoError(t, err)
@@ -150,7 +150,7 @@ func TestNotificationBuilder(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithNotificationType("TestNotificationType").
-			Create("foo@bar.com")
+			Create(context.TODO(), "foo@bar.com")
 
 		// then
 		require.NoError(t, err)
@@ -171,7 +171,7 @@ func TestNotificationBuilder(t *testing.T) {
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithNotificationType("TestNotificationType").
 			WithUserContext(userSignup).
-			Create("foo@bar.com")
+			Create(context.TODO(), "foo@bar.com")
 
 		// then
 		require.NoError(t, err)
