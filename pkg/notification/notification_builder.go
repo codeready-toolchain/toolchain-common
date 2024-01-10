@@ -139,16 +139,17 @@ func (b *notificationBuilderImpl) WithKeysAndValues(keysAndValues map[string]str
 func (b *notificationBuilderImpl) WithUserContext(userSignup *toolchainv1alpha1.UserSignup) Builder {
 	b.options = append(b.options, func(n *toolchainv1alpha1.Notification) error {
 
-		n.Spec.Context["UserID"] = userSignup.Spec.Userid
+		n.Spec.Context["Sub"] = userSignup.Spec.IdentityClaims.Sub
+		n.Spec.Context["UserID"] = userSignup.Spec.IdentityClaims.Sub
 		n.Spec.Context["UserName"] = userSignup.Status.CompliantUsername
-		n.Spec.Context["FirstName"] = userSignup.Spec.GivenName
-		n.Spec.Context["LastName"] = userSignup.Spec.FamilyName
-		n.Spec.Context["CompanyName"] = userSignup.Spec.Company
+		n.Spec.Context["FirstName"] = userSignup.Spec.IdentityClaims.GivenName
+		n.Spec.Context["LastName"] = userSignup.Spec.IdentityClaims.FamilyName
+		n.Spec.Context["CompanyName"] = userSignup.Spec.IdentityClaims.Company
 
 		n.ObjectMeta.Labels[toolchainv1alpha1.NotificationUserNameLabelKey] = userSignup.Status.CompliantUsername
 
-		if emailLbl, exists := userSignup.Annotations[toolchainv1alpha1.UserSignupUserEmailAnnotationKey]; exists {
-			n.Spec.Context["UserEmail"] = emailLbl
+		if userSignup.Spec.IdentityClaims.Email != "" {
+			n.Spec.Context["UserEmail"] = userSignup.Spec.IdentityClaims.Email
 		}
 
 		return nil

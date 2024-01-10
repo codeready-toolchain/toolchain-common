@@ -16,7 +16,7 @@ func TestUserAccountFromMur(t *testing.T) {
 		userAcc := uatest.NewUserAccountFromMur(mur)
 
 		// when & then
-		assert.Equal(t, mur.Spec.UserID, userAcc.Spec.UserID)
+		assert.Equal(t, mur.Spec.PropagatedClaims, userAcc.Spec.PropagatedClaims)
 		assert.Equal(t, mur.Spec.Disabled, userAcc.Spec.Disabled)
 	})
 }

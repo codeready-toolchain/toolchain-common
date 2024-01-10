@@ -72,6 +72,12 @@ func WithTierName(tierName string) Option {
 	}
 }
 
+func WithDisableInheritance(disableInheritance bool) Option {
+	return func(space *toolchainv1alpha1.Space) {
+		space.Spec.DisableInheritance = disableInheritance
+	}
+}
+
 func WithTierHashLabelFor(tier *toolchainv1alpha1.NSTemplateTier) Option {
 	return func(space *toolchainv1alpha1.Space) {
 		h, _ := hash.ComputeHashForNSTemplateTier(tier) // we can assume the JSON marshalling will always work

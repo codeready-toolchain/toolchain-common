@@ -8,7 +8,6 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
-	"github.com/gofrs/uuid"
 	"github.com/redhat-cop/operator-utils/pkg/util"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,22 +41,18 @@ func NewMasterUserRecords(t *testing.T, size int, nameFmt string, modifiers ...M
 }
 
 func NewMasterUserRecord(t *testing.T, userName string, modifiers ...MurModifier) *toolchainv1alpha1.MasterUserRecord {
-	userID := uuid.Must(uuid.NewV4()).String()
 	mur := &toolchainv1alpha1.MasterUserRecord{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: test.HostOperatorNs,
-			Name:      userName,
-			Labels:    map[string]string{},
-			Annotations: map[string]string{
-				toolchainv1alpha1.MasterUserRecordEmailAnnotationKey: "joe@redhat.com",
-			},
+			Namespace:   test.HostOperatorNs,
+			Name:        userName,
+			Labels:      map[string]string{},
+			Annotations: map[string]string{},
 		},
 		Spec: toolchainv1alpha1.MasterUserRecordSpec{
 			TierName:     "deactivate30",
-			UserID:       userID,
 			UserAccounts: []toolchainv1alpha1.UserAccountEmbedded{newEmbeddedUa(test.MemberClusterName)},
 			PropagatedClaims: toolchainv1alpha1.PropagatedClaims{
-				Sub:         "44332211",
+				Sub:         "UserID123",
 				UserID:      "135246",
 				AccountID:   "357468",
 				OriginalSub: "11223344",
@@ -93,7 +88,14 @@ func ModifyUaInMur(mur *toolchainv1alpha1.MasterUserRecord, targetCluster string
 
 func UserID(userID string) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
-		mur.Spec.UserID = userID
+		mur.Spec.PropagatedClaims.UserID = userID
+		return nil
+	}
+}
+
+func Sub(sub string) MurModifier {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
+		mur.Spec.PropagatedClaims.Sub = sub
 		return nil
 	}
 }
@@ -208,7 +210,7 @@ func ProvisionedMur(provisionedTime *metav1.Time) MurModifier {
 // UserIDFromUserSignup creates a MurModifier to change the userID value to match the provided usersignup
 func UserIDFromUserSignup(userSignup *toolchainv1alpha1.UserSignup) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
-		mur.Spec.UserID = userSignup.Name
+		mur.Spec.PropagatedClaims.UserID = userSignup.Name
 		return nil
 	}
 }
