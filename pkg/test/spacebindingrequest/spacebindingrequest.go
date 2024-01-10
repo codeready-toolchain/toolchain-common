@@ -7,6 +7,7 @@ import (
 	"github.com/gofrs/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type Option func(spaceRequest *toolchainv1alpha1.SpaceBindingRequest)
@@ -55,7 +56,7 @@ func WithDeletionTimestamp() Option {
 
 func WithFinalizer() Option {
 	return func(spaceBindingRequest *toolchainv1alpha1.SpaceBindingRequest) {
-		spaceBindingRequest.Finalizers = append(spaceBindingRequest.Finalizers, toolchainv1alpha1.FinalizerName)
+		controllerutil.AddFinalizer(spaceBindingRequest, toolchainv1alpha1.FinalizerName)
 	}
 }
 
