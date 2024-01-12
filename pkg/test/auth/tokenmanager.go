@@ -150,6 +150,13 @@ func WithAccountIDClaim(accountID string) ExtraClaim {
 	}
 }
 
+// WithAudClaim sets the `aud` claim in the token to generate
+func WithAudClaim(aud []string) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(*MyClaims).Audience = aud
+	}
+}
+
 // Identity is a user identity
 type Identity struct {
 	ID       uuid.UUID
@@ -236,13 +243,6 @@ type MyClaims struct {
 	AccountID         string `json:"account_id"`
 }
 
-//func (c *MyClaims) Valid() error {
-//	c.StandardClaims.IssuedAt -= leeway
-//	err := c.StandardClaims.Valid()
-//	c.StandardClaims.IssuedAt += leeway
-//	return err
-//}
-
 // GenerateToken generates a default token.
 func (tg *TokenManager) GenerateToken(identity Identity, kid string, extraClaims ...ExtraClaim) *jwt.Token {
 	token := jwt.New(jwt.SigningMethodRS256)
@@ -301,7 +301,7 @@ func GenerateSignedE2ETestToken(identity Identity, extraClaims ...ExtraClaim) (s
 	return tm.GenerateSignedToken(identity, e2ePrivateKID, extraClaims...)
 }
 
-// NewKeyServer creates and starts an http key server
+// NewKeyServer creates and starts a http key server
 func (tg *TokenManager) NewKeyServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
