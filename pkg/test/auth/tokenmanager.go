@@ -14,7 +14,7 @@ import (
 	"time"
 
 	uuid "github.com/gofrs/uuid"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
 )
@@ -104,14 +104,14 @@ func WithFamilyNameClaim(familyName string) ExtraClaim {
 // WithIATClaim sets the `iat` claim in the token to generate
 func WithIATClaim(iat time.Time) ExtraClaim {
 	return func(token *jwt.Token) {
-		token.Claims.(*MyClaims).IssuedAt = iat.Unix()
+		token.Claims.(*MyClaims).IssuedAt = &jwt.NumericDate{iat}
 	}
 }
 
 // WithExpClaim sets the `exp` claim in the token to generate
 func WithExpClaim(exp time.Time) ExtraClaim {
 	return func(token *jwt.Token) {
-		token.Claims.(*MyClaims).ExpiresAt = exp.Unix()
+		token.Claims.(*MyClaims).ExpiresAt = &jwt.NumericDate{exp}
 	}
 }
 
@@ -132,7 +132,7 @@ func WithOriginalSubClaim(originalSub string) ExtraClaim {
 // WithNotBeforeClaim sets the `nbf` claim in the token to generate
 func WithNotBeforeClaim(nbf time.Time) ExtraClaim {
 	return func(token *jwt.Token) {
-		token.Claims.(*MyClaims).NotBefore = nbf.Unix()
+		token.Claims.(*MyClaims).NotBefore = &jwt.NumericDate{nbf}
 	}
 }
 
@@ -219,7 +219,7 @@ func (tg *TokenManager) Key(kid string) (*rsa.PrivateKey, error) {
 const leeway = 5000
 
 type MyClaims struct {
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 	IdentityID        string `json:"uuid,omitempty"`
 	PreferredUsername string `json:"preferred_username,omitempty"`
 	SessionState      string `json:"session_state,omitempty"`
@@ -236,23 +236,23 @@ type MyClaims struct {
 	AccountID         string `json:"account_id"`
 }
 
-func (c *MyClaims) Valid() error {
-	c.StandardClaims.IssuedAt -= leeway
-	err := c.StandardClaims.Valid()
-	c.StandardClaims.IssuedAt += leeway
-	return err
-}
+//func (c *MyClaims) Valid() error {
+//	c.StandardClaims.IssuedAt -= leeway
+//	err := c.StandardClaims.Valid()
+//	c.StandardClaims.IssuedAt += leeway
+//	return err
+//}
 
 // GenerateToken generates a default token.
 func (tg *TokenManager) GenerateToken(identity Identity, kid string, extraClaims ...ExtraClaim) *jwt.Token {
 	token := jwt.New(jwt.SigningMethodRS256)
 
-	token.Claims = &MyClaims{StandardClaims: jwt.StandardClaims{
-		Id:        uuid.Must(uuid.NewV4()).String(),
-		IssuedAt:  time.Now().Unix(),
+	token.Claims = &MyClaims{RegisteredClaims: jwt.RegisteredClaims{
+		ID:        uuid.Must(uuid.NewV4()).String(),
+		IssuedAt:  &jwt.NumericDate{time.Now()},
 		Issuer:    "codeready-toolchain",
-		ExpiresAt: time.Now().Unix() + 60*60*24*30,
-		NotBefore: 0,
+		ExpiresAt: &jwt.NumericDate{time.Now().Add(30 * 24 * time.Hour)},
+		NotBefore: &jwt.NumericDate{},
 		Subject:   identity.ID.String(),
 	},
 		IdentityID:        identity.ID.String(),
