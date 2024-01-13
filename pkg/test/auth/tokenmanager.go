@@ -249,10 +249,10 @@ func (tg *TokenManager) GenerateToken(identity Identity, kid string, extraClaims
 
 	token.Claims = &MyClaims{RegisteredClaims: jwt.RegisteredClaims{
 		ID:        uuid.Must(uuid.NewV4()).String(),
-		IssuedAt:  &jwt.NumericDate{time.Now()},
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		Issuer:    "codeready-toolchain",
-		ExpiresAt: &jwt.NumericDate{time.Now().Add(30 * 24 * time.Hour)},
-		NotBefore: &jwt.NumericDate{},
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * 24 * time.Hour)),
+		NotBefore: jwt.NewNumericDate(time.Time{}),
 		Subject:   identity.ID.String(),
 	},
 		IdentityID:        identity.ID.String(),
