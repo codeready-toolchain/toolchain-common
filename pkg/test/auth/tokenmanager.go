@@ -217,12 +217,6 @@ func (tg *TokenManager) Key(kid string) (*rsa.PrivateKey, error) {
 	return key, nil
 }
 
-/****************************************************
-
-  This section is a temporary fix until formal leeway support is available in the next jwt-go release
-
- *****************************************************/
-
 type MyClaims struct {
 	jwt.RegisteredClaims
 	IdentityID        string `json:"uuid,omitempty"`
