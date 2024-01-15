@@ -104,14 +104,14 @@ func WithFamilyNameClaim(familyName string) ExtraClaim {
 // WithIATClaim sets the `iat` claim in the token to generate
 func WithIATClaim(iat time.Time) ExtraClaim {
 	return func(token *jwt.Token) {
-		token.Claims.(*MyClaims).IssuedAt = &jwt.NumericDate{iat}
+		token.Claims.(*MyClaims).IssuedAt = &jwt.NumericDate{Time: iat}
 	}
 }
 
 // WithExpClaim sets the `exp` claim in the token to generate
 func WithExpClaim(exp time.Time) ExtraClaim {
 	return func(token *jwt.Token) {
-		token.Claims.(*MyClaims).ExpiresAt = &jwt.NumericDate{exp}
+		token.Claims.(*MyClaims).ExpiresAt = &jwt.NumericDate{Time: exp}
 	}
 }
 
@@ -132,7 +132,7 @@ func WithOriginalSubClaim(originalSub string) ExtraClaim {
 // WithNotBeforeClaim sets the `nbf` claim in the token to generate
 func WithNotBeforeClaim(nbf time.Time) ExtraClaim {
 	return func(token *jwt.Token) {
-		token.Claims.(*MyClaims).NotBefore = &jwt.NumericDate{nbf}
+		token.Claims.(*MyClaims).NotBefore = &jwt.NumericDate{Time: nbf}
 	}
 }
 
@@ -222,8 +222,6 @@ func (tg *TokenManager) Key(kid string) (*rsa.PrivateKey, error) {
   This section is a temporary fix until formal leeway support is available in the next jwt-go release
 
  *****************************************************/
-
-const leeway = 5000
 
 type MyClaims struct {
 	jwt.RegisteredClaims
