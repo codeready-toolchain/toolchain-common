@@ -404,7 +404,7 @@ func TestTokenManagerKeyService(t *testing.T) {
 		// check key integrity for key 0
 		webKey0 := webKeys.Key(kid0)
 		require.NotNil(t, webKey0)
-		require.Equal(t, 1, len(webKey0))
+		require.Len(t, webKey0, 1)
 		rsaKey0, ok := webKey0[0].Key.(*rsa.PublicKey)
 		require.True(t, ok)
 		// check key equality by comparing the modulus
@@ -413,7 +413,7 @@ func TestTokenManagerKeyService(t *testing.T) {
 		// check key integrity for key 1
 		webKey1 := webKeys.Key(kid1)
 		require.NotNil(t, webKey1)
-		require.Equal(t, 1, len(webKey1))
+		require.Len(t, webKey1, 1)
 		rsaKey1, ok := webKey1[0].Key.(*rsa.PublicKey)
 		require.True(t, ok)
 		// check key equality by comparing the modulus

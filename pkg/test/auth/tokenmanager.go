@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	bitSize       = 2048
+	bitSize = 2048
+	//nolint:gosec
 	e2ePrivatePEM = `-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEApnQLIhfCVZPJKt5D5SCRUhJ/N5aCsRNlnowqMFzhUF7DF5kb
 YWoE8YWF6YcLuyfh/NChAVkixd4zOvyOtVuOjFao/1/2HmKlGxeJ4JhlF1PBXMZV
