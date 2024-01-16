@@ -4,6 +4,7 @@ import (
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/gofrs/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -62,6 +63,6 @@ func WithFinalizer() Option {
 
 func WithCondition(c toolchainv1alpha1.Condition) Option {
 	return func(spaceBindingRequest *toolchainv1alpha1.SpaceBindingRequest) {
-		spaceBindingRequest.Status.Conditions = append(spaceBindingRequest.Status.Conditions, c)
+		spaceBindingRequest.Status.Conditions, _ = condition.AddOrUpdateStatusConditions(spaceBindingRequest.Status.Conditions, c)
 	}
 }
