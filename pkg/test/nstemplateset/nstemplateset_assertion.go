@@ -243,6 +243,6 @@ func (a *Assertion) HasFinalizer() *Assertion {
 func (a *Assertion) DoesNotHaveFinalizer() *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
-	assert.Len(a.t, a.nsTmplSet.Finalizers, 0)
+	assert.Empty(a.t, a.nsTmplSet.Finalizers)
 	return a
 }

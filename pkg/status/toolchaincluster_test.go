@@ -9,6 +9,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -42,7 +43,7 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			test.AssertConditionsMatchAndRecentTimestamps(t, conditions, expected)
 		})
 
@@ -66,7 +67,7 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.Equal(t, msg, err.Error())
 			test.AssertConditionsMatchAndRecentTimestamps(t, conditions, expected)
 		})
@@ -90,7 +91,7 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.Equal(t, fakeToolchainClusterMsg, err.Error())
 			test.AssertConditionsMatchAndRecentTimestamps(t, conditions, expected)
 		})
@@ -115,7 +116,7 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.Equal(t, msg, err.Error())
 			test.AssertConditionsMatchAndRecentTimestamps(t, conditions, expected)
 		})
@@ -140,7 +141,7 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.Equal(t, msg, err.Error())
 			test.AssertConditionsMatchAndRecentTimestamps(t, conditions, expected)
 		})
@@ -165,7 +166,7 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			err := ValidateComponentConditionReady(conditions...)
 
 			// then
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.Contains(t, err.Error(), msg)
 			test.AssertConditionsMatchAndRecentTimestamps(t, conditions, expected)
 		})

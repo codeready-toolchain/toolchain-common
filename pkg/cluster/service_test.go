@@ -126,7 +126,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		require.Len(t, clusterConfigs, 0)
+		require.Empty(t, clusterConfigs)
 	})
 
 	t.Run("when list fails", func(t *testing.T) {
@@ -141,7 +141,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 
 		// then
 		require.Error(t, err)
-		require.Len(t, clusterConfigs, 0)
+		require.Empty(t, clusterConfigs)
 	})
 
 	t.Run("when get secret fails", func(t *testing.T) {
@@ -156,6 +156,6 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 
 		// then
 		require.Error(t, err)
-		require.Len(t, clusterConfigs, 0)
+		require.Empty(t, clusterConfigs)
 	})
 }
