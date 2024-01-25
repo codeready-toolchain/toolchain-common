@@ -59,7 +59,7 @@ func (m *VersionCheckManager) CheckDeployedVersionIsUpToDate(ctx context.Context
 	m.LastGHCallsPerRepo[githubRepo.Name] = time.Now()
 	githubClient := m.GetGithubClientFunc(ctx, accessTokenKey)
 	// get the latest commit from given repository and branch
-	latestCommit, commitResponse, err := githubClient.Repositories.GetCommit(context.TODO(), githubRepo.Org, githubRepo.Name, githubRepo.Branch, &github.ListOptions{})
+	latestCommit, commitResponse, err := githubClient.Repositories.GetCommit(ctx, githubRepo.Org, githubRepo.Name, githubRepo.Branch, &github.ListOptions{})
 	defer commitResponse.Body.Close()
 	if err != nil {
 		errMsg := err.Error()
