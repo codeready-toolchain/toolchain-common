@@ -6,8 +6,8 @@ require (
 	github.com/codeready-toolchain/api v0.0.0-20240103194050-d5c7803671c1
 	github.com/go-logr/logr v1.2.3
 	github.com/gofrs/uuid v3.3.0+incompatible
-	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/lestrrat-go/jwx v1.2.26
+	github.com/golang-jwt/jwt/v5 v5.2.0
+	github.com/lestrrat-go/jwx v1.2.28
 	github.com/magiconair/properties v1.8.5
 	// using latest commit from 'github.com/openshift/api branch release-4.12'
 	github.com/openshift/api v0.0.0-20230213134911-7ba313770556
@@ -69,7 +69,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
-	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
+	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect

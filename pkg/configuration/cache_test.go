@@ -223,7 +223,7 @@ func TestLoadLatest(t *testing.T) {
 		require.True(t, ok)
 		assert.Equal(t, 1100, *toolchaincfg.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.DefaultThreshold)
 		assert.Len(t, secrets, 1)
-		assert.Equal(t, secrets["notification-secret"]["mailgunAPIKey"], "abc123")
+		assert.Equal(t, "abc123", secrets["notification-secret"]["mailgunAPIKey"])
 
 		t.Run("returns the same when the config hasn't been updated", func(t *testing.T) {
 			// when
@@ -235,7 +235,7 @@ func TestLoadLatest(t *testing.T) {
 			require.True(t, ok)
 			assert.Equal(t, 1100, *toolchaincfg.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.DefaultThreshold)
 			assert.Len(t, secrets, 1)
-			assert.Equal(t, secrets["notification-secret"]["mailgunAPIKey"], "abc123")
+			assert.Equal(t, "abc123", secrets["notification-secret"]["mailgunAPIKey"])
 		})
 
 		t.Run("returns the new value when the config has been updated", func(t *testing.T) {
@@ -259,7 +259,7 @@ func TestLoadLatest(t *testing.T) {
 			require.True(t, ok)
 			assert.Equal(t, 2000, *toolchaincfg.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.DefaultThreshold)
 			assert.Len(t, secrets, 1)
-			assert.Equal(t, secrets["notification-secret"]["mailgunAPIKey"], "abc456")
+			assert.Equal(t, "abc456", secrets["notification-secret"]["mailgunAPIKey"])
 		})
 	})
 

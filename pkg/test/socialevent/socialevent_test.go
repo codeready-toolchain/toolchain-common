@@ -18,50 +18,50 @@ func TestNewSocialEvent(t *testing.T) {
 		// when
 		e := testsocialevent.NewSocialEvent(test.HostOperatorNs, socialevent.NewName())
 		// then
-		assert.Equal(t, e.Spec.UserTier, "deactivate30") // default
-		assert.Equal(t, e.Spec.SpaceTier, "base1ns")     // default
-		assert.Equal(t, e.Spec.MaxAttendees, 10)         // default
-		assert.Equal(t, e.Status.ActivationCount, 0)     // default
+		assert.Equal(t, "deactivate30", e.Spec.UserTier) // default
+		assert.Equal(t, "base1ns", e.Spec.SpaceTier)     // default
+		assert.Equal(t, 10, e.Spec.MaxAttendees)         // default
+		assert.Equal(t, 0, e.Status.ActivationCount)     // default
 	})
 
 	t.Run("with custom user tier", func(t *testing.T) {
 		// when
 		e := testsocialevent.NewSocialEvent(test.HostOperatorNs, socialevent.NewName(), testsocialevent.WithUserTier("deactivate80"))
 		// then
-		assert.Equal(t, e.Spec.UserTier, "deactivate80") // custom
-		assert.Equal(t, e.Spec.SpaceTier, "base1ns")     // default
-		assert.Equal(t, e.Spec.MaxAttendees, 10)         // default
-		assert.Equal(t, e.Status.ActivationCount, 0)     // default
+		assert.Equal(t, "deactivate80", e.Spec.UserTier) // custom
+		assert.Equal(t, "base1ns", e.Spec.SpaceTier)     // default
+		assert.Equal(t, 10, e.Spec.MaxAttendees)         // default
+		assert.Equal(t, 0, e.Status.ActivationCount)     // default
 	})
 
 	t.Run("with custom space tier", func(t *testing.T) {
 		// when
 		e := testsocialevent.NewSocialEvent(test.HostOperatorNs, socialevent.NewName(), testsocialevent.WithSpaceTier("base1ns6didler"))
 		// then
-		assert.Equal(t, e.Spec.UserTier, "deactivate30")    // default
-		assert.Equal(t, e.Spec.SpaceTier, "base1ns6didler") // custom
-		assert.Equal(t, e.Spec.MaxAttendees, 10)            // default
-		assert.Equal(t, e.Status.ActivationCount, 0)        // default
+		assert.Equal(t, "deactivate30", e.Spec.UserTier)    // default
+		assert.Equal(t, "base1ns6didler", e.Spec.SpaceTier) // custom
+		assert.Equal(t, 10, e.Spec.MaxAttendees)            // default
+		assert.Equal(t, 0, e.Status.ActivationCount)        // default
 	})
 
 	t.Run("with custom max attendees", func(t *testing.T) {
 		// when
 		e := testsocialevent.NewSocialEvent(test.HostOperatorNs, socialevent.NewName(), testsocialevent.WithMaxAttendees(5))
 		// then
-		assert.Equal(t, e.Spec.UserTier, "deactivate30") // default
-		assert.Equal(t, e.Spec.SpaceTier, "base1ns")     // default
-		assert.Equal(t, e.Spec.MaxAttendees, 5)          // custom
-		assert.Equal(t, e.Status.ActivationCount, 0)     // default
+		assert.Equal(t, "deactivate30", e.Spec.UserTier) // default
+		assert.Equal(t, "base1ns", e.Spec.SpaceTier)     // default
+		assert.Equal(t, 5, e.Spec.MaxAttendees)          // custom
+		assert.Equal(t, 0, e.Status.ActivationCount)     // default
 	})
 
 	t.Run("with custom activation count", func(t *testing.T) {
 		// when
 		e := testsocialevent.NewSocialEvent(test.HostOperatorNs, socialevent.NewName(), testsocialevent.WithActivationCount(1))
 		// then
-		assert.Equal(t, e.Spec.UserTier, "deactivate30") // default
-		assert.Equal(t, e.Spec.SpaceTier, "base1ns")     // default
-		assert.Equal(t, e.Spec.MaxAttendees, 10)         // default
-		assert.Equal(t, e.Status.ActivationCount, 1)     // custom
+		assert.Equal(t, "deactivate30", e.Spec.UserTier) // default
+		assert.Equal(t, "base1ns", e.Spec.SpaceTier)     // default
+		assert.Equal(t, 10, e.Spec.MaxAttendees)         // default
+		assert.Equal(t, 1, e.Status.ActivationCount)     // custom
 	})
 
 	t.Run("with custom start time", func(t *testing.T) {
@@ -70,11 +70,11 @@ func TestNewSocialEvent(t *testing.T) {
 		// when
 		e := testsocialevent.NewSocialEvent(test.HostOperatorNs, socialevent.NewName(), testsocialevent.WithStartTime(start))
 		// then
-		assert.Equal(t, e.Spec.UserTier, "deactivate30")         // default
-		assert.Equal(t, e.Spec.SpaceTier, "base1ns")             // default
-		assert.Equal(t, e.Spec.MaxAttendees, 10)                 // default
-		assert.Equal(t, e.Status.ActivationCount, 0)             // default
-		assert.Equal(t, e.Spec.StartTime, metav1.NewTime(start)) // custom
+		assert.Equal(t, "deactivate30", e.Spec.UserTier)         // default
+		assert.Equal(t, "base1ns", e.Spec.SpaceTier)             // default
+		assert.Equal(t, 10, e.Spec.MaxAttendees)                 // default
+		assert.Equal(t, 0, e.Status.ActivationCount)             // default
+		assert.Equal(t, metav1.NewTime(start), e.Spec.StartTime) // custom
 	})
 
 	t.Run("with custom end time", func(t *testing.T) {
@@ -83,11 +83,11 @@ func TestNewSocialEvent(t *testing.T) {
 		// when
 		e := testsocialevent.NewSocialEvent(test.HostOperatorNs, socialevent.NewName(), testsocialevent.WithEndTime(end))
 		// then
-		assert.Equal(t, e.Spec.UserTier, "deactivate30")     // default
-		assert.Equal(t, e.Spec.SpaceTier, "base1ns")         // default
-		assert.Equal(t, e.Spec.MaxAttendees, 10)             // default
-		assert.Equal(t, e.Status.ActivationCount, 0)         // default
-		assert.Equal(t, e.Spec.EndTime, metav1.NewTime(end)) // custom
+		assert.Equal(t, "deactivate30", e.Spec.UserTier)     // default
+		assert.Equal(t, "base1ns", e.Spec.SpaceTier)         // default
+		assert.Equal(t, 10, e.Spec.MaxAttendees)             // default
+		assert.Equal(t, 0, e.Status.ActivationCount)         // default
+		assert.Equal(t, metav1.NewTime(end), e.Spec.EndTime) // custom
 	})
 
 }
