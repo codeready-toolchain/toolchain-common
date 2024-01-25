@@ -36,12 +36,20 @@ func Enabled(enabled bool) CreateOption {
 	}
 }
 
-func WithReadyCondition() CreateOption {
+func WithReadyConditionValid() CreateOption {
+	return WithReadyCondition(corev1.ConditionTrue, toolchainv1alpha1.SpaceProvisionerConfigValidReason)
+}
+
+func WithReadyConditionInvalid(reason string) CreateOption {
+	return WithReadyCondition(corev1.ConditionFalse, reason)
+}
+
+func WithReadyCondition(status corev1.ConditionStatus, reason string) CreateOption {
 	return func(spc *toolchainv1alpha1.SpaceProvisionerConfig) {
 		spc.Status.Conditions, _ = condition.AddOrUpdateStatusConditions(spc.Status.Conditions, toolchainv1alpha1.Condition{
 			Type:   toolchainv1alpha1.ConditionReady,
-			Status: corev1.ConditionTrue,
-			Reason: toolchainv1alpha1.SpaceProvisionerConfigValidReason,
+			Status: status,
+			Reason: reason,
 		})
 	}
 }
