@@ -43,15 +43,21 @@ type Predicate[T client.Object] interface {
 //
 //	predicates.Is(predicates.Named("whatevs"))
 func Is[T client.Object](p Predicate[T]) Predicate[client.Object] {
-	return isCast[T]{inner: p}
+	return cast[T]{inner: p}
 }
 
-type isCast[T client.Object] struct {
+// Has is just an alias of Is. It is provided for better readability with certain predicate
+// names.
+func Has[T client.Object](p Predicate[T]) Predicate[client.Object] {
+	return cast[T]{inner: p}
+}
+
+type cast[T client.Object] struct {
 	inner Predicate[T]
 }
 
-func (i isCast[T]) Matches(obj client.Object) bool {
-	return i.inner.Matches(obj.(T))
+func (c cast[T]) Matches(obj client.Object) bool {
+	return c.inner.Matches(obj.(T))
 }
 
 type named struct {
@@ -62,8 +68,8 @@ func (n *named) Matches(obj client.Object) bool {
 	return obj.GetName() == n.name
 }
 
-// Named returns a predicate checking that an Object has given name.
-func Named(name string) Predicate[client.Object] {
+// Name returns a predicate checking that an Object has given name.
+func Name(name string) Predicate[client.Object] {
 	return &named{name: name}
 }
 
@@ -88,8 +94,8 @@ func (w *withKey) Matches(obj client.Object) bool {
 	return obj.GetName() == w.Name && obj.GetNamespace() == w.Namespace
 }
 
-// HasObjectKey returns a predicate checking that an Object has given NamespacedName (aka client.ObjectKey).
-func HasObjectKey(key types.NamespacedName) Predicate[client.Object] {
+// ObjectKey returns a predicate checking that an Object has given NamespacedName (aka client.ObjectKey).
+func ObjectKey(key types.NamespacedName) Predicate[client.Object] {
 	return &withKey{NamespacedName: key}
 }
 
@@ -108,8 +114,8 @@ func (h *hasLabels) Matches(obj client.Object) bool {
 	return true
 }
 
-// HasLabels returns a predicate checking that an Object has provided labels and their values.
-func HasLabels(requiredLabels map[string]string) Predicate[client.Object] {
+// Labels returns a predicate checking that an Object has provided labels and their values.
+func Labels(requiredLabels map[string]string) Predicate[client.Object] {
 	return &hasLabels{requiredLabels: requiredLabels}
 }
 
@@ -128,7 +134,7 @@ func (h *hasAnnotations) Matches(obj client.Object) bool {
 	return true
 }
 
-// HasAnnotations returns a predicate checking that an Object has provided annotations and their values.
-func HasAnnotations(requiredAnnotations map[string]string) Predicate[client.Object] {
+// Annotations returns a predicate checking that an Object has provided annotations and their values.
+func Annotations(requiredAnnotations map[string]string) Predicate[client.Object] {
 	return &hasAnnotations{requiredAnnotations: requiredAnnotations}
 }
