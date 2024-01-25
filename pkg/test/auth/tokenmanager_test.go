@@ -10,7 +10,7 @@ import (
 	"time"
 
 	uuid "github.com/gofrs/uuid"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 	jose "gopkg.in/square/go-jose.v2"
 	"gotest.tools/assert"
@@ -137,7 +137,7 @@ func TestTokenManagerTokens(t *testing.T) {
 		claims, ok := decodedToken.Claims.(*MyClaims)
 		require.True(t, ok)
 		require.Equal(t, identity0.ID.String(), claims.Subject)
-		require.Equal(t, iatTime.Unix(), claims.IssuedAt)
+		require.Equal(t, iatTime.Unix(), claims.IssuedAt.Unix())
 	})
 	t.Run("create token with exp extra claim", func(t *testing.T) {
 		username := uuid.Must(uuid.NewV4()).String()
@@ -154,12 +154,12 @@ func TestTokenManagerTokens(t *testing.T) {
 			return &(key0.PublicKey), nil
 		})
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "token is expired by ")
+		require.EqualError(t, err, "token has invalid claims: token is expired")
 		require.False(t, decodedToken.Valid)
 		claims, ok := decodedToken.Claims.(*MyClaims)
 		require.True(t, ok)
 		require.Equal(t, identity0.ID.String(), claims.Subject)
-		require.Equal(t, expTime.Unix(), claims.ExpiresAt)
+		require.Equal(t, expTime.Unix(), claims.ExpiresAt.Unix())
 	})
 	t.Run("create token with sub extra claim", func(t *testing.T) {
 		username := uuid.Must(uuid.NewV4()).String()
@@ -200,7 +200,7 @@ func TestTokenManagerTokens(t *testing.T) {
 		claims, ok := decodedToken.Claims.(*MyClaims)
 		require.True(t, ok)
 		require.Equal(t, identity0.ID.String(), claims.Subject)
-		require.Equal(t, nbfTime.Unix(), claims.NotBefore)
+		require.Equal(t, nbfTime.Unix(), claims.NotBefore.Unix())
 	})
 	t.Run("create token with given name extra claim", func(t *testing.T) {
 		username := uuid.Must(uuid.NewV4()).String()
@@ -299,7 +299,7 @@ func TestTokenManagerTokens(t *testing.T) {
 		claims, ok := decodedToken.Claims.(*MyClaims)
 		require.True(t, ok)
 		require.Equal(t, identity0.ID.String(), claims.Subject)
-		require.Equal(t, iatTime.Unix(), claims.IssuedAt)
+		require.Equal(t, iatTime.Unix(), claims.IssuedAt.Unix())
 	})
 	t.Run("create token with original_sub extra claim", func(t *testing.T) {
 		username := uuid.Must(uuid.NewV4()).String()
@@ -404,7 +404,7 @@ func TestTokenManagerKeyService(t *testing.T) {
 		// check key integrity for key 0
 		webKey0 := webKeys.Key(kid0)
 		require.NotNil(t, webKey0)
-		require.Equal(t, 1, len(webKey0))
+		require.Len(t, webKey0, 1)
 		rsaKey0, ok := webKey0[0].Key.(*rsa.PublicKey)
 		require.True(t, ok)
 		// check key equality by comparing the modulus
@@ -413,7 +413,7 @@ func TestTokenManagerKeyService(t *testing.T) {
 		// check key integrity for key 1
 		webKey1 := webKeys.Key(kid1)
 		require.NotNil(t, webKey1)
-		require.Equal(t, 1, len(webKey1))
+		require.Len(t, webKey1, 1)
 		rsaKey1, ok := webKey1[0].Key.(*rsa.PublicKey)
 		require.True(t, ok)
 		// check key equality by comparing the modulus

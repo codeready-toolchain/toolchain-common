@@ -205,9 +205,9 @@ func TestNewSpaceBindingLister(t *testing.T) {
 				// then
 				spaceBindings, err := spaceBindingLister.ListForSpace(tc.space, []toolchainv1alpha1.SpaceBinding{})
 				if tc.expectedErr != "" {
-					assert.EqualError(t, err, tc.expectedErr)
+					require.EqualError(t, err, tc.expectedErr)
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 					assert.Len(t, spaceBindings, len(tc.expectedSpaceBindings), "invalid number of spacebindings")
 					for _, expectedSpaceBinding := range tc.expectedSpaceBindings {
 						found := false
@@ -398,7 +398,7 @@ func TestNewSpaceBindingLister(t *testing.T) {
 
 				// then
 				spaceBindings, err := spaceBindingLister.ListForSpace(tc.space, []toolchainv1alpha1.SpaceBinding{})
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Len(t, spaceBindings, len(tc.expectedSpaceBindings), "invalid number of spacebindings for %s", tc.space.GetName())
 				for _, expectedSpaceBinding := range tc.expectedSpaceBindings {
 					found := false

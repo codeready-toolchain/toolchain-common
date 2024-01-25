@@ -73,7 +73,7 @@ func TestLoadFromConfigMap(t *testing.T) {
 
 		// test env vars are parsed and created correctly
 		testTest := os.Getenv("MEMBER_OPERATOR_TEST_KEY_ONE")
-		assert.Equal(t, testTest, "")
+		assert.Equal(t, "", testTest)
 	})
 	t.Run("env overwrite", func(t *testing.T) {
 		// given
@@ -95,7 +95,7 @@ func TestLoadFromConfigMap(t *testing.T) {
 
 		// test env vars are parsed and created correctly
 		testTest := os.Getenv("MEMBER_OPERATOR_TEST_KEY")
-		assert.Equal(t, testTest, "test-value")
+		assert.Equal(t, "test-value", testTest)
 	})
 }
 
@@ -171,7 +171,7 @@ func TestLoadFromSecret(t *testing.T) {
 		require.NoError(t, err)
 
 		// test env vars are parsed and created correctly
-		assert.Equal(t, 1, len(secretData))
+		assert.Len(t, secretData, 1)
 		assert.Equal(t, "test-value", secretData["test.key"])
 	})
 }

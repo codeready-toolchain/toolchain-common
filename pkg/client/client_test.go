@@ -698,7 +698,7 @@ func TestProcessAndApply(t *testing.T) {
 			createdOrUpdated, err = client.NewApplyClient(cl).Apply(context.TODO(), objs, newLabels("advanced", "john", "dev"))
 
 			// then
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.False(t, createdOrUpdated)
 		})
 	})
