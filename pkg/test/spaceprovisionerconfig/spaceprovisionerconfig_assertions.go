@@ -9,7 +9,7 @@ import (
 
 type predicate func(*toolchainv1alpha1.SpaceProvisionerConfig) bool
 
-var _ assertions.Predicate[*toolchainv1alpha1.SpaceProvisionerConfig] = (predicate)(nil)
+var _ assertions.Predicate[*toolchainv1alpha1.SpaceProvisionerConfig] = predicate(nil)
 
 func (p predicate) Matches(obj *toolchainv1alpha1.SpaceProvisionerConfig) bool {
 	return p(obj)
