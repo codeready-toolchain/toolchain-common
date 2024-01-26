@@ -160,7 +160,7 @@ func (a *MasterUserRecordAssertion) HasFinalizer() *MasterUserRecordAssertion {
 func (a *MasterUserRecordAssertion) DoesNotHaveFinalizer() *MasterUserRecordAssertion {
 	err := a.loadMasterUserRecord()
 	require.NoError(a.t, err)
-	assert.Len(a.t, a.mur.Finalizers, 0)
+	assert.Empty(a.t, a.mur.Finalizers)
 	return a
 }
 

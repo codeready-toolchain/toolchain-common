@@ -1,6 +1,7 @@
 package status
 
 import (
+	"context"
 	"testing"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
@@ -19,7 +20,7 @@ func TestGetDeploymentStatusConditions(t *testing.T) {
 
 		t.Run("deployment ready", func(t *testing.T) {
 			fakeClient := test.NewFakeClient(t, fakeDeploymentReady())
-			conditions := GetDeploymentStatusConditions(fakeClient, "test-deployment", test.HostOperatorNs)
+			conditions := GetDeploymentStatusConditions(context.TODO(), fakeClient, "test-deployment", test.HostOperatorNs)
 			err := ValidateComponentConditionReady(conditions...)
 			require.NoError(t, err)
 
@@ -34,7 +35,7 @@ func TestGetDeploymentStatusConditions(t *testing.T) {
 
 		t.Run("deployment does not exist", func(t *testing.T) {
 			fakeClient := test.NewFakeClient(t)
-			conditions := GetDeploymentStatusConditions(fakeClient, "test-deployment", test.HostOperatorNs)
+			conditions := GetDeploymentStatusConditions(context.TODO(), fakeClient, "test-deployment", test.HostOperatorNs)
 			err := ValidateComponentConditionReady(conditions...)
 			require.Error(t, err)
 
@@ -49,7 +50,7 @@ func TestGetDeploymentStatusConditions(t *testing.T) {
 
 		t.Run("deployment not available", func(t *testing.T) {
 			fakeClient := test.NewFakeClient(t, fakeDeploymentNotAvailable())
-			conditions := GetDeploymentStatusConditions(fakeClient, "test-deployment", test.HostOperatorNs)
+			conditions := GetDeploymentStatusConditions(context.TODO(), fakeClient, "test-deployment", test.HostOperatorNs)
 			err := ValidateComponentConditionReady(conditions...)
 			require.Error(t, err)
 
@@ -64,7 +65,7 @@ func TestGetDeploymentStatusConditions(t *testing.T) {
 
 		t.Run("deployment not progressing", func(t *testing.T) {
 			fakeClient := test.NewFakeClient(t, fakeDeploymentNotProgressing())
-			conditions := GetDeploymentStatusConditions(fakeClient, "test-deployment", test.HostOperatorNs)
+			conditions := GetDeploymentStatusConditions(context.TODO(), fakeClient, "test-deployment", test.HostOperatorNs)
 			err := ValidateComponentConditionReady(conditions...)
 			require.Error(t, err)
 
