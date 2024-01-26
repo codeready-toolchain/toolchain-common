@@ -25,7 +25,7 @@ type Builder interface {
 	WithControllerReference(owner v1.Object, scheme *runtime.Scheme) Builder
 	WithKeysAndValues(keysAndValues map[string]string) Builder
 	WithUserContext(userSignup *toolchainv1alpha1.UserSignup) Builder
-	Create(recipient string) (*toolchainv1alpha1.Notification, error)
+	Create(ctx context.Context, recipient string) (*toolchainv1alpha1.Notification, error)
 }
 
 func NewNotificationBuilder(client client.Client, namespace string) Builder {
@@ -42,7 +42,7 @@ type notificationBuilderImpl struct {
 	options   []Option
 }
 
-func (b *notificationBuilderImpl) Create(recipient string) (*toolchainv1alpha1.Notification, error) {
+func (b *notificationBuilderImpl) Create(ctx context.Context, recipient string) (*toolchainv1alpha1.Notification, error) {
 
 	if list, err := mail.ParseAddressList(recipient); err != nil || len(list) == 0 {
 		return nil, errors.Wrap(err, fmt.Sprintf("The specified recipient [%s] is not a valid email address", recipient))
@@ -68,7 +68,7 @@ func (b *notificationBuilderImpl) Create(recipient string) (*toolchainv1alpha1.N
 
 	generateName(notification)
 
-	return notification, b.client.Create(context.TODO(), notification)
+	return notification, b.client.Create(ctx, notification)
 }
 
 func generateName(notification *toolchainv1alpha1.Notification) {
