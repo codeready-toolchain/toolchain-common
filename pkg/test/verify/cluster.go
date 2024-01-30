@@ -25,9 +25,9 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	memberLabels := []map[string]string{
-		Labels("", "", test.NameHost),
-		Labels(cluster.Member, "", test.NameHost),
-		Labels(cluster.Member, "member-ns", test.NameHost)}
+		Labels("", test.NameHost),
+		Labels("", test.NameHost),
+		Labels("member-ns", test.NameHost)}
 	for _, labels := range memberLabels {
 
 		t.Run("add member ToolchainCluster", func(t *testing.T) {
@@ -47,7 +47,6 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 				require.NoError(t, err)
 				cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
 				require.True(t, ok)
-				assert.Equal(t, cluster.Member, cachedToolchainCluster.Type)
 				if labels["namespace"] == "" {
 					assert.Equal(t, "toolchain-member-operator", cachedToolchainCluster.OperatorNamespace)
 				} else {
@@ -55,13 +54,6 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 				}
 				// check that toolchain cluster role label tenant was set only on member cluster type
 				require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
-				expectedToolChainClusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
-				_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
-				if labels["type"] == string(cluster.Member) {
-					require.True(t, found)
-				} else {
-					require.False(t, found)
-				}
 				assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
 				assert.Equal(t, test.NameHost, cachedToolchainCluster.OwnerClusterName)
 				assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
@@ -75,8 +67,8 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse)
 	memberLabels := []map[string]string{
-		Labels(cluster.Host, "", test.NameMember),
-		Labels(cluster.Host, "host-ns", test.NameMember)}
+		Labels("", test.NameMember),
+		Labels("host-ns", test.NameMember)}
 	for _, labels := range memberLabels {
 
 		t.Run("add host ToolchainCluster", func(t *testing.T) {
@@ -96,7 +88,6 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 				require.NoError(t, err)
 				cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
 				require.True(t, ok)
-				assert.Equal(t, cluster.Host, cachedToolchainCluster.Type)
 				if labels["namespace"] == "" {
 					assert.Equal(t, "toolchain-host-operator", cachedToolchainCluster.OperatorNamespace)
 				} else {
@@ -119,7 +110,7 @@ func AddToolchainClusterFailsBecauseOfMissingSecret(t *testing.T, functionToVeri
 	// given
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
-	toolchainCluster, _ := test.NewToolchainCluster("east", "secret", status, Labels("", "", test.NameHost))
+	toolchainCluster, _ := test.NewToolchainCluster("east", "secret", status, Labels("", test.NameHost))
 	cl := test.NewFakeClient(t, toolchainCluster)
 	service := newToolchainClusterService(t, cl, false)
 
@@ -138,7 +129,7 @@ func AddToolchainClusterFailsBecauseOfEmptySecret(t *testing.T, functionToVerify
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster, _ := test.NewToolchainCluster("east", "secret", status,
-		Labels("", "", test.NameHost))
+		Labels("", test.NameHost))
 	secret := &corev1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "secret",
@@ -162,10 +153,10 @@ func UpdateToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	defer gock.Off()
 	statusTrue := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster1, sec1 := test.NewToolchainCluster("east", "secret1", statusTrue,
-		Labels("", "", test.NameMember))
+		Labels("", test.NameMember))
 	statusFalse := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse)
 	toolchainCluster2, sec2 := test.NewToolchainCluster("east", "secret2", statusFalse,
-		Labels(cluster.Host, "", test.NameMember))
+		Labels("", test.NameMember))
 	cl := test.NewFakeClient(t, toolchainCluster2, sec1, sec2)
 	service := newToolchainClusterService(t, cl, false)
 	defer service.DeleteToolchainCluster("east")
@@ -181,7 +172,6 @@ func UpdateToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	require.True(t, ok)
 	assert.Equal(t, statusFalse, *cachedToolchainCluster.ClusterStatus)
 	AssertClusterConfigThat(t, cachedToolchainCluster.Config).
-		IsOfType(cluster.Host).
 		HasName("east").
 		HasOperatorNamespace("toolchain-host-operator").
 		HasOwnerClusterName(test.NameMember).
@@ -194,7 +184,7 @@ func DeleteToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster, sec := test.NewToolchainCluster("east", "sec", status,
-		Labels("", "", test.NameHost))
+		Labels("", test.NameHost))
 	cl := test.NewFakeClient(t, sec)
 	service := newToolchainClusterService(t, cl, false)
 	err := service.AddOrUpdateToolchainCluster(toolchainCluster)
@@ -210,16 +200,8 @@ func DeleteToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	assert.Nil(t, cachedToolchainCluster)
 }
 
-func Labels(clType cluster.Type, ns, ownerClusterName string) map[string]string {
+func Labels(ns, ownerClusterName string) map[string]string {
 	labels := map[string]string{}
-	if clType != "" {
-		labels["type"] = string(clType)
-		// Set cluster role tenant label only for member type clusters.
-		if clType == cluster.Member {
-			// We use only the label key, the value can remain empty.
-			labels[cluster.RoleLabel(cluster.Tenant)] = ""
-		}
-	}
 	if ns != "" {
 		labels["namespace"] = ns
 	}
@@ -253,11 +235,6 @@ func AssertClusterConfigThat(t *testing.T, clusterConfig *cluster.Config) *Clust
 		t:             t,
 		clusterConfig: clusterConfig,
 	}
-}
-
-func (a *ClusterConfigAssertion) IsOfType(clusterType cluster.Type) *ClusterConfigAssertion {
-	assert.Equal(a.t, clusterType, a.clusterConfig.Type)
-	return a
 }
 
 func (a *ClusterConfigAssertion) HasOperatorNamespace(namespace string) *ClusterConfigAssertion {

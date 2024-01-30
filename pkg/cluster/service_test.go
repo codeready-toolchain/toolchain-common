@@ -69,22 +69,21 @@ func TestDeleteToolchainClusterWhenDoesNotExist(t *testing.T) {
 func TestListToolchainClusterConfigs(t *testing.T) {
 	// given
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
-	m1, sec1 := test.NewToolchainClusterWithEndpoint("east", "secret1", "http://m1.com", status, verify.Labels(cluster.Member, test.MemberOperatorNs, "m1ClusterName"))
-	m2, sec2 := test.NewToolchainClusterWithEndpoint("west", "secret2", "http://m2.com", status, verify.Labels(cluster.Member, test.MemberOperatorNs, "m2ClusterName"))
-	host, secHost := test.NewToolchainCluster("host", "secretHost", status, verify.Labels(cluster.Host, test.HostOperatorNs, "hostClusterName"))
-	noise, secNoise := test.NewToolchainCluster("noise", "secretNoise", status, verify.Labels(cluster.Type("e2e"), test.MemberOperatorNs, "noiseClusterName"))
+	m1, sec1 := test.NewToolchainClusterWithEndpoint("east", "secret1", "http://m1.com", status, verify.Labels(test.MemberOperatorNs, "m1ClusterName"))
+	m2, sec2 := test.NewToolchainClusterWithEndpoint("west", "secret2", "http://m2.com", status, verify.Labels(test.MemberOperatorNs, "m2ClusterName"))
+	host, secHost := test.NewToolchainCluster("host", "secretHost", status, verify.Labels(test.HostOperatorNs, "hostClusterName"))
+	noise, secNoise := test.NewToolchainCluster("noise", "secretNoise", status, verify.Labels(test.MemberOperatorNs, "noiseClusterName"))
 	require.NoError(t, toolchainv1alpha1.AddToScheme(scheme.Scheme))
 	cl := test.NewFakeClient(t, m1, m2, host, noise, sec1, sec2, secHost, secNoise)
 
 	t.Run("list members", func(t *testing.T) {
 		// when
-		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, cluster.Member, time.Second)
+		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
 
 		// then
 		require.NoError(t, err)
 		require.Len(t, clusterConfigs, 2)
 		verify.AssertClusterConfigThat(t, clusterConfigs[0]).
-			IsOfType(cluster.Member).
 			HasName("east").
 			HasOperatorNamespace("toolchain-member-operator").
 			HasOwnerClusterName("m1ClusterName").
@@ -92,7 +91,6 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 			ContainsLabel(cluster.RoleLabel(cluster.Tenant)). // the value is not used only the key matters
 			RestConfigHasHost("http://m1.com")
 		verify.AssertClusterConfigThat(t, clusterConfigs[1]).
-			IsOfType(cluster.Member).
 			HasName("west").
 			HasOperatorNamespace("toolchain-member-operator").
 			HasOwnerClusterName("m2ClusterName").
@@ -103,13 +101,12 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 
 	t.Run("list host", func(t *testing.T) {
 		// when
-		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, cluster.Host, time.Second)
+		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
 
 		// then
 		require.NoError(t, err)
 		require.Len(t, clusterConfigs, 1)
 		verify.AssertClusterConfigThat(t, clusterConfigs[0]).
-			IsOfType(cluster.Host).
 			HasName("host").
 			HasOperatorNamespace("toolchain-host-operator").
 			HasOwnerClusterName("hostClusterName").
@@ -122,7 +119,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 		cl := test.NewFakeClient(t, host, noise, secNoise)
 
 		// when
-		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, cluster.Member, time.Second)
+		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
 
 		// then
 		require.NoError(t, err)
@@ -137,7 +134,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 		}
 
 		// when
-		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, cluster.Member, time.Second)
+		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
 
 		// then
 		require.Error(t, err)
@@ -152,7 +149,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 		}
 
 		// when
-		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, cluster.Member, time.Second)
+		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
 
 		// then
 		require.Error(t, err)

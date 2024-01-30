@@ -76,7 +76,7 @@ func TestUpdateClientBasedOnRestConfig(t *testing.T) {
 	defer gock.Off()
 	statusTrue := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster1, sec1 := test.NewToolchainCluster("east", "secret1", statusTrue,
-		map[string]string{"type": string(Member)})
+		map[string]string{})
 
 	t.Run("don't update when RestConfig is the same", func(t *testing.T) {
 		// given
@@ -135,7 +135,6 @@ func newToolchainClusterService(cl client.Client, timeout time.Duration) Toolcha
 }
 
 func assertMemberCluster(t *testing.T, cachedCluster *CachedToolchainCluster, status toolchainv1alpha1.ToolchainClusterStatus) {
-	assert.Equal(t, Member, cachedCluster.Type)
 	assert.Equal(t, status, *cachedCluster.ClusterStatus)
 	assert.Equal(t, test.NameMember, cachedCluster.OwnerClusterName)
 	assert.Equal(t, "http://cluster.com", cachedCluster.APIEndpoint)
