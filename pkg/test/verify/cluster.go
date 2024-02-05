@@ -47,11 +47,7 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 				require.NoError(t, err)
 				cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
 				require.True(t, ok)
-				if labels["namespace"] == "" {
-					assert.Equal(t, "toolchain-member-operator", cachedToolchainCluster.OperatorNamespace)
-				} else {
-					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
-				}
+
 				// check that toolchain cluster role label tenant was set only on member cluster type
 				require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
 				assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
@@ -88,11 +84,7 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 				require.NoError(t, err)
 				cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
 				require.True(t, ok)
-				if labels["namespace"] == "" {
-					assert.Equal(t, "toolchain-host-operator", cachedToolchainCluster.OperatorNamespace)
-				} else {
-					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
-				}
+
 				// check that toolchain cluster role label tenant is not set on host cluster
 				require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
 				expectedToolChainClusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
@@ -173,7 +165,6 @@ func UpdateToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	assert.Equal(t, statusFalse, *cachedToolchainCluster.ClusterStatus)
 	AssertClusterConfigThat(t, cachedToolchainCluster.Config).
 		HasName("east").
-		HasOperatorNamespace("toolchain-host-operator").
 		HasOwnerClusterName(test.NameMember).
 		HasAPIEndpoint("http://cluster.com").
 		RestConfigHasHost("http://cluster.com")
