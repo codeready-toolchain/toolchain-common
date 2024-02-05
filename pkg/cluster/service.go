@@ -26,9 +26,6 @@ const (
 	// labelClusterRolePrefix is the prefix that defines the cluster role as label key
 	labelClusterRolePrefix = "cluster-role"
 
-	defaultHostOperatorNamespace   = "toolchain-host-operator"
-	defaultMemberOperatorNamespace = "toolchain-member-operator"
-
 	toolchainAPIQPS   = 20.0
 	toolchainAPIBurst = 30
 	toolchainTokenKey = "token"
