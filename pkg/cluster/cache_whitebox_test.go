@@ -146,9 +146,6 @@ func TestGetClustersByType(t *testing.T) {
 	})
 
 	t.Run("get member clusters", func(t *testing.T) {
-		// noise
-		host := newTestCachedToolchainCluster(t, "cluster-host", ready)
-		clusterCache.addCachedToolchainCluster(host)
 
 		t.Run("all clusters", func(t *testing.T) {
 			// given
@@ -162,7 +159,6 @@ func TestGetClustersByType(t *testing.T) {
 			clusters := GetMemberClusters()
 
 			//then
-			//assert.Len(t, clusters, 2)
 			assert.Contains(t, clusters, member1)
 			assert.Contains(t, clusters, member2)
 		})
@@ -181,7 +177,6 @@ func TestGetClustersByType(t *testing.T) {
 			clusters := GetMemberClusters()
 
 			//then
-			//assert.Len(t, clusters, 1)
 			assert.Contains(t, clusters, member)
 			assert.True(t, called)
 		})
@@ -206,17 +201,12 @@ func TestGetClustersByType(t *testing.T) {
 			clusters := GetMemberClusters(Ready)
 
 			//then
-			//assert.Len(t, clusters, 2)
 			assert.Contains(t, clusters, member1)
 			assert.Contains(t, clusters, member2)
 		})
 	})
 
 	t.Run("get host cluster", func(t *testing.T) {
-
-		// noise
-		member1 := newTestCachedToolchainCluster(t, "cluster-member-1", ready)
-		clusterCache.addCachedToolchainCluster(member1)
 
 		t.Run("found", func(t *testing.T) {
 			// given
