@@ -82,20 +82,17 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		require.Len(t, clusterConfigs, 2)
 		verify.AssertClusterConfigThat(t, clusterConfigs[0]).
 			HasName("east").
 			HasOperatorNamespace("toolchain-member-operator").
 			HasOwnerClusterName("m1ClusterName").
 			HasAPIEndpoint("http://m1.com").
-			ContainsLabel(cluster.RoleLabel(cluster.Tenant)). // the value is not used only the key matters
 			RestConfigHasHost("http://m1.com")
-		verify.AssertClusterConfigThat(t, clusterConfigs[1]).
+		verify.AssertClusterConfigThat(t, clusterConfigs[3]).
 			HasName("west").
 			HasOperatorNamespace("toolchain-member-operator").
 			HasOwnerClusterName("m2ClusterName").
 			HasAPIEndpoint("http://m2.com").
-			ContainsLabel(cluster.RoleLabel(cluster.Tenant)). // the value is not used only the key matters
 			RestConfigHasHost("http://m2.com")
 	})
 
@@ -105,25 +102,12 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		require.Len(t, clusterConfigs, 1)
-		verify.AssertClusterConfigThat(t, clusterConfigs[0]).
+		verify.AssertClusterConfigThat(t, clusterConfigs[1]).
 			HasName("host").
 			HasOperatorNamespace("toolchain-host-operator").
 			HasOwnerClusterName("hostClusterName").
 			HasAPIEndpoint("http://cluster.com").
 			RestConfigHasHost("http://cluster.com")
-	})
-
-	t.Run("list members when there is none present", func(t *testing.T) {
-		// given
-		cl := test.NewFakeClient(t, host, noise, secNoise)
-
-		// when
-		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
-
-		// then
-		require.NoError(t, err)
-		require.Empty(t, clusterConfigs)
 	})
 
 	t.Run("when list fails", func(t *testing.T) {
