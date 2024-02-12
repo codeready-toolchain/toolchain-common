@@ -107,13 +107,13 @@ func TestGetClustersByType(t *testing.T) {
 			// empty cache
 
 			//when
-			clusters := clusterCache.getCachedToolchainClustersByType()
+			clusters := clusterCache.getCachedToolchainClusters()
 
 			//then
 			assert.Empty(t, clusters)
 
 			//when
-			clusters = clusterCache.getCachedToolchainClustersByType()
+			clusters = clusterCache.getCachedToolchainClusters()
 
 			//then
 			assert.Empty(t, clusters)
@@ -131,14 +131,14 @@ func TestGetClustersByType(t *testing.T) {
 			clusterCache.addCachedToolchainCluster(host)
 
 			//when
-			clusters := clusterCache.getCachedToolchainClustersByType()
+			clusters := clusterCache.getCachedToolchainClusters()
 
 			//then
 			assert.Contains(t, clusters, member1)
 			assert.Contains(t, clusters, member2)
 
 			//when
-			clusters = clusterCache.getCachedToolchainClustersByType()
+			clusters = clusterCache.getCachedToolchainClusters()
 
 			//then
 			assert.Contains(t, clusters, host)
@@ -389,7 +389,7 @@ func TestMultipleActionsInParallel(t *testing.T) {
 			go func() {
 				defer waitForFinished.Done()
 				latch.Wait()
-				clusterCache.getCachedToolchainClustersByType()
+				clusterCache.getCachedToolchainClusters()
 
 			}()
 			go func(clusterToTest *CachedToolchainCluster) {

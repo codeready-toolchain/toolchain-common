@@ -79,7 +79,7 @@ var Ready Condition = func(cluster *CachedToolchainCluster) bool {
 	return IsReady(cluster.ClusterStatus)
 }
 
-func (c *toolchainClusterClients) getCachedToolchainClustersByType(conditions ...Condition) []*CachedToolchainCluster {
+func (c *toolchainClusterClients) getCachedToolchainClusters(conditions ...Condition) []*CachedToolchainCluster {
 	c.RLock()
 	defer c.RUnlock()
 	return Filter(c.clusters, conditions...)
@@ -113,12 +113,12 @@ var HostCluster GetHostClusterFunc = GetHostCluster
 // GetHostCluster returns the kube client for the host cluster from the cache of the clusters
 // and info if such a client exists
 func GetHostCluster() (*CachedToolchainCluster, bool) {
-	clusters := clusterCache.getCachedToolchainClustersByType()
+	clusters := clusterCache.getCachedToolchainClusters()
 	if len(clusters) == 0 {
 		if clusterCache.refreshCache != nil {
 			clusterCache.refreshCache()
 		}
-		clusters = clusterCache.getCachedToolchainClustersByType()
+		clusters = clusterCache.getCachedToolchainClusters()
 		if len(clusters) == 0 {
 			return nil, false
 		}
@@ -134,12 +134,12 @@ var MemberClusters GetMemberClustersFunc = GetMemberClusters
 
 // GetMemberClusters returns the kube clients for the host clusters from the cache of the clusters
 func GetMemberClusters(conditions ...Condition) []*CachedToolchainCluster {
-	clusters := clusterCache.getCachedToolchainClustersByType(conditions...)
+	clusters := clusterCache.getCachedToolchainClusters(conditions...)
 	if len(clusters) == 0 {
 		if clusterCache.refreshCache != nil {
 			clusterCache.refreshCache()
 		}
-		clusters = clusterCache.getCachedToolchainClustersByType(conditions...)
+		clusters = clusterCache.getCachedToolchainClusters(conditions...)
 	}
 	return clusters
 }
