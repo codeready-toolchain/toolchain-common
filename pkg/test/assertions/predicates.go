@@ -33,8 +33,22 @@ import (
 // but waits for an object that satisfies the predicates to appear in the cluster).
 //
 //	assertions.AssertThat(t, toolchainCluster, assertions.Is(Ready()))
+//
+// If you're implementing your own predicate, consider implementing the PredicateMatchFixer,
+// too, so that you can benefit from improved failure diagnostics offered by Explain function.
 type Predicate[T client.Object] interface {
 	Matches(obj T) bool
+}
+
+// PredicateMatchFixer is an optional interface that the predicate implementations can also
+// implement. If so, the FixToMatch method is used to obtain an object that WOULD
+// match the predicate. This would-be-matching object is then used to produce a diff
+// between it and the non-matching object of the predicate in case of a test failure
+// for logging purposes.
+//
+// There is no need to copy the provided object.
+type PredicateMatchFixer[T client.Object] interface {
+	FixToMatch(obj T) T
 }
 
 // Is merely casts the generic predicate on type T to a predicate on client.Object. This is
@@ -43,29 +57,53 @@ type Predicate[T client.Object] interface {
 //
 //	predicates.Is(predicates.Named("whatevs"))
 func Is[T client.Object](p Predicate[T]) Predicate[client.Object] {
-	return cast[T]{inner: p}
+	return &cast[T]{Inner: p}
 }
 
 // Has is just an alias of Is. It is provided for better readability with certain predicate
 // names.
 func Has[T client.Object](p Predicate[T]) Predicate[client.Object] {
-	return cast[T]{inner: p}
+	return &cast[T]{Inner: p}
 }
 
 type cast[T client.Object] struct {
-	inner Predicate[T]
+	// Inner is public so that Explain (in assertions.go) can access it...
+	Inner Predicate[T]
 }
 
-func (c cast[T]) Matches(obj client.Object) bool {
-	return c.inner.Matches(obj.(T))
+var (
+	_ Predicate[client.Object]           = (*cast[client.Object])(nil)
+	_ PredicateMatchFixer[client.Object] = (*cast[client.Object])(nil)
+)
+
+func (c *cast[T]) Matches(obj client.Object) bool {
+	return c.Inner.Matches(obj.(T))
+}
+
+func (c *cast[T]) FixToMatch(obj client.Object) client.Object {
+	pf, ok := c.Inner.(PredicateMatchFixer[T])
+	if ok {
+		return pf.FixToMatch(obj.(T))
+	}
+	return obj
 }
 
 type named struct {
 	name string
 }
 
+var (
+	_ Predicate[client.Object]           = (*named)(nil)
+	_ PredicateMatchFixer[client.Object] = (*named)(nil)
+)
+
 func (n *named) Matches(obj client.Object) bool {
 	return obj.GetName() == n.name
+}
+
+func (n *named) FixToMatch(obj client.Object) client.Object {
+	obj.SetName(n.name)
+	return obj
 }
 
 // Name returns a predicate checking that an Object has given name.
@@ -77,8 +115,18 @@ type inNamespace struct {
 	namespace string
 }
 
+var (
+	_ Predicate[client.Object]           = (*inNamespace)(nil)
+	_ PredicateMatchFixer[client.Object] = (*inNamespace)(nil)
+)
+
 func (i *inNamespace) Matches(obj client.Object) bool {
 	return obj.GetNamespace() == i.namespace
+}
+
+func (i *inNamespace) FixToMatch(obj client.Object) client.Object {
+	obj.SetNamespace(i.namespace)
+	return obj
 }
 
 // InNamespace returns a predicate checking that an Object is in the given namespace.
@@ -90,8 +138,19 @@ type withKey struct {
 	types.NamespacedName
 }
 
+var (
+	_ Predicate[client.Object]           = (*withKey)(nil)
+	_ PredicateMatchFixer[client.Object] = (*withKey)(nil)
+)
+
 func (w *withKey) Matches(obj client.Object) bool {
 	return obj.GetName() == w.Name && obj.GetNamespace() == w.Namespace
+}
+
+func (w *withKey) FixToMatch(obj client.Object) client.Object {
+	obj.SetName(w.Name)
+	obj.SetNamespace(w.Namespace)
+	return obj
 }
 
 // ObjectKey returns a predicate checking that an Object has given NamespacedName (aka client.ObjectKey).
@@ -102,6 +161,11 @@ func ObjectKey(key types.NamespacedName) Predicate[client.Object] {
 type hasLabels struct {
 	requiredLabels map[string]string
 }
+
+var (
+	_ Predicate[client.Object]           = (*hasLabels)(nil)
+	_ PredicateMatchFixer[client.Object] = (*hasLabels)(nil)
+)
 
 func (h *hasLabels) Matches(obj client.Object) bool {
 	objLabels := obj.GetLabels()
@@ -114,6 +178,23 @@ func (h *hasLabels) Matches(obj client.Object) bool {
 	return true
 }
 
+func (h *hasLabels) FixToMatch(obj client.Object) client.Object {
+	if len(h.requiredLabels) == 0 {
+		return obj
+	}
+	objLabels := obj.GetLabels()
+	if objLabels == nil {
+		objLabels = map[string]string{}
+	}
+
+	for k, v := range h.requiredLabels {
+		objLabels[k] = v
+	}
+
+	obj.SetLabels(objLabels)
+	return obj
+}
+
 // Labels returns a predicate checking that an Object has provided labels and their values.
 func Labels(requiredLabels map[string]string) Predicate[client.Object] {
 	return &hasLabels{requiredLabels: requiredLabels}
@@ -122,6 +203,11 @@ func Labels(requiredLabels map[string]string) Predicate[client.Object] {
 type hasAnnotations struct {
 	requiredAnnotations map[string]string
 }
+
+var (
+	_ Predicate[client.Object]           = (*hasAnnotations)(nil)
+	_ PredicateMatchFixer[client.Object] = (*hasAnnotations)(nil)
+)
 
 func (h *hasAnnotations) Matches(obj client.Object) bool {
 	objAnnos := obj.GetAnnotations()
@@ -132,6 +218,23 @@ func (h *hasAnnotations) Matches(obj client.Object) bool {
 		}
 	}
 	return true
+}
+
+func (h *hasAnnotations) FixToMatch(obj client.Object) client.Object {
+	if len(h.requiredAnnotations) == 0 {
+		return obj
+	}
+	objAnnos := obj.GetAnnotations()
+	if objAnnos == nil {
+		objAnnos = map[string]string{}
+	}
+
+	for k, v := range h.requiredAnnotations {
+		objAnnos[k] = v
+	}
+
+	obj.SetAnnotations(objAnnos)
+	return obj
 }
 
 // Annotations returns a predicate checking that an Object has provided annotations and their values.
