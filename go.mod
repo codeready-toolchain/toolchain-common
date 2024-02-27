@@ -3,7 +3,7 @@ module github.com/codeready-toolchain/toolchain-common
 go 1.20
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20240207000013-661b63025269
+	github.com/codeready-toolchain/api v0.0.0-20240227210924-371ddb054d87
 	github.com/go-logr/logr v1.2.3
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang-jwt/jwt/v5 v5.2.0
@@ -112,5 +112,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/codeready-toolchain/api => github.com/sbryzak/api v0.0.0-20240226224654-d481e7f73040
