@@ -19,10 +19,12 @@ import (
 func NewFakeClient(t T, initObjs ...runtime.Object) *FakeClient {
 	s := scheme.Scheme
 	err := toolchainv1alpha1.AddToScheme(s)
+	subResource := &toolchainv1alpha1.ToolchainCluster{}
 	require.NoError(t, err)
 	cl := fake.NewClientBuilder().
 		WithScheme(s).
 		WithRuntimeObjects(initObjs...).
+		WithStatusSubresource(subResource).
 		Build()
 	return &FakeClient{Client: cl, T: t}
 }
@@ -35,22 +37,27 @@ type FakeClient struct {
 	MockCreate       func(ctx context.Context, obj client.Object, opts ...client.CreateOption) error
 	MockUpdate       func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
 	MockPatch        func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error
-	MockStatusUpdate func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
-	MockStatusPatch  func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error
+	MockStatusUpdate func(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error
+	MockStatusPatch  func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error
 	MockDelete       func(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
 	MockDeleteAllOf  func(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error
 }
 
 type mockStatusUpdate struct {
-	mockUpdate func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
-	mockPatch  func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error
+	mockCreate func(ctx context.Context, obj client.Object, subResource client.Object, opts ...client.SubResourceCreateOption) error
+	mockUpdate func(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error
+	mockPatch  func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error
 }
 
-func (m *mockStatusUpdate) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+func (m *mockStatusUpdate) Create(ctx context.Context, obj client.Object, subResource client.Object, opts ...client.SubResourceCreateOption) error {
+	return m.mockCreate(ctx, obj, subResource, opts...)
+}
+
+func (m *mockStatusUpdate) Update(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error {
 	return m.mockUpdate(ctx, obj, opts...)
 }
 
-func (m *mockStatusUpdate) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+func (m *mockStatusUpdate) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error {
 	return m.mockPatch(ctx, obj, patch, opts...)
 }
 
