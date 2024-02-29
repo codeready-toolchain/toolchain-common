@@ -16,15 +16,14 @@ import (
 )
 
 // NewFakeClient creates a fake K8s client with ability to override specific Get/List/Create/Update/StatusUpdate/Delete functions
-func NewFakeClient(t T, initObjs ...runtime.Object) *FakeClient {
+func NewFakeClient(t T, initObjs ...client.Object) *FakeClient {
 	s := scheme.Scheme
 	err := toolchainv1alpha1.AddToScheme(s)
-	subResource := &toolchainv1alpha1.ToolchainCluster{}
 	require.NoError(t, err)
 	cl := fake.NewClientBuilder().
 		WithScheme(s).
-		WithRuntimeObjects(initObjs...).
-		WithStatusSubresource(subResource).
+		WithObjects(initObjs...).
+		WithStatusSubresource(initObjs...).
 		Build()
 	return &FakeClient{Client: cl, T: t}
 }
