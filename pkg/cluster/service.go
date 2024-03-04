@@ -123,6 +123,11 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 		Client:        cl,
 		ClusterStatus: &toolchainCluster.Status,
 	}
+
+	if cluster.OperatorNamespace == "" {
+		return fmt.Errorf("the operator namespace is not set for the ToolchainCluster CR")
+	}
+
 	clusterCache.addCachedToolchainCluster(cluster)
 	return nil
 }

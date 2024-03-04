@@ -74,21 +74,22 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 	host, secHost := test.NewToolchainCluster("host", "secretHost", status, verify.Labels(test.HostOperatorNs, "hostClusterName"))
 	noise, secNoise := test.NewToolchainCluster("noise", "secretNoise", status, verify.Labels(test.MemberOperatorNs, "noiseClusterName"))
 	require.NoError(t, toolchainv1alpha1.AddToScheme(scheme.Scheme))
-	cl := test.NewFakeClient(t, m1, m2, host, noise, sec1, sec2, secHost, secNoise)
 
 	t.Run("list members", func(t *testing.T) {
 		// when
+		cl := test.NewFakeClient(t, m1, m2, sec1, sec2, secNoise)
 		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
 
 		// then
 		require.NoError(t, err)
+		require.Len(t, clusterConfigs, 2)
 		verify.AssertClusterConfigThat(t, clusterConfigs[0]).
 			HasName("east").
 			HasOperatorNamespace("toolchain-member-operator").
 			HasOwnerClusterName("m1ClusterName").
 			HasAPIEndpoint("http://m1.com").
 			RestConfigHasHost("http://m1.com")
-		verify.AssertClusterConfigThat(t, clusterConfigs[3]).
+		verify.AssertClusterConfigThat(t, clusterConfigs[1]).
 			HasName("west").
 			HasOperatorNamespace("toolchain-member-operator").
 			HasOwnerClusterName("m2ClusterName").
@@ -98,16 +99,31 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 
 	t.Run("list host", func(t *testing.T) {
 		// when
+		cl := test.NewFakeClient(t, host, secHost, secNoise)
 		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
 
 		// then
 		require.NoError(t, err)
-		verify.AssertClusterConfigThat(t, clusterConfigs[1]).
+		require.Len(t, clusterConfigs, 1)
+
+		verify.AssertClusterConfigThat(t, clusterConfigs[0]).
 			HasName("host").
 			HasOperatorNamespace("toolchain-host-operator").
 			HasOwnerClusterName("hostClusterName").
 			HasAPIEndpoint("http://cluster.com").
 			RestConfigHasHost("http://cluster.com")
+	})
+
+	t.Run("list members when there is none present", func(t *testing.T) {
+		// given
+		cl := test.NewFakeClient(t, host, noise, secNoise)
+
+		// when
+		clusterConfigs, _ := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
+
+		// then
+		//require.NoError(t, err)
+		require.Empty(t, clusterConfigs)
 	})
 
 	t.Run("when list fails", func(t *testing.T) {
