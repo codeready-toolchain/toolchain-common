@@ -14,14 +14,14 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-// TemplateVariables contains all the available variables that are supported by the templates
-type TemplateVariables struct {
+// Variables contains all the available variables that are supported by the templates
+type Variables struct {
 	Namespace string
 }
 
 // LoadObjectsFromEmbedFS loads all the kubernetes objects from an embedded filesystem and returns a list of Unstructured objects that can be applied in the cluster.
 // The function will return all the objects it finds starting from the root of the embedded filesystem.
-func LoadObjectsFromEmbedFS(efs *embed.FS, variables *TemplateVariables) ([]*unstructured.Unstructured, error) {
+func LoadObjectsFromEmbedFS(efs *embed.FS, variables *Variables) ([]*unstructured.Unstructured, error) {
 	var objects []*unstructured.Unstructured
 	entries, err := getAllTemplateNames(efs)
 	if err != nil {
@@ -61,7 +61,7 @@ func LoadObjectsFromEmbedFS(efs *embed.FS, variables *TemplateVariables) ([]*uns
 }
 
 // replaceTemplateVariables replaces all the variables in the given template and returns a buffer with the evaluated content
-func replaceTemplateVariables(templateName string, templateContent []byte, variables *TemplateVariables) (bytes.Buffer, error) {
+func replaceTemplateVariables(templateName string, templateContent []byte, variables *Variables) (bytes.Buffer, error) {
 	var buf bytes.Buffer
 	tmpl, err := template.New(templateName).Parse(string(templateContent))
 	if err != nil {
