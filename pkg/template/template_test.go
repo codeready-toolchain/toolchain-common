@@ -9,16 +9,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//go:embed testTemplates/*
+//go:embed testdata/*
 var EFS embed.FS
 
-//go:embed testTemplates/host/*
+//go:embed testdata/host/*
 var hostFS embed.FS
 
 func TestLoadObjectsFromEmbedFS(t *testing.T) {
 	t.Run("loads objects recursively from all subdirectories", func(t *testing.T) {
 		// when
-		objects, err := template.LoadObjectsFromEmbedFS(&EFS, &template.TemplateVariables{Namespace: test.HostOperatorNs})
+		objects, err := template.LoadObjectsFromEmbedFS(&EFS, &template.Variables{Namespace: test.HostOperatorNs})
 		// then
 		require.NoError(t, err)
 		require.NotNil(t, objects)
@@ -29,7 +29,7 @@ func TestLoadObjectsFromEmbedFS(t *testing.T) {
 	t.Run("variable substitution works", func(t *testing.T) {
 		// when
 		// we pass only the hostFS directory
-		objects, err := template.LoadObjectsFromEmbedFS(&hostFS, &template.TemplateVariables{Namespace: test.HostOperatorNs})
+		objects, err := template.LoadObjectsFromEmbedFS(&hostFS, &template.Variables{Namespace: test.HostOperatorNs})
 		// then
 		// object's in this folder should have variables to be replaced
 		require.NoError(t, err)
