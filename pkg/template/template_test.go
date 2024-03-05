@@ -26,10 +26,12 @@ func TestLoadObjectsFromEmbedFS(t *testing.T) {
 	t.Run("loads objects recursively from all subdirectories", func(t *testing.T) {
 		// when
 		allObjects, err := template.LoadObjectsFromEmbedFS(&EFS, &template.Variables{Namespace: test.HostOperatorNs})
-		hostFolderObjects, err := template.LoadObjectsFromEmbedFS(&hostFS, &template.Variables{Namespace: test.HostOperatorNs})
-		memberFolderObjects, err := template.LoadObjectsFromEmbedFS(&memberFS, nil)
-		// then
 		require.NoError(t, err)
+		hostFolderObjects, err := template.LoadObjectsFromEmbedFS(&hostFS, &template.Variables{Namespace: test.HostOperatorNs})
+		require.NoError(t, err)
+		memberFolderObjects, err := template.LoadObjectsFromEmbedFS(&memberFS, nil)
+		require.NoError(t, err)
+		// then
 		require.NotNil(t, allObjects)
 		require.NotNil(t, hostFolderObjects)
 		require.NotNil(t, memberFolderObjects)
@@ -59,6 +61,7 @@ func checkExpectedObjects(t *testing.T, objects []*unstructured.Unstructured) {
 	require.Equal(t, "toolchain-host-operator", sa.GetNamespace())
 	role := &rbac.Role{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(objects[1].Object, role)
+	require.NoError(t, err)
 	require.Equal(t, "toolchaincluster-host", role.GetName())
 	require.Equal(t, "toolchain-host-operator", role.GetNamespace())
 	require.Equal(t, []rbac.PolicyRule{
@@ -70,6 +73,7 @@ func checkExpectedObjects(t *testing.T, objects []*unstructured.Unstructured) {
 	}, role.Rules)
 	roleBinding := &rbac.RoleBinding{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(objects[2].Object, roleBinding)
+	require.NoError(t, err)
 	require.Equal(t, "toolchaincluster-host", roleBinding.GetName())
 	require.Equal(t, "toolchain-host-operator", roleBinding.GetNamespace())
 	require.Equal(t, rbac.RoleRef{
@@ -84,6 +88,7 @@ func checkExpectedObjects(t *testing.T, objects []*unstructured.Unstructured) {
 	}, roleBinding.Subjects[0])
 	clusterRole := &rbac.ClusterRole{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(objects[3].Object, clusterRole)
+	require.NoError(t, err)
 	require.Equal(t, "member-toolchaincluster-cr", clusterRole.GetName())
 	require.Equal(t, []rbac.PolicyRule{
 		{
