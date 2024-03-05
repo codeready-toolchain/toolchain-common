@@ -116,13 +116,13 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 
 	t.Run("list members when there is none present", func(t *testing.T) {
 		// given
-		cl := test.NewFakeClient(t, host, noise, secNoise)
+		cl := test.NewFakeClient(t)
 
 		// when
-		clusterConfigs, _ := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
+		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
 
 		// then
-		//require.NoError(t, err)
+		require.NoError(t, err)
 		require.Empty(t, clusterConfigs)
 	})
 
