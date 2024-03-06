@@ -30,6 +30,7 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 	for _, labels := range memberLabels {
 
 		t.Run("add member ToolchainCluster", func(t *testing.T) {
+			labels["namespace"] = test.HostOperatorNs
 			for _, withCA := range []bool{true, false} {
 				toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, labels)
 				if withCA {
@@ -56,6 +57,26 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 				assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
 			}
 		})
+		t.Run("Fail add member ToolchainCluster if empty operator namespace", func(t *testing.T) {
+			labels["namespace"] = ""
+			for _, withCA := range []bool{true, false} {
+				toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, labels)
+				if withCA {
+					toolchainCluster.Spec.CABundle = "ZHVtbXk="
+				}
+				cl := test.NewFakeClient(t, toolchainCluster, sec)
+				service := newToolchainClusterService(t, cl, withCA)
+				defer service.DeleteToolchainCluster("east")
+
+				// when
+				err := functionToVerify(toolchainCluster, cl, service)
+
+				// then
+				require.Error(t, err)
+				_, ok := cluster.GetCachedToolchainCluster("east")
+				require.False(t, ok)
+			}
+		})
 	}
 }
 
@@ -67,7 +88,7 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 		Labels("", test.NameMember),
 		Labels("host-ns", test.NameMember)}
 	for _, labels := range memberLabels {
-
+		labels["namespace"] = test.MemberOperatorNs
 		t.Run("add host ToolchainCluster", func(t *testing.T) {
 			for _, withCA := range []bool{true, false} {
 				toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, labels)
@@ -149,9 +170,11 @@ func UpdateToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	statusTrue := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster1, sec1 := test.NewToolchainCluster("east", "secret1", statusTrue,
 		Labels("", test.NameMember))
+	toolchainCluster1.Labels["namespace"] = test.HostOperatorNs
 	statusFalse := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse)
 	toolchainCluster2, sec2 := test.NewToolchainCluster("east", "secret2", statusFalse,
 		Labels("", test.NameMember))
+	toolchainCluster2.Labels["namespace"] = test.HostOperatorNs
 	cl := test.NewFakeClient(t, toolchainCluster2, sec1, sec2)
 	service := newToolchainClusterService(t, cl, false)
 	defer service.DeleteToolchainCluster("east")
@@ -179,6 +202,7 @@ func DeleteToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster, sec := test.NewToolchainCluster("east", "sec", status,
 		Labels("", test.NameHost))
+	toolchainCluster.Labels["namespace"] = test.MemberOperatorNs
 	cl := test.NewFakeClient(t, sec)
 	service := newToolchainClusterService(t, cl, false)
 	err := service.AddOrUpdateToolchainCluster(toolchainCluster)

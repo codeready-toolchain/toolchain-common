@@ -20,7 +20,7 @@ func TestRefreshCacheInService(t *testing.T) {
 	// given
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
-	toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, map[string]string{"ownerClusterName": test.NameMember})
+	toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, map[string]string{"ownerClusterName": test.NameMember, "namespace": test.HostOperatorNs})
 	s := scheme.Scheme
 	err := toolchainv1alpha1.AddToScheme(s)
 	require.NoError(t, err)
@@ -76,7 +76,7 @@ func TestUpdateClientBasedOnRestConfig(t *testing.T) {
 	defer gock.Off()
 	statusTrue := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	toolchainCluster1, sec1 := test.NewToolchainCluster("east", "secret1", statusTrue,
-		map[string]string{})
+		map[string]string{"namespace": test.HostOperatorNs})
 
 	t.Run("don't update when RestConfig is the same", func(t *testing.T) {
 		// given
