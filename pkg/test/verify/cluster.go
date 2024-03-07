@@ -191,6 +191,7 @@ func UpdateToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	assert.Equal(t, statusFalse, *cachedToolchainCluster.ClusterStatus)
 	AssertClusterConfigThat(t, cachedToolchainCluster.Config).
 		HasName("east").
+		HasOperatorNamespace("toolchain-host-operator").
 		HasOwnerClusterName(test.NameMember).
 		HasAPIEndpoint("http://cluster.com").
 		RestConfigHasHost("http://cluster.com")

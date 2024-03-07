@@ -147,6 +147,18 @@ func TestGetClustersByType(t *testing.T) {
 
 	t.Run("get member clusters", func(t *testing.T) {
 
+		t.Run("not found", func(t *testing.T) {
+			// given
+			defer resetClusterCache()
+			// no members
+
+			//when
+			clusters := GetMemberClusters()
+
+			//then
+			assert.Empty(t, clusters)
+		})
+
 		t.Run("all clusters", func(t *testing.T) {
 			// given
 			defer resetClusterCache()
@@ -208,6 +220,17 @@ func TestGetClustersByType(t *testing.T) {
 
 	t.Run("get host cluster", func(t *testing.T) {
 
+		t.Run("not found", func(t *testing.T) {
+			// given
+			defer resetClusterCache()
+			// no host
+
+			//when
+			_, ok := GetHostCluster()
+
+			//then
+			assert.False(t, ok)
+		})
 		t.Run("found", func(t *testing.T) {
 			// given
 			defer resetClusterCache()
@@ -389,7 +412,12 @@ func TestMultipleActionsInParallel(t *testing.T) {
 			go func() {
 				defer waitForFinished.Done()
 				latch.Wait()
-				clusterCache.getCachedToolchainClusters()
+				clusters := clusterCache.getCachedToolchainClusters()
+				if len(clusters) == 1 {
+					assert.Equal(t, clusterToTest, clusters[0])
+				} else {
+					assert.Empty(t, clusters)
+				}
 
 			}()
 			go func(clusterToTest *CachedToolchainCluster) {
