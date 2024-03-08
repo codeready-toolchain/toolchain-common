@@ -12,11 +12,11 @@ const (
 	NameMember = "east"
 )
 
-func NewToolchainCluster(name, secName string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
-	return NewToolchainClusterWithEndpoint(name, secName, "http://cluster.com", status, labels)
+func NewToolchainCluster(name, ns, secName string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
+	return NewToolchainClusterWithEndpoint(name, ns, secName, "http://cluster.com", status, labels)
 }
 
-func NewToolchainClusterWithEndpoint(name, secName, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
+func NewToolchainClusterWithEndpoint(name, ns, secName, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
 	gock.New(apiEndpoint).
 		Get("api").
 		Persist().

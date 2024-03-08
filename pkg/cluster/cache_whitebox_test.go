@@ -99,52 +99,6 @@ func TestGetClusterWhenIsEmpty(t *testing.T) {
 
 func TestGetClustersByType(t *testing.T) {
 
-	t.Run("get clusters by type", func(t *testing.T) {
-
-		t.Run("not found", func(t *testing.T) {
-			defer resetClusterCache()
-			// given
-			// empty cache
-
-			//when
-			clusters := clusterCache.getCachedToolchainClusters()
-
-			//then
-			assert.Empty(t, clusters)
-
-			//when
-			clusters = clusterCache.getCachedToolchainClusters()
-
-			//then
-			assert.Empty(t, clusters)
-		})
-
-		t.Run("found", func(t *testing.T) {
-			defer resetClusterCache()
-			// given
-			// Two members, one host
-			member1 := newTestCachedToolchainCluster(t, "cluster-1", ready)
-			clusterCache.addCachedToolchainCluster(member1)
-			member2 := newTestCachedToolchainCluster(t, "cluster-2", ready)
-			clusterCache.addCachedToolchainCluster(member2)
-			host := newTestCachedToolchainCluster(t, "cluster-3", ready)
-			clusterCache.addCachedToolchainCluster(host)
-
-			//when
-			clusters := clusterCache.getCachedToolchainClusters()
-
-			//then
-			assert.Contains(t, clusters, member1)
-			assert.Contains(t, clusters, member2)
-
-			//when
-			clusters = clusterCache.getCachedToolchainClusters()
-
-			//then
-			assert.Contains(t, clusters, host)
-		})
-	})
-
 	t.Run("get member clusters", func(t *testing.T) {
 
 		t.Run("not found", func(t *testing.T) {
@@ -171,6 +125,7 @@ func TestGetClustersByType(t *testing.T) {
 			clusters := GetMemberClusters()
 
 			//then
+			assert.Len(t, clusters, 2)
 			assert.Contains(t, clusters, member1)
 			assert.Contains(t, clusters, member2)
 		})
@@ -189,6 +144,7 @@ func TestGetClustersByType(t *testing.T) {
 			clusters := GetMemberClusters()
 
 			//then
+			assert.Len(t, clusters, 1)
 			assert.Contains(t, clusters, member)
 			assert.True(t, called)
 		})
@@ -213,6 +169,7 @@ func TestGetClustersByType(t *testing.T) {
 			clusters := GetMemberClusters(Ready)
 
 			//then
+			assert.Len(t, clusters, 3)
 			assert.Contains(t, clusters, member1)
 			assert.Contains(t, clusters, member2)
 		})
@@ -393,7 +350,7 @@ func TestMultipleActionsInParallel(t *testing.T) {
 
 	for _, clusterToTest := range []*CachedToolchainCluster{memberCluster, hostCluster} {
 		for i := 0; i < 1000; i++ {
-			waitForFinished.Add(4)
+			waitForFinished.Add(3)
 			go func() {
 				defer waitForFinished.Done()
 				latch.Wait()
@@ -408,12 +365,6 @@ func TestMultipleActionsInParallel(t *testing.T) {
 				} else {
 					assert.Nil(t, cluster)
 				}
-			}()
-			go func() {
-				defer waitForFinished.Done()
-				latch.Wait()
-				clusterCache.getCachedToolchainClusters()
-
 			}()
 			go func(clusterToTest *CachedToolchainCluster) {
 				defer waitForFinished.Done()

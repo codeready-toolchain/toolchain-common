@@ -122,7 +122,7 @@ func withStatus(conditions ...toolchainv1alpha1.ToolchainClusterCondition) toolc
 }
 
 func newToolchainCluster(name, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
-	toolchainCluster, secret := test.NewToolchainClusterWithEndpoint(name, "secret", apiEndpoint, status, map[string]string{"namespace": test.MemberOperatorNs})
+	toolchainCluster, secret := test.NewToolchainClusterWithEndpoint(name, test.MemberOperatorNs, "secret", apiEndpoint, status, map[string]string{"namespace": test.MemberOperatorNs})
 	return toolchainCluster, secret
 }
 

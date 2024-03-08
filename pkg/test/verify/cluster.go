@@ -27,54 +27,39 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 	memberLabels := []map[string]string{
 		Labels("", test.NameHost),
 		Labels("member-ns", test.NameHost)}
+
 	for _, labels := range memberLabels {
-
 		t.Run("add member ToolchainCluster", func(t *testing.T) {
-			labels["namespace"] = test.HostOperatorNs
 			for _, withCA := range []bool{true, false} {
-				toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, labels)
+				toolchainCluster, sec := test.NewToolchainCluster("east", test.HostOperatorNs, "secret", status, labels)
 				if withCA {
 					toolchainCluster.Spec.CABundle = "ZHVtbXk="
 				}
+				toolchainCluster.Labels[cluster.RoleLabel(cluster.Tenant)] = ""
 				cl := test.NewFakeClient(t, toolchainCluster, sec)
 				service := newToolchainClusterService(t, cl, withCA)
 				defer service.DeleteToolchainCluster("east")
-
 				// when
 				err := functionToVerify(toolchainCluster, cl, service)
-
 				// then
-				require.NoError(t, err)
-				cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
-				require.True(t, ok)
+				if labels["namespace"] != "" {
+					require.NoError(t, err)
+					cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
+					require.True(t, ok)
+					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
+					// check that toolchain cluster role label tenant was set only on member cluster type
+					require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
+					_, found := toolchainCluster.Labels[cluster.RoleLabel(cluster.Tenant)]
+					require.True(t, found)
 
-				assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
-
-				// check that toolchain cluster role label tenant was set only on member cluster type
-				require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
-				assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
-				assert.Equal(t, test.NameHost, cachedToolchainCluster.OwnerClusterName)
-				assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
-			}
-		})
-		t.Run("Fail add member ToolchainCluster if empty operator namespace", func(t *testing.T) {
-			labels["namespace"] = ""
-			for _, withCA := range []bool{true, false} {
-				toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, labels)
-				if withCA {
-					toolchainCluster.Spec.CABundle = "ZHVtbXk="
+					assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
+					assert.Equal(t, test.NameHost, cachedToolchainCluster.OwnerClusterName)
+					assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
+				} else {
+					require.Error(t, err)
+					_, ok := cluster.GetCachedToolchainCluster("east")
+					require.False(t, ok)
 				}
-				cl := test.NewFakeClient(t, toolchainCluster, sec)
-				service := newToolchainClusterService(t, cl, withCA)
-				defer service.DeleteToolchainCluster("east")
-
-				// when
-				err := functionToVerify(toolchainCluster, cl, service)
-
-				// then
-				require.Error(t, err)
-				_, ok := cluster.GetCachedToolchainCluster("east")
-				require.False(t, ok)
 			}
 		})
 	}
@@ -85,13 +70,12 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse)
 	memberLabels := []map[string]string{
-		Labels("", test.NameMember),
+		Labels(test.MemberOperatorNs, test.NameMember),
 		Labels("host-ns", test.NameMember)}
 	for _, labels := range memberLabels {
-		labels["namespace"] = test.MemberOperatorNs
 		t.Run("add host ToolchainCluster", func(t *testing.T) {
 			for _, withCA := range []bool{true, false} {
-				toolchainCluster, sec := test.NewToolchainCluster("east", "secret", status, labels)
+				toolchainCluster, sec := test.NewToolchainCluster("east", test.MemberOperatorNs, "secret", status, labels)
 				if withCA {
 					toolchainCluster.Spec.CABundle = "ZHVtbXk="
 				}
@@ -102,21 +86,27 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 				// when
 				err := functionToVerify(toolchainCluster, cl, service)
 
-				// then
-				require.NoError(t, err)
-				cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
-				require.True(t, ok)
+				if labels["namespace"] != "" {
+					// then
+					require.NoError(t, err)
+					cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
+					require.True(t, ok)
 
-				assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
+					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
 
-				// check that toolchain cluster role label tenant is not set on host cluster
-				require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
-				expectedToolChainClusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
-				_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
-				require.False(t, found)
-				assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
-				assert.Equal(t, test.NameMember, cachedToolchainCluster.OwnerClusterName)
-				assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
+					// check that toolchain cluster role label tenant is not set on host cluster
+					require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
+					expectedToolChainClusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
+					_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
+					require.False(t, found)
+					assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
+					assert.Equal(t, test.NameMember, cachedToolchainCluster.OwnerClusterName)
+					assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
+				} else {
+					require.Error(t, err)
+					_, ok := cluster.GetCachedToolchainCluster("east")
+					require.False(t, ok)
+				}
 			}
 		})
 	}
@@ -126,7 +116,7 @@ func AddToolchainClusterFailsBecauseOfMissingSecret(t *testing.T, functionToVeri
 	// given
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
-	toolchainCluster, _ := test.NewToolchainCluster("east", "secret", status, Labels("", test.NameHost))
+	toolchainCluster, _ := test.NewToolchainCluster("east", test.MemberOperatorNs, "secret", status, Labels("", test.NameHost))
 	cl := test.NewFakeClient(t, toolchainCluster)
 	service := newToolchainClusterService(t, cl, false)
 
@@ -144,8 +134,8 @@ func AddToolchainClusterFailsBecauseOfEmptySecret(t *testing.T, functionToVerify
 	// given
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
-	toolchainCluster, _ := test.NewToolchainCluster("east", "secret", status,
-		Labels("", test.NameHost))
+	toolchainCluster, _ := test.NewToolchainCluster("east", test.MemberOperatorNs, "secret", status,
+		Labels(test.MemberOperatorNs, test.NameHost))
 	secret := &corev1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "secret",
@@ -168,13 +158,11 @@ func UpdateToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	// given
 	defer gock.Off()
 	statusTrue := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
-	toolchainCluster1, sec1 := test.NewToolchainCluster("east", "secret1", statusTrue,
-		Labels("", test.NameMember))
-	toolchainCluster1.Labels["namespace"] = test.HostOperatorNs
+	toolchainCluster1, sec1 := test.NewToolchainCluster("east", test.HostOperatorNs, "secret1", statusTrue,
+		Labels(test.HostOperatorNs, test.NameMember))
 	statusFalse := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse)
-	toolchainCluster2, sec2 := test.NewToolchainCluster("east", "secret2", statusFalse,
-		Labels("", test.NameMember))
-	toolchainCluster2.Labels["namespace"] = test.HostOperatorNs
+	toolchainCluster2, sec2 := test.NewToolchainCluster("east", test.HostOperatorNs, "secret2", statusFalse,
+		Labels(test.HostOperatorNs, test.NameMember))
 	cl := test.NewFakeClient(t, toolchainCluster2, sec1, sec2)
 	service := newToolchainClusterService(t, cl, false)
 	defer service.DeleteToolchainCluster("east")
@@ -201,9 +189,8 @@ func DeleteToolchainCluster(t *testing.T, functionToVerify FunctionToVerify) {
 	// given
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
-	toolchainCluster, sec := test.NewToolchainCluster("east", "sec", status,
-		Labels("", test.NameHost))
-	toolchainCluster.Labels["namespace"] = test.MemberOperatorNs
+	toolchainCluster, sec := test.NewToolchainCluster("east", test.MemberOperatorNs, "sec", status,
+		Labels(test.MemberOperatorNs, test.NameHost))
 	cl := test.NewFakeClient(t, sec)
 	service := newToolchainClusterService(t, cl, false)
 	err := service.AddOrUpdateToolchainCluster(toolchainCluster)
