@@ -96,7 +96,7 @@ func TestClusterHealthChecks(t *testing.T) {
 }
 
 func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolchainv1alpha1.ToolchainCluster) func() {
-	service := cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", 0, func(config *rest.Config, options client.Options) (client.Client, error) {
+	service := cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, test.MemberOperatorNs, 0, func(config *rest.Config, options client.Options) (client.Client, error) {
 		// make sure that insecure is false to make Gock mocking working properly
 		config.Insecure = false
 		return client.New(config, options)
@@ -122,7 +122,7 @@ func withStatus(conditions ...toolchainv1alpha1.ToolchainClusterCondition) toolc
 }
 
 func newToolchainCluster(name, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
-	toolchainCluster, secret := test.NewToolchainClusterWithEndpoint(name, test.MemberOperatorNs, "secret", apiEndpoint, status, map[string]string{"namespace": test.MemberOperatorNs})
+	toolchainCluster, secret := test.NewToolchainClusterWithEndpoint(name, "test-namespace", "secret", apiEndpoint, status, map[string]string{"namespace": "test-namespace"})
 	return toolchainCluster, secret
 }
 
