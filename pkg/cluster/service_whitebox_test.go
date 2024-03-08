@@ -20,12 +20,12 @@ func TestRefreshCacheInService(t *testing.T) {
 	// given
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
-	toolchainCluster, sec := test.NewToolchainCluster("east", test.HostOperatorNs, "secret", status, map[string]string{"ownerClusterName": test.NameMember, "namespace": test.HostOperatorNs})
+	toolchainCluster, sec := test.NewToolchainCluster("east", test.HostOperatorNs, "secret", status, map[string]string{"ownerClusterName": test.NameMember, "namespace": test.MemberOperatorNs})
 	s := scheme.Scheme
 	err := toolchainv1alpha1.AddToScheme(s)
 	require.NoError(t, err)
 	cl := test.NewFakeClient(t, toolchainCluster, sec)
-	service := newToolchainClusterService(cl, 0)
+	service := newToolchainClusterService(cl, 0, test.HostOperatorNs)
 
 	t.Run("the member cluster should be retrieved when refreshCache func is called", func(t *testing.T) {
 		// given
@@ -81,7 +81,7 @@ func TestUpdateClientBasedOnRestConfig(t *testing.T) {
 	t.Run("don't update when RestConfig is the same", func(t *testing.T) {
 		// given
 		cl := test.NewFakeClient(t, sec1)
-		service := newToolchainClusterService(cl, 3*time.Second)
+		service := newToolchainClusterService(cl, 3*time.Second, test.HostOperatorNs)
 		defer service.DeleteToolchainCluster("east")
 
 		err := service.AddOrUpdateToolchainCluster(toolchainCluster1)
@@ -104,7 +104,7 @@ func TestUpdateClientBasedOnRestConfig(t *testing.T) {
 	t.Run("update when RestConfig is not the same", func(t *testing.T) {
 		// given
 		cl := test.NewFakeClient(t, sec1)
-		service := newToolchainClusterService(cl, 3*time.Second)
+		service := newToolchainClusterService(cl, 3*time.Second, test.HostOperatorNs)
 		defer service.DeleteToolchainCluster("east")
 
 		err := service.AddOrUpdateToolchainCluster(toolchainCluster1)
@@ -124,8 +124,8 @@ func TestUpdateClientBasedOnRestConfig(t *testing.T) {
 	})
 }
 
-func newToolchainClusterService(cl client.Client, timeout time.Duration) ToolchainClusterService {
-	return NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", timeout, func(config *rest.Config, options client.Options) (client.Client, error) {
+func newToolchainClusterService(cl client.Client, timeout time.Duration, ons string) ToolchainClusterService {
+	return NewToolchainClusterServiceWithClient(cl, logf.Log, ons, timeout, func(config *rest.Config, options client.Options) (client.Client, error) {
 		// make sure that insecure is false to make Gock mocking working properly
 		// let's use a copy of the config, so it doesn't affect the cache logic
 		copiedConfig := rest.CopyConfig(config)

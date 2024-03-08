@@ -69,10 +69,6 @@ func TestDeleteToolchainClusterWhenDoesNotExist(t *testing.T) {
 func TestListToolchainClusterConfigs(t *testing.T) {
 	// given
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
-	//m1, sec1 := test.NewToolchainClusterWithEndpoint("east", test.HostOperatorNs, "secret1", "http://m1.com", status, verify.Labels(test.MemberOperatorNs, "m1ClusterName"))
-	//m2, sec2 := test.NewToolchainClusterWithEndpoint("west", test.HostOperatorNs, "secret2", "http://m2.com", status, verify.Labels(test.MemberOperatorNs, "m2ClusterName"))
-	//host, secHost := test.NewToolchainCluster("host", test.MemberOperatorNs, "secretHost", status, verify.Labels(test.HostOperatorNs, "hostClusterName"))
-	//noise, secNoise := test.NewToolchainCluster("noise", "noise-namespace", "secretNoise", status, verify.Labels(test.MemberOperatorNs, "noiseClusterName"))
 	require.NoError(t, toolchainv1alpha1.AddToScheme(scheme.Scheme))
 
 	m1, sec1 := test.NewToolchainClusterWithEndpoint("east", test.HostOperatorNs, "secret1", "http://m1.com", status, verify.Labels(test.MemberOperatorNs, "m1ClusterName"))
@@ -108,11 +104,9 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 	})
 
 	t.Run("list host", func(t *testing.T) {
-		// given
-		cl := test.NewFakeClient(t, host, noise, secNoise)
 		// when
 
-		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
+		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, host.Namespace, time.Second)
 
 		// then
 		require.NoError(t, err)
