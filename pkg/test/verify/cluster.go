@@ -70,7 +70,7 @@ func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) 
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse)
 	memberLabels := []map[string]string{
-		Labels(test.MemberOperatorNs, test.NameMember),
+		Labels("", test.NameMember),
 		Labels("host-ns", test.NameMember)}
 	for _, labels := range memberLabels {
 		t.Run("add host ToolchainCluster", func(t *testing.T) {
@@ -139,7 +139,7 @@ func AddToolchainClusterFailsBecauseOfEmptySecret(t *testing.T, functionToVerify
 	secret := &corev1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "secret",
-			Namespace: "test-namespace",
+			Namespace: test.MemberOperatorNs,
 		}}
 	cl := test.NewFakeClient(t, toolchainCluster, secret)
 	service := newToolchainClusterService(t, cl, false)
