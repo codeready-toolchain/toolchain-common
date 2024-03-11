@@ -348,40 +348,38 @@ func TestMultipleActionsInParallel(t *testing.T) {
 
 	}
 
-	for _, clusterToTest := range []*CachedToolchainCluster{clusterForTest} {
-		for i := 0; i < 1000; i++ {
-			waitForFinished.Add(4)
-			go func() {
-				defer waitForFinished.Done()
-				latch.Wait()
-				clusterCache.addCachedToolchainCluster(clusterToTest)
-			}()
-			go func() {
-				defer waitForFinished.Done()
-				latch.Wait()
-				cluster, ok := clusterCache.getCachedToolchainCluster(clusterToTest.Name, true)
-				if ok {
-					assert.Equal(t, clusterToTest, cluster)
-				} else {
-					assert.Nil(t, cluster)
-				}
-			}()
-			go func() {
-				defer waitForFinished.Done()
-				latch.Wait()
-				clusters := clusterCache.getCachedToolchainClusters()
-				if len(clusters) == 1 {
-					assert.Equal(t, clusterToTest, clusters[0])
-				} else {
-					assert.Empty(t, clusters)
-				}
-			}()
-			go func(clusterToTest *CachedToolchainCluster) {
-				defer waitForFinished.Done()
-				latch.Wait()
-				clusterCache.deleteCachedToolchainCluster(clusterToTest.Name)
-			}(clusterToTest)
-		}
+	for i := 0; i < 1000; i++ {
+		waitForFinished.Add(4)
+		go func() {
+			defer waitForFinished.Done()
+			latch.Wait()
+			clusterCache.addCachedToolchainCluster(clusterForTest)
+		}()
+		go func() {
+			defer waitForFinished.Done()
+			latch.Wait()
+			cluster, ok := clusterCache.getCachedToolchainCluster(clusterForTest.Name, true)
+			if ok {
+				assert.Equal(t, clusterForTest, cluster)
+			} else {
+				assert.Nil(t, cluster)
+			}
+		}()
+		go func() {
+			defer waitForFinished.Done()
+			latch.Wait()
+			clusters := clusterCache.getCachedToolchainClusters()
+			if len(clusters) == 1 {
+				assert.Equal(t, clusterForTest, clusters[0])
+			} else {
+				assert.Empty(t, clusters)
+			}
+		}()
+		go func(clusterToTest *CachedToolchainCluster) {
+			defer waitForFinished.Done()
+			latch.Wait()
+			clusterCache.deleteCachedToolchainCluster(clusterToTest.Name)
+		}(clusterForTest)
 	}
 
 	// when

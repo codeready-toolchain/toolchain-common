@@ -71,13 +71,12 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
 	require.NoError(t, toolchainv1alpha1.AddToScheme(scheme.Scheme))
 
-	m1, sec1 := test.NewToolchainClusterWithEndpoint("east", test.HostOperatorNs, "secret1", "http://m1.com", status, verify.Labels(test.MemberOperatorNs, "m1ClusterName"))
-	m2, sec2 := test.NewToolchainClusterWithEndpoint("west", test.HostOperatorNs, "secret2", "http://m2.com", status, verify.Labels(test.MemberOperatorNs, "m2ClusterName"))
+	m1, sec1 := test.NewToolchainClusterWithEndpoint("east", test.HostOperatorNs, "secret1", "http://m1.com", status, map[string]string{"ownerClusterName": "m1ClusterName", "namespace": test.MemberOperatorNs, cluster.RoleLabel(cluster.Tenant): ""})
+	m2, sec2 := test.NewToolchainClusterWithEndpoint("west", test.HostOperatorNs, "secret2", "http://m2.com", status, map[string]string{"ownerClusterName": "m2ClusterName", "namespace": test.MemberOperatorNs, cluster.RoleLabel(cluster.Tenant): ""})
 	host, secHost := test.NewToolchainCluster("host", test.MemberOperatorNs, "secretHost", status, verify.Labels(test.HostOperatorNs, "hostClusterName"))
 	noise, secNoise := test.NewToolchainCluster("noise", "noise-namespace", "secretNoise", status, verify.Labels(test.MemberOperatorNs, "noiseClusterName"))
 	require.NoError(t, toolchainv1alpha1.AddToScheme(scheme.Scheme))
-	m1.Labels[cluster.RoleLabel(cluster.Tenant)] = ""
-	m2.Labels[cluster.RoleLabel(cluster.Tenant)] = ""
+
 	cl := test.NewFakeClient(t, m1, m2, host, noise, sec1, sec2, secHost, secNoise)
 
 	t.Run("list members", func(t *testing.T) {

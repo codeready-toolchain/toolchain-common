@@ -24,92 +24,111 @@ func AddToolchainClusterAsMember(t *testing.T, functionToVerify FunctionToVerify
 	// given
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
-	memberLabels := []map[string]string{
-		Labels("", test.NameHost),
-		Labels("member-ns", test.NameHost)}
 
-	for _, labels := range memberLabels {
-		t.Run("add member ToolchainCluster", func(t *testing.T) {
-			for _, withCA := range []bool{true, false} {
-				toolchainCluster, sec := test.NewToolchainCluster("east", test.HostOperatorNs, "secret", status, labels)
-				if withCA {
-					toolchainCluster.Spec.CABundle = "ZHVtbXk="
-				}
-				toolchainCluster.Labels[cluster.RoleLabel(cluster.Tenant)] = ""
-				cl := test.NewFakeClient(t, toolchainCluster, sec)
-				service := newToolchainClusterService(t, cl, withCA)
-				defer service.DeleteToolchainCluster("east")
-				// when
-				err := functionToVerify(toolchainCluster, cl, service)
-				// then
-				if labels["namespace"] != "" {
-					require.NoError(t, err)
-					cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
-					require.True(t, ok)
-					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
-					// check that toolchain cluster role label tenant was set only on member cluster type
-					require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
-					_, found := toolchainCluster.Labels[cluster.RoleLabel(cluster.Tenant)]
-					require.True(t, found)
-
-					assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
-					assert.Equal(t, test.NameHost, cachedToolchainCluster.OwnerClusterName)
-					assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
-				} else {
-					require.Error(t, err)
-					_, ok := cluster.GetCachedToolchainCluster("east")
-					require.False(t, ok)
-				}
+	t.Run("add member ToolchainCluster with namespace label set", func(t *testing.T) {
+		for _, withCA := range []bool{true, false} {
+			toolchainCluster, sec := test.NewToolchainCluster("east", test.HostOperatorNs, "secret", status, Labels("member-ns", test.NameHost))
+			if withCA {
+				toolchainCluster.Spec.CABundle = "ZHVtbXk="
 			}
-		})
-	}
+			toolchainCluster.Labels[cluster.RoleLabel(cluster.Tenant)] = ""
+			cl := test.NewFakeClient(t, toolchainCluster, sec)
+			service := newToolchainClusterService(t, cl, withCA)
+			defer service.DeleteToolchainCluster("east")
+			// when
+			err := functionToVerify(toolchainCluster, cl, service)
+			// then
+			require.NoError(t, err)
+			cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
+			require.True(t, ok)
+			assert.Equal(t, "member-ns", cachedToolchainCluster.OperatorNamespace)
+			// check that toolchain cluster role label tenant was set only on member cluster type
+			require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
+			_, found := toolchainCluster.Labels[cluster.RoleLabel(cluster.Tenant)]
+			require.True(t, found)
+			assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
+			assert.Equal(t, test.NameHost, cachedToolchainCluster.OwnerClusterName)
+			assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
+
+		}
+	})
+
+	t.Run("add member ToolchainCluster without namespace label set should fail", func(t *testing.T) {
+		for _, withCA := range []bool{true, false} {
+			toolchainCluster, sec := test.NewToolchainCluster("east", test.HostOperatorNs, "secret", status, Labels("", test.NameHost))
+			if withCA {
+				toolchainCluster.Spec.CABundle = "ZHVtbXk="
+			}
+			toolchainCluster.Labels[cluster.RoleLabel(cluster.Tenant)] = ""
+			cl := test.NewFakeClient(t, toolchainCluster, sec)
+			service := newToolchainClusterService(t, cl, withCA)
+			defer service.DeleteToolchainCluster("east")
+			// when
+			err := functionToVerify(toolchainCluster, cl, service)
+			// then
+			require.Error(t, err)
+			_, ok := cluster.GetCachedToolchainCluster("east")
+			require.False(t, ok)
+
+		}
+	})
 }
 
 func AddToolchainClusterAsHost(t *testing.T, functionToVerify FunctionToVerify) {
 	// given
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse)
-	memberLabels := []map[string]string{
-		Labels("", test.NameMember),
-		Labels("host-ns", test.NameMember)}
-	for _, labels := range memberLabels {
-		t.Run("add host ToolchainCluster", func(t *testing.T) {
-			for _, withCA := range []bool{true, false} {
-				toolchainCluster, sec := test.NewToolchainCluster("east", test.MemberOperatorNs, "secret", status, labels)
-				if withCA {
-					toolchainCluster.Spec.CABundle = "ZHVtbXk="
-				}
-				cl := test.NewFakeClient(t, toolchainCluster, sec)
-				service := newToolchainClusterService(t, cl, withCA)
-				defer service.DeleteToolchainCluster("east")
-
-				// when
-				err := functionToVerify(toolchainCluster, cl, service)
-
-				if labels["namespace"] != "" {
-					// then
-					require.NoError(t, err)
-					cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
-					require.True(t, ok)
-
-					assert.Equal(t, labels["namespace"], cachedToolchainCluster.OperatorNamespace)
-
-					// check that toolchain cluster role label tenant is not set on host cluster
-					require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
-					expectedToolChainClusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
-					_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
-					require.False(t, found)
-					assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
-					assert.Equal(t, test.NameMember, cachedToolchainCluster.OwnerClusterName)
-					assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
-				} else {
-					require.Error(t, err)
-					_, ok := cluster.GetCachedToolchainCluster("east")
-					require.False(t, ok)
-				}
+	t.Run("add host ToolchainCluster with namespace label set", func(t *testing.T) {
+		for _, withCA := range []bool{true, false} {
+			toolchainCluster, sec := test.NewToolchainCluster("east", test.MemberOperatorNs, "secret", status, Labels("host-ns", test.NameMember))
+			if withCA {
+				toolchainCluster.Spec.CABundle = "ZHVtbXk="
 			}
-		})
-	}
+			cl := test.NewFakeClient(t, toolchainCluster, sec)
+			service := newToolchainClusterService(t, cl, withCA)
+			defer service.DeleteToolchainCluster("east")
+
+			// when
+			err := functionToVerify(toolchainCluster, cl, service)
+
+			// then
+			require.NoError(t, err)
+			cachedToolchainCluster, ok := cluster.GetCachedToolchainCluster("east")
+			require.True(t, ok)
+
+			assert.Equal(t, "host-ns", cachedToolchainCluster.OperatorNamespace)
+
+			// check that toolchain cluster role label tenant is not set on host cluster
+			require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(toolchainCluster), toolchainCluster))
+			expectedToolChainClusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
+			_, found := toolchainCluster.Labels[expectedToolChainClusterRoleLabel]
+			require.False(t, found)
+			assert.Equal(t, status, *cachedToolchainCluster.ClusterStatus)
+			assert.Equal(t, test.NameMember, cachedToolchainCluster.OwnerClusterName)
+			assert.Equal(t, "http://cluster.com", cachedToolchainCluster.APIEndpoint)
+		}
+	})
+
+	t.Run("add host ToolchainCluster without namespace label set should fail", func(t *testing.T) {
+		for _, withCA := range []bool{true, false} {
+			toolchainCluster, sec := test.NewToolchainCluster("east", test.MemberOperatorNs, "secret", status, Labels("", test.NameMember))
+			if withCA {
+				toolchainCluster.Spec.CABundle = "ZHVtbXk="
+			}
+			cl := test.NewFakeClient(t, toolchainCluster, sec)
+			service := newToolchainClusterService(t, cl, withCA)
+			defer service.DeleteToolchainCluster("east")
+
+			// when
+			err := functionToVerify(toolchainCluster, cl, service)
+
+			// then
+			require.Error(t, err)
+			_, ok := cluster.GetCachedToolchainCluster("east")
+			require.False(t, ok)
+
+		}
+	})
 }
 
 func AddToolchainClusterFailsBecauseOfMissingSecret(t *testing.T, functionToVerify FunctionToVerify) {
