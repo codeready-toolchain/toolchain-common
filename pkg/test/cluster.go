@@ -32,7 +32,7 @@ func NewToolchainClusterWithEndpoint(name, ons, secName, apiEndpoint string, sta
 			"token": []byte("mycooltoken"),
 		},
 	}
-	//labels["namespace"] = ons
+
 	return &toolchainv1alpha1.ToolchainCluster{
 		Spec: toolchainv1alpha1.ToolchainClusterSpec{
 			SecretRef: toolchainv1alpha1.LocalSecretReference{

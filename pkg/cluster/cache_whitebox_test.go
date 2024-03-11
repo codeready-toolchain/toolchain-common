@@ -336,21 +336,21 @@ func TestRefreshCache(t *testing.T) {
 
 func TestMultipleActionsInParallel(t *testing.T) {
 	// given
+	clusterForTest := newTestCachedToolchainCluster(t, "clusterForTest", ready)
+
 	defer resetClusterCache()
 	var latch sync.WaitGroup
 	latch.Add(1)
 	var waitForFinished sync.WaitGroup
 
-	memberCluster := newTestCachedToolchainCluster(t, "memberCluster", ready)
-	hostCluster := newTestCachedToolchainCluster(t, "hostCluster", ready)
 	clusterCache.refreshCache = func() {
-		clusterCache.addCachedToolchainCluster(memberCluster)
-		clusterCache.addCachedToolchainCluster(hostCluster)
+		clusterCache.addCachedToolchainCluster(clusterForTest)
+
 	}
 
-	for _, clusterToTest := range []*CachedToolchainCluster{memberCluster, hostCluster} {
+	for _, clusterToTest := range []*CachedToolchainCluster{clusterForTest} {
 		for i := 0; i < 1000; i++ {
-			waitForFinished.Add(3)
+			waitForFinished.Add(4)
 			go func() {
 				defer waitForFinished.Done()
 				latch.Wait()
@@ -364,6 +364,16 @@ func TestMultipleActionsInParallel(t *testing.T) {
 					assert.Equal(t, clusterToTest, cluster)
 				} else {
 					assert.Nil(t, cluster)
+				}
+			}()
+			go func() {
+				defer waitForFinished.Done()
+				latch.Wait()
+				clusters := clusterCache.getCachedToolchainClusters()
+				if len(clusters) == 1 {
+					assert.Equal(t, clusterToTest, clusters[0])
+				} else {
+					assert.Empty(t, clusters)
 				}
 			}()
 			go func(clusterToTest *CachedToolchainCluster) {
@@ -380,13 +390,9 @@ func TestMultipleActionsInParallel(t *testing.T) {
 	// then
 	waitForFinished.Wait()
 
-	member, ok := clusterCache.getCachedToolchainCluster("memberCluster", true)
+	clusterForTest1, ok := clusterCache.getCachedToolchainCluster("clusterForTest", true)
 	assert.True(t, ok)
-	assert.Equal(t, memberCluster, member)
-
-	host, ok := clusterCache.getCachedToolchainCluster("hostCluster", true)
-	assert.True(t, ok)
-	assert.Equal(t, hostCluster, host)
+	assert.Equal(t, clusterForTest, clusterForTest1)
 }
 
 // clusterOption an option to configure the cluster to use in the tests
