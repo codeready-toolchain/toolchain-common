@@ -124,8 +124,8 @@ func TestUpdateClientBasedOnRestConfig(t *testing.T) {
 	})
 }
 
-func newToolchainClusterService(cl client.Client, timeout time.Duration, ons string) ToolchainClusterService {
-	return NewToolchainClusterServiceWithClient(cl, logf.Log, ons, timeout, func(config *rest.Config, options client.Options) (client.Client, error) {
+func newToolchainClusterService(cl client.Client, timeout time.Duration, tcNs string) ToolchainClusterService {
+	return NewToolchainClusterServiceWithClient(cl, logf.Log, tcNs, timeout, func(config *rest.Config, options client.Options) (client.Client, error) {
 		// make sure that insecure is false to make Gock mocking working properly
 		// let's use a copy of the config, so it doesn't affect the cache logic
 		copiedConfig := rest.CopyConfig(config)

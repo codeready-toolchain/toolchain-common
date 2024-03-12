@@ -12,11 +12,11 @@ const (
 	NameMember = "east"
 )
 
-func NewToolchainCluster(name, ons, secName string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
-	return NewToolchainClusterWithEndpoint(name, ons, secName, "http://cluster.com", status, labels)
+func NewToolchainCluster(name, tcNs, secName string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
+	return NewToolchainClusterWithEndpoint(name, tcNs, secName, "http://cluster.com", status, labels)
 }
 
-func NewToolchainClusterWithEndpoint(name, ons, secName, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
+func NewToolchainClusterWithEndpoint(name, tcNs, secName, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
 	gock.New(apiEndpoint).
 		Get("api").
 		Persist().
@@ -25,7 +25,7 @@ func NewToolchainClusterWithEndpoint(name, ons, secName, apiEndpoint string, sta
 	secret := &corev1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      secName,
-			Namespace: ons,
+			Namespace: tcNs,
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
@@ -43,7 +43,7 @@ func NewToolchainClusterWithEndpoint(name, ons, secName, apiEndpoint string, sta
 		},
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,
-			Namespace: ons,
+			Namespace: tcNs,
 			Labels:    labels,
 		},
 		Status: status,
