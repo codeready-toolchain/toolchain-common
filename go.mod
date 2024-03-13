@@ -7,7 +7,7 @@ require (
 	github.com/go-logr/logr v1.2.3
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang-jwt/jwt/v5 v5.2.0
-	github.com/lestrrat-go/jwx v1.2.28
+	github.com/lestrrat-go/jwx v1.2.29
 	github.com/magiconair/properties v1.8.5
 	// using latest commit from 'github.com/openshift/api branch release-4.12'
 	github.com/openshift/api v0.0.0-20230213134911-7ba313770556
@@ -15,7 +15,7 @@ require (
 	github.com/openshift/library-go v0.0.0-20230301092340-c13b89190a26
 	github.com/pkg/errors v0.9.1
 	github.com/redhat-cop/operator-utils v1.3.3-0.20220121120056-862ef22b8cdf
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	gopkg.in/h2non/gock.v1 v1.0.14
 	gopkg.in/square/go-jose.v2 v2.3.0
 	gotest.tools v2.2.0+incompatible
@@ -91,10 +91,10 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
