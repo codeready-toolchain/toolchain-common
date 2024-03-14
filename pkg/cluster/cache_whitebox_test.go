@@ -7,7 +7,6 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -51,37 +50,6 @@ func TestGetCluster(t *testing.T) {
 	}
 }
 
-func TestHostCluster(t *testing.T) {
-	// given
-	defer resetClusterCache()
-	host := newTestCachedToolchainCluster(t, "host-cluster", ready)
-	clusterCache.addCachedToolchainCluster(host)
-
-	// when
-	returnedCachedCluster, ok := HostCluster()
-
-	// then
-	assert.True(t, ok)
-	assert.Equal(t, host, returnedCachedCluster)
-}
-
-func TestMemberClusters(t *testing.T) {
-	// given
-	defer resetClusterCache()
-	member1 := newTestCachedToolchainCluster(t, "member-cluster-1", ready)
-	clusterCache.addCachedToolchainCluster(member1)
-	member2 := newTestCachedToolchainCluster(t, "member-cluster-2", ready)
-	clusterCache.addCachedToolchainCluster(member2)
-
-	// when
-	returnedCachedClusters := MemberClusters()
-
-	// then
-	require.Len(t, returnedCachedClusters, 2)
-	assert.Contains(t, returnedCachedClusters, member1)
-	assert.Contains(t, returnedCachedClusters, member2)
-}
-
 func TestGetClusterWhenIsEmpty(t *testing.T) {
 	// given
 	resetClusterCache()
@@ -97,17 +65,17 @@ func TestGetClusterWhenIsEmpty(t *testing.T) {
 	}
 }
 
-func TestGetClustersByType(t *testing.T) {
+func TestGetClusters(t *testing.T) {
 
-	t.Run("get member clusters", func(t *testing.T) {
+	t.Run("get clusters", func(t *testing.T) {
 
 		t.Run("not found", func(t *testing.T) {
 			// given
 			defer resetClusterCache()
-			// no members
+			// no clusters
 
 			//when
-			clusters := GetMemberClusters()
+			clusters := GetClusters()
 
 			//then
 			assert.Empty(t, clusters)
@@ -116,111 +84,68 @@ func TestGetClustersByType(t *testing.T) {
 		t.Run("all clusters", func(t *testing.T) {
 			// given
 			defer resetClusterCache()
+			host := newTestCachedToolchainCluster(t, "cluster-host", ready)
+			clusterCache.addCachedToolchainCluster(host)
 			member1 := newTestCachedToolchainCluster(t, "cluster-1", ready)
 			clusterCache.addCachedToolchainCluster(member1)
 			member2 := newTestCachedToolchainCluster(t, "cluster-2", ready)
 			clusterCache.addCachedToolchainCluster(member2)
 
 			//when
-			clusters := GetMemberClusters()
-
-			//then
-			assert.Len(t, clusters, 2)
-			assert.Contains(t, clusters, member1)
-			assert.Contains(t, clusters, member2)
-		})
-
-		t.Run("found after refreshing the cache", func(t *testing.T) {
-			// given
-			defer resetClusterCache()
-			member := newTestCachedToolchainCluster(t, "member", ready)
-			called := false
-			clusterCache.refreshCache = func() {
-				called = true
-				clusterCache.addCachedToolchainCluster(member)
-			}
-
-			//when
-			clusters := GetMemberClusters()
-
-			//then
-			assert.Len(t, clusters, 1)
-			assert.Contains(t, clusters, member)
-			assert.True(t, called)
-		})
-
-	})
-
-	t.Run("get member clusters filtered by readiness and capacity", func(t *testing.T) {
-		defer resetClusterCache()
-
-		// noise
-		host := newTestCachedToolchainCluster(t, "cluster-host", ready)
-		clusterCache.addCachedToolchainCluster(host)
-		member1 := newTestCachedToolchainCluster(t, "cluster-1", ready)
-		clusterCache.addCachedToolchainCluster(member1)
-		member2 := newTestCachedToolchainCluster(t, "cluster-2", ready)
-		clusterCache.addCachedToolchainCluster(member2)
-		member3 := newTestCachedToolchainCluster(t, "cluster-3", notReady)
-		clusterCache.addCachedToolchainCluster(member3)
-
-		t.Run("get only ready member clusters", func(t *testing.T) {
-			//when
-			clusters := GetMemberClusters(Ready)
+			clusters := GetClusters()
 
 			//then
 			assert.Len(t, clusters, 3)
 			assert.Contains(t, clusters, member1)
 			assert.Contains(t, clusters, member2)
-		})
-	})
-
-	t.Run("get host cluster", func(t *testing.T) {
-
-		t.Run("not found", func(t *testing.T) {
-			// given
-			defer resetClusterCache()
-			// no host
-
-			//when
-			_, ok := GetHostCluster()
-
-			//then
-			assert.False(t, ok)
-		})
-		t.Run("found", func(t *testing.T) {
-			// given
-			defer resetClusterCache()
-			host := newTestCachedToolchainCluster(t, "cluster-host", ready)
-			clusterCache.addCachedToolchainCluster(host)
-
-			//when
-			cluster, ok := GetHostCluster()
-
-			//then
-			assert.True(t, ok)
-			assert.Equal(t, host, cluster)
+			assert.Contains(t, clusters, host)
 		})
 
 		t.Run("found after refreshing the cache", func(t *testing.T) {
 			// given
 			defer resetClusterCache()
-			host := newTestCachedToolchainCluster(t, "cluster-host", ready)
+			clustertest := newTestCachedToolchainCluster(t, "clustertotest", ready)
 			called := false
 			clusterCache.refreshCache = func() {
 				called = true
-				clusterCache.addCachedToolchainCluster(host)
+				clusterCache.addCachedToolchainCluster(clustertest)
 			}
 
 			//when
-			cluster, ok := GetHostCluster()
+			clusters := GetClusters()
 
 			//then
-			assert.True(t, ok)
-			assert.Equal(t, host, cluster)
+			assert.Len(t, clusters, 1)
+			assert.Contains(t, clusters, clustertest)
 			assert.True(t, called)
 		})
+
+		t.Run("get clusters filtered by readiness and capacity", func(t *testing.T) {
+			defer resetClusterCache()
+
+			host := newTestCachedToolchainCluster(t, "cluster-host", ready)
+			clusterCache.addCachedToolchainCluster(host)
+			member1 := newTestCachedToolchainCluster(t, "cluster-1", ready)
+			clusterCache.addCachedToolchainCluster(member1)
+			member2 := newTestCachedToolchainCluster(t, "cluster-2", ready)
+			clusterCache.addCachedToolchainCluster(member2)
+			// noise
+			member3 := newTestCachedToolchainCluster(t, "cluster-3", notReady)
+			clusterCache.addCachedToolchainCluster(member3)
+
+			//when
+			clusters := GetClusters(Ready)
+
+			//then
+			assert.Len(t, clusters, 3)
+			assert.Contains(t, clusters, member1)
+			assert.Contains(t, clusters, member2)
+			assert.Contains(t, clusters, host)
+
+		})
+
 	})
+
 }
 
 func TestGetClusterUsingDifferentKey(t *testing.T) {

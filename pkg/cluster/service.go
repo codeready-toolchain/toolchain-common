@@ -227,9 +227,9 @@ func IsReady(clusterStatus *toolchainv1alpha1.ToolchainClusterStatus) bool {
 	return false
 }
 
-func ListToolchainClusterConfigs(cl client.Client, namespace string, timeout time.Duration) ([]*Config, error) {
+func ListToolchainClusterConfigs(ctx context.Context, cl client.Client, namespace string, timeout time.Duration) ([]*Config, error) {
 	toolchainClusters := &toolchainv1alpha1.ToolchainClusterList{}
-	if err := cl.List(context.TODO(), toolchainClusters, client.InNamespace(namespace)); err != nil {
+	if err := cl.List(ctx, toolchainClusters, client.InNamespace(namespace)); err != nil {
 		return nil, err
 	}
 	var configs []*Config

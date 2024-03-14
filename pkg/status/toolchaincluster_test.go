@@ -27,9 +27,9 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 		t.Run("condition ready", func(t *testing.T) {
 			// given
 			readyAttrs := ToolchainClusterAttributes{
-				GetClusterFunc: newGetHostClusterReady(),
-				Period:         10 * time.Second,
-				Timeout:        3 * time.Second,
+				GetClustersFunc: newGetHostClusterReady(),
+				Period:          10 * time.Second,
+				Timeout:         3 * time.Second,
 			}
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
@@ -51,9 +51,9 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			// given
 			msg := "the cluster connection was not found"
 			readyAttrs := ToolchainClusterAttributes{
-				GetClusterFunc: newGetHostClusterNotOk(),
-				Period:         10 * time.Second,
-				Timeout:        3 * time.Second,
+				GetClustersFunc: newGetHostClusterNotOk(),
+				Period:          10 * time.Second,
+				Timeout:         3 * time.Second,
 			}
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
@@ -75,9 +75,9 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 		t.Run("condition cluster ok but not ready", func(t *testing.T) {
 			// given
 			readyAttrs := ToolchainClusterAttributes{
-				GetClusterFunc: newGetHostClusterOkButNotReady(fakeToolchainClusterMsg),
-				Period:         10 * time.Second,
-				Timeout:        3 * time.Second,
+				GetClustersFunc: newGetHostClusterOkButNotReady(fakeToolchainClusterMsg),
+				Period:          10 * time.Second,
+				Timeout:         3 * time.Second,
 			}
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
@@ -100,9 +100,9 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			// given
 			msg := "the cluster connection is not ready"
 			readyAttrs := ToolchainClusterAttributes{
-				GetClusterFunc: newGetHostClusterOkButNotReady(""),
-				Period:         10 * time.Second,
-				Timeout:        3 * time.Second,
+				GetClustersFunc: newGetHostClusterOkButNotReady(""),
+				Period:          10 * time.Second,
+				Timeout:         3 * time.Second,
 			}
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
@@ -125,9 +125,9 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			// given
 			msg := "the cluster connection is not ready"
 			readyAttrs := ToolchainClusterAttributes{
-				GetClusterFunc: newGetHostClusterOkWithClusterOfflineCondition(),
-				Period:         10 * time.Second,
-				Timeout:        3 * time.Second,
+				GetClustersFunc: newGetHostClusterOkWithClusterOfflineCondition(),
+				Period:          10 * time.Second,
+				Timeout:         3 * time.Second,
 			}
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
@@ -150,9 +150,9 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			// given
 			msg := "exceeded the maximum duration since the last probe: 13s"
 			readyAttrs := ToolchainClusterAttributes{
-				GetClusterFunc: newGetHostClusterLastProbeTimeExceeded(),
-				Period:         10 * time.Second,
-				Timeout:        3 * time.Second,
+				GetClustersFunc: newGetHostClusterLastProbeTimeExceeded(),
+				Period:          10 * time.Second,
+				Timeout:         3 * time.Second,
 			}
 			expected := toolchainv1alpha1.Condition{
 				Type:    toolchainv1alpha1.ConditionReady,
@@ -173,23 +173,23 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 	})
 }
 
-func newGetHostClusterReady() cluster.GetHostClusterFunc {
+func newGetHostClusterReady() cluster.GetClustersFunc {
 	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue, metav1.Now(), fakeToolchainClusterReason, "")
 }
 
-func newGetHostClusterNotOk() cluster.GetHostClusterFunc {
+func newGetHostClusterNotOk() cluster.GetClustersFunc {
 	return NewFakeGetHostCluster(false, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse, metav1.Now(), fakeToolchainClusterReason, fakeToolchainClusterMsg)
 }
 
-func newGetHostClusterOkButNotReady(message string) cluster.GetHostClusterFunc {
+func newGetHostClusterOkButNotReady(message string) cluster.GetClustersFunc {
 	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse, metav1.Now(), fakeToolchainClusterReason, message)
 }
 
-func newGetHostClusterOkWithClusterOfflineCondition() cluster.GetHostClusterFunc {
+func newGetHostClusterOkWithClusterOfflineCondition() cluster.GetClustersFunc {
 	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterOffline, corev1.ConditionFalse, metav1.Now(), fakeToolchainClusterReason, fakeToolchainClusterMsg)
 }
 
-func newGetHostClusterLastProbeTimeExceeded() cluster.GetHostClusterFunc {
+func newGetHostClusterLastProbeTimeExceeded() cluster.GetClustersFunc {
 	tenMinsAgo := metav1.Now().Add(time.Duration(-10) * time.Minute)
 	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue, metav1.NewTime(tenMinsAgo), fakeToolchainClusterReason, fakeToolchainClusterMsg)
 }
@@ -197,13 +197,14 @@ func newGetHostClusterLastProbeTimeExceeded() cluster.GetHostClusterFunc {
 // NewGetHostCluster returns cluster.GetHostClusterFunc function. The cluster.CachedToolchainCluster
 // that is returned by the function then contains the given client and the given status and lastProbeTime.
 // If ok == false, then the function returns nil for the cluster.
-func NewFakeGetHostCluster(ok bool, conditionType toolchainv1alpha1.ToolchainClusterConditionType, status corev1.ConditionStatus, lastProbeTime metav1.Time, reason, message string) cluster.GetHostClusterFunc {
+func NewFakeGetHostCluster(ok bool, conditionType toolchainv1alpha1.ToolchainClusterConditionType, status corev1.ConditionStatus, lastProbeTime metav1.Time, reason, message string) cluster.GetClustersFunc {
 	if !ok {
-		return func() (*cluster.CachedToolchainCluster, bool) {
-			return nil, false
+		return func(conditions ...cluster.Condition) []*cluster.CachedToolchainCluster {
+			return nil
 		}
 	}
-	return func() (*cluster.CachedToolchainCluster, bool) {
+
+	return func(conditions ...cluster.Condition) []*cluster.CachedToolchainCluster {
 		toolchainClusterValue := &cluster.CachedToolchainCluster{
 			Config: &cluster.Config{
 				OperatorNamespace: test.HostOperatorNs,
@@ -222,6 +223,6 @@ func NewFakeGetHostCluster(ok bool, conditionType toolchainv1alpha1.ToolchainClu
 			toolchainClusterValue.ClusterStatus.Conditions[0].Message = message
 		}
 
-		return toolchainClusterValue, true
+		return []*cluster.CachedToolchainCluster{toolchainClusterValue}
 	}
 }

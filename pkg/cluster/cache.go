@@ -103,6 +103,24 @@ func GetCachedToolchainCluster(name string) (*CachedToolchainCluster, bool) {
 	return clusterCache.getCachedToolchainCluster(name, true)
 }
 
+// GetClustersFunc a func that returns all the clusters from the cache
+type GetClustersFunc func(conditions ...Condition) []*CachedToolchainCluster
+
+// Clusters the func to retrieve all the clusters
+var Clusters GetClustersFunc = GetClusters
+
+// GetClusters returns the kube clients for all the clusters from the cache of the clusters
+func GetClusters(conditions ...Condition) []*CachedToolchainCluster {
+	clusters := clusterCache.getCachedToolchainClusters(conditions...)
+	if len(clusters) == 0 {
+		if clusterCache.refreshCache != nil {
+			clusterCache.refreshCache()
+		}
+		clusters = clusterCache.getCachedToolchainClusters(conditions...)
+	}
+	return clusters
+}
+
 // GetHostClusterFunc a func that returns the Host cluster from the cache,
 // along with a bool to indicate if there was a match or not
 type GetHostClusterFunc func() (*CachedToolchainCluster, bool)

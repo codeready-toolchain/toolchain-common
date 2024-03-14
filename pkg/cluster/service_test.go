@@ -81,7 +81,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 
 	t.Run("list members", func(t *testing.T) {
 		// when
-		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
+		clusterConfigs, err := cluster.ListToolchainClusterConfigs(context.TODO(), cl, m1.Namespace, time.Second)
 
 		// then
 		require.NoError(t, err)
@@ -105,7 +105,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 	t.Run("list host", func(t *testing.T) {
 		// when
 
-		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, host.Namespace, time.Second)
+		clusterConfigs, err := cluster.ListToolchainClusterConfigs(context.TODO(), cl, host.Namespace, time.Second)
 
 		// then
 		require.NoError(t, err)
@@ -124,7 +124,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 		cl := test.NewFakeClient(t, host, noise, secNoise)
 
 		// when
-		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
+		clusterConfigs, err := cluster.ListToolchainClusterConfigs(context.TODO(), cl, m1.Namespace, time.Second)
 
 		// then
 		require.NoError(t, err)
@@ -139,7 +139,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 		}
 
 		// when
-		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
+		clusterConfigs, err := cluster.ListToolchainClusterConfigs(context.TODO(), cl, m1.Namespace, time.Second)
 
 		// then
 		require.Error(t, err)
@@ -154,7 +154,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 		}
 
 		// when
-		clusterConfigs, err := cluster.ListToolchainClusterConfigs(cl, m1.Namespace, time.Second)
+		clusterConfigs, err := cluster.ListToolchainClusterConfigs(context.TODO(), cl, m1.Namespace, time.Second)
 
 		// then
 		require.Error(t, err)
