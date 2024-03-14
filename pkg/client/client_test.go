@@ -14,6 +14,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/template"
 	. "github.com/codeready-toolchain/toolchain-common/pkg/test"
 	templatev1 "github.com/openshift/api/template/v1"
+	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	authv1 "github.com/openshift/api/authorization/v1"
@@ -741,6 +742,81 @@ func TestProcessAndApply(t *testing.T) {
 				Name:       "foo",
 			},
 		}, ns.OwnerReferences)
+	})
+}
+
+func TestApplyUnstructuredObjects(t *testing.T) {
+
+	t.Run("special case - service account", func(t *testing.T) {
+		t.Run("should create service account from unstructured object", func(t *testing.T) {
+			// given
+			sa := &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"kind": "ServiceAccount",
+					"metadata": map[string]interface{}{
+						"name":      "toolchaincluster-member",
+						"namespace": "toolchain-member-operator",
+					},
+					"apiVersion": "v1",
+				},
+			}
+			cl := NewFakeClient(t)
+
+			// when
+			createdOrUpdated, err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{sa}, map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue})
+			require.NoError(t, err)
+
+			// then
+			assert.True(t, createdOrUpdated)
+			var actualSa corev1.ServiceAccount
+			err = cl.Get(context.TODO(), types.NamespacedName{Name: "toolchaincluster-member", Namespace: "toolchain-member-operator"}, &actualSa) // assert sa was created
+			require.NoError(t, err)
+			assert.Equal(t, toolchainv1alpha1.ProviderLabelValue, actualSa.Labels[toolchainv1alpha1.ProviderLabelKey])
+
+			t.Run("should update service account", func(t *testing.T) {
+				// when
+				// we update the labels
+				createdOrUpdated, err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{sa},
+					map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue,
+						toolchainv1alpha1.OwnerLabelKey: "someowner",
+					},
+				)
+				require.NoError(t, err)
+
+				// then
+				err = cl.Get(context.TODO(), types.NamespacedName{Name: "toolchaincluster-member", Namespace: "toolchain-member-operator"}, &actualSa) // assert sa was created
+				require.NoError(t, err)
+				assert.True(t, createdOrUpdated)
+				assert.Equal(t, toolchainv1alpha1.ProviderLabelValue, actualSa.Labels[toolchainv1alpha1.ProviderLabelKey]) // existing label is still there
+				assert.Equal(t, "someowner", actualSa.Labels[toolchainv1alpha1.OwnerLabelKey])                             // new label is here as well
+			})
+		})
+	})
+
+	t.Run("should apply other type of objects from unstructured object", func(t *testing.T) {
+		// given
+		role := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"kind": "Role",
+				"metadata": map[string]interface{}{
+					"name":      "toolchaincluster-member",
+					"namespace": "toolchain-member-operator",
+				},
+				"apiVersion": "rbac.authorization.k8s.io/v1",
+			},
+		}
+		cl := NewFakeClient(t)
+
+		// when
+		createdOrUpdated, err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{role}, map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue})
+
+		// then
+		require.NoError(t, err)
+		assert.True(t, createdOrUpdated)
+		var actualRole rbac.Role
+		err = cl.Get(context.TODO(), types.NamespacedName{Name: "toolchaincluster-member", Namespace: "toolchain-member-operator"}, &actualRole) // assert role was created
+		require.NoError(t, err)
+		assert.Equal(t, toolchainv1alpha1.ProviderLabelValue, actualRole.Labels[toolchainv1alpha1.ProviderLabelKey])
 	})
 }
 

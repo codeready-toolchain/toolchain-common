@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -102,7 +104,6 @@ func (c ApplyClient) ApplyObject(ctx context.Context, obj client.Object, options
 }
 
 func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options ...ApplyObjectOption) (bool, error) {
-	// gets the meta accessor to the new resource
 	// gets the meta accessor to the new resource
 	config := newApplyObjectConfiguration(options...)
 
@@ -260,4 +261,55 @@ func MergeAnnotations(toolchainObject client.Object, newAnnotations map[string]s
 		annotations[key] = value
 	}
 	toolchainObject.SetAnnotations(annotations)
+}
+
+// ApplyUnstructuredObjects applies the given Unstructured objects on the cluster.
+func ApplyUnstructuredObjects(ctx context.Context, cl client.Client, unstructuredObjects []*unstructured.Unstructured, newLabels map[string]string) (bool, error) {
+	applyClient := NewApplyClient(cl)
+	anyApplied := false
+
+	for _, unstructuredObj := range unstructuredObjects {
+		var object = unstructuredObj.DeepCopyObject().(client.Object)
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.Object, object); err != nil {
+			return false, err
+		}
+		// Special handling of ServiceAccounts is required because if a ServiceAccount is reapplied when it already exists, it causes Kubernetes controllers to
+		// automatically create new Secrets for the ServiceAccounts. After enough time the number of Secrets created will hit the Secrets quota and then no new
+		// Secrets can be created. To prevent this from happening, we fetch the already existing SA, update labels and annotations only, and then call update using the same object (keeping the refs to secrets).
+		if strings.EqualFold(object.GetObjectKind().GroupVersionKind().Kind, "ServiceAccount") {
+			log.Info("the object is a ServiceAccount so we do the special handling for it...", "object_namespace", object.GetNamespace(), "object_name", object.GetObjectKind().GroupVersionKind().Kind+"/"+object.GetName())
+			sa := object.DeepCopyObject().(client.Object)
+			err := applyClient.Get(ctx, client.ObjectKeyFromObject(object), sa)
+			if err != nil && !k8serrors.IsNotFound(err) {
+				return anyApplied, err
+			}
+			if err != nil {
+				log.Info("the ServiceAccount does not exists - creating...")
+				MergeLabels(object, newLabels)
+				if err := applyClient.Create(ctx, object); err != nil {
+					return anyApplied, err
+				}
+			} else {
+				log.Info("the ServiceAccount already exists - updating labels and annotations...")
+				MergeLabels(sa, newLabels)                    // add new labels to existing one
+				MergeLabels(sa, object.GetLabels())           // add new labels from template
+				MergeAnnotations(sa, object.GetAnnotations()) // add new annotations from template
+				err = applyClient.Update(ctx, sa)
+				if err != nil {
+					return anyApplied, err
+				}
+			}
+			anyApplied = true
+			continue
+		}
+		log.Info("applying object", "object_namespace", object.GetNamespace(), "object_name", object.GetObjectKind().GroupVersionKind().Kind+"/"+object.GetName())
+		MergeLabels(object, newLabels)
+		_, err := applyClient.ApplyObject(ctx, object)
+		if err != nil {
+			return anyApplied, err
+		}
+		anyApplied = true
+	}
+
+	return anyApplied, nil
 }
