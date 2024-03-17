@@ -6,21 +6,37 @@ import (
 	"fmt"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	commoncontroller "github.com/codeready-toolchain/toolchain-common/controllers"
 	applycl "github.com/codeready-toolchain/toolchain-common/pkg/client"
+	commonpredicates "github.com/codeready-toolchain/toolchain-common/pkg/predicate"
 	"github.com/codeready-toolchain/toolchain-common/pkg/template"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&toolchainv1alpha1.ToolchainCluster{}).
-		Complete(r)
+func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, operatorNamespace string) error {
+	build := ctrl.NewControllerManagedBy(mgr).
+		For(&v1.ServiceAccount{})
+
+	// add watcher for all kinds from given templates
+	allObjects, err := template.LoadObjectsFromEmbedFS(r.templates, &template.Variables{Namespace: operatorNamespace})
+	if err != nil {
+		return err
+	}
+	mapToOwnerByLabel := handler.EnqueueRequestsFromMapFunc(commoncontroller.MapToOwnerByLabel("", toolchainv1alpha1.ProviderLabelKey))
+	for _, obj := range allObjects {
+		build = build.Watches(&source.Kind{Type: obj.DeepCopyObject().(runtimeclient.Object)}, mapToOwnerByLabel, builder.WithPredicates(commonpredicates.LabelsAndGenerationPredicate{}))
+	}
+	return build.Complete(r)
 }
 
 // Reconciler reconciles a ToolchainCluster object
@@ -29,9 +45,6 @@ type Reconciler struct {
 	scheme    *runtime.Scheme
 	templates *embed.FS
 }
-
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io;authorization.openshift.io,resources=rolebindings;roles;clusterroles;clusterrolebindings,verbs=*
-//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile loads all the manifests from a given embed.FS folder, evaluates the supported variables and applies the objects in the cluster.
 func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
