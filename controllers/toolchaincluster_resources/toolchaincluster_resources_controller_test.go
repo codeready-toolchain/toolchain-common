@@ -8,6 +8,7 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
+	templatetest "github.com/codeready-toolchain/toolchain-common/pkg/template"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -19,9 +20,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-//go:embed testdata/*
-var testdataFS embed.FS
 
 func TestToolchainClusterResources(t *testing.T) {
 	// given
@@ -36,7 +34,7 @@ func TestToolchainClusterResources(t *testing.T) {
 
 	t.Run("controller should create service account resource", func(t *testing.T) {
 		// then
-		controller, req := prepareReconcile(toolchainCluster, cl, &testdataFS)
+		controller, req := prepareReconcile(toolchainCluster, cl, &templatetest.HostFS)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -44,26 +42,25 @@ func TestToolchainClusterResources(t *testing.T) {
 		sa := &v1.ServiceAccount{}
 		err = cl.Get(context.TODO(), types.NamespacedName{
 			Namespace: test.MemberOperatorNs,
-			Name:      "toolchaincluster-member",
+			Name:      "toolchaincluster-host",
 		}, sa)
 		require.NoError(t, err)
 		require.Equal(t, toolchainv1alpha1.ProviderLabelValue, sa.Labels[toolchainv1alpha1.ProviderLabelKey])
 	})
 
-	t.Run("controller should create other type of resource", func(t *testing.T) {
+	t.Run("controller should create cluster role resource", func(t *testing.T) {
 		// then
-		controller, req := prepareReconcile(toolchainCluster, cl, &testdataFS)
+		controller, req := prepareReconcile(toolchainCluster, cl, &templatetest.MemberFS)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
 		require.NoError(t, err)
-		role := &rbac.Role{}
+		cr := &rbac.ClusterRole{}
 		err = cl.Get(context.TODO(), types.NamespacedName{
-			Namespace: test.MemberOperatorNs,
-			Name:      "toolchaincluster-member",
-		}, role)
+			Name: "member-toolchaincluster-cr",
+		}, cr)
 		require.NoError(t, err)
-		require.Equal(t, toolchainv1alpha1.ProviderLabelValue, role.Labels[toolchainv1alpha1.ProviderLabelKey])
+		require.Equal(t, toolchainv1alpha1.ProviderLabelValue, cr.Labels[toolchainv1alpha1.ProviderLabelKey])
 	})
 
 	t.Run("controller should return error when not templates are configured", func(t *testing.T) {
