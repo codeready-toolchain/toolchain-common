@@ -270,9 +270,6 @@ func ApplyUnstructuredObjects(ctx context.Context, cl client.Client, unstructure
 
 	for _, unstructuredObj := range unstructuredObjects {
 		var object = unstructuredObj.DeepCopyObject().(client.Object)
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.Object, object); err != nil {
-			return false, err
-		}
 		// Special handling of ServiceAccounts is required because if a ServiceAccount is reapplied when it already exists, it causes Kubernetes controllers to
 		// automatically create new Secrets for the ServiceAccounts. After enough time the number of Secrets created will hit the Secrets quota and then no new
 		// Secrets can be created. To prevent this from happening, we fetch the already existing SA, update labels and annotations only, and then call update using the same object (keeping the refs to secrets).
