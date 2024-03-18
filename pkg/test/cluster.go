@@ -4,7 +4,7 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -12,11 +12,11 @@ const (
 	NameMember = "east"
 )
 
-func NewToolchainCluster(name, secName string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
-	return NewToolchainClusterWithEndpoint(name, secName, "http://cluster.com", status, labels)
+func NewToolchainCluster(name, tcNs, secName string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
+	return NewToolchainClusterWithEndpoint(name, tcNs, secName, "http://cluster.com", status, labels)
 }
 
-func NewToolchainClusterWithEndpoint(name, secName, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
+func NewToolchainClusterWithEndpoint(name, tcNs, secName, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus, labels map[string]string) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
 	gock.New(apiEndpoint).
 		Get("api").
 		Persist().
@@ -25,7 +25,7 @@ func NewToolchainClusterWithEndpoint(name, secName, apiEndpoint string, status t
 	secret := &corev1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      secName,
-			Namespace: "test-namespace",
+			Namespace: tcNs,
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
@@ -43,7 +43,7 @@ func NewToolchainClusterWithEndpoint(name, secName, apiEndpoint string, status t
 		},
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,
-			Namespace: "test-namespace",
+			Namespace: tcNs,
 			Labels:    labels,
 		},
 		Status: status,

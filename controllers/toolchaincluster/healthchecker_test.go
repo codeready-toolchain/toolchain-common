@@ -19,6 +19,7 @@ import (
 func TestClusterHealthChecks(t *testing.T) {
 	// given
 	defer gock.Off()
+	tcNs := "test-namespace"
 	gock.New("http://cluster.com").
 		Get("healthz").
 		Persist().
@@ -35,9 +36,9 @@ func TestClusterHealthChecks(t *testing.T) {
 		Reply(404)
 
 	t.Run("ToolchainCluster.status doesn't contain any conditions", func(t *testing.T) {
-		unstable, sec := newToolchainCluster("unstable", "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
-		notFound, _ := newToolchainCluster("not-found", "http://not-found.com", toolchainv1alpha1.ToolchainClusterStatus{})
-		stable, _ := newToolchainCluster("stable", "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		notFound, _ := newToolchainCluster("not-found", tcNs, "http://not-found.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, unstable, notFound, stable, sec)
 		reset := setupCachedClusters(t, cl, unstable, notFound, stable)
@@ -53,10 +54,9 @@ func TestClusterHealthChecks(t *testing.T) {
 	})
 
 	t.Run("ToolchainCluster.status already contains conditions", func(t *testing.T) {
-		unstable, sec := newToolchainCluster("unstable", "http://unstable.com", withStatus(healthy()))
-		notFound, _ := newToolchainCluster("not-found", "http://not-found.com", withStatus(notOffline(), unhealthy()))
-		stable, _ := newToolchainCluster("stable", "http://cluster.com", withStatus(offline()))
-
+		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", withStatus(healthy()))
+		notFound, _ := newToolchainCluster("not-found", tcNs, "http://not-found.com", withStatus(notOffline(), unhealthy()))
+		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(offline()))
 		cl := test.NewFakeClient(t, unstable, notFound, stable, sec)
 		resetCache := setupCachedClusters(t, cl, unstable, notFound, stable)
 		defer resetCache()
@@ -71,8 +71,7 @@ func TestClusterHealthChecks(t *testing.T) {
 	})
 
 	t.Run("if no zones nor region is retrieved, then keep the current", func(t *testing.T) {
-		stable, sec := newToolchainCluster("stable", "http://cluster.com", withStatus(offline()))
-
+		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(offline()))
 		cl := test.NewFakeClient(t, stable, sec)
 		resetCache := setupCachedClusters(t, cl, stable)
 		defer resetCache()
@@ -85,7 +84,7 @@ func TestClusterHealthChecks(t *testing.T) {
 	})
 
 	t.Run("if the connection cannot be established at beginning, then it should be offline", func(t *testing.T) {
-		stable, sec := newToolchainCluster("failing", "http://failing.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		stable, sec := newToolchainCluster("failing", tcNs, "http://failing.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, stable, sec)
 
@@ -98,7 +97,7 @@ func TestClusterHealthChecks(t *testing.T) {
 }
 
 func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolchainv1alpha1.ToolchainCluster) func() {
-	service := cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", 0, func(config *rest.Config, options client.Options) (client.Client, error) {
+	service := cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, test.MemberOperatorNs, 0, func(config *rest.Config, options client.Options) (client.Client, error) {
 		// make sure that insecure is false to make Gock mocking working properly
 		config.Insecure = false
 		return client.New(config, options)
@@ -123,8 +122,8 @@ func withStatus(conditions ...toolchainv1alpha1.ToolchainClusterCondition) toolc
 	}
 }
 
-func newToolchainCluster(name, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
-	toolchainCluster, secret := test.NewToolchainClusterWithEndpoint(name, "secret", apiEndpoint, status, map[string]string{})
+func newToolchainCluster(name, tcNs string, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
+	toolchainCluster, secret := test.NewToolchainClusterWithEndpoint(name, tcNs, "secret", apiEndpoint, status, map[string]string{"namespace": "test-namespace"})
 	return toolchainCluster, secret
 }
 

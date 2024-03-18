@@ -61,33 +61,5 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		return reconcile.Result{}, err
 	}
 
-	// add toolchaincluster role label if not present
-	reqLogger.Info("adding cluster role label based on type")
-	if err := r.addToolchainClusterRoleLabelFromType(ctx, toolchainCluster); err != nil {
-		return reconcile.Result{}, err
-	}
-
 	return reconcile.Result{}, r.clusterCacheService.AddOrUpdateToolchainCluster(toolchainCluster)
-}
-
-func (r *Reconciler) addToolchainClusterRoleLabelFromType(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
-	logger := log.FromContext(ctx)
-
-	if clusterType, found := toolchainCluster.Labels[cluster.LabelType]; !found {
-		logger.Info("cluster `type` label not found, unable to add toolchain cluster role label from type")
-		return nil
-	} else if clusterType != string(cluster.Member) {
-		logger.Info("cluster `type` is not member, skipping cluster role label setting")
-		return nil
-	}
-	clusterRoleLabel := cluster.RoleLabel(cluster.Tenant)
-	if _, exists := toolchainCluster.Labels[clusterRoleLabel]; !exists {
-		logger.Info("setting cluster role label for toolchaincluster", clusterRoleLabel, toolchainCluster.Name)
-		// We use only the label key, the value can remain empty.
-		toolchainCluster.Labels[clusterRoleLabel] = ""
-		if err := r.client.Update(ctx, toolchainCluster); err != nil {
-			return err
-		}
-	}
-	return nil
 }

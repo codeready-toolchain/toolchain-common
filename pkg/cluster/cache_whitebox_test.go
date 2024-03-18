@@ -23,7 +23,7 @@ var getCachedToolchainClusterFuncs = []func(name string) (*CachedToolchainCluste
 func TestAddCluster(t *testing.T) {
 	// given
 	defer resetClusterCache()
-	cachedCluster := newTestCachedToolchainCluster(t, "testCluster", Member, ready)
+	cachedCluster := newTestCachedToolchainCluster(t, "testCluster", ready)
 
 	// when
 	clusterCache.addCachedToolchainCluster(cachedCluster)
@@ -36,9 +36,9 @@ func TestAddCluster(t *testing.T) {
 func TestGetCluster(t *testing.T) {
 	// given
 	defer resetClusterCache()
-	cachedCluster := newTestCachedToolchainCluster(t, "testCluster", Member, ready)
+	cachedCluster := newTestCachedToolchainCluster(t, "testCluster", ready)
 	clusterCache.addCachedToolchainCluster(cachedCluster)
-	clusterCache.addCachedToolchainCluster(newTestCachedToolchainCluster(t, "cluster", Member, ready))
+	clusterCache.addCachedToolchainCluster(newTestCachedToolchainCluster(t, "cluster", ready))
 
 	for _, getCachedCluster := range getCachedToolchainClusterFuncs {
 
@@ -54,7 +54,7 @@ func TestGetCluster(t *testing.T) {
 func TestHostCluster(t *testing.T) {
 	// given
 	defer resetClusterCache()
-	host := newTestCachedToolchainCluster(t, "host-cluster", Host, ready)
+	host := newTestCachedToolchainCluster(t, "host-cluster", ready)
 	clusterCache.addCachedToolchainCluster(host)
 
 	// when
@@ -68,9 +68,9 @@ func TestHostCluster(t *testing.T) {
 func TestMemberClusters(t *testing.T) {
 	// given
 	defer resetClusterCache()
-	member1 := newTestCachedToolchainCluster(t, "member-cluster-1", Member, ready)
+	member1 := newTestCachedToolchainCluster(t, "member-cluster-1", ready)
 	clusterCache.addCachedToolchainCluster(member1)
-	member2 := newTestCachedToolchainCluster(t, "member-cluster-2", Member, ready)
+	member2 := newTestCachedToolchainCluster(t, "member-cluster-2", ready)
 	clusterCache.addCachedToolchainCluster(member2)
 
 	// when
@@ -99,58 +99,7 @@ func TestGetClusterWhenIsEmpty(t *testing.T) {
 
 func TestGetClustersByType(t *testing.T) {
 
-	t.Run("get clusters by type", func(t *testing.T) {
-
-		t.Run("not found", func(t *testing.T) {
-			defer resetClusterCache()
-			// given
-			// empty cache
-
-			//when
-			clusters := clusterCache.getCachedToolchainClustersByType(Member)
-
-			//then
-			assert.Empty(t, clusters)
-
-			//when
-			clusters = clusterCache.getCachedToolchainClustersByType(Host)
-
-			//then
-			assert.Empty(t, clusters)
-		})
-
-		t.Run("found", func(t *testing.T) {
-			defer resetClusterCache()
-			// given
-			// Two members, one host
-			member1 := newTestCachedToolchainCluster(t, "cluster-1", Member, ready)
-			clusterCache.addCachedToolchainCluster(member1)
-			member2 := newTestCachedToolchainCluster(t, "cluster-2", Member, ready)
-			clusterCache.addCachedToolchainCluster(member2)
-			host := newTestCachedToolchainCluster(t, "cluster-3", Host, ready)
-			clusterCache.addCachedToolchainCluster(host)
-
-			//when
-			clusters := clusterCache.getCachedToolchainClustersByType(Member)
-
-			//then
-			assert.Len(t, clusters, 2)
-			assert.Contains(t, clusters, member1)
-			assert.Contains(t, clusters, member2)
-
-			//when
-			clusters = clusterCache.getCachedToolchainClustersByType(Host)
-
-			//then
-			assert.Len(t, clusters, 1)
-			assert.Contains(t, clusters, host)
-		})
-	})
-
 	t.Run("get member clusters", func(t *testing.T) {
-		// noise
-		host := newTestCachedToolchainCluster(t, "cluster-host", Host, ready)
-		clusterCache.addCachedToolchainCluster(host)
 
 		t.Run("not found", func(t *testing.T) {
 			// given
@@ -167,9 +116,9 @@ func TestGetClustersByType(t *testing.T) {
 		t.Run("all clusters", func(t *testing.T) {
 			// given
 			defer resetClusterCache()
-			member1 := newTestCachedToolchainCluster(t, "cluster-1", Member, ready)
+			member1 := newTestCachedToolchainCluster(t, "cluster-1", ready)
 			clusterCache.addCachedToolchainCluster(member1)
-			member2 := newTestCachedToolchainCluster(t, "cluster-2", Member, ready)
+			member2 := newTestCachedToolchainCluster(t, "cluster-2", ready)
 			clusterCache.addCachedToolchainCluster(member2)
 
 			//when
@@ -184,7 +133,7 @@ func TestGetClustersByType(t *testing.T) {
 		t.Run("found after refreshing the cache", func(t *testing.T) {
 			// given
 			defer resetClusterCache()
-			member := newTestCachedToolchainCluster(t, "member", Member, ready)
+			member := newTestCachedToolchainCluster(t, "member", ready)
 			called := false
 			clusterCache.refreshCache = func() {
 				called = true
@@ -206,13 +155,13 @@ func TestGetClustersByType(t *testing.T) {
 		defer resetClusterCache()
 
 		// noise
-		host := newTestCachedToolchainCluster(t, "cluster-host", Host, ready)
+		host := newTestCachedToolchainCluster(t, "cluster-host", ready)
 		clusterCache.addCachedToolchainCluster(host)
-		member1 := newTestCachedToolchainCluster(t, "cluster-1", Member, ready)
+		member1 := newTestCachedToolchainCluster(t, "cluster-1", ready)
 		clusterCache.addCachedToolchainCluster(member1)
-		member2 := newTestCachedToolchainCluster(t, "cluster-2", Member, ready)
+		member2 := newTestCachedToolchainCluster(t, "cluster-2", ready)
 		clusterCache.addCachedToolchainCluster(member2)
-		member3 := newTestCachedToolchainCluster(t, "cluster-3", Member, notReady)
+		member3 := newTestCachedToolchainCluster(t, "cluster-3", notReady)
 		clusterCache.addCachedToolchainCluster(member3)
 
 		t.Run("get only ready member clusters", func(t *testing.T) {
@@ -220,17 +169,13 @@ func TestGetClustersByType(t *testing.T) {
 			clusters := GetMemberClusters(Ready)
 
 			//then
-			assert.Len(t, clusters, 2)
+			assert.Len(t, clusters, 3)
 			assert.Contains(t, clusters, member1)
 			assert.Contains(t, clusters, member2)
 		})
 	})
 
 	t.Run("get host cluster", func(t *testing.T) {
-
-		// noise
-		member1 := newTestCachedToolchainCluster(t, "cluster-member-1", Member, ready)
-		clusterCache.addCachedToolchainCluster(member1)
 
 		t.Run("not found", func(t *testing.T) {
 			// given
@@ -243,11 +188,10 @@ func TestGetClustersByType(t *testing.T) {
 			//then
 			assert.False(t, ok)
 		})
-
 		t.Run("found", func(t *testing.T) {
 			// given
 			defer resetClusterCache()
-			host := newTestCachedToolchainCluster(t, "cluster-host", Host, ready)
+			host := newTestCachedToolchainCluster(t, "cluster-host", ready)
 			clusterCache.addCachedToolchainCluster(host)
 
 			//when
@@ -261,7 +205,7 @@ func TestGetClustersByType(t *testing.T) {
 		t.Run("found after refreshing the cache", func(t *testing.T) {
 			// given
 			defer resetClusterCache()
-			host := newTestCachedToolchainCluster(t, "cluster-host", Host, ready)
+			host := newTestCachedToolchainCluster(t, "cluster-host", ready)
 			called := false
 			clusterCache.refreshCache = func() {
 				called = true
@@ -282,7 +226,7 @@ func TestGetClustersByType(t *testing.T) {
 func TestGetClusterUsingDifferentKey(t *testing.T) {
 	// given
 	defer resetClusterCache()
-	clusterCache.addCachedToolchainCluster(newTestCachedToolchainCluster(t, "cluster", Member, ready))
+	clusterCache.addCachedToolchainCluster(newTestCachedToolchainCluster(t, "cluster", ready))
 
 	for _, getCachedCluster := range getCachedToolchainClusterFuncs {
 
@@ -298,8 +242,8 @@ func TestGetClusterUsingDifferentKey(t *testing.T) {
 func TestUpdateCluster(t *testing.T) {
 	// given
 	defer resetClusterCache()
-	trueCluster := newTestCachedToolchainCluster(t, "testCluster", Member, ready)
-	falseCluster := newTestCachedToolchainCluster(t, "testCluster", Member, notReady)
+	trueCluster := newTestCachedToolchainCluster(t, "testCluster", ready)
+	falseCluster := newTestCachedToolchainCluster(t, "testCluster", notReady)
 	clusterCache.addCachedToolchainCluster(trueCluster)
 
 	// when
@@ -313,9 +257,9 @@ func TestUpdateCluster(t *testing.T) {
 func TestDeleteCluster(t *testing.T) {
 	// given
 	defer resetClusterCache()
-	cachedCluster := newTestCachedToolchainCluster(t, "testCluster", Member, ready)
+	cachedCluster := newTestCachedToolchainCluster(t, "testCluster", ready)
 	clusterCache.addCachedToolchainCluster(cachedCluster)
-	clusterCache.addCachedToolchainCluster(newTestCachedToolchainCluster(t, "cluster", Member, ready))
+	clusterCache.addCachedToolchainCluster(newTestCachedToolchainCluster(t, "cluster", ready))
 	assert.Len(t, clusterCache.clusters, 2)
 
 	// when
@@ -328,8 +272,8 @@ func TestDeleteCluster(t *testing.T) {
 
 func TestRefreshCache(t *testing.T) {
 	// given
-	testCluster := newTestCachedToolchainCluster(t, "testCluster", Member, ready)
-	newCluster := newTestCachedToolchainCluster(t, "newCluster", Member, ready)
+	testCluster := newTestCachedToolchainCluster(t, "testCluster", ready)
+	newCluster := newTestCachedToolchainCluster(t, "newCluster", ready)
 
 	t.Run("refresh enabled", func(t *testing.T) {
 		defer resetClusterCache()
@@ -392,52 +336,50 @@ func TestRefreshCache(t *testing.T) {
 
 func TestMultipleActionsInParallel(t *testing.T) {
 	// given
+	clusterForTest := newTestCachedToolchainCluster(t, "clusterForTest", ready)
+
 	defer resetClusterCache()
 	var latch sync.WaitGroup
 	latch.Add(1)
 	var waitForFinished sync.WaitGroup
 
-	memberCluster := newTestCachedToolchainCluster(t, "memberCluster", Member, ready)
-	hostCluster := newTestCachedToolchainCluster(t, "hostCluster", Host, ready)
 	clusterCache.refreshCache = func() {
-		clusterCache.addCachedToolchainCluster(memberCluster)
-		clusterCache.addCachedToolchainCluster(hostCluster)
+		clusterCache.addCachedToolchainCluster(clusterForTest)
+
 	}
 
-	for _, clusterToTest := range []*CachedToolchainCluster{memberCluster, hostCluster} {
-		for i := 0; i < 1000; i++ {
-			waitForFinished.Add(4)
-			go func() {
-				defer waitForFinished.Done()
-				latch.Wait()
-				clusterCache.addCachedToolchainCluster(clusterToTest)
-			}()
-			go func() {
-				defer waitForFinished.Done()
-				latch.Wait()
-				cluster, ok := clusterCache.getCachedToolchainCluster(clusterToTest.Name, true)
-				if ok {
-					assert.Equal(t, clusterToTest, cluster)
-				} else {
-					assert.Nil(t, cluster)
-				}
-			}()
-			go func() {
-				defer waitForFinished.Done()
-				latch.Wait()
-				clusters := clusterCache.getCachedToolchainClustersByType(clusterToTest.Type)
-				if len(clusters) == 1 {
-					assert.Equal(t, clusterToTest, clusters[0])
-				} else {
-					assert.Empty(t, clusters)
-				}
-			}()
-			go func(clusterToTest *CachedToolchainCluster) {
-				defer waitForFinished.Done()
-				latch.Wait()
-				clusterCache.deleteCachedToolchainCluster(clusterToTest.Name)
-			}(clusterToTest)
-		}
+	for i := 0; i < 1000; i++ {
+		waitForFinished.Add(4)
+		go func() {
+			defer waitForFinished.Done()
+			latch.Wait()
+			clusterCache.addCachedToolchainCluster(clusterForTest)
+		}()
+		go func() {
+			defer waitForFinished.Done()
+			latch.Wait()
+			cluster, ok := clusterCache.getCachedToolchainCluster(clusterForTest.Name, true)
+			if ok {
+				assert.Equal(t, clusterForTest, cluster)
+			} else {
+				assert.Nil(t, cluster)
+			}
+		}()
+		go func() {
+			defer waitForFinished.Done()
+			latch.Wait()
+			clusters := clusterCache.getCachedToolchainClusters()
+			if len(clusters) == 1 {
+				assert.Equal(t, clusterForTest, clusters[0])
+			} else {
+				assert.Empty(t, clusters)
+			}
+		}()
+		go func(clusterToTest *CachedToolchainCluster) {
+			defer waitForFinished.Done()
+			latch.Wait()
+			clusterCache.deleteCachedToolchainCluster(clusterToTest.Name)
+		}(clusterForTest)
 	}
 
 	// when
@@ -446,13 +388,9 @@ func TestMultipleActionsInParallel(t *testing.T) {
 	// then
 	waitForFinished.Wait()
 
-	member, ok := clusterCache.getCachedToolchainCluster("memberCluster", true)
+	clusterForTest1, ok := clusterCache.getCachedToolchainCluster("clusterForTest", true)
 	assert.True(t, ok)
-	assert.Equal(t, memberCluster, member)
-
-	host, ok := clusterCache.getCachedToolchainCluster("hostCluster", true)
-	assert.True(t, ok)
-	assert.Equal(t, hostCluster, host)
+	assert.Equal(t, clusterForTest, clusterForTest1)
 }
 
 // clusterOption an option to configure the cluster to use in the tests
@@ -474,13 +412,12 @@ var notReady clusterOption = func(c *CachedToolchainCluster) {
 	})
 }
 
-func newTestCachedToolchainCluster(t *testing.T, name string, clusterType Type, options ...clusterOption) *CachedToolchainCluster {
+func newTestCachedToolchainCluster(t *testing.T, name string, options ...clusterOption) *CachedToolchainCluster {
 	cl := test.NewFakeClient(t)
 	cachedCluster := &CachedToolchainCluster{
 		Config: &Config{
 			Name:              name,
 			OperatorNamespace: name + "Namespace",
-			Type:              clusterType,
 		},
 		Client:        cl,
 		ClusterStatus: &toolchainv1alpha1.ToolchainClusterStatus{},

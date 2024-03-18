@@ -26,9 +26,6 @@ const (
 	// labelClusterRolePrefix is the prefix that defines the cluster role as label key
 	labelClusterRolePrefix = "cluster-role"
 
-	defaultHostOperatorNamespace   = "toolchain-host-operator"
-	defaultMemberOperatorNamespace = "toolchain-member-operator"
-
 	toolchainAPIQPS   = 20.0
 	toolchainAPIBurst = 30
 	toolchainTokenKey = "token"
@@ -126,16 +123,11 @@ func (s *ToolchainClusterService) addToolchainCluster(log logr.Logger, toolchain
 		Client:        cl,
 		ClusterStatus: &toolchainCluster.Status,
 	}
-	if cluster.Type == "" {
-		cluster.Type = Member
-	}
+
 	if cluster.OperatorNamespace == "" {
-		if cluster.Type == Host {
-			cluster.OperatorNamespace = defaultHostOperatorNamespace
-		} else {
-			cluster.OperatorNamespace = defaultMemberOperatorNamespace
-		}
+		return fmt.Errorf("the operator namespace is not set for the ToolchainCluster CR")
 	}
+
 	clusterCache.addCachedToolchainCluster(cluster)
 	return nil
 }
@@ -218,7 +210,6 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 		Name:              toolchainCluster.Name,
 		APIEndpoint:       toolchainCluster.Spec.APIEndpoint,
 		RestConfig:        restConfig,
-		Type:              Type(toolchainCluster.Labels[LabelType]),
 		OperatorNamespace: toolchainCluster.Labels[labelNamespace],
 		OwnerClusterName:  toolchainCluster.Labels[labelOwnerClusterName],
 		Labels:            toolchainCluster.Labels,
@@ -236,9 +227,9 @@ func IsReady(clusterStatus *toolchainv1alpha1.ToolchainClusterStatus) bool {
 	return false
 }
 
-func ListToolchainClusterConfigs(cl client.Client, namespace string, clusterType Type, timeout time.Duration) ([]*Config, error) {
+func ListToolchainClusterConfigs(cl client.Client, namespace string, timeout time.Duration) ([]*Config, error) {
 	toolchainClusters := &toolchainv1alpha1.ToolchainClusterList{}
-	if err := cl.List(context.TODO(), toolchainClusters, client.InNamespace(namespace), client.MatchingLabels{LabelType: string(clusterType)}); err != nil {
+	if err := cl.List(context.TODO(), toolchainClusters, client.InNamespace(namespace)); err != nil {
 		return nil, err
 	}
 	var configs []*Config

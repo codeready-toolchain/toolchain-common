@@ -24,8 +24,6 @@ type Config struct {
 	// APIEndpoint is the API endpoint of the corresponding ToolchainCluster. This can be a hostname,
 	// hostname:port, IP or IP:port.
 	APIEndpoint string
-	// Type is a type of the cluster (either host or member)
-	Type Type
 	// OperatorNamespace is a name of a namespace (in the cluster) the operator is running in
 	OperatorNamespace string
 	// OwnerClusterName keeps the name of the cluster the ToolchainCluster resource is created in
@@ -81,23 +79,21 @@ var Ready Condition = func(cluster *CachedToolchainCluster) bool {
 	return IsReady(cluster.ClusterStatus)
 }
 
-func (c *toolchainClusterClients) getCachedToolchainClustersByType(clusterType Type, conditions ...Condition) []*CachedToolchainCluster {
+func (c *toolchainClusterClients) getCachedToolchainClusters(conditions ...Condition) []*CachedToolchainCluster {
 	c.RLock()
 	defer c.RUnlock()
-	return Filter(clusterType, c.clusters, conditions...)
+	return Filter(c.clusters, conditions...)
 }
-func Filter(clusterType Type, clusters map[string]*CachedToolchainCluster, conditions ...Condition) []*CachedToolchainCluster {
+func Filter(clusters map[string]*CachedToolchainCluster, conditions ...Condition) []*CachedToolchainCluster {
 	filteredClusters := make([]*CachedToolchainCluster, 0, len(clusters))
 clusters:
 	for _, cluster := range clusters {
-		if cluster.Type == clusterType {
-			for _, match := range conditions {
-				if !match(cluster) {
-					continue clusters
-				}
+		for _, match := range conditions {
+			if !match(cluster) {
+				continue clusters
 			}
-			filteredClusters = append(filteredClusters, cluster)
 		}
+		filteredClusters = append(filteredClusters, cluster)
 	}
 	return filteredClusters
 }
@@ -117,12 +113,12 @@ var HostCluster GetHostClusterFunc = GetHostCluster
 // GetHostCluster returns the kube client for the host cluster from the cache of the clusters
 // and info if such a client exists
 func GetHostCluster() (*CachedToolchainCluster, bool) {
-	clusters := clusterCache.getCachedToolchainClustersByType(Host)
+	clusters := clusterCache.getCachedToolchainClusters()
 	if len(clusters) == 0 {
 		if clusterCache.refreshCache != nil {
 			clusterCache.refreshCache()
 		}
-		clusters = clusterCache.getCachedToolchainClustersByType(Host)
+		clusters = clusterCache.getCachedToolchainClusters()
 		if len(clusters) == 0 {
 			return nil, false
 		}
@@ -138,23 +134,15 @@ var MemberClusters GetMemberClustersFunc = GetMemberClusters
 
 // GetMemberClusters returns the kube clients for the host clusters from the cache of the clusters
 func GetMemberClusters(conditions ...Condition) []*CachedToolchainCluster {
-	clusters := clusterCache.getCachedToolchainClustersByType(Member, conditions...)
+	clusters := clusterCache.getCachedToolchainClusters(conditions...)
 	if len(clusters) == 0 {
 		if clusterCache.refreshCache != nil {
 			clusterCache.refreshCache()
 		}
-		clusters = clusterCache.getCachedToolchainClustersByType(Member, conditions...)
+		clusters = clusterCache.getCachedToolchainClusters(conditions...)
 	}
 	return clusters
 }
-
-// Type is a cluster type (either host or member)
-type Type string
-
-const (
-	Member Type = "member"
-	Host   Type = "host"
-)
 
 // Role defines the role of the cluster.
 // Each type of cluster can have multiple roles (tenant for specific APIs, user workloads, others ... )

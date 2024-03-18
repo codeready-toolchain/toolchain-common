@@ -206,7 +206,6 @@ func NewFakeGetHostCluster(ok bool, conditionType toolchainv1alpha1.ToolchainClu
 	return func() (*cluster.CachedToolchainCluster, bool) {
 		toolchainClusterValue := &cluster.CachedToolchainCluster{
 			Config: &cluster.Config{
-				Type:              cluster.Host,
 				OperatorNamespace: test.HostOperatorNs,
 				OwnerClusterName:  test.MemberClusterName,
 			},
