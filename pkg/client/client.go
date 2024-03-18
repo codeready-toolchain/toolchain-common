@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -146,6 +145,16 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	originalGeneration := existing.GetGeneration()
 	obj.SetResourceVersion(existing.GetResourceVersion())
 
+	// Special handling of ServiceAccounts is required because if a ServiceAccount is reapplied when it already exists, it causes Kubernetes controllers to
+	// automatically create new Secrets for the ServiceAccounts. After enough time the number of Secrets created will hit the Secrets quota and then no new
+	// Secrets can be created. To prevent this from happening, we keep the existing refs to secrets.
+	if strings.EqualFold(obj.GetObjectKind().GroupVersionKind().Kind, "ServiceAccount") {
+		MergeAnnotations(obj, existing.GetAnnotations()) // copy existing annotations
+		if err := RetainSecrets(obj, existing); err != nil {
+			return false, err
+		}
+	}
+
 	// also, if the resource to create is a Service and there's a previous version, we should retain its `spec.ClusterIP`, otherwise
 	// the update will fail with the following error:
 	// `Service "<name>" is invalid: spec.clusterIP: Invalid value: "": field is immutable`
@@ -193,6 +202,46 @@ func clusterIP(obj runtime.Object) (string, bool, error) {
 	default:
 		// do nothing, object is not a service
 		return "", false, nil
+	}
+}
+
+// RetainSecrets sets the `spec.secrets` value from the given 'existing' object
+// into the 'newResource' object.
+func RetainSecrets(newResource, existing runtime.Object) error {
+	secretsRef, found, err := secrets(existing)
+	if err != nil {
+		return err
+	}
+	if !found {
+		// skip
+		return nil
+	}
+	switch newResource := newResource.(type) {
+	case *corev1.ServiceAccount:
+		sf, ok := secretsRef.([]corev1.ObjectReference)
+		if !ok {
+			return nil
+		}
+		newResource.Secrets = sf
+	case *unstructured.Unstructured:
+		if err := unstructured.SetNestedField(newResource.Object, secretsRef, "secrets"); err != nil {
+			return err
+		}
+	default:
+		// do nothing, object is not a service
+	}
+	return nil
+}
+
+func secrets(obj runtime.Object) (interface{}, bool, error) {
+	switch obj := obj.(type) {
+	case *corev1.ServiceAccount:
+		return obj.Secrets, len(obj.Secrets) > 0, nil
+	case *unstructured.Unstructured:
+		return unstructured.NestedFieldCopy(obj.Object, "secrets")
+	default:
+		// do nothing, object is not a service
+		return []corev1.ObjectReference{}, false, nil
 	}
 }
 
@@ -270,35 +319,6 @@ func ApplyUnstructuredObjects(ctx context.Context, cl client.Client, unstructure
 
 	for _, unstructuredObj := range unstructuredObjects {
 		var object = unstructuredObj.DeepCopyObject().(client.Object)
-		// Special handling of ServiceAccounts is required because if a ServiceAccount is reapplied when it already exists, it causes Kubernetes controllers to
-		// automatically create new Secrets for the ServiceAccounts. After enough time the number of Secrets created will hit the Secrets quota and then no new
-		// Secrets can be created. To prevent this from happening, we fetch the already existing SA, update labels and annotations only, and then call update using the same object (keeping the refs to secrets).
-		if strings.EqualFold(object.GetObjectKind().GroupVersionKind().Kind, "ServiceAccount") {
-			log.Info("the object is a ServiceAccount so we do the special handling for it...", "object_namespace", object.GetNamespace(), "object_name", object.GetObjectKind().GroupVersionKind().Kind+"/"+object.GetName())
-			sa := object.DeepCopyObject().(client.Object)
-			err := applyClient.Get(ctx, client.ObjectKeyFromObject(object), sa)
-			if err != nil && !k8serrors.IsNotFound(err) {
-				return anyApplied, err
-			}
-			if err != nil {
-				log.Info("the ServiceAccount does not exists - creating...")
-				MergeLabels(object, newLabels)
-				if err := applyClient.Create(ctx, object); err != nil {
-					return anyApplied, err
-				}
-			} else {
-				log.Info("the ServiceAccount already exists - updating labels and annotations...")
-				MergeLabels(sa, newLabels)                    // add new labels to existing one
-				MergeLabels(sa, object.GetLabels())           // add new labels from template
-				MergeAnnotations(sa, object.GetAnnotations()) // add new annotations from template
-				err = applyClient.Update(ctx, sa)
-				if err != nil {
-					return anyApplied, err
-				}
-			}
-			anyApplied = true
-			continue
-		}
 		log.Info("applying object", "object_namespace", object.GetNamespace(), "object_name", object.GetObjectKind().GroupVersionKind().Kind+"/"+object.GetName())
 		MergeLabels(object, newLabels)
 		_, err := applyClient.ApplyObject(ctx, object)

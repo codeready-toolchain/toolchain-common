@@ -772,24 +772,50 @@ func TestApplyUnstructuredObjects(t *testing.T) {
 			err = cl.Get(context.TODO(), types.NamespacedName{Name: "toolchaincluster-member", Namespace: "toolchain-member-operator"}, &actualSa) // assert sa was created
 			require.NoError(t, err)
 			assert.Equal(t, toolchainv1alpha1.ProviderLabelValue, actualSa.Labels[toolchainv1alpha1.ProviderLabelKey])
+		})
 
-			t.Run("should update service account", func(t *testing.T) {
-				// when
-				// we update the labels
-				createdOrUpdated, err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{sa},
-					map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue,
-						toolchainv1alpha1.OwnerLabelKey: "someowner",
+		t.Run("should update service account", func(t *testing.T) {
+			// given
+			// there's an existing SA with secret refs
+			existingSA := newSA()
+			secretRefs := []corev1.ObjectReference{
+				{
+					Name:      "secret",
+					Namespace: existingSA.Namespace,
+				},
+			}
+			existingSA.Secrets = secretRefs
+
+			newSA := &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"kind": "ServiceAccount",
+					"metadata": map[string]interface{}{
+						"name":      "appstudio-user-sa",
+						"namespace": "john-dev",
 					},
-				)
-				require.NoError(t, err)
+					"apiVersion": "v1",
+				},
+			}
+			cl := NewFakeClient(t, existingSA)
 
-				// then
-				err = cl.Get(context.TODO(), types.NamespacedName{Name: "toolchaincluster-member", Namespace: "toolchain-member-operator"}, &actualSa) // assert sa was created
-				require.NoError(t, err)
-				assert.True(t, createdOrUpdated)
-				assert.Equal(t, toolchainv1alpha1.ProviderLabelValue, actualSa.Labels[toolchainv1alpha1.ProviderLabelKey]) // existing label is still there
-				assert.Equal(t, "someowner", actualSa.Labels[toolchainv1alpha1.OwnerLabelKey])                             // new label is here as well
-			})
+			// when
+			// we update the labels
+			createdOrUpdated, err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{newSA},
+				map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue,
+					toolchainv1alpha1.OwnerLabelKey: "someowner",
+				},
+			)
+			require.NoError(t, err)
+			assert.True(t, createdOrUpdated)
+
+			// then
+			var actualSa corev1.ServiceAccount
+			err = cl.Get(context.TODO(), types.NamespacedName{Name: "appstudio-user-sa", Namespace: "john-dev"}, &actualSa) // assert sa was created
+			require.NoError(t, err)
+			assert.True(t, createdOrUpdated)
+			assert.Equal(t, toolchainv1alpha1.ProviderLabelValue, actualSa.Labels[toolchainv1alpha1.ProviderLabelKey]) // existing label is still there
+			assert.Equal(t, "someowner", actualSa.Labels[toolchainv1alpha1.OwnerLabelKey])                             // new label is here as well
+			assert.Equal(t, secretRefs, actualSa.Secrets)                                                              // secret refs are still there
 		})
 	})
 
