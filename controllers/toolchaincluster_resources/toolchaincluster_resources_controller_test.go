@@ -8,7 +8,6 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
-	templatetest "github.com/codeready-toolchain/toolchain-common/pkg/template"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -20,6 +19,12 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+//go:embed testdata/cluster-role.yaml
+var clusterRoleFS embed.FS
+
+//go:embed testdata/service-account.yaml
+var serviceAccountFS embed.FS
 
 func TestToolchainClusterResources(t *testing.T) {
 	// given
@@ -34,7 +39,7 @@ func TestToolchainClusterResources(t *testing.T) {
 
 	t.Run("controller should create service account resource", func(t *testing.T) {
 		// then
-		controller, req := prepareReconcile(toolchainCluster, cl, &templatetest.HostFS)
+		controller, req := prepareReconcile(toolchainCluster, cl, &serviceAccountFS)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -50,7 +55,7 @@ func TestToolchainClusterResources(t *testing.T) {
 
 	t.Run("controller should create cluster role resource", func(t *testing.T) {
 		// then
-		controller, req := prepareReconcile(toolchainCluster, cl, &templatetest.MemberFS)
+		controller, req := prepareReconcile(toolchainCluster, cl, &clusterRoleFS)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)

@@ -1,6 +1,7 @@
 package template_test
 
 import (
+	"embed"
 	"testing"
 
 	"github.com/codeready-toolchain/toolchain-common/pkg/template"
@@ -12,14 +13,23 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+//go:embed testdata/*
+var EFS embed.FS
+
+//go:embed testdata/host/*
+var HostFS embed.FS
+
+//go:embed testdata/member/*
+var MemberFS embed.FS
+
 func TestLoadObjectsFromEmbedFS(t *testing.T) {
 	t.Run("loads objects recursively from all subdirectories", func(t *testing.T) {
 		// when
-		allObjects, err := template.LoadObjectsFromEmbedFS(&template.EFS, &template.Variables{Namespace: test.HostOperatorNs})
+		allObjects, err := template.LoadObjectsFromEmbedFS(&EFS, &template.Variables{Namespace: test.HostOperatorNs})
 		require.NoError(t, err)
-		hostFolderObjects, err := template.LoadObjectsFromEmbedFS(&template.HostFS, &template.Variables{Namespace: test.HostOperatorNs})
+		hostFolderObjects, err := template.LoadObjectsFromEmbedFS(&HostFS, &template.Variables{Namespace: test.HostOperatorNs})
 		require.NoError(t, err)
-		memberFolderObjects, err := template.LoadObjectsFromEmbedFS(&template.MemberFS, nil)
+		memberFolderObjects, err := template.LoadObjectsFromEmbedFS(&MemberFS, nil)
 		require.NoError(t, err)
 		// then
 		require.NotNil(t, allObjects)
@@ -35,7 +45,7 @@ func TestLoadObjectsFromEmbedFS(t *testing.T) {
 	t.Run("error - when variables are not provided", func(t *testing.T) {
 		// when
 		// we do not pass required variables for the templates that requires variables
-		objects, err := template.LoadObjectsFromEmbedFS(&template.HostFS, nil)
+		objects, err := template.LoadObjectsFromEmbedFS(&HostFS, nil)
 		// then
 		// we should get back an error
 		require.Error(t, err)
