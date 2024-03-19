@@ -19,20 +19,19 @@ const (
 
 // ToolchainClusterAttributes required attributes for obtaining ToolchainCluster status
 type ToolchainClusterAttributes struct {
-	GetClustersFunc cluster.GetClustersFunc
-	Period          time.Duration
-	Timeout         time.Duration
+	GetClusterFunc func() (*cluster.CachedToolchainCluster, bool)
+	Period         time.Duration
+	Timeout        time.Duration
 }
 
 // GetToolchainClusterConditions uses the provided ToolchainCluster attributes to determine status conditions
 func GetToolchainClusterConditions(logger logr.Logger, attrs ToolchainClusterAttributes) []toolchainv1alpha1.Condition {
 	// look up cluster connection status
-	toolchainClusters := attrs.GetClustersFunc()
+	toolchainCluster, ok := attrs.GetClusterFunc()
 
-	if len(toolchainClusters) != 1 {
+	if !ok {
 		return []toolchainv1alpha1.Condition{*NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusClusterConnectionNotFoundReason, ErrMsgClusterConnectionNotFound)}
 	}
-	toolchainCluster := toolchainClusters[0]
 
 	// check conditions of cluster connection
 	if !cluster.IsReady(toolchainCluster.ClusterStatus) {

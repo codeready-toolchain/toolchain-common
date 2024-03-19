@@ -103,14 +103,14 @@ func GetCachedToolchainCluster(name string) (*CachedToolchainCluster, bool) {
 	return clusterCache.getCachedToolchainCluster(name, true)
 }
 
-// GetClustersFunc a func that returns all the clusters from the cache
-type GetClustersFunc func(conditions ...Condition) []*CachedToolchainCluster
+// GetToolchainClustersCachedFunc a func that returns all the clusters from the cache
+type GetToolchainClustersCachedFunc func(conditions ...Condition) []*CachedToolchainCluster
 
-// Clusters the func to retrieve all the clusters
-var Clusters GetClustersFunc = GetClusters
+// ToolchainClustersCached the func to retrieve all the clusters
+var ToolchainClustersCached GetToolchainClustersCachedFunc = GetToolchainClustersCached
 
-// GetClusters returns the kube clients for all the clusters from the cache of the clusters
-func GetClusters(conditions ...Condition) []*CachedToolchainCluster {
+// GetToolchainClustersCached returns the kube clients for all the clusters from the cache of the clusters
+func GetToolchainClustersCached(conditions ...Condition) []*CachedToolchainCluster {
 	clusters := clusterCache.getCachedToolchainClusters(conditions...)
 	if len(clusters) == 0 {
 		if clusterCache.refreshCache != nil {
@@ -142,24 +142,6 @@ func GetHostCluster() (*CachedToolchainCluster, bool) {
 		}
 	}
 	return clusters[0], true
-}
-
-// GetMemberClustersFunc a func that returns the member clusters from the cache
-type GetMemberClustersFunc func(conditions ...Condition) []*CachedToolchainCluster
-
-// MemberClusters the func to retrieve the member clusters
-var MemberClusters GetMemberClustersFunc = GetMemberClusters
-
-// GetMemberClusters returns the kube clients for the host clusters from the cache of the clusters
-func GetMemberClusters(conditions ...Condition) []*CachedToolchainCluster {
-	clusters := clusterCache.getCachedToolchainClusters(conditions...)
-	if len(clusters) == 0 {
-		if clusterCache.refreshCache != nil {
-			clusterCache.refreshCache()
-		}
-		clusters = clusterCache.getCachedToolchainClusters(conditions...)
-	}
-	return clusters
 }
 
 // Role defines the role of the cluster.

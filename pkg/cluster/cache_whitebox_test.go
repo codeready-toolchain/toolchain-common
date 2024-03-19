@@ -75,7 +75,7 @@ func TestGetClusters(t *testing.T) {
 			// no clusters
 
 			//when
-			clusters := GetClusters()
+			clusters := GetToolchainClustersCached()
 
 			//then
 			assert.Empty(t, clusters)
@@ -92,7 +92,7 @@ func TestGetClusters(t *testing.T) {
 			clusterCache.addCachedToolchainCluster(member2)
 
 			//when
-			clusters := GetClusters()
+			clusters := GetToolchainClustersCached()
 
 			//then
 			assert.Len(t, clusters, 3)
@@ -112,7 +112,7 @@ func TestGetClusters(t *testing.T) {
 			}
 
 			//when
-			clusters := GetClusters()
+			clusters := GetToolchainClustersCached()
 
 			//then
 			assert.Len(t, clusters, 1)
@@ -134,7 +134,7 @@ func TestGetClusters(t *testing.T) {
 			clusterCache.addCachedToolchainCluster(member3)
 
 			//when
-			clusters := GetClusters(Ready)
+			clusters := GetToolchainClustersCached(Ready)
 
 			//then
 			assert.Len(t, clusters, 3)
