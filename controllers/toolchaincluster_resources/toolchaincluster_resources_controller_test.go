@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -45,13 +46,7 @@ func TestToolchainClusterResources(t *testing.T) {
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
 		require.NoError(t, err)
-		sa := &v1.ServiceAccount{}
-		err = cl.Get(context.TODO(), types.NamespacedName{
-			Namespace: test.MemberOperatorNs,
-			Name:      "toolchaincluster-host",
-		}, sa)
-		require.NoError(t, err)
-		require.Equal(t, toolchainv1alpha1.ProviderLabelValue, sa.Labels[toolchainv1alpha1.ProviderLabelKey])
+		checkExpectedServiceAccountResources(t, cl)
 	})
 
 	t.Run("controller should create cluster role resource", func(t *testing.T) {
@@ -66,7 +61,7 @@ func TestToolchainClusterResources(t *testing.T) {
 			Name: "member-toolchaincluster-cr",
 		}, cr)
 		require.NoError(t, err)
-		require.Equal(t, toolchainv1alpha1.ProviderLabelValue, cr.Labels[toolchainv1alpha1.ProviderLabelKey])
+		require.Equal(t, ResourceControllerLabelValue, cr.Labels[toolchainv1alpha1.ProviderLabelKey])
 	})
 
 	t.Run("controller should return error when not templates are configured", func(t *testing.T) {
@@ -77,6 +72,24 @@ func TestToolchainClusterResources(t *testing.T) {
 		_, err := controller.Reconcile(context.TODO(), req)
 		require.Error(t, err)
 	})
+}
+
+func checkExpectedServiceAccountResources(t *testing.T, cl *test.FakeClient) {
+	expectedTypes := []client.Object{
+		&v1.ServiceAccount{},
+		&rbac.Role{},
+		&rbac.RoleBinding{},
+	}
+
+	for _, resourceType := range expectedTypes {
+		resource := resourceType
+		err := cl.Get(context.TODO(), types.NamespacedName{
+			Namespace: test.MemberOperatorNs,
+			Name:      "toolchaincluster-host",
+		}, resource)
+		require.NoError(t, err)
+		require.Equal(t, ResourceControllerLabelValue, resource.GetLabels()[toolchainv1alpha1.ProviderLabelKey])
+	}
 }
 
 func prepareReconcile(sa *v1.ServiceAccount, cl *test.FakeClient, templates *embed.FS) (Reconciler, reconcile.Request) {

@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func TestLabelMapper(t *testing.T) {
+func TestMapToOwnerByLabel(t *testing.T) {
 
 	t.Run("resource with expected label", func(t *testing.T) {
 		// given
@@ -51,6 +51,68 @@ func TestLabelMapper(t *testing.T) {
 		}
 		// when
 		result := MapToOwnerByLabel("ns", "owner")(&obj)
+		// then
+		require.Empty(t, result)
+	})
+}
+
+func TestMapToOwnerByLabelValue(t *testing.T) {
+
+	t.Run("resource with expected label and value", func(t *testing.T) {
+		// given
+		objMeta := metav1.ObjectMeta{
+			Name: "bar",
+			Labels: map[string]string{
+				"type":     "che",
+				"owner":    "foo",
+				"revision": "123",
+			},
+		}
+		obj := &corev1.Namespace{
+			ObjectMeta: objMeta,
+		}
+		// when
+		result := MapToOwnerByLabelValue("ns", "owner", "foo")(obj)
+		// then
+		require.Len(t, result, 1)
+		assert.Equal(t, reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: "ns",
+				Name:      "bar",
+			},
+		}, result[0])
+	})
+
+	t.Run("resource without expected label key", func(t *testing.T) {
+		// given
+		objMeta := metav1.ObjectMeta{
+			Name: "bar",
+			Labels: map[string]string{
+				"somenoise": "foo",
+			},
+		}
+		obj := corev1.Namespace{
+			ObjectMeta: objMeta,
+		}
+		// when
+		result := MapToOwnerByLabelValue("ns", "owner", "foo")(&obj)
+		// then
+		require.Empty(t, result)
+	})
+
+	t.Run("resource without expected label value", func(t *testing.T) {
+		// given
+		objMeta := metav1.ObjectMeta{
+			Name: "bar",
+			Labels: map[string]string{
+				"owner": "foo",
+			},
+		}
+		obj := corev1.Namespace{
+			ObjectMeta: objMeta,
+		}
+		// when
+		result := MapToOwnerByLabelValue("ns", "owner", "bar")(&obj)
 		// then
 		require.Empty(t, result)
 	})

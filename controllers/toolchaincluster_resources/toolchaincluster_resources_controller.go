@@ -22,6 +22,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+// ResourceControllerLabelValue is being added to all the resources managed by this controller.
+// It's then used to filter all the events on those resources by using a mapper function in the watcher configuration.
+const ResourceControllerLabelValue = "toolchaincluster-resources-controller" // todo move this label value to api repo
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, operatorNamespace string) error {
 	// check for required templates FS directory
@@ -38,7 +42,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, operatorNamespace string
 	if err != nil {
 		return err
 	}
-	mapToOwnerByLabel := handler.EnqueueRequestsFromMapFunc(commoncontroller.MapToOwnerByLabel("", toolchainv1alpha1.ProviderLabelKey))
+	mapToOwnerByLabel := handler.EnqueueRequestsFromMapFunc(commoncontroller.MapToOwnerByLabelValue(operatorNamespace, toolchainv1alpha1.ProviderLabelKey, ResourceControllerLabelValue))
 	for _, obj := range r.templateObjects {
 		build = build.Watches(&source.Kind{Type: obj.DeepCopyObject().(runtimeclient.Object)}, mapToOwnerByLabel, builder.WithPredicates(commonpredicates.LabelsAndGenerationPredicate{}))
 	}
@@ -62,9 +66,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		return reconcile.Result{}, fmt.Errorf("no templates FS configured")
 	}
 
-	// apply all the objects and add toolchaincluster as owner reference
+	// apply all the objects with a custom label
 	newLabels := map[string]string{
-		toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue,
+		toolchainv1alpha1.ProviderLabelKey: ResourceControllerLabelValue,
 	}
 
 	// todo implement delete logic for objects that were renamed/removed from the templates

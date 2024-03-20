@@ -149,10 +149,10 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	// automatically create new Secrets for the ServiceAccounts. After enough time the number of Secrets created will hit the Secrets quota and then no new
 	// Secrets can be created. To prevent this from happening, we keep the existing refs to secrets.
 	if strings.EqualFold(obj.GetObjectKind().GroupVersionKind().Kind, "ServiceAccount") {
-		MergeAnnotations(obj, existing.GetAnnotations()) // copy existing annotations
-		if err := RetainSecrets(obj, existing); err != nil {
-			return false, err
-		}
+		MergeAnnotations(existing, obj.GetAnnotations()) // copy existing annotations
+		MergeLabels(existing, obj.GetLabels())
+		// let's use the existing object so that we keep the references to the existing secrets
+		obj = existing
 	}
 
 	// also, if the resource to create is a Service and there's a previous version, we should retain its `spec.ClusterIP`, otherwise
@@ -202,46 +202,6 @@ func clusterIP(obj runtime.Object) (string, bool, error) {
 	default:
 		// do nothing, object is not a service
 		return "", false, nil
-	}
-}
-
-// RetainSecrets sets the `spec.secrets` value from the given 'existing' object
-// into the 'newResource' object.
-func RetainSecrets(newResource, existing runtime.Object) error {
-	secretsRef, found, err := secrets(existing)
-	if err != nil {
-		return err
-	}
-	if !found {
-		// skip
-		return nil
-	}
-	switch newResource := newResource.(type) {
-	case *corev1.ServiceAccount:
-		sf, ok := secretsRef.([]corev1.ObjectReference)
-		if !ok {
-			return nil
-		}
-		newResource.Secrets = sf
-	case *unstructured.Unstructured:
-		if err := unstructured.SetNestedField(newResource.Object, secretsRef, "secrets"); err != nil {
-			return err
-		}
-	default:
-		// do nothing, object is not a service
-	}
-	return nil
-}
-
-func secrets(obj runtime.Object) (interface{}, bool, error) {
-	switch obj := obj.(type) {
-	case *corev1.ServiceAccount:
-		return obj.Secrets, len(obj.Secrets) > 0, nil
-	case *unstructured.Unstructured:
-		return unstructured.NestedFieldCopy(obj.Object, "secrets")
-	default:
-		// do nothing, object is not a service
-		return []corev1.ObjectReference{}, false, nil
 	}
 }
 
