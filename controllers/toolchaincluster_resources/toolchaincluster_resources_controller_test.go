@@ -4,19 +4,16 @@ import (
 	"context"
 	"embed"
 	"testing"
-	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
-	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
+	"github.com/codeready-toolchain/toolchain-common/pkg/template"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -28,18 +25,22 @@ var serviceAccountFS embed.FS
 
 func TestToolchainClusterResources(t *testing.T) {
 	// given
-	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, v1.ConditionTrue)
-	toolchainCluster, sec := test.NewToolchainCluster("east", test.MemberOperatorNs, "secret", status, nil)
-	toolchainCluster.Spec.CABundle = "ZHVtbXk="
-	cl := test.NewFakeClient(t, toolchainCluster, sec)
-	service := cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, test.MemberOperatorNs, 3*time.Second, func(config *rest.Config, options client.Options) (client.Client, error) {
-		return client.New(config, options)
-	})
-	defer service.DeleteToolchainCluster("east")
+	// we assume there is already a service account generated in the member operator namespaces
+	sa := &v1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ServiceAccount",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "existing-sa",
+			Namespace: test.MemberOperatorNs,
+		},
+	}
+	cl := test.NewFakeClient(t, sa)
 
 	t.Run("controller should create service account resource", func(t *testing.T) {
 		// then
-		controller, req := prepareReconcile(toolchainCluster, cl, &serviceAccountFS)
+		controller, req := prepareReconcile(sa, cl, &serviceAccountFS)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -55,7 +56,7 @@ func TestToolchainClusterResources(t *testing.T) {
 
 	t.Run("controller should create cluster role resource", func(t *testing.T) {
 		// then
-		controller, req := prepareReconcile(toolchainCluster, cl, &clusterRoleFS)
+		controller, req := prepareReconcile(sa, cl, &clusterRoleFS)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -70,7 +71,7 @@ func TestToolchainClusterResources(t *testing.T) {
 
 	t.Run("controller should return error when not templates are configured", func(t *testing.T) {
 		// then
-		controller, req := prepareReconcile(toolchainCluster, cl, nil) // no templates are passed to the controller initialization
+		controller, req := prepareReconcile(sa, cl, nil) // no templates are passed to the controller initialization
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -78,14 +79,31 @@ func TestToolchainClusterResources(t *testing.T) {
 	})
 }
 
-func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, templates *embed.FS) (Reconciler, reconcile.Request) {
+func prepareReconcile(sa *v1.ServiceAccount, cl *test.FakeClient, templates *embed.FS) (Reconciler, reconcile.Request) {
+	if templates == nil {
+		return emptyReconciler(cl)
+	}
+	templateObjects, err := template.LoadObjectsFromEmbedFS(templates, &template.Variables{Namespace: sa.Namespace})
+	if err != nil {
+		return emptyReconciler(cl)
+	}
 	controller := Reconciler{
-		client:    cl,
-		scheme:    scheme.Scheme,
-		templates: templates,
+		client:          cl,
+		scheme:          scheme.Scheme,
+		templates:       templates,
+		templateObjects: templateObjects,
 	}
 	req := reconcile.Request{
-		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
+		NamespacedName: test.NamespacedName(sa.Namespace, sa.Name),
 	}
 	return controller, req
+}
+
+func emptyReconciler(cl *test.FakeClient) (Reconciler, reconcile.Request) {
+	return Reconciler{
+		client:          cl,
+		scheme:          scheme.Scheme,
+		templates:       nil,
+		templateObjects: nil,
+	}, reconcile.Request{}
 }
