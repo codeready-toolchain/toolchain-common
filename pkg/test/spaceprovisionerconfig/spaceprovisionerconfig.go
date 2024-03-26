@@ -2,6 +2,7 @@ package spaceprovisionerconfig
 
 import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
+	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,6 +23,10 @@ func NewSpaceProvisionerConfig(name string, namespace string, opts ...CreateOpti
 	}
 
 	return spc
+}
+
+func PlacementRole(shortName string) string {
+	return cluster.RoleLabel(cluster.Role(shortName))
 }
 
 func ReferencingToolchainCluster(name string) CreateOption {
@@ -51,6 +56,12 @@ func WithReadyCondition(status corev1.ConditionStatus, reason string) CreateOpti
 			Status: status,
 			Reason: reason,
 		})
+	}
+}
+
+func WithPlacementRoles(placementRoles ...string) CreateOption {
+	return func(spc *toolchainv1alpha1.SpaceProvisionerConfig) {
+		spc.Spec.PlacementRoles = placementRoles
 	}
 }
 
