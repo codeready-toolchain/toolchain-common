@@ -46,7 +46,7 @@ type Reconciler struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
-	reqLogger := log.FromContext(ctx)
+	reqLogger := log.FromContext(ctx).WithName("cache")
 	reqLogger.Info("Reconciling ToolchainCluster")
 
 	// Fetch the ToolchainCluster instance
