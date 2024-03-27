@@ -27,10 +27,10 @@ func MapToOwnerByLabel(namespace, label string) func(object client.Object) []rec
 	}
 }
 
-// MapToOwnerByLabelValue returns an event handler will convert events on a resource to requests
+// MapToControllerByMatchingLabel returns an event handler will convert events on a resource to requests
 // if the resource matches a given label key and value
 // (if the label exists)
-func MapToOwnerByLabelValue(namespace, labelKey, labelValue string) func(object client.Object) []reconcile.Request {
+func MapToControllerByMatchingLabel(namespace, labelKey, labelValue string) func(object client.Object) []reconcile.Request {
 	return func(obj client.Object) []reconcile.Request {
 		if labelValueFound, exists := obj.GetLabels()[labelKey]; exists && labelValue == labelValueFound {
 			return []reconcile.Request{
@@ -42,7 +42,7 @@ func MapToOwnerByLabelValue(namespace, labelKey, labelValue string) func(object 
 				},
 			}
 		}
-		// the obj was not a namespace or it did not have the required label.
+		// the obj did not have the required label.
 		return []reconcile.Request{}
 	}
 }

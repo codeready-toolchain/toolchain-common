@@ -72,7 +72,7 @@ func TestMapToOwnerByLabelValue(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToOwnerByLabelValue("ns", "owner", "foo")(obj)
+		result := MapToControllerByMatchingLabel("ns", "owner", "foo")(obj)
 		// then
 		require.Len(t, result, 1)
 		assert.Equal(t, reconcile.Request{
@@ -95,7 +95,7 @@ func TestMapToOwnerByLabelValue(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToOwnerByLabelValue("ns", "owner", "foo")(&obj)
+		result := MapToControllerByMatchingLabel("ns", "owner", "foo")(&obj)
 		// then
 		require.Empty(t, result)
 	})
@@ -112,7 +112,7 @@ func TestMapToOwnerByLabelValue(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToOwnerByLabelValue("ns", "owner", "bar")(&obj)
+		result := MapToControllerByMatchingLabel("ns", "owner", "bar")(&obj)
 		// then
 		require.Empty(t, result)
 	})
