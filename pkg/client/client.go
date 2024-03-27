@@ -278,10 +278,9 @@ func ApplyUnstructuredObjects(ctx context.Context, cl client.Client, unstructure
 	anyApplied := false
 
 	for _, unstructuredObj := range unstructuredObjects {
-		var object = unstructuredObj.DeepCopyObject().(client.Object)
-		log.Info("applying object", "object_namespace", object.GetNamespace(), "object_name", object.GetObjectKind().GroupVersionKind().Kind+"/"+object.GetName())
-		MergeLabels(object, newLabels)
-		_, err := applyClient.ApplyObject(ctx, object)
+		log.Info("applying object", "object_namespace", unstructuredObj.GetNamespace(), "object_name", unstructuredObj.GetObjectKind().GroupVersionKind().Kind+"/"+unstructuredObj.GetName())
+		MergeLabels(unstructuredObj, newLabels)
+		_, err := applyClient.ApplyObject(ctx, unstructuredObj)
 		if err != nil {
 			return anyApplied, err
 		}
