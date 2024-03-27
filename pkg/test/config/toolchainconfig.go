@@ -85,10 +85,12 @@ func (o AutomaticApprovalOption) Enabled(value bool) AutomaticApprovalOption {
 	return o
 }
 
+// Deprecated: This is no longer used for anything.
 type CapacityThresholdsOption struct {
 	*ToolchainConfigOptionImpl
 }
 
+// Deprecated: This is no longer used for anything.
 func CapacityThresholds() *CapacityThresholdsOption {
 	c := &CapacityThresholdsOption{
 		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
@@ -96,6 +98,7 @@ func CapacityThresholds() *CapacityThresholdsOption {
 	return c
 }
 
+// Deprecated: This is no longer used for anything.
 func (c CapacityThresholdsOption) ResourceCapacityThreshold(defaultThreshold int, perMember ...PerMemberClusterOptionInt) CapacityThresholdsOption {
 	c.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.DefaultThreshold = &defaultThreshold
@@ -107,6 +110,7 @@ func (c CapacityThresholdsOption) ResourceCapacityThreshold(defaultThreshold int
 	return c
 }
 
+// Deprecated: This is no longer used for anything.
 func (c CapacityThresholdsOption) MaxNumberOfSpaces(perMember ...PerMemberClusterOptionInt) CapacityThresholdsOption {
 	c.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.CapacityThresholds.MaxNumberOfSpacesPerMemberCluster = map[string]int{}
