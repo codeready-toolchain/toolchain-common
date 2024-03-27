@@ -763,11 +763,10 @@ func TestApplyUnstructuredObjects(t *testing.T) {
 			cl := NewFakeClient(t)
 
 			// when
-			createdOrUpdated, err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{sa}, map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue})
+			err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{sa}, map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue})
 			require.NoError(t, err)
 
 			// then
-			assert.True(t, createdOrUpdated)
 			var actualSa corev1.ServiceAccount
 			err = cl.Get(context.TODO(), types.NamespacedName{Name: "toolchaincluster-member", Namespace: "toolchain-member-operator"}, &actualSa) // assert sa was created
 			require.NoError(t, err)
@@ -800,19 +799,17 @@ func TestApplyUnstructuredObjects(t *testing.T) {
 
 			// when
 			// we update the labels
-			createdOrUpdated, err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{newSA},
+			err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{newSA},
 				map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue,
 					toolchainv1alpha1.OwnerLabelKey: "someowner",
 				},
 			)
 			require.NoError(t, err)
-			assert.True(t, createdOrUpdated)
 
 			// then
 			var actualSa corev1.ServiceAccount
 			err = cl.Get(context.TODO(), types.NamespacedName{Name: "appstudio-user-sa", Namespace: "john-dev"}, &actualSa) // assert sa was created
 			require.NoError(t, err)
-			assert.True(t, createdOrUpdated)
 			assert.Equal(t, toolchainv1alpha1.ProviderLabelValue, actualSa.Labels[toolchainv1alpha1.ProviderLabelKey]) // existing label is still there
 			assert.Equal(t, "someowner", actualSa.Labels[toolchainv1alpha1.OwnerLabelKey])                             // new label is here as well
 			assert.Equal(t, secretRefs, actualSa.Secrets)                                                              // secret refs are still there
@@ -834,11 +831,10 @@ func TestApplyUnstructuredObjects(t *testing.T) {
 		cl := NewFakeClient(t)
 
 		// when
-		createdOrUpdated, err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{role}, map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue})
+		err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{role}, map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue})
 
 		// then
 		require.NoError(t, err)
-		assert.True(t, createdOrUpdated)
 		var actualRole rbac.Role
 		err = cl.Get(context.TODO(), types.NamespacedName{Name: "toolchaincluster-member", Namespace: "toolchain-member-operator"}, &actualRole) // assert role was created
 		require.NoError(t, err)

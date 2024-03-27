@@ -273,19 +273,16 @@ func MergeAnnotations(toolchainObject client.Object, newAnnotations map[string]s
 }
 
 // ApplyUnstructuredObjects applies the given Unstructured objects on the cluster.
-func ApplyUnstructuredObjects(ctx context.Context, cl client.Client, unstructuredObjects []*unstructured.Unstructured, newLabels map[string]string) (bool, error) {
+func ApplyUnstructuredObjects(ctx context.Context, cl client.Client, unstructuredObjects []*unstructured.Unstructured, newLabels map[string]string) error {
 	applyClient := NewApplyClient(cl)
-	anyApplied := false
-
 	for _, unstructuredObj := range unstructuredObjects {
 		log.Info("applying object", "object_namespace", unstructuredObj.GetNamespace(), "object_name", unstructuredObj.GetObjectKind().GroupVersionKind().Kind+"/"+unstructuredObj.GetName())
 		MergeLabels(unstructuredObj, newLabels)
 		_, err := applyClient.ApplyObject(ctx, unstructuredObj)
 		if err != nil {
-			return anyApplied, err
+			return err
 		}
-		anyApplied = true
 	}
 
-	return anyApplied, nil
+	return nil
 }
