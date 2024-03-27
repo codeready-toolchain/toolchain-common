@@ -1,4 +1,4 @@
-package toolchaincluster_cache
+package toolchainclustercache
 
 import (
 	"context"
