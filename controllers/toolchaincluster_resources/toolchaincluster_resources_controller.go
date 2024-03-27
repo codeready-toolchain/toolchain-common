@@ -42,7 +42,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, operatorNamespace string
 	if err != nil {
 		return err
 	}
-	mapToOwnerByLabel := handler.EnqueueRequestsFromMapFunc(commoncontroller.MapToControllerByMatchingLabel(operatorNamespace, toolchainv1alpha1.ProviderLabelKey, ResourceControllerLabelValue))
+	mapToOwnerByLabel := handler.EnqueueRequestsFromMapFunc(commoncontroller.MapToControllerByMatchingLabel(toolchainv1alpha1.ProviderLabelKey, ResourceControllerLabelValue))
 	for _, obj := range r.templateObjects {
 		build = build.Watches(&source.Kind{Type: obj.DeepCopyObject().(runtimeclient.Object)}, mapToOwnerByLabel, builder.WithPredicates(commonpredicates.LabelsAndGenerationPredicate{}))
 	}

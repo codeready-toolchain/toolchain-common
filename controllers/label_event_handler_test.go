@@ -56,12 +56,13 @@ func TestMapToOwnerByLabel(t *testing.T) {
 	})
 }
 
-func TestMapToOwnerByLabelValue(t *testing.T) {
+func TestMapToControllerByMatchingLabel(t *testing.T) {
 
 	t.Run("resource with expected label and value", func(t *testing.T) {
 		// given
 		objMeta := metav1.ObjectMeta{
-			Name: "bar",
+			Name:      "bar",
+			Namespace: "ns",
 			Labels: map[string]string{
 				"type":     "che",
 				"owner":    "foo",
@@ -72,7 +73,7 @@ func TestMapToOwnerByLabelValue(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToControllerByMatchingLabel("ns", "owner", "foo")(obj)
+		result := MapToControllerByMatchingLabel("owner", "foo")(obj)
 		// then
 		require.Len(t, result, 1)
 		assert.Equal(t, reconcile.Request{
@@ -95,7 +96,7 @@ func TestMapToOwnerByLabelValue(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToControllerByMatchingLabel("ns", "owner", "foo")(&obj)
+		result := MapToControllerByMatchingLabel("owner", "foo")(&obj)
 		// then
 		require.Empty(t, result)
 	})
@@ -112,7 +113,7 @@ func TestMapToOwnerByLabelValue(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToControllerByMatchingLabel("ns", "owner", "bar")(&obj)
+		result := MapToControllerByMatchingLabel("owner", "bar")(&obj)
 		// then
 		require.Empty(t, result)
 	})
