@@ -2,6 +2,8 @@ module github.com/codeready-toolchain/toolchain-common
 
 go 1.20
 
+replace github.com/codeready-toolchain/api => github.com/metlos/api v0.0.0-20240326131121-9509925cdd79
+
 require (
 	github.com/codeready-toolchain/api v0.0.0-20240322110702-5ab3840476e9
 	github.com/go-logr/logr v1.2.3
