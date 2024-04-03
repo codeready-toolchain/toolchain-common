@@ -1,4 +1,4 @@
-package toolchaincluster_resources
+package toolchainclusterresources
 
 import (
 	"context"
@@ -101,9 +101,9 @@ func prepareReconcile(sa *v1.ServiceAccount, cl *test.FakeClient, templates *emb
 		return emptyReconciler(cl)
 	}
 	controller := Reconciler{
-		client:          cl,
-		scheme:          scheme.Scheme,
-		templates:       templates,
+		Client:          cl,
+		Scheme:          scheme.Scheme,
+		Templates:       templates,
 		templateObjects: templateObjects,
 	}
 	req := reconcile.Request{
@@ -114,9 +114,9 @@ func prepareReconcile(sa *v1.ServiceAccount, cl *test.FakeClient, templates *emb
 
 func emptyReconciler(cl *test.FakeClient) (Reconciler, reconcile.Request) {
 	return Reconciler{
-		client:          cl,
-		scheme:          scheme.Scheme,
-		templates:       nil,
+		Client:          cl,
+		Scheme:          scheme.Scheme,
+		Templates:       nil,
 		templateObjects: nil,
 	}, reconcile.Request{}
 }

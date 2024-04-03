@@ -1,4 +1,4 @@
-package toolchaincluster_resources
+package toolchainclusterresources
 
 import (
 	"context"
@@ -29,7 +29,7 @@ const ResourceControllerLabelValue = "toolchaincluster-resources-controller" // 
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, operatorNamespace string) error {
 	// check for required templates FS directory
-	if r.templates == nil {
+	if r.Templates == nil {
 		return fmt.Errorf("no templates FS configured")
 	}
 
@@ -38,7 +38,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, operatorNamespace string
 
 	// add watcher for all kinds from given templates
 	var err error
-	r.templateObjects, err = template.LoadObjectsFromEmbedFS(r.templates, &template.Variables{Namespace: operatorNamespace})
+	r.templateObjects, err = template.LoadObjectsFromEmbedFS(r.Templates, &template.Variables{Namespace: operatorNamespace})
 	if err != nil {
 		return err
 	}
@@ -51,9 +51,9 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, operatorNamespace string
 
 // Reconciler reconciles a ToolchainCluster object
 type Reconciler struct {
-	client          runtimeclient.Client
-	scheme          *runtime.Scheme
-	templates       *embed.FS
+	Client          runtimeclient.Client
+	Scheme          *runtime.Scheme
+	Templates       *embed.FS
 	templateObjects []*unstructured.Unstructured
 }
 
@@ -62,7 +62,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	reqLogger := log.FromContext(ctx)
 	reqLogger.Info("Reconciling ToolchainCluster resources controller")
 	// check for required templates FS directory
-	if r.templates == nil {
+	if r.Templates == nil {
 		return reconcile.Result{}, fmt.Errorf("no templates FS configured")
 	}
 
@@ -73,5 +73,5 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 
 	// todo implement delete logic for objects that were renamed/removed from the templates
 
-	return reconcile.Result{}, applycl.ApplyUnstructuredObjects(ctx, r.client, r.templateObjects, newLabels) // apply objects on the cluster
+	return reconcile.Result{}, applycl.ApplyUnstructuredObjects(ctx, r.Client, r.templateObjects, newLabels) // apply objects on the cluster
 }
