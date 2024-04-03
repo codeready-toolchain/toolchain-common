@@ -2,7 +2,6 @@ package nstemplatetiers
 
 import (
 	"fmt"
-	"reflect"
 	"sort"
 	"strings"
 
@@ -145,9 +144,6 @@ func loadTemplatesByTiers(metadata map[string]string, files map[string][]byte) (
 
 	results := make(map[string]*tierData)
 	for name, content := range files {
-		if name == "metadata.yaml" {
-			continue
-		}
 		// split the name using the `/` separator
 		parts := strings.Split(name, "/")
 		// skip any name that does not have 2 parts
@@ -352,7 +348,7 @@ func (t *TierGenerator) initNSTemplateTiers() error {
 			nsTemplateTier = fromData.rawTemplates.nsTemplateTier
 			sourceTierName = fromData.name
 		}
-		objs, err := t.newNSTemplateTier(sourceTierName, tierName, *nsTemplateTier, tierTemplates, parameters)
+		objs, err := t.newNSTemplateTier(sourceTierName, tierName, nsTemplateTier, tierTemplates, parameters)
 		if err != nil {
 			return err
 		}
@@ -431,9 +427,9 @@ func (t *TierGenerator) createNSTemplateTiers() error {
 //	      templateRef: appstudio-admin-ab12cd34-ab12cd34
 //
 // ------
-func (t *TierGenerator) newNSTemplateTier(sourceTierName, tierName string, nsTemplateTier template, tierTemplates []*toolchainv1alpha1.TierTemplate, parameters []templatev1.Parameter) ([]runtimeclient.Object, error) {
+func (t *TierGenerator) newNSTemplateTier(sourceTierName, tierName string, nsTemplateTier *template, tierTemplates []*toolchainv1alpha1.TierTemplate, parameters []templatev1.Parameter) ([]runtimeclient.Object, error) {
 	decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
-	if reflect.DeepEqual(nsTemplateTier, template{}) {
+	if nsTemplateTier == nil {
 		return nil, fmt.Errorf("tier %s is missing a tier.yaml file", tierName)
 	}
 

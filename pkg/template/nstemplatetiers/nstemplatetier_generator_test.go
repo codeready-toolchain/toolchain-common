@@ -465,6 +465,18 @@ func TestGenerateTiers(t *testing.T) {
 				assert.Regexp(t, "unable to create or update the '\\w+' NSTemplateTier: unable to create resource of kind: NSTemplateTier, version: v1alpha1: an error", err.Error())
 			})
 
+			t.Run("missing tier.yaml file", func(t *testing.T) {
+				// given
+				clt := test.NewFakeClient(t)
+				testTemplates := getTestTemplates(t)
+				delete(testTemplates, "base/tier.yaml")
+
+				// when
+				err := GenerateTiers(s, ensureObjectFuncForClient(clt), namespace, getTestMetadata(), testTemplates)
+				// then
+				require.EqualError(t, err, "unable to init NSTemplateTier generator: tier base is missing a tier.yaml file")
+			})
+
 			t.Run("failed to update nstemplatetiers", func(t *testing.T) {
 				// given
 				// initialize the client with an existing `advanced` NSTemplatetier
