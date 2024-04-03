@@ -469,12 +469,12 @@ func TestGenerateTiers(t *testing.T) {
 				// given
 				clt := test.NewFakeClient(t)
 				testTemplates := getTestTemplates(t)
-				delete(testTemplates, "base/tier.yaml")
+				delete(testTemplates, "appstudio/tier.yaml")
 
 				// when
 				err := GenerateTiers(s, ensureObjectFuncForClient(clt), namespace, getTestMetadata(), testTemplates)
 				// then
-				require.EqualError(t, err, "unable to init NSTemplateTier generator: tier base is missing a tier.yaml file")
+				require.EqualError(t, err, "unable to init NSTemplateTier generator: tier appstudio is missing a tier.yaml file")
 			})
 
 			t.Run("failed to update nstemplatetiers", func(t *testing.T) {
@@ -501,9 +501,6 @@ func TestGenerateTiers(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "unable to create NSTemplateTiers: unable to create or update the 'advanced' NSTemplateTier: unable to create resource of kind: NSTemplateTier, version: v1alpha1: unable to update the resource")
 			})
-		})
-
-		t.Run("tiertemplates", func(t *testing.T) {
 
 			t.Run("failed to create nstemplatetiers", func(t *testing.T) {
 				// given
