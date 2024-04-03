@@ -71,7 +71,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		toolchainv1alpha1.ProviderLabelKey: ResourceControllerLabelValue,
 	}
 
-	// todo implement delete logic for objects that were renamed/removed from the templates
+	// TODO implement delete logic for objects that were renamed/removed from the templates
 
 	return reconcile.Result{}, applycl.ApplyUnstructuredObjects(ctx, r.Client, r.templateObjects, newLabels) // apply objects on the cluster
 }
