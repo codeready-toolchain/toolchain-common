@@ -121,7 +121,10 @@ func basedOnOtherTier(expectedTiers map[string]bool, tier string) bool {
 
 func getTestTemplates(t *testing.T) map[string][]byte {
 	templates := map[string][]byte{}
-	err := fs.WalkDir(testTemplateFiles, ".", func(path string, d fs.DirEntry, _ error) error {
+	err := fs.WalkDir(testTemplateFiles, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 		if d.IsDir() {
 			return nil
 		}
