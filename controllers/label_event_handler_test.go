@@ -117,4 +117,19 @@ func TestMapToControllerByMatchingLabel(t *testing.T) {
 		// then
 		require.Empty(t, result)
 	})
+
+	t.Run("resource without labels", func(t *testing.T) {
+		// given
+		objMeta := metav1.ObjectMeta{
+			Name: "bar",
+			Labels: nil,
+		}
+		obj := corev1.Namespace{
+			ObjectMeta: objMeta,
+		}
+		// when
+		result := MapToControllerByMatchingLabel("owner", "bar")(&obj)
+		// then
+		require.Empty(t, result)
+	})
 }
