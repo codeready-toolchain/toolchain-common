@@ -73,5 +73,5 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 
 	// TODO implement delete logic for objects that were renamed/removed from the templates
 
-	return reconcile.Result{}, applycl.ApplyUnstructuredObjects(ctx, r.Client, r.templateObjects, newLabels) // apply objects on the cluster
+	return reconcile.Result{}, applycl.ApplyUnstructuredObjectsWithNewLabels(ctx, r.Client, r.templateObjects, newLabels) // apply objects on the cluster
 }

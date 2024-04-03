@@ -763,7 +763,7 @@ func TestApplyUnstructuredObjects(t *testing.T) {
 			cl := NewFakeClient(t)
 
 			// when
-			err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{sa}, map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue})
+			err := client.ApplyUnstructuredObjectsWithNewLabels(context.TODO(), cl, []*unstructured.Unstructured{sa}, map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue})
 			require.NoError(t, err)
 
 			// then
@@ -799,7 +799,7 @@ func TestApplyUnstructuredObjects(t *testing.T) {
 
 			// when
 			// we update the labels
-			err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{newSA},
+			err := client.ApplyUnstructuredObjectsWithNewLabels(context.TODO(), cl, []*unstructured.Unstructured{newSA},
 				map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue,
 					toolchainv1alpha1.OwnerLabelKey: "someowner",
 				},
@@ -831,7 +831,7 @@ func TestApplyUnstructuredObjects(t *testing.T) {
 		cl := NewFakeClient(t)
 
 		// when
-		err := client.ApplyUnstructuredObjects(context.TODO(), cl, []*unstructured.Unstructured{role}, map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue})
+		err := client.ApplyUnstructuredObjectsWithNewLabels(context.TODO(), cl, []*unstructured.Unstructured{role}, map[string]string{toolchainv1alpha1.ProviderLabelKey: toolchainv1alpha1.ProviderLabelValue})
 
 		// then
 		require.NoError(t, err)
