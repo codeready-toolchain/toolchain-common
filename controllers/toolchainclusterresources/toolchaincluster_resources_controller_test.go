@@ -40,11 +40,13 @@ func TestToolchainClusterResources(t *testing.T) {
 	cl := test.NewFakeClient(t, sa)
 
 	t.Run("controller should create service account resource", func(t *testing.T) {
-		// then
+		// given
 		controller, req := prepareReconcile(sa, cl, &serviceAccountFS)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
+		
+		// then
 		require.NoError(t, err)
 		checkExpectedServiceAccountResources(t, cl)
 	})
