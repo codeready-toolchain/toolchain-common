@@ -45,18 +45,20 @@ func TestToolchainClusterResources(t *testing.T) {
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
-		
+
 		// then
 		require.NoError(t, err)
 		checkExpectedServiceAccountResources(t, cl)
 	})
 
 	t.Run("controller should create cluster role resource", func(t *testing.T) {
-		// then
+		// given
 		controller, req := prepareReconcile(sa, cl, &clusterRoleFS)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
+
+		// then
 		require.NoError(t, err)
 		cr := &rbac.ClusterRole{}
 		err = cl.Get(context.TODO(), types.NamespacedName{
@@ -67,11 +69,13 @@ func TestToolchainClusterResources(t *testing.T) {
 	})
 
 	t.Run("controller should return error when not templates are configured", func(t *testing.T) {
-		// then
+		// given
 		controller, req := prepareReconcile(sa, cl, nil) // no templates are passed to the controller initialization
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
+
+		// then
 		require.Error(t, err)
 	})
 }
