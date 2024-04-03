@@ -17,19 +17,19 @@ import (
 var EFS embed.FS
 
 //go:embed testdata/host/*
-var HostFS embed.FS
+var hostFS embed.FS
 
 //go:embed testdata/member/*
-var MemberFS embed.FS
+var memberFS embed.FS
 
 func TestLoadObjectsFromEmbedFS(t *testing.T) {
 	t.Run("loads objects recursively from all subdirectories", func(t *testing.T) {
 		// when
 		allObjects, err := template.LoadObjectsFromEmbedFS(&EFS, &template.Variables{Namespace: test.HostOperatorNs})
 		require.NoError(t, err)
-		hostFolderObjects, err := template.LoadObjectsFromEmbedFS(&HostFS, &template.Variables{Namespace: test.HostOperatorNs})
+		hostFolderObjects, err := template.LoadObjectsFromEmbedFS(&hostFS, &template.Variables{Namespace: test.HostOperatorNs})
 		require.NoError(t, err)
-		memberFolderObjects, err := template.LoadObjectsFromEmbedFS(&MemberFS, nil)
+		memberFolderObjects, err := template.LoadObjectsFromEmbedFS(&memberFS, nil)
 		require.NoError(t, err)
 		// then
 		require.NotNil(t, allObjects)
@@ -45,7 +45,7 @@ func TestLoadObjectsFromEmbedFS(t *testing.T) {
 	t.Run("error - when variables are not provided", func(t *testing.T) {
 		// when
 		// we do not pass required variables for the templates that requires variables
-		objects, err := template.LoadObjectsFromEmbedFS(&HostFS, nil)
+		objects, err := template.LoadObjectsFromEmbedFS(&hostFS, nil)
 		// then
 		// we should get back an error
 		require.Error(t, err)
