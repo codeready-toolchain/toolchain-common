@@ -24,7 +24,7 @@ import (
 
 // ResourceControllerLabelValue is being added to all the resources managed by this controller.
 // It's then used to filter all the events on those resources by using a mapper function in the watcher configuration.
-const ResourceControllerLabelValue = "toolchaincluster-resources-controller" // todo move this label value to api repo
+const ResourceControllerLabelValue = "toolchaincluster-resources-controller" // TODO move this label value to api repo
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, operatorNamespace string) error {
