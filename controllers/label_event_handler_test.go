@@ -121,7 +121,7 @@ func TestMapToControllerByMatchingLabel(t *testing.T) {
 	t.Run("resource without labels", func(t *testing.T) {
 		// given
 		objMeta := metav1.ObjectMeta{
-			Name: "bar",
+			Name:   "bar",
 			Labels: nil,
 		}
 		obj := corev1.Namespace{
