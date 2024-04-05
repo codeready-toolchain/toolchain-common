@@ -81,7 +81,7 @@ func checkExpectedObjects(t *testing.T, objects []*unstructured.Unstructured) {
 		Kind:     "Role",
 		Name:     "toolchaincluster-host",
 	}, roleBinding.RoleRef)
-	require.Equal(t, 1, len(roleBinding.Subjects))
+	require.Len(t, roleBinding.Subjects, 1)
 	require.Equal(t, rbac.Subject{
 		Kind: "ServiceAccount",
 		Name: "toolchaincluster-host",

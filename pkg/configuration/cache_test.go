@@ -340,11 +340,11 @@ func TestMultipleExecutionsInParallel(t *testing.T) {
 			config, secrets, err := GetConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 			// then
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			toolchaincfg, ok := config.(*toolchainv1alpha1.ToolchainConfig)
-			require.True(t, ok)
+			assert.True(t, ok)
 			assert.NotEmpty(t, toolchaincfg.Spec)
-			require.NotEmpty(t, secrets)
+			assert.NotEmpty(t, secrets)
 		}()
 		go func(i int) {
 			defer waitForFinished.Done()
