@@ -35,9 +35,9 @@ func TestLoadObjectsFromEmbedFS(t *testing.T) {
 		require.NotNil(t, allObjects)
 		require.NotNil(t, hostFolderObjects)
 		require.NotNil(t, memberFolderObjects)
-		require.Equal(t, 4, len(allObjects), "invalid number of expected total objects")
-		require.Equal(t, 3, len(hostFolderObjects), "invalid number of expected objects from host folder")
-		require.Equal(t, 1, len(memberFolderObjects), "invalid number of expected objects from member folder")
+		require.Len(t, allObjects, 4, "invalid number of expected total objects")
+		require.Len(t, hostFolderObjects, 3, "invalid number of expected objects from host folder")
+		require.Len(t, memberFolderObjects, 1, "invalid number of expected objects from member folder")
 		// check match for the expected objects
 		checkExpectedObjects(t, allObjects)
 	})
