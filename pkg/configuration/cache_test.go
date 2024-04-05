@@ -47,7 +47,7 @@ func TestCache(t *testing.T) {
 
 	t.Run("return config that is stored in cache", func(t *testing.T) {
 		// given
-		originalConfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321)))
+		originalConfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321))) //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 		cl := test.NewFakeClient(t, originalConfig)
 
 		// when
@@ -62,7 +62,7 @@ func TestCache(t *testing.T) {
 
 		t.Run("returns the same when the cache hasn't been updated", func(t *testing.T) {
 			// given
-			newConfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 666)))
+			newConfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 666))) //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 			cl := test.NewFakeClient(t, newConfig)
 
 			// when
@@ -80,7 +80,7 @@ func TestCache(t *testing.T) {
 		t.Run("returns the new config when the cache was updated", func(t *testing.T) {
 			// given
 			newConfig := NewToolchainConfigObjWithReset(t,
-				testconfig.CapacityThresholds().ResourceCapacityThreshold(666),
+				testconfig.CapacityThresholds().ResourceCapacityThreshold(666), //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 				testconfig.Deactivation().DeactivatingNotificationDays(5),
 				testconfig.Notifications().Secret().
 					Ref("notification-secret").
@@ -112,7 +112,7 @@ func TestGetConfigFailed(t *testing.T) {
 	defer restore()
 	// given
 	t.Run("config not found", func(t *testing.T) {
-		config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321)))
+		config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321))) //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 		cl := test.NewFakeClient(t, config)
 		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 			return apierrors.NewNotFound(schema.GroupResource{}, "config")
@@ -125,11 +125,10 @@ func TestGetConfigFailed(t *testing.T) {
 		require.NoError(t, err)
 		assert.Nil(t, actual)
 		assert.Empty(t, secrets)
-
 	})
 
 	t.Run("error getting config", func(t *testing.T) {
-		config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321)))
+		config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321))) //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 		cl := test.NewFakeClient(t, config)
 		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 			return fmt.Errorf("some error")
@@ -145,7 +144,7 @@ func TestGetConfigFailed(t *testing.T) {
 	})
 
 	t.Run("load secrets error", func(t *testing.T) {
-		config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321)))
+		config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member1", 321))) //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 		// given
 		cl := test.NewFakeClient(t, config)
 		cl.MockList = func(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
@@ -174,7 +173,7 @@ func TestGetCachedConfig(t *testing.T) {
 
 	t.Run("cache filled", func(t *testing.T) {
 		// given
-		original := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member", 1)))
+		original := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member", 1))) //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 
 		secretData := map[string]map[string]string{
 			"notification-secret": {
@@ -193,14 +192,13 @@ func TestGetCachedConfig(t *testing.T) {
 		assert.Equal(t, original.Spec, toolchaincfg.Spec)
 		assert.Equal(t, secretData, secrets)
 	})
-
 }
 
 func TestLoadLatest(t *testing.T) {
 	restore := test.SetEnvVarAndRestore(t, "WATCH_NAMESPACE", test.HostOperatorNs)
 	defer restore()
 	t.Run("config found", func(t *testing.T) {
-		initConfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().ResourceCapacityThreshold(1100))
+		initConfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().ResourceCapacityThreshold(1100)) //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 		initSecret := &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "notification-secret",
@@ -240,7 +238,7 @@ func TestLoadLatest(t *testing.T) {
 
 		t.Run("returns the new value when the config has been updated", func(t *testing.T) {
 			// get
-			changedConfig := UpdateToolchainConfigObjWithReset(t, cl, testconfig.CapacityThresholds().ResourceCapacityThreshold(2000))
+			changedConfig := UpdateToolchainConfigObjWithReset(t, cl, testconfig.CapacityThresholds().ResourceCapacityThreshold(2000)) //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 			err := cl.Update(context.TODO(), changedConfig)
 			require.NoError(t, err)
 
@@ -277,7 +275,7 @@ func TestLoadLatest(t *testing.T) {
 	})
 
 	t.Run("get config error", func(t *testing.T) {
-		initconfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().ResourceCapacityThreshold(100))
+		initconfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().ResourceCapacityThreshold(100)) //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 		// given
 		cl := test.NewFakeClient(t, initconfig)
 		cl.MockGet = func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
@@ -294,7 +292,7 @@ func TestLoadLatest(t *testing.T) {
 	})
 
 	t.Run("load secrets error", func(t *testing.T) {
-		initconfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().ResourceCapacityThreshold(100))
+		initconfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().ResourceCapacityThreshold(100)) //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 		// given
 		cl := test.NewFakeClient(t, initconfig)
 		cl.MockList = func(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
@@ -318,7 +316,7 @@ func TestMultipleExecutionsInParallel(t *testing.T) {
 	var latch sync.WaitGroup
 	latch.Add(1)
 	var waitForFinished sync.WaitGroup
-	initconfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member", 1)))
+	initconfig := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster("member", 1))) //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -351,7 +349,7 @@ func TestMultipleExecutionsInParallel(t *testing.T) {
 		go func(i int) {
 			defer waitForFinished.Done()
 			latch.Wait()
-			config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster(fmt.Sprintf("member%d", i), i)))
+			config := NewToolchainConfigObjWithReset(t, testconfig.CapacityThresholds().MaxNumberOfSpaces(testconfig.PerMemberCluster(fmt.Sprintf("member%d", i), i))) //nolint:staticcheck //this is testing the deprecated funcionality so let's keep it in until it is removed
 
 			secretData := map[string]map[string]string{
 				"notification-secret": {
