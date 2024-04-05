@@ -339,6 +339,42 @@ func TestApplySingle(t *testing.T) {
 			assert.Equal(t, "second-value", configMap.Data["first-param"])
 		})
 	})
+
+	t.Run("updates of ServiceAccount", func(t *testing.T) {
+
+		t.Run("should update service account with last applied configuration", func(t *testing.T) {
+			// given
+			// there's an existing SA with secret refs
+			existingSA := newSA()
+			secretRefs := []corev1.ObjectReference{
+				{
+					Name:      "secret",
+					Namespace: existingSA.Namespace,
+				},
+			}
+			existingSA.Secrets = secretRefs
+			cl, cli := newClient(t)
+			_, err := cl.ApplyRuntimeObject(context.TODO(), existingSA)
+			require.NoError(t, err)
+
+			// when
+			// we update with existing annotations
+			newSA := existingSA.DeepCopy()
+			existingLastAppliedAnnotation := map[string]string{
+				client.LastAppliedConfigurationAnnotationKey: client.GetNewConfiguration(newSA),
+			}
+			newSA.SetAnnotations(existingLastAppliedAnnotation)   // let's set the last applied annotation
+			_, err = cl.ApplyRuntimeObject(context.TODO(), newSA) // then
+
+			// then
+			require.NoError(t, err)
+			var actualSa corev1.ServiceAccount
+			err = cli.Get(context.TODO(), types.NamespacedName{Name: "appstudio-user-sa", Namespace: "john-dev"}, &actualSa) // assert sa was created
+			require.NoError(t, err)
+			assert.Equal(t, secretRefs, actualSa.Secrets)                                                                                                                    // secret refs are still there
+			assert.Equal(t, existingLastAppliedAnnotation[client.LastAppliedConfigurationAnnotationKey], actualSa.Annotations[client.LastAppliedConfigurationAnnotationKey]) // the last apply configuration should match the previous object
+		})
+	})
 }
 
 func toUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {

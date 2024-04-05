@@ -113,7 +113,11 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	if config.saveConfiguration {
 		// set current object as annotation
 		annotations := obj.GetAnnotations()
-		newConfiguration = getNewConfiguration(obj)
+		// reset the previous config to avoid recursive embedding of the object
+		if _, found := obj.GetAnnotations()[LastAppliedConfigurationAnnotationKey]; found {
+			delete(obj.GetAnnotations(), LastAppliedConfigurationAnnotationKey)
+		}
+		newConfiguration = GetNewConfiguration(obj)
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
@@ -205,7 +209,7 @@ func clusterIP(obj runtime.Object) (string, bool, error) {
 	}
 }
 
-func getNewConfiguration(newResource runtime.Object) string {
+func GetNewConfiguration(newResource runtime.Object) string {
 	newJSON, err := marshalObjectContent(newResource)
 	if err != nil {
 		log.Error(err, "unable to marshal the object", "object", newResource)
