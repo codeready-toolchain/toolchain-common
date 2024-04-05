@@ -76,7 +76,7 @@ func TestMapToControllerByMatchingLabel(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToControllerByMatchingLabel("owner", "foo")(obj)
+		result := MapToControllerByMatchingLabel("owner", "foo")(context.TODO(), obj)
 		// then
 		require.Len(t, result, 1)
 		assert.Equal(t, reconcile.Request{
@@ -99,7 +99,7 @@ func TestMapToControllerByMatchingLabel(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToControllerByMatchingLabel("owner", "foo")(&obj)
+		result := MapToControllerByMatchingLabel("owner", "foo")(context.TODO(), &obj)
 		// then
 		require.Empty(t, result)
 	})
@@ -116,7 +116,7 @@ func TestMapToControllerByMatchingLabel(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToControllerByMatchingLabel("owner", "bar")(&obj)
+		result := MapToControllerByMatchingLabel("owner", "bar")(context.TODO(), &obj)
 		// then
 		require.Empty(t, result)
 	})
@@ -131,7 +131,7 @@ func TestMapToControllerByMatchingLabel(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToControllerByMatchingLabel("owner", "bar")(&obj)
+		result := MapToControllerByMatchingLabel("owner", "bar")(context.TODO(), &obj)
 		// then
 		require.Empty(t, result)
 	})
