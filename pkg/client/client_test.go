@@ -353,6 +353,10 @@ func TestApplySingle(t *testing.T) {
 				},
 			}
 			existingSA.Secrets = secretRefs
+			existingLastAppliedAnnotation := map[string]string{
+				client.LastAppliedConfigurationAnnotationKey: client.GetNewConfiguration(existingSA),
+			}
+			existingSA.SetAnnotations(existingLastAppliedAnnotation) // let's set the last applied annotation
 			cl, cli := newClient(t)
 			_, err := cl.ApplyRuntimeObject(context.TODO(), existingSA)
 			require.NoError(t, err)
@@ -360,9 +364,6 @@ func TestApplySingle(t *testing.T) {
 			// when
 			// we update with existing annotations
 			newSA := existingSA.DeepCopy()
-			existingLastAppliedAnnotation := map[string]string{
-				client.LastAppliedConfigurationAnnotationKey: client.GetNewConfiguration(newSA),
-			}
 			newSA.SetAnnotations(existingLastAppliedAnnotation)   // let's set the last applied annotation
 			_, err = cl.ApplyRuntimeObject(context.TODO(), newSA) // then
 

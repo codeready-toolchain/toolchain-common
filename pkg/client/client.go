@@ -113,10 +113,6 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	if config.saveConfiguration {
 		// set current object as annotation
 		annotations := obj.GetAnnotations()
-		// reset the previous config to avoid recursive embedding of the object
-		if _, found := obj.GetAnnotations()[LastAppliedConfigurationAnnotationKey]; found {
-			delete(obj.GetAnnotations(), LastAppliedConfigurationAnnotationKey)
-		}
 		newConfiguration = GetNewConfiguration(obj)
 		if annotations == nil {
 			annotations = map[string]string{}
@@ -209,7 +205,12 @@ func clusterIP(obj runtime.Object) (string, bool, error) {
 	}
 }
 
-func GetNewConfiguration(newResource runtime.Object) string {
+func GetNewConfiguration(newResource client.Object) string {
+	// reset the previous config to avoid recursive embedding of the object
+	copyResource := newResource.DeepCopyObject().(client.Object)
+	if _, found := copyResource.GetAnnotations()[LastAppliedConfigurationAnnotationKey]; found {
+		delete(copyResource.GetAnnotations(), LastAppliedConfigurationAnnotationKey)
+	}
 	newJSON, err := marshalObjectContent(newResource)
 	if err != nil {
 		log.Error(err, "unable to marshal the object", "object", newResource)
@@ -282,7 +283,7 @@ func ApplyUnstructuredObjectsWithNewLabels(ctx context.Context, cl client.Client
 	for _, unstructuredObj := range unstructuredObjects {
 		log.Info("applying object", "object_namespace", unstructuredObj.GetNamespace(), "object_name", unstructuredObj.GetObjectKind().GroupVersionKind().Kind+"/"+unstructuredObj.GetName())
 		MergeLabels(unstructuredObj, newLabels)
-		_, err := applyClient.ApplyObject(ctx, unstructuredObj)
+		_, err := applyClient.ApplyObject(ctx, unstructuredObj, SaveConfiguration(false))
 		if err != nil {
 			return err
 		}
