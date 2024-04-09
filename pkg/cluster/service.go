@@ -234,7 +234,8 @@ func ListToolchainClusterConfigs(cl client.Client, namespace string, timeout tim
 	}
 	var configs []*Config
 	for _, cluster := range toolchainClusters.Items {
-		clusterConfig, err := NewClusterConfig(cl, &cluster, timeout) // nolint:gosec
+		cluster := cluster // TODO We won't need it after upgrading to go 1.22: https://go.dev/blog/loopvar-preview
+		clusterConfig, err := NewClusterConfig(cl, &cluster, timeout)
 		if err != nil {
 			return nil, err
 		}
