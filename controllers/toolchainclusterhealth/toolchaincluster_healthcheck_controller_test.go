@@ -1,8 +1,9 @@
-package toolchainclustercache
+package toolchainclusterhealth
 
 import (
 	"context"
 	"testing"
+	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
@@ -11,9 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func TestClusterHealthChecks(t *testing.T) {
@@ -37,37 +40,38 @@ func TestClusterHealthChecks(t *testing.T) {
 
 	t.Run("ToolchainCluster.status doesn't contain any conditions", func(t *testing.T) {
 		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
-		notFound, _ := newToolchainCluster("not-found", tcNs, "http://not-found.com", toolchainv1alpha1.ToolchainClusterStatus{})
-		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
-		cl := test.NewFakeClient(t, unstable, notFound, stable, sec)
-		reset := setupCachedClusters(t, cl, unstable, notFound, stable)
+		cl := test.NewFakeClient(t, unstable, sec)
+		reset := setupCachedClusters(t, cl, unstable)
 		defer reset()
+		service := newToolchainClusterService(t, cl, false)
+		// given
+		controller, req := prepareReconcile(unstable, cl, service, 10*time.Second)
 
 		// when
-		updateClusterStatuses(context.TODO(), "test-namespace", cl)
+		_, err := controller.Reconcile(context.TODO(), req)
 
 		// then
+		require.NoError(t, err)
 		assertClusterStatus(t, cl, "unstable", notOffline(), unhealthy())
-		assertClusterStatus(t, cl, "not-found", offline())
-		assertClusterStatus(t, cl, "stable", healthy())
+
 	})
 
 	t.Run("ToolchainCluster.status already contains conditions", func(t *testing.T) {
 		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", withStatus(healthy()))
-		notFound, _ := newToolchainCluster("not-found", tcNs, "http://not-found.com", withStatus(notOffline(), unhealthy()))
-		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(offline()))
-		cl := test.NewFakeClient(t, unstable, notFound, stable, sec)
-		resetCache := setupCachedClusters(t, cl, unstable, notFound, stable)
+		cl := test.NewFakeClient(t, unstable, sec)
+		resetCache := setupCachedClusters(t, cl, unstable)
 		defer resetCache()
+		service := newToolchainClusterService(t, cl, false)
+		// given
+		controller, req := prepareReconcile(unstable, cl, service, 10*time.Second)
 
 		// when
-		updateClusterStatuses(context.TODO(), "test-namespace", cl)
+		_, err := controller.Reconcile(context.TODO(), req)
 
 		// then
+		require.NoError(t, err)
 		assertClusterStatus(t, cl, "unstable", notOffline(), unhealthy())
-		assertClusterStatus(t, cl, "not-found", offline())
-		assertClusterStatus(t, cl, "stable", healthy())
 	})
 
 	t.Run("if no zones nor region is retrieved, then keep the current", func(t *testing.T) {
@@ -75,23 +79,31 @@ func TestClusterHealthChecks(t *testing.T) {
 		cl := test.NewFakeClient(t, stable, sec)
 		resetCache := setupCachedClusters(t, cl, stable)
 		defer resetCache()
+		service := newToolchainClusterService(t, cl, false)
+		// given
+		controller, req := prepareReconcile(stable, cl, service, 10*time.Second)
 
 		// when
-		updateClusterStatuses(context.TODO(), "test-namespace", cl)
+		_, err := controller.Reconcile(context.TODO(), req)
 
 		// then
+		require.NoError(t, err)
 		assertClusterStatus(t, cl, "stable", healthy())
 	})
 
 	t.Run("if the connection cannot be established at beginning, then it should be offline", func(t *testing.T) {
-		stable, sec := newToolchainCluster("failing", tcNs, "http://failing.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
+		stable, sec := newToolchainCluster("failing", tcNs, "http://failing.com", toolchainv1alpha1.ToolchainClusterStatus{})
 		cl := test.NewFakeClient(t, stable, sec)
+		service := newToolchainClusterService(t, cl, false)
+		// given
+		controller, req := prepareReconcile(stable, cl, service, 10*time.Second)
 
 		// when
-		updateClusterStatuses(context.TODO(), "test-namespace", cl)
+		_, err := controller.Reconcile(context.TODO(), req)
 
 		// then
+		require.NoError(t, err)
 		assertClusterStatus(t, cl, "failing", offline())
 	})
 }
@@ -127,6 +139,21 @@ func newToolchainCluster(name, tcNs string, apiEndpoint string, status toolchain
 	return toolchainCluster, secret
 }
 
+func newToolchainClusterService(t *testing.T, cl client.Client, withCA bool) cluster.ToolchainClusterService {
+	return cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", 3*time.Second, func(config *rest.Config, options client.Options) (client.Client, error) {
+		if withCA {
+			assert.False(t, config.Insecure)
+			assert.Equal(t, []byte("dummy"), config.CAData)
+		} else {
+			assert.True(t, config.Insecure)
+		}
+		// make sure that insecure is false to make Gock mocking working properly
+		config.Insecure = false
+		// reset the dummy certificate
+		config.CAData = []byte("")
+		return client.New(config, options)
+	})
+}
 func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clusterConds ...toolchainv1alpha1.ToolchainClusterCondition) {
 	tc := &toolchainv1alpha1.ToolchainCluster{}
 	err := cl.Get(context.TODO(), test.NamespacedName("test-namespace", clusterName), tc)
@@ -144,6 +171,19 @@ ExpConditions:
 		}
 		assert.Failf(t, "condition not found", "the list of conditions %v doesn't contain the expected condition %v", tc.Status.Conditions, expCond)
 	}
+}
+
+func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService, requeAfter time.Duration) (Reconciler, reconcile.Request) {
+	controller := Reconciler{
+		client:              cl,
+		scheme:              scheme.Scheme,
+		clusterCacheService: service,
+		requeAfter:          requeAfter,
+	}
+	req := reconcile.Request{
+		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
+	}
+	return controller, req
 }
 
 func healthy() toolchainv1alpha1.ToolchainClusterCondition {
