@@ -38,15 +38,17 @@ func TestClusterHealthChecks(t *testing.T) {
 		Persist().
 		Reply(404)
 
+	requeAfter := 10 * time.Second
+	withCA := false
 	t.Run("ToolchainCluster.status doesn't contain any conditions", func(t *testing.T) {
 		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, unstable, sec)
 		reset := setupCachedClusters(t, cl, unstable)
 		defer reset()
-		service := newToolchainClusterService(t, cl, false)
+		service := newToolchainClusterService(t, cl, withCA)
 		// given
-		controller, req := prepareReconcile(unstable, cl, service, 10*time.Second)
+		controller, req := prepareReconcile(unstable, cl, service, requeAfter)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -62,9 +64,9 @@ func TestClusterHealthChecks(t *testing.T) {
 		cl := test.NewFakeClient(t, unstable, sec)
 		resetCache := setupCachedClusters(t, cl, unstable)
 		defer resetCache()
-		service := newToolchainClusterService(t, cl, false)
+		service := newToolchainClusterService(t, cl, withCA)
 		// given
-		controller, req := prepareReconcile(unstable, cl, service, 10*time.Second)
+		controller, req := prepareReconcile(unstable, cl, service, requeAfter)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -79,9 +81,9 @@ func TestClusterHealthChecks(t *testing.T) {
 		cl := test.NewFakeClient(t, stable, sec)
 		resetCache := setupCachedClusters(t, cl, stable)
 		defer resetCache()
-		service := newToolchainClusterService(t, cl, false)
+		service := newToolchainClusterService(t, cl, withCA)
 		// given
-		controller, req := prepareReconcile(stable, cl, service, 10*time.Second)
+		controller, req := prepareReconcile(stable, cl, service, requeAfter)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -95,9 +97,9 @@ func TestClusterHealthChecks(t *testing.T) {
 
 		stable, sec := newToolchainCluster("failing", tcNs, "http://failing.com", toolchainv1alpha1.ToolchainClusterStatus{})
 		cl := test.NewFakeClient(t, stable, sec)
-		service := newToolchainClusterService(t, cl, false)
+		service := newToolchainClusterService(t, cl, withCA)
 		// given
-		controller, req := prepareReconcile(stable, cl, service, 10*time.Second)
+		controller, req := prepareReconcile(stable, cl, service, requeAfter)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
