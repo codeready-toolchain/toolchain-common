@@ -64,17 +64,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-
+	clusterObj := toolchainCluster.DeepCopy()
 	cachedCluster, ok := cluster.GetCachedToolchainCluster(toolchainCluster.Name)
 	if !ok {
 		err := fmt.Errorf("cluster %s not found in cache", toolchainCluster.Name)
-		reqLogger.Error(err, "failed to retrieve stored data for cluster")
+		clusterObj.Status.Conditions = []toolchainv1alpha1.ToolchainClusterCondition{clusterOfflineCondition()}
+		if err := r.client.Status().Update(ctx, clusterObj); err != nil {
+			reqLogger.Error(err, "failed to update the status of ToolchainCluster")
+		}
 		return reconcile.Result{}, err
 	}
 
 	clientSet, err := kubeclientset.NewForConfig(cachedCluster.RestConfig)
 	if err != nil {
-		reqLogger.Error(err, "cannot create ClientSet for a ToolchainCluster")
 		return reconcile.Result{}, err
 	}
 

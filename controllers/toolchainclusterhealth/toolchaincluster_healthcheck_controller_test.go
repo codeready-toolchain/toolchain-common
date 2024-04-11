@@ -2,6 +2,7 @@ package toolchainclusterhealth
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -40,9 +42,51 @@ func TestClusterHealthChecks(t *testing.T) {
 
 	requeAfter := 10 * time.Second
 	withCA := false
-	t.Run("ToolchainCluster.status doesn't contain any conditions", func(t *testing.T) {
+
+	t.Run("ToolchainCluster not found", func(t *testing.T) {
 		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
+		cl := test.NewFakeClient(t, sec)
+		reset := setupCachedClusters(t, cl, unstable)
+		defer reset()
+		service := newToolchainClusterService(t, cl, withCA)
+		// given
+		controller, req := prepareReconcile(unstable, cl, service, requeAfter)
+
+		// when
+		_, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.NoError(t, err)
+
+	})
+
+	t.Run("Error while getting ToolchainCluster", func(t *testing.T) {
+		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
+
+		cl := test.NewFakeClient(t, sec)
+
+		cl.MockGet = func(ctx context.Context, key runtimeclient.ObjectKey, obj runtimeclient.Object, opts ...runtimeclient.GetOption) error {
+			if _, ok := obj.(*toolchainv1alpha1.ToolchainCluster); ok {
+				return fmt.Errorf("mock error")
+			}
+			return cl.Client.Get(ctx, key, obj, opts...)
+		}
+
+		service := newToolchainClusterService(t, cl, withCA)
+		// given
+		controller, req := prepareReconcile(unstable, cl, service, requeAfter)
+
+		// when
+		_, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.EqualError(t, err, "mock error")
+
+	})
+
+	t.Run("ToolchainCluster.status doesn't contain any conditions", func(t *testing.T) {
+		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
 		cl := test.NewFakeClient(t, unstable, sec)
 		reset := setupCachedClusters(t, cl, unstable)
 		defer reset()
