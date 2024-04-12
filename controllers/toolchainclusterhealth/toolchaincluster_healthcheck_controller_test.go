@@ -84,42 +84,21 @@ func TestClusterHealthChecks(t *testing.T) {
 		require.EqualError(t, err, "mock error")
 
 	})
+	t.Run("if the connection cannot be established at beginning, then it should be offline", func(t *testing.T) {
 
-	t.Run("ToolchainCluster.status doesn't contain any conditions", func(t *testing.T) {
-		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
-		cl := test.NewFakeClient(t, unstable, sec)
-		reset := setupCachedClusters(t, cl, unstable)
-		defer reset()
+		stable, sec := newToolchainCluster("failing", tcNs, "http://failing.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		cl := test.NewFakeClient(t, stable, sec)
 		service := newToolchainClusterService(t, cl, withCA)
 		// given
-		controller, req := prepareReconcile(unstable, cl, service, requeAfter)
+		controller, req := prepareReconcile(stable, cl, service, requeAfter)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
 
 		// then
 		require.NoError(t, err)
-		assertClusterStatus(t, cl, "unstable", notOffline(), unhealthy())
-
+		assertClusterStatus(t, cl, "failing", offline())
 	})
-
-	t.Run("ToolchainCluster.status already contains conditions", func(t *testing.T) {
-		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", withStatus(healthy()))
-		cl := test.NewFakeClient(t, unstable, sec)
-		resetCache := setupCachedClusters(t, cl, unstable)
-		defer resetCache()
-		service := newToolchainClusterService(t, cl, withCA)
-		// given
-		controller, req := prepareReconcile(unstable, cl, service, requeAfter)
-
-		// when
-		_, err := controller.Reconcile(context.TODO(), req)
-
-		// then
-		require.NoError(t, err)
-		assertClusterStatus(t, cl, "unstable", notOffline(), unhealthy())
-	})
-
 	t.Run("if no zones nor region is retrieved, then keep the current", func(t *testing.T) {
 		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(offline()))
 		cl := test.NewFakeClient(t, stable, sec)
@@ -137,21 +116,74 @@ func TestClusterHealthChecks(t *testing.T) {
 		assertClusterStatus(t, cl, "stable", healthy())
 	})
 
-	t.Run("if the connection cannot be established at beginning, then it should be offline", func(t *testing.T) {
+	tests := map[string]struct {
+		tctype            string
+		apiendpoint       string
+		clustercondition1 toolchainv1alpha1.ToolchainClusterCondition
+		clustercondition2 toolchainv1alpha1.ToolchainClusterCondition
+		status            toolchainv1alpha1.ToolchainClusterStatus
+	}{
+		"UnstableNoCondition": {
+			tctype:            "unstable",
+			apiendpoint:       "http://unstable.com",
+			clustercondition1: notOffline(),
+			clustercondition2: unhealthy(),
+			status:            toolchainv1alpha1.ToolchainClusterStatus{},
+		},
+		"StableNoCondition": {
+			tctype:            "stable",
+			apiendpoint:       "http://cluster.com",
+			clustercondition1: healthy(),
+			status:            toolchainv1alpha1.ToolchainClusterStatus{},
+		},
+		"NotFoundNoCondition": {
+			tctype:            "not-found",
+			apiendpoint:       "http://not-found.com",
+			clustercondition1: offline(),
+			status:            toolchainv1alpha1.ToolchainClusterStatus{},
+		},
+		"UnstableContainsCondition": {
+			tctype:            "unstable",
+			apiendpoint:       "http://unstable.com",
+			clustercondition1: notOffline(),
+			clustercondition2: unhealthy(),
+			status:            withStatus(healthy()),
+		},
+		"StableContainsCondition": {
+			tctype:            "stable",
+			apiendpoint:       "http://cluster.com",
+			clustercondition1: healthy(),
+			status:            withStatus(healthy()),
+		},
+		"NotFoundContainsCondition": {
+			tctype:            "not-found",
+			apiendpoint:       "http://not-found.com",
+			clustercondition1: offline(),
+			status:            withStatus(healthy()),
+		},
+	}
+	for k, tc := range tests {
+		t.Run(k, func(t *testing.T) {
+			tctype, sec := newToolchainCluster(tc.tctype, tcNs, tc.apiendpoint, tc.status)
+			cl := test.NewFakeClient(t, tctype, sec)
+			reset := setupCachedClusters(t, cl, tctype)
+			defer reset()
 
-		stable, sec := newToolchainCluster("failing", tcNs, "http://failing.com", toolchainv1alpha1.ToolchainClusterStatus{})
-		cl := test.NewFakeClient(t, stable, sec)
-		service := newToolchainClusterService(t, cl, withCA)
-		// given
-		controller, req := prepareReconcile(stable, cl, service, requeAfter)
+			service := newToolchainClusterService(t, cl, withCA)
+			//given
+			controller, req := prepareReconcile(tctype, cl, service, requeAfter)
 
-		// when
-		_, err := controller.Reconcile(context.TODO(), req)
-
-		// then
-		require.NoError(t, err)
-		assertClusterStatus(t, cl, "failing", offline())
-	})
+			//when
+			_, err := controller.Reconcile(context.TODO(), req)
+			//then
+			require.NoError(t, err)
+			if k == "UnstableNoCondition" || k == "UnstableContainsCondition" {
+				assertClusterStatus(t, cl, tc.tctype, tc.clustercondition1, tc.clustercondition2)
+			} else {
+				assertClusterStatus(t, cl, tc.tctype, tc.clustercondition1)
+			}
+		})
+	}
 }
 
 func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolchainv1alpha1.ToolchainCluster) func() {
