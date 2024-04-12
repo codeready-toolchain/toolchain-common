@@ -795,7 +795,7 @@ func TestNewTierTemplate(t *testing.T) {
 }
 
 func ensureObjectFuncForClient(cl runtimeclient.Client) EnsureObject {
-	return func(toEnsure runtimeclient.Object, canUpdate bool) (bool, error) {
+	return func(toEnsure runtimeclient.Object, canUpdate bool, _ string) (bool, error) {
 		if !canUpdate {
 			if err := cl.Create(context.TODO(), toEnsure); err != nil && !apierrors.IsAlreadyExists(err) {
 				return false, err

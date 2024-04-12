@@ -21,7 +21,7 @@ import (
 
 var log = logf.Log.WithName("templates")
 
-type EnsureObject func(toEnsure runtimeclient.Object, canUpdate bool) (bool, error)
+type EnsureObject func(toEnsure runtimeclient.Object, canUpdate bool, tierName string) (bool, error)
 
 type TierGenerator struct {
 	ensureObject    EnsureObject
@@ -275,11 +275,11 @@ func (t *TierGenerator) newTierTemplates(basedOnTierFileRevision string, tierDat
 // createTierTemplates creates all TierTemplate resources from the tier map
 func (t *TierGenerator) createTierTemplates() error {
 	// create the templates
-	for _, tierTmpls := range t.templatesByTier {
+	for tierName, tierTmpls := range t.templatesByTier {
 		for _, tierTmpl := range tierTmpls.tierTemplates {
 			log.Info("creating TierTemplate", "namespace", tierTmpl.Namespace, "name", tierTmpl.Name)
 			// using the "standard" client since we don't need to support updates on such resources, they should be immutable
-			if _, err := t.ensureObject(tierTmpl, false); err != nil {
+			if _, err := t.ensureObject(tierTmpl, false, tierName); err != nil {
 				return errors.Wrapf(err, "unable to create the '%s' TierTemplate in namespace '%s'", tierTmpl.Name, tierTmpl.Namespace)
 			}
 			log.Info("TierTemplate resource created", "namespace", tierTmpl.Namespace, "name", tierTmpl.Name)
@@ -380,7 +380,7 @@ func (t *TierGenerator) createNSTemplateTiers() error {
 			labels = make(map[string]string)
 		}
 		labels[toolchainv1alpha1.ProviderLabelKey] = toolchainv1alpha1.ProviderLabelValue
-		updated, err := t.ensureObject(tier, true)
+		updated, err := t.ensureObject(tier, true, tierName)
 		if err != nil {
 			return errors.Wrapf(err, "unable to create or update the '%s' NSTemplateTier", tierName)
 		}
