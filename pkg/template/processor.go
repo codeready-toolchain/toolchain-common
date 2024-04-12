@@ -2,7 +2,7 @@ package template
 
 import (
 	"fmt"
-	"math/rand" //nolint:gosec
+	"math/rand"
 	"time"
 
 	templatev1 "github.com/openshift/api/template/v1"
@@ -36,6 +36,7 @@ func (p Processor) Process(tmpl *templatev1.Template, values map[string]string, 
 			v.Generate = ""
 		}
 	}
+
 	// convert the template into a set of objects
 	tmplProcessor := templateprocessing.NewProcessor(map[string]generator.Generator{
 		"expression": generator.NewExpressionValueGenerator(rand.New(rand.NewSource(time.Now().UnixNano()))), //nolint:gosec
