@@ -376,6 +376,69 @@ func TestApplySingle(t *testing.T) {
 			assert.Equal(t, existingLastAppliedAnnotation[client.LastAppliedConfigurationAnnotationKey], actualSa.Annotations[client.LastAppliedConfigurationAnnotationKey]) // the last apply configuration should match the previous object
 		})
 	})
+
+	t.Run("should update object when save configuration is disabled and another annotation is present", func(t *testing.T) {
+		// given
+		cl, cli := newClient(t)
+		existingRules := []rbac.PolicyRule{
+			{
+				APIGroups: []string{"toolchain.dev.openshift.com"},
+				Resources: []string{"bannedusers", "masteruserrecords"},
+				Verbs:     []string{"*"},
+			},
+		}
+		existingRole := rbac.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "toolchaincluster-host",
+				Namespace:   HostOperatorNs,
+				Annotations: map[string]string{"kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"Role\",\"metadata\":{\"annotations\":{},\"name\":\"toolchaincluster-host\",\"namespace\":\"toolchain-host-operator\"},\"rules\":[{\"apiGroups\":[\"toolchain.dev.openshift.com\"],\"resources\":[\"bannedusers\",\"masteruserrecords\"],\"verbs\":[\"*\"]}]}"},
+			},
+			Rules: existingRules,
+		}
+
+		// when
+		_, err := cl.ApplyRuntimeObject(context.TODO(), &existingRole, client.SaveConfiguration(false))
+		require.NoError(t, err)
+
+		// then
+		// the object should match the existing role
+		foundRole := &rbac.Role{}
+		err = cli.Get(context.TODO(), types.NamespacedName{
+			Name:      "toolchaincluster-host",
+			Namespace: HostOperatorNs,
+		}, foundRole)
+		require.NoError(t, err)
+		require.Equal(t, existingRules, foundRole.Rules)
+
+		// when
+		// we updated the role
+		newRules := []rbac.PolicyRule{
+			{
+				APIGroups: []string{"toolchain.dev.openshift.com"},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			},
+		}
+		newRole := rbac.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "toolchaincluster-host",
+				Namespace: HostOperatorNs,
+			},
+			Rules: newRules,
+		}
+		_, err = cl.ApplyRuntimeObject(context.TODO(), &newRole, client.SaveConfiguration(false))
+		require.NoError(t, err)
+
+		// then
+		// the new rules should be there
+		foundRole = &rbac.Role{}
+		err = cl.Get(context.TODO(), types.NamespacedName{
+			Name:      "toolchaincluster-host",
+			Namespace: HostOperatorNs,
+		}, foundRole)
+		require.NoError(t, err)
+		require.Equal(t, newRules, foundRole.Rules)
+	})
 }
 
 func toUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {

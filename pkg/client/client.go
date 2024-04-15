@@ -134,7 +134,8 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	if !config.forceUpdate {
 		existingAnnotations := existing.GetAnnotations()
 		if existingAnnotations != nil {
-			if newConfiguration == existingAnnotations[LastAppliedConfigurationAnnotationKey] {
+			lastApplied, lastAppliedFound := existingAnnotations[LastAppliedConfigurationAnnotationKey]
+			if lastAppliedFound && newConfiguration != "" && newConfiguration == lastApplied {
 				return false, nil
 			}
 		}
