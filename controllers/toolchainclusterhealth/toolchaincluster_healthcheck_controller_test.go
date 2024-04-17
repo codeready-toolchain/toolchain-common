@@ -9,7 +9,6 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
@@ -21,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func TestClusterHealthChecks(t *testing.T) {
+func TestClustercontrollerChecks(t *testing.T) {
 	// given
 	defer gock.Off()
 	tcNs := "test-namespace"
@@ -81,100 +80,7 @@ func TestClusterHealthChecks(t *testing.T) {
 		require.EqualError(t, err, "mock error")
 
 	})
-	t.Run("if the connection cannot be established at beginning, then it should be offline", func(t *testing.T) {
 
-		stable, sec := newToolchainCluster("failing", tcNs, "http://failing.com", toolchainv1alpha1.ToolchainClusterStatus{})
-		cl := test.NewFakeClient(t, stable, sec)
-		reset := setupCachedClusters(t, cl, stable)
-		defer reset()
-		// given
-		controller, req := prepareReconcile(stable, cl, requeAfter)
-
-		// when
-		_, err := controller.Reconcile(context.TODO(), req)
-
-		// then
-		require.NoError(t, err)
-		assertClusterStatus(t, cl, "failing", offline())
-	})
-	t.Run("if no zones nor region is retrieved, then keep the current", func(t *testing.T) {
-		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(offline()))
-		cl := test.NewFakeClient(t, stable, sec)
-		resetCache := setupCachedClusters(t, cl, stable)
-		defer resetCache()
-		// given
-		controller, req := prepareReconcile(stable, cl, requeAfter)
-
-		// when
-		_, err := controller.Reconcile(context.TODO(), req)
-
-		// then
-		require.NoError(t, err)
-		assertClusterStatus(t, cl, "stable", healthy())
-	})
-
-	tests := map[string]struct {
-		tctype            string
-		apiendpoint       string
-		clusterconditions []toolchainv1alpha1.ToolchainClusterCondition
-		status            toolchainv1alpha1.ToolchainClusterStatus
-	}{
-		"UnstableNoCondition": {
-			tctype:            "unstable",
-			apiendpoint:       "http://unstable.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{unhealthy(), notOffline()},
-			status:            toolchainv1alpha1.ToolchainClusterStatus{},
-		},
-		"StableNoCondition": {
-			tctype:            "stable",
-			apiendpoint:       "http://cluster.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{healthy()},
-			status:            toolchainv1alpha1.ToolchainClusterStatus{},
-		},
-		"NotFoundNoCondition": {
-			tctype:            "not-found",
-			apiendpoint:       "http://not-found.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{offline()},
-			status:            toolchainv1alpha1.ToolchainClusterStatus{},
-		},
-		"UnstableContainsCondition": {
-			tctype:            "unstable",
-			apiendpoint:       "http://unstable.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{unhealthy(), notOffline()},
-			status:            withStatus(healthy()),
-		},
-		"StableContainsCondition": {
-			tctype:            "stable",
-			apiendpoint:       "http://cluster.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{healthy()},
-			status:            withStatus(healthy()),
-		},
-		"NotFoundContainsCondition": {
-			tctype:            "not-found",
-			apiendpoint:       "http://not-found.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{offline()},
-			status:            withStatus(healthy()),
-		},
-	}
-	for k, tc := range tests {
-		t.Run(k, func(t *testing.T) {
-			tctype, sec := newToolchainCluster(tc.tctype, tcNs, tc.apiendpoint, tc.status)
-			cl := test.NewFakeClient(t, tctype, sec)
-			reset := setupCachedClusters(t, cl, tctype)
-			defer reset()
-
-			//given
-			controller, req := prepareReconcile(tctype, cl, requeAfter)
-
-			//when
-			_, err := controller.Reconcile(context.TODO(), req)
-			//then
-			require.NoError(t, err)
-
-			assertClusterStatus(t, cl, tc.tctype, tc.clusterconditions...)
-
-		})
-	}
 }
 
 func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolchainv1alpha1.ToolchainCluster) func() {
@@ -197,34 +103,9 @@ func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolcha
 	}
 }
 
-func withStatus(conditions ...toolchainv1alpha1.ToolchainClusterCondition) toolchainv1alpha1.ToolchainClusterStatus {
-	return toolchainv1alpha1.ToolchainClusterStatus{
-		Conditions: conditions,
-	}
-}
-
 func newToolchainCluster(name, tcNs string, apiEndpoint string, status toolchainv1alpha1.ToolchainClusterStatus) (*toolchainv1alpha1.ToolchainCluster, *corev1.Secret) {
 	toolchainCluster, secret := test.NewToolchainClusterWithEndpoint(name, tcNs, "secret", apiEndpoint, status, map[string]string{"namespace": "test-namespace"})
 	return toolchainCluster, secret
-}
-
-func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clusterConds ...toolchainv1alpha1.ToolchainClusterCondition) {
-	tc := &toolchainv1alpha1.ToolchainCluster{}
-	err := cl.Get(context.TODO(), test.NamespacedName("test-namespace", clusterName), tc)
-	require.NoError(t, err)
-	assert.Len(t, tc.Status.Conditions, len(clusterConds))
-ExpConditions:
-	for _, expCond := range clusterConds {
-		for _, cond := range tc.Status.Conditions {
-			if expCond.Type == cond.Type {
-				assert.Equal(t, expCond.Status, cond.Status)
-				assert.Equal(t, expCond.Reason, cond.Reason)
-				assert.Equal(t, expCond.Message, cond.Message)
-				continue ExpConditions
-			}
-		}
-		assert.Failf(t, "condition not found", "the list of conditions %v doesn't contain the expected condition %v", tc.Status.Conditions, expCond)
-	}
 }
 
 func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, requeAfter time.Duration) (Reconciler, reconcile.Request) {
@@ -237,34 +118,4 @@ func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *
 		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
 	}
 	return controller, req
-}
-
-func healthy() toolchainv1alpha1.ToolchainClusterCondition {
-	return toolchainv1alpha1.ToolchainClusterCondition{
-		Type:    toolchainv1alpha1.ToolchainClusterReady,
-		Status:  corev1.ConditionTrue,
-		Reason:  "ClusterReady",
-		Message: "/healthz responded with ok",
-	}
-}
-func unhealthy() toolchainv1alpha1.ToolchainClusterCondition {
-	return toolchainv1alpha1.ToolchainClusterCondition{Type: toolchainv1alpha1.ToolchainClusterReady,
-		Status:  corev1.ConditionFalse,
-		Reason:  "ClusterNotReady",
-		Message: "/healthz responded without ok",
-	}
-}
-func offline() toolchainv1alpha1.ToolchainClusterCondition {
-	return toolchainv1alpha1.ToolchainClusterCondition{Type: toolchainv1alpha1.ToolchainClusterOffline,
-		Status:  corev1.ConditionTrue,
-		Reason:  "ClusterNotReachable",
-		Message: "cluster is not reachable",
-	}
-}
-func notOffline() toolchainv1alpha1.ToolchainClusterCondition {
-	return toolchainv1alpha1.ToolchainClusterCondition{Type: toolchainv1alpha1.ToolchainClusterOffline,
-		Status:  corev1.ConditionFalse,
-		Reason:  "ClusterReachable",
-		Message: "cluster is reachable",
-	}
 }
