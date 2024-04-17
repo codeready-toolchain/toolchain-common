@@ -342,7 +342,7 @@ func TestApplySingle(t *testing.T) {
 
 	t.Run("updates of ServiceAccount", func(t *testing.T) {
 
-		t.Run("should update service account with last applied configuration", func(t *testing.T) {
+		t.Run("last-applied-configuration is used and SA secret ref is not updated", func(t *testing.T) {
 			// given
 			// there's an existing SA with secret refs
 			existingSA := newSA()
@@ -358,7 +358,7 @@ func TestApplySingle(t *testing.T) {
 			}
 			existingSA.SetAnnotations(existingLastAppliedAnnotation) // let's set the last applied annotation
 			cl, cli := newClient(t)
-			_, err := cl.ApplyRuntimeObject(context.TODO(), existingSA)
+			_, err := cl.ApplyRuntimeObject(context.TODO(), existingSA.DeepCopyObject())
 			require.NoError(t, err)
 
 			// when
