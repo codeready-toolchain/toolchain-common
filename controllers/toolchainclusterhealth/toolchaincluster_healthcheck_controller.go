@@ -32,7 +32,7 @@ func defaultHealthCheckAndUpdateClusterStatus(ctx context.Context, localClusterC
 }
 
 // NewReconciler returns a new Reconciler
-func NewReconciler(mgr manager.Manager, namespace string, timeout time.Duration, requeAfter time.Duration) *Reconciler {
+func NewReconciler(mgr manager.Manager, requeAfter time.Duration) *Reconciler {
 	log.Log.WithName("toolchaincluster_health")
 	return &Reconciler{
 		client:                            mgr.GetClient(),
