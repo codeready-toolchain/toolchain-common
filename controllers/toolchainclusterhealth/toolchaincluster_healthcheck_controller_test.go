@@ -119,46 +119,43 @@ func TestClusterHealthChecks(t *testing.T) {
 	tests := map[string]struct {
 		tctype            string
 		apiendpoint       string
-		clustercondition1 toolchainv1alpha1.ToolchainClusterCondition
-		clustercondition2 toolchainv1alpha1.ToolchainClusterCondition
+		clusterconditions []toolchainv1alpha1.ToolchainClusterCondition
 		status            toolchainv1alpha1.ToolchainClusterStatus
 	}{
 		"UnstableNoCondition": {
 			tctype:            "unstable",
 			apiendpoint:       "http://unstable.com",
-			clustercondition1: notOffline(),
-			clustercondition2: unhealthy(),
+			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{unhealthy(), notOffline()},
 			status:            toolchainv1alpha1.ToolchainClusterStatus{},
 		},
 		"StableNoCondition": {
 			tctype:            "stable",
 			apiendpoint:       "http://cluster.com",
-			clustercondition1: healthy(),
+			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{healthy()},
 			status:            toolchainv1alpha1.ToolchainClusterStatus{},
 		},
 		"NotFoundNoCondition": {
 			tctype:            "not-found",
 			apiendpoint:       "http://not-found.com",
-			clustercondition1: offline(),
+			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{offline()},
 			status:            toolchainv1alpha1.ToolchainClusterStatus{},
 		},
 		"UnstableContainsCondition": {
 			tctype:            "unstable",
 			apiendpoint:       "http://unstable.com",
-			clustercondition1: notOffline(),
-			clustercondition2: unhealthy(),
+			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{unhealthy(), notOffline()},
 			status:            withStatus(healthy()),
 		},
 		"StableContainsCondition": {
 			tctype:            "stable",
 			apiendpoint:       "http://cluster.com",
-			clustercondition1: healthy(),
+			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{healthy()},
 			status:            withStatus(healthy()),
 		},
 		"NotFoundContainsCondition": {
 			tctype:            "not-found",
 			apiendpoint:       "http://not-found.com",
-			clustercondition1: offline(),
+			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{offline()},
 			status:            withStatus(healthy()),
 		},
 	}
@@ -177,11 +174,9 @@ func TestClusterHealthChecks(t *testing.T) {
 			_, err := controller.Reconcile(context.TODO(), req)
 			//then
 			require.NoError(t, err)
-			if k == "UnstableNoCondition" || k == "UnstableContainsCondition" {
-				assertClusterStatus(t, cl, tc.tctype, tc.clustercondition1, tc.clustercondition2)
-			} else {
-				assertClusterStatus(t, cl, tc.tctype, tc.clustercondition1)
-			}
+
+			assertClusterStatus(t, cl, tc.tctype, tc.clusterconditions...)
+
 		})
 	}
 }
