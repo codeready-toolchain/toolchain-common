@@ -19,13 +19,11 @@ import (
 
 // NewReconciler returns a new Reconciler
 func NewReconciler(mgr manager.Manager, namespace string, timeout time.Duration, requeAfter time.Duration) *Reconciler {
-	cacheLog := log.Log.WithName("toolchaincluster_health")
-	clusterCacheService := cluster.NewToolchainClusterService(mgr.GetClient(), cacheLog, namespace, timeout)
+	log.Log.WithName("toolchaincluster_health")
 	return &Reconciler{
-		client:              mgr.GetClient(),
-		scheme:              mgr.GetScheme(),
-		clusterCacheService: clusterCacheService,
-		requeAfter:          requeAfter,
+		client:     mgr.GetClient(),
+		scheme:     mgr.GetScheme(),
+		requeAfter: requeAfter,
 	}
 }
 
@@ -38,10 +36,9 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // Reconciler reconciles a ToolchainCluster object
 type Reconciler struct {
-	client              client.Client
-	scheme              *runtime.Scheme
-	clusterCacheService cluster.ToolchainClusterService
-	requeAfter          time.Duration
+	client     client.Client
+	scheme     *runtime.Scheme
+	requeAfter time.Duration
 }
 
 // Reconcile reads that state of the cluster for a ToolchainCluster object and makes changes based on the state read

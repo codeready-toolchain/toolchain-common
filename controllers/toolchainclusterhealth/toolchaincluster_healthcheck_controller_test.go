@@ -41,7 +41,6 @@ func TestClusterHealthChecks(t *testing.T) {
 		Reply(404)
 
 	requeAfter := 10 * time.Second
-	withCA := false
 
 	t.Run("ToolchainCluster not found", func(t *testing.T) {
 		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
@@ -49,9 +48,8 @@ func TestClusterHealthChecks(t *testing.T) {
 		cl := test.NewFakeClient(t, sec)
 		reset := setupCachedClusters(t, cl, unstable)
 		defer reset()
-		service := newToolchainClusterService(t, cl, withCA)
 		// given
-		controller, req := prepareReconcile(unstable, cl, service, requeAfter)
+		controller, req := prepareReconcile(unstable, cl, requeAfter)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -73,9 +71,8 @@ func TestClusterHealthChecks(t *testing.T) {
 			return cl.Client.Get(ctx, key, obj, opts...)
 		}
 
-		service := newToolchainClusterService(t, cl, withCA)
 		// given
-		controller, req := prepareReconcile(unstable, cl, service, requeAfter)
+		controller, req := prepareReconcile(unstable, cl, requeAfter)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -88,9 +85,10 @@ func TestClusterHealthChecks(t *testing.T) {
 
 		stable, sec := newToolchainCluster("failing", tcNs, "http://failing.com", toolchainv1alpha1.ToolchainClusterStatus{})
 		cl := test.NewFakeClient(t, stable, sec)
-		service := newToolchainClusterService(t, cl, withCA)
+		reset := setupCachedClusters(t, cl, stable)
+		defer reset()
 		// given
-		controller, req := prepareReconcile(stable, cl, service, requeAfter)
+		controller, req := prepareReconcile(stable, cl, requeAfter)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -104,9 +102,8 @@ func TestClusterHealthChecks(t *testing.T) {
 		cl := test.NewFakeClient(t, stable, sec)
 		resetCache := setupCachedClusters(t, cl, stable)
 		defer resetCache()
-		service := newToolchainClusterService(t, cl, withCA)
 		// given
-		controller, req := prepareReconcile(stable, cl, service, requeAfter)
+		controller, req := prepareReconcile(stable, cl, requeAfter)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -166,9 +163,8 @@ func TestClusterHealthChecks(t *testing.T) {
 			reset := setupCachedClusters(t, cl, tctype)
 			defer reset()
 
-			service := newToolchainClusterService(t, cl, withCA)
 			//given
-			controller, req := prepareReconcile(tctype, cl, service, requeAfter)
+			controller, req := prepareReconcile(tctype, cl, requeAfter)
 
 			//when
 			_, err := controller.Reconcile(context.TODO(), req)
@@ -212,21 +208,6 @@ func newToolchainCluster(name, tcNs string, apiEndpoint string, status toolchain
 	return toolchainCluster, secret
 }
 
-func newToolchainClusterService(t *testing.T, cl client.Client, withCA bool) cluster.ToolchainClusterService {
-	return cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, "test-namespace", 3*time.Second, func(config *rest.Config, options client.Options) (client.Client, error) {
-		if withCA {
-			assert.False(t, config.Insecure)
-			assert.Equal(t, []byte("dummy"), config.CAData)
-		} else {
-			assert.True(t, config.Insecure)
-		}
-		// make sure that insecure is false to make Gock mocking working properly
-		config.Insecure = false
-		// reset the dummy certificate
-		config.CAData = []byte("")
-		return client.New(config, options)
-	})
-}
 func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clusterConds ...toolchainv1alpha1.ToolchainClusterCondition) {
 	tc := &toolchainv1alpha1.ToolchainCluster{}
 	err := cl.Get(context.TODO(), test.NamespacedName("test-namespace", clusterName), tc)
@@ -246,12 +227,11 @@ ExpConditions:
 	}
 }
 
-func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, service cluster.ToolchainClusterService, requeAfter time.Duration) (Reconciler, reconcile.Request) {
+func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, requeAfter time.Duration) (Reconciler, reconcile.Request) {
 	controller := Reconciler{
-		client:              cl,
-		scheme:              scheme.Scheme,
-		clusterCacheService: service,
-		requeAfter:          requeAfter,
+		client:     cl,
+		scheme:     scheme.Scheme,
+		requeAfter: requeAfter,
 	}
 	req := reconcile.Request{
 		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
