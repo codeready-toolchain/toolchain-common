@@ -1,4 +1,4 @@
-package toolchainclusterhealth
+package toolchaincluster
 
 import (
 	"context"
@@ -151,10 +151,13 @@ func newToolchainCluster(name, tcNs string, apiEndpoint string, status toolchain
 }
 
 func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, requeAfter time.Duration) (Reconciler, reconcile.Request) {
-	controller := NewReconciler(cl, *scheme.Scheme, requeAfter)
-
+	controller := Reconciler{
+		client:     cl,
+		scheme:     scheme.Scheme,
+		requeAfter: requeAfter,
+	}
 	req := reconcile.Request{
 		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
 	}
-	return *controller, req
+	return controller, req
 }

@@ -1,4 +1,4 @@
-package toolchainclusterhealth
+package toolchaincluster
 
 import (
 	"context"
@@ -15,16 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-// NewReconciler returns a new Reconciler
-func NewReconciler(cl client.Client, scheme runtime.Scheme, requeAfter time.Duration) *Reconciler {
-	log.Log.WithName("toolchaincluster_health")
-	return &Reconciler{
-		client:     cl,
-		scheme:     &scheme,
-		requeAfter: requeAfter,
-	}
-}
 
 // Reconciler reconciles a ToolchainCluster object
 type Reconciler struct {

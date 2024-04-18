@@ -1,4 +1,4 @@
-package toolchainclusterhealth
+package toolchaincluster
 
 import (
 	"context"
