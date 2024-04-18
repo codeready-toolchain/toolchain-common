@@ -23,7 +23,7 @@ import (
 
 var requeAfter = 10 * time.Second
 
-func TestClustercontrollerChecks(t *testing.T) {
+func TestClusterControllerChecks(t *testing.T) {
 	// given
 
 	defer gock.Off()
@@ -44,12 +44,12 @@ func TestClustercontrollerChecks(t *testing.T) {
 		Reply(404)
 
 	t.Run("ToolchainCluster not found", func(t *testing.T) {
+		// given
 		NotFound, sec := newToolchainCluster("notfound", tcNs, "http://not-found.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, sec)
 		reset := setupCachedClusters(t, cl, NotFound)
 		defer reset()
-		// given
 		controller, req := prepareReconcile(NotFound, cl, requeAfter)
 
 		// when
@@ -100,6 +100,7 @@ func TestClustercontrollerChecks(t *testing.T) {
 		// then
 		require.Equal(t, err, nil)
 		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
+		assertClusterStatus(t, cl, "stable", healthy())
 
 	})
 
@@ -152,9 +153,9 @@ func newToolchainCluster(name, tcNs string, apiEndpoint string, status toolchain
 
 func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, requeAfter time.Duration) (Reconciler, reconcile.Request) {
 	controller := Reconciler{
-		client:     cl,
-		scheme:     scheme.Scheme,
-		requeAfter: requeAfter,
+		Client:     cl,
+		Scheme:     scheme.Scheme,
+		RequeAfter: requeAfter,
 	}
 	req := reconcile.Request{
 		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),

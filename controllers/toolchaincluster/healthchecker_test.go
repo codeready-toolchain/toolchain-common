@@ -74,7 +74,7 @@ func TestClusterHealthChecks(t *testing.T) {
 			tctype:            "stable",
 			apiendpoint:       "http://cluster.com",
 			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{healthy()},
-			status:            withStatus(healthy()),
+			status:            withStatus(offline()),
 		},
 		"NotFoundContainsCondition": {
 			tctype:            "not-found",

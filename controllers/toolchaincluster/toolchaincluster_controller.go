@@ -18,9 +18,9 @@ import (
 
 // Reconciler reconciles a ToolchainCluster object
 type Reconciler struct {
-	client     client.Client
-	scheme     *runtime.Scheme
-	requeAfter time.Duration
+	Client     client.Client
+	Scheme     *runtime.Scheme
+	RequeAfter time.Duration
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -36,12 +36,12 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
-	reqLogger := log.FromContext(ctx).WithName("health")
+	reqLogger := log.FromContext(ctx)
 	reqLogger.Info("Reconciling ToolchainCluster")
 
 	// Fetch the ToolchainCluster instance
 	toolchainCluster := &toolchainv1alpha1.ToolchainCluster{}
-	err := r.client.Get(ctx, request.NamespacedName, toolchainCluster)
+	err := r.Client.Get(ctx, request.NamespacedName, toolchainCluster)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Stop monitoring the toolchain cluster as it is deleted
@@ -55,7 +55,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	if !ok {
 		err := fmt.Errorf("cluster %s not found in cache", toolchainCluster.Name)
 		toolchainCluster.Status.Conditions = []toolchainv1alpha1.ToolchainClusterCondition{clusterOfflineCondition()}
-		if err := r.client.Status().Update(ctx, toolchainCluster); err != nil {
+		if err := r.Client.Status().Update(ctx, toolchainCluster); err != nil {
 			reqLogger.Error(err, "failed to update the status of ToolchainCluster")
 		}
 		return reconcile.Result{}, err
@@ -63,10 +63,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 
 	clientSet, err := kubeclientset.NewForConfig(cachedCluster.RestConfig)
 	if err != nil {
+		reqLogger.Error(err, "cannot create ClientSet for the ToolchainCluster")
 		return reconcile.Result{}, err
 	}
 	healthChecker := &HealthChecker{
-		localClusterClient:     r.client,
+		localClusterClient:     r.Client,
 		remoteClusterClient:    cachedCluster.Client,
 		remoteClusterClientset: clientSet,
 		logger:                 reqLogger,
@@ -77,5 +78,5 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{RequeueAfter: r.requeAfter}, nil
+	return reconcile.Result{RequeueAfter: r.RequeAfter}, nil
 }
