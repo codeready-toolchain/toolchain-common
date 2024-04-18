@@ -7,38 +7,22 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubeclientset "k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// defaultHealthCheckAndUpdateClusterStatus updates the status of the individual cluster
-func defaultHealthCheckAndUpdateClusterStatus(ctx context.Context, localClusterClient client.Client, remoteClusterClient client.Client, remoteClusterClientset *kubeclientset.Clientset, logger logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
-	healthChecker := &HealthChecker{
-		localClusterClient:     localClusterClient,
-		remoteClusterClient:    remoteClusterClient,
-		remoteClusterClientset: remoteClusterClientset,
-		logger:                 logger,
-	}
-
-	// update the status of the individual cluster.
-	return healthChecker.updateIndividualClusterStatus(ctx, toolchainCluster)
-}
-
 // NewReconciler returns a new Reconciler
-func NewReconciler(mgr manager.Manager, requeAfter time.Duration) *Reconciler {
+func NewReconciler(cl client.Client, scheme runtime.Scheme, requeAfter time.Duration) *Reconciler {
 	log.Log.WithName("toolchaincluster_health")
 	return &Reconciler{
-		client:                            mgr.GetClient(),
-		scheme:                            mgr.GetScheme(),
-		requeAfter:                        requeAfter,
-		healthCheckAndUpdateClusterStatus: defaultHealthCheckAndUpdateClusterStatus,
+		client:     cl,
+		scheme:     &scheme,
+		requeAfter: requeAfter,
 	}
 }
 
@@ -47,8 +31,6 @@ type Reconciler struct {
 	client     client.Client
 	scheme     *runtime.Scheme
 	requeAfter time.Duration
-
-	healthCheckAndUpdateClusterStatus func(ctx context.Context, localClusterClient client.Client, remoteClusterClient client.Client, remoteClusterClientset *kubeclientset.Clientset, logger logr.Logger, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -93,9 +75,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-
+	healthChecker := &HealthChecker{
+		localClusterClient:     r.client,
+		remoteClusterClient:    cachedCluster.Client,
+		remoteClusterClientset: clientSet,
+		logger:                 reqLogger,
+	}
 	//update the status of the individual cluster.
-	if err := defaultHealthCheckAndUpdateClusterStatus(ctx, r.client, cachedCluster.Client, clientSet, reqLogger, toolchainCluster); err != nil {
+	if err := healthChecker.updateIndividualClusterStatus(ctx, toolchainCluster); err != nil {
 		reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
 		return reconcile.Result{}, err
 	}

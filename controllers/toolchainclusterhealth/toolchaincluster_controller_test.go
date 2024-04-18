@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,8 +21,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var requeAfter = 10 * time.Second
+
 func TestClustercontrollerChecks(t *testing.T) {
 	// given
+
 	defer gock.Off()
 	tcNs := "test-namespace"
 	gock.New("http://cluster.com").
@@ -39,27 +43,26 @@ func TestClustercontrollerChecks(t *testing.T) {
 		Persist().
 		Reply(404)
 
-	requeAfter := 10 * time.Second
-
 	t.Run("ToolchainCluster not found", func(t *testing.T) {
-		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		NotFound, sec := newToolchainCluster("notfound", tcNs, "http://not-found.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, sec)
-		reset := setupCachedClusters(t, cl, unstable)
+		reset := setupCachedClusters(t, cl, NotFound)
 		defer reset()
 		// given
-		controller, req := prepareReconcile(unstable, cl, requeAfter)
+		controller, req := prepareReconcile(NotFound, cl, requeAfter)
 
 		// when
-		_, err := controller.Reconcile(context.TODO(), req)
+		recresult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
-		require.NoError(t, err)
+		require.Equal(t, err, nil)
+		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recresult)
 
 	})
 
 	t.Run("Error while getting ToolchainCluster", func(t *testing.T) {
-		unstable, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		tc, sec := newToolchainCluster("tc", tcNs, "http://tc.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, sec)
 
@@ -71,13 +74,52 @@ func TestClustercontrollerChecks(t *testing.T) {
 		}
 
 		// given
-		controller, req := prepareReconcile(unstable, cl, requeAfter)
+		controller, req := prepareReconcile(tc, cl, requeAfter)
+
+		// when
+		recresult, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.EqualError(t, err, "mock error")
+		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recresult)
+
+	})
+
+	t.Run("reconcile successful and requeued", func(t *testing.T) {
+		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
+
+		cl := test.NewFakeClient(t, stable, sec)
+		reset := setupCachedClusters(t, cl, stable)
+		defer reset()
+		// given
+		controller, req := prepareReconcile(stable, cl, requeAfter)
+
+		// when
+		recresult, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.Equal(t, err, nil)
+		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
+
+	})
+
+	t.Run("toolchain cluster cache not found", func(t *testing.T) {
+		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
+
+		cl := test.NewFakeClient(t, stable)
+
+		// given
+		controller, req := prepareReconcile(stable, cl, requeAfter)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
 
 		// then
-		require.EqualError(t, err, "mock error")
+		require.EqualError(t, err, "cluster stable not found in cache")
+		actualtoolchaincluster := &toolchainv1alpha1.ToolchainCluster{}
+		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: "stable", Namespace: tcNs}, actualtoolchaincluster)
+		require.NoError(t, err)
+		assertClusterStatus(t, cl, "stable", offline())
 
 	})
 
@@ -109,13 +151,10 @@ func newToolchainCluster(name, tcNs string, apiEndpoint string, status toolchain
 }
 
 func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, requeAfter time.Duration) (Reconciler, reconcile.Request) {
-	controller := Reconciler{
-		client:     cl,
-		scheme:     scheme.Scheme,
-		requeAfter: requeAfter,
-	}
+	controller := NewReconciler(cl, *scheme.Scheme, requeAfter)
+
 	req := reconcile.Request{
 		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
 	}
-	return controller, req
+	return *controller, req
 }
