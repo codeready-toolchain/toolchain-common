@@ -62,6 +62,7 @@ func TestClusterControllerChecks(t *testing.T) {
 	})
 
 	t.Run("Error while getting ToolchainCluster", func(t *testing.T) {
+		// given
 		tc, sec := newToolchainCluster("tc", tcNs, "http://tc.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, sec)
@@ -73,7 +74,6 @@ func TestClusterControllerChecks(t *testing.T) {
 			return cl.Client.Get(ctx, key, obj, opts...)
 		}
 
-		// given
 		controller, req := prepareReconcile(tc, cl, requeAfter)
 
 		// when
@@ -86,12 +86,12 @@ func TestClusterControllerChecks(t *testing.T) {
 	})
 
 	t.Run("reconcile successful and requeued", func(t *testing.T) {
+		// given
 		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, stable, sec)
 		reset := setupCachedClusters(t, cl, stable)
 		defer reset()
-		// given
 		controller, req := prepareReconcile(stable, cl, requeAfter)
 
 		// when
@@ -105,11 +105,11 @@ func TestClusterControllerChecks(t *testing.T) {
 	})
 
 	t.Run("toolchain cluster cache not found", func(t *testing.T) {
+		// given
 		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, stable)
 
-		// given
 		controller, req := prepareReconcile(stable, cl, requeAfter)
 
 		// when
