@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gofrs/uuid"
+	"github.com/gofrs/uuid/v5"
 	"github.com/magiconair/properties/assert"
 	"github.com/stretchr/testify/require"
 )

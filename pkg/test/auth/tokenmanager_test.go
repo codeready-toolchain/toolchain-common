@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	uuid "github.com/gofrs/uuid"
+	uuid "github.com/gofrs/uuid/v5"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 	jose "gopkg.in/square/go-jose.v2"

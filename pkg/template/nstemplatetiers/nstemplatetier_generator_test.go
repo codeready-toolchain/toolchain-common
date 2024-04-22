@@ -21,7 +21,7 @@ import (
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/ghodss/yaml"
-	"github.com/gofrs/uuid"
+	"github.com/gofrs/uuid/v5"
 	templatev1 "github.com/openshift/api/template/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

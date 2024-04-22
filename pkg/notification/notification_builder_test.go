@@ -10,7 +10,7 @@ import (
 	testusersignup "github.com/codeready-toolchain/toolchain-common/pkg/test/usersignup"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gofrs/uuid"
+	"github.com/gofrs/uuid/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
