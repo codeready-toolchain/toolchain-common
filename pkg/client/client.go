@@ -113,7 +113,7 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	if config.saveConfiguration {
 		// set current object as annotation
 		annotations := obj.GetAnnotations()
-		newConfiguration = getNewConfiguration(obj)
+		newConfiguration = GetNewConfiguration(obj)
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
@@ -124,6 +124,7 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	namespacedName := types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}
 	if err := c.Client.Get(ctx, namespacedName, existing); err != nil {
 		if apierrors.IsNotFound(err) {
+			obj.SetResourceVersion("") // reset resource version when creating to avoid error: resourceVersion should not be set on objects to be created
 			return true, c.createObj(ctx, obj, config.owner)
 		}
 		return false, errors.Wrapf(err, "unable to get the resource '%v'", existing)
@@ -133,7 +134,8 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	if !config.forceUpdate {
 		existingAnnotations := existing.GetAnnotations()
 		if existingAnnotations != nil {
-			if newConfiguration == existingAnnotations[LastAppliedConfigurationAnnotationKey] {
+			lastApplied, lastAppliedFound := existingAnnotations[LastAppliedConfigurationAnnotationKey]
+			if lastAppliedFound && newConfiguration != "" && newConfiguration == lastApplied {
 				return false, nil
 			}
 		}
@@ -205,13 +207,21 @@ func clusterIP(obj runtime.Object) (string, bool, error) {
 	}
 }
 
-func getNewConfiguration(newResource runtime.Object) string {
-	newJSON, err := marshalObjectContent(newResource)
+func GetNewConfiguration(newResource client.Object) string {
+	// reset the previous config to avoid recursive embedding of the object
+	copyResource := removeAnnotation(newResource, LastAppliedConfigurationAnnotationKey)
+	newJSON, err := marshalObjectContent(copyResource)
 	if err != nil {
-		log.Error(err, "unable to marshal the object", "object", newResource)
-		return fmt.Sprintf("%v", newResource)
+		log.Error(err, "unable to marshal the object", "object", copyResource)
+		return fmt.Sprintf("%v", copyResource)
 	}
 	return string(newJSON)
+}
+
+func removeAnnotation(newResource client.Object, annotationKey string) client.Object {
+	copyResource := newResource.DeepCopyObject().(client.Object)
+	delete(copyResource.GetAnnotations(), annotationKey)
+	return copyResource
 }
 
 func marshalObjectContent(newResource runtime.Object) ([]byte, error) {
@@ -278,7 +288,7 @@ func ApplyUnstructuredObjectsWithNewLabels(ctx context.Context, cl client.Client
 	for _, unstructuredObj := range unstructuredObjects {
 		log.Info("applying object", "object_namespace", unstructuredObj.GetNamespace(), "object_name", unstructuredObj.GetObjectKind().GroupVersionKind().Kind+"/"+unstructuredObj.GetName())
 		MergeLabels(unstructuredObj, newLabels)
-		_, err := applyClient.ApplyObject(ctx, unstructuredObj)
+		_, err := applyClient.ApplyObject(ctx, unstructuredObj, SaveConfiguration(false))
 		if err != nil {
 			return err
 		}
