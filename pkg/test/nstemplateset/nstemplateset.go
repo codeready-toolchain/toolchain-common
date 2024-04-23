@@ -1,6 +1,7 @@
 package nstemplateset
 
 import (
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
@@ -120,5 +121,11 @@ func WithNotReadyCondition(reason, message string) Option {
 func WithDeletionTimestamp(ts time.Time) Option {
 	return func(nstmplSet *toolchainv1alpha1.NSTemplateSet) {
 		nstmplSet.DeletionTimestamp = &metav1.Time{Time: ts}
+	}
+}
+
+func WithFinalizer() Option {
+	return func(nstmplSet *toolchainv1alpha1.NSTemplateSet) {
+		controllerutil.AddFinalizer(nstmplSet, toolchainv1alpha1.FinalizerName)
 	}
 }
