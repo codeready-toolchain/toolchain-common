@@ -50,9 +50,9 @@ func NewToolchainClusterWithEndpoint(name, tcNs, secName, apiEndpoint string, st
 	}, secret
 }
 
-func NewClusterStatus(conType toolchainv1alpha1.ToolchainClusterConditionType, conStatus corev1.ConditionStatus) toolchainv1alpha1.ToolchainClusterStatus {
+func NewClusterStatus(conType toolchainv1alpha1.ConditionType, conStatus corev1.ConditionStatus) toolchainv1alpha1.ToolchainClusterStatus {
 	return toolchainv1alpha1.ToolchainClusterStatus{
-		Conditions: []toolchainv1alpha1.ToolchainClusterCondition{{
+		Conditions: []toolchainv1alpha1.Condition{{
 			Type:   conType,
 			Status: conStatus,
 		}},

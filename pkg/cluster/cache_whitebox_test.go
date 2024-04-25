@@ -398,7 +398,7 @@ type clusterOption func(*CachedToolchainCluster)
 
 // Ready an option to state the cluster as "ready"
 var ready clusterOption = func(c *CachedToolchainCluster) {
-	c.ClusterStatus.Conditions = append(c.ClusterStatus.Conditions, toolchainv1alpha1.ToolchainClusterCondition{
+	c.ClusterStatus.Conditions = append(c.ClusterStatus.Conditions, toolchainv1alpha1.Condition{
 		Type:   toolchainv1alpha1.ToolchainClusterReady,
 		Status: v1.ConditionTrue,
 	})
@@ -406,7 +406,7 @@ var ready clusterOption = func(c *CachedToolchainCluster) {
 
 // clusterNotReady an option to state the cluster as "not ready"
 var notReady clusterOption = func(c *CachedToolchainCluster) {
-	c.ClusterStatus.Conditions = append(c.ClusterStatus.Conditions, toolchainv1alpha1.ToolchainClusterCondition{
+	c.ClusterStatus.Conditions = append(c.ClusterStatus.Conditions, toolchainv1alpha1.Condition{
 		Type:   toolchainv1alpha1.ToolchainClusterReady,
 		Status: v1.ConditionFalse,
 	})

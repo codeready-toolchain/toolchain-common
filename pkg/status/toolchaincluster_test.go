@@ -197,7 +197,7 @@ func newGetHostClusterLastProbeTimeExceeded() cluster.GetHostClusterFunc {
 // NewGetHostCluster returns cluster.GetHostClusterFunc function. The cluster.CachedToolchainCluster
 // that is returned by the function then contains the given client and the given status and lastProbeTime.
 // If ok == false, then the function returns nil for the cluster.
-func NewFakeGetHostCluster(ok bool, conditionType toolchainv1alpha1.ToolchainClusterConditionType, status corev1.ConditionStatus, lastProbeTime metav1.Time, reason, message string) cluster.GetHostClusterFunc {
+func NewFakeGetHostCluster(ok bool, conditionType toolchainv1alpha1.ConditionType, status corev1.ConditionStatus, lastProbeTime metav1.Time, reason, message string) cluster.GetHostClusterFunc {
 	if !ok {
 		return func() (*cluster.CachedToolchainCluster, bool) {
 			return nil, false
@@ -210,11 +210,11 @@ func NewFakeGetHostCluster(ok bool, conditionType toolchainv1alpha1.ToolchainClu
 				OwnerClusterName:  test.MemberClusterName,
 			},
 			ClusterStatus: &toolchainv1alpha1.ToolchainClusterStatus{
-				Conditions: []toolchainv1alpha1.ToolchainClusterCondition{{
-					Type:          conditionType,
-					Reason:        reason,
-					Status:        status,
-					LastProbeTime: lastProbeTime,
+				Conditions: []toolchainv1alpha1.Condition{{
+					Type:               conditionType,
+					Reason:             reason,
+					Status:             status,
+					LastTransitionTime: lastProbeTime,
 				}},
 			},
 		}

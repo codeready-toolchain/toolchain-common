@@ -64,50 +64,50 @@ func (hc *HealthChecker) getClusterHealthStatus(ctx context.Context) *toolchainv
 	return &clusterStatus
 }
 
-func clusterReadyCondition() toolchainv1alpha1.ToolchainClusterCondition {
+func clusterReadyCondition() toolchainv1alpha1.Condition {
 	currentTime := metav1.Now()
-	return toolchainv1alpha1.ToolchainClusterCondition{
+	return toolchainv1alpha1.Condition{
 		Type:               toolchainv1alpha1.ToolchainClusterReady,
 		Status:             corev1.ConditionTrue,
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterReadyReason,
 		Message:            healthzOk,
-		LastProbeTime:      currentTime,
-		LastTransitionTime: &currentTime,
+		LastTransitionTime: currentTime,
+		LastUpdatedTime:    &currentTime,
 	}
 }
 
-func clusterNotReadyCondition() toolchainv1alpha1.ToolchainClusterCondition {
+func clusterNotReadyCondition() toolchainv1alpha1.Condition {
 	currentTime := metav1.Now()
-	return toolchainv1alpha1.ToolchainClusterCondition{
+	return toolchainv1alpha1.Condition{
 		Type:               toolchainv1alpha1.ToolchainClusterReady,
 		Status:             corev1.ConditionFalse,
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterNotReadyReason,
 		Message:            healthzNotOk,
-		LastProbeTime:      currentTime,
-		LastTransitionTime: &currentTime,
+		LastTransitionTime: currentTime,
+		LastUpdatedTime:    &currentTime,
 	}
 }
 
-func clusterOfflineCondition() toolchainv1alpha1.ToolchainClusterCondition {
+func clusterOfflineCondition() toolchainv1alpha1.Condition {
 	currentTime := metav1.Now()
-	return toolchainv1alpha1.ToolchainClusterCondition{
+	return toolchainv1alpha1.Condition{
 		Type:               toolchainv1alpha1.ToolchainClusterOffline,
 		Status:             corev1.ConditionTrue,
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterNotReachableReason,
 		Message:            clusterNotReachableMsg,
-		LastProbeTime:      currentTime,
-		LastTransitionTime: &currentTime,
+		LastTransitionTime: currentTime,
+		LastUpdatedTime:    &currentTime,
 	}
 }
 
-func clusterNotOfflineCondition() toolchainv1alpha1.ToolchainClusterCondition {
+func clusterNotOfflineCondition() toolchainv1alpha1.Condition {
 	currentTime := metav1.Now()
-	return toolchainv1alpha1.ToolchainClusterCondition{
+	return toolchainv1alpha1.Condition{
 		Type:               toolchainv1alpha1.ToolchainClusterOffline,
 		Status:             corev1.ConditionFalse,
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterReachableReason,
 		Message:            clusterReachableMsg,
-		LastProbeTime:      currentTime,
-		LastTransitionTime: &currentTime,
+		LastTransitionTime: currentTime,
+		LastUpdatedTime:    &currentTime,
 	}
 }
