@@ -85,6 +85,13 @@ func (o AutomaticApprovalOption) Enabled(value bool) AutomaticApprovalOption {
 	return o
 }
 
+func (o AutomaticApprovalOption) Domains(value string) AutomaticApprovalOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.AutomaticApproval.Domains = &value
+	})
+	return o
+}
+
 type DeactivationOption struct {
 	*ToolchainConfigOptionImpl
 }
