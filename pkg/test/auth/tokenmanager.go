@@ -21,11 +21,6 @@ const (
 	e2ePrivateKID = "d5693c31-7016-46a4-bbe4-867e6d6a3b3a"
 )
 
-var (
-	e2eTestPrivateKey *rsa.PrivateKey
-	e2ePKOnce         sync.Once
-)
-
 // WebKeySet represents a JWK Set object.
 type WebKeySet struct {
 	Keys []jwk.Key `json:"keys"`
@@ -306,6 +301,11 @@ func GetE2ETestPublicKey() []*PublicKey {
 
 	return publicKeys
 }
+
+var (
+	e2eTestPrivateKey *rsa.PrivateKey
+	e2ePKOnce         sync.Once
+)
 
 // getE2ETestPrivateKey returns the e2e private key from the PEM.
 func getE2ETestPrivateKey() *rsa.PrivateKey {
