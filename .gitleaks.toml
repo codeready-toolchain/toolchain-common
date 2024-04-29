@@ -2,5 +2,5 @@
   description = "Global Allowlist"
 
   paths = [
-    '''pkg/test/auth/tokenmanager.go''',
+    '''^pkg/test/auth/tokenmanager.go$''',
   ]
