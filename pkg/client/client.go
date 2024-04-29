@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -103,7 +104,6 @@ func (c ApplyClient) ApplyObject(ctx context.Context, obj client.Object, options
 
 func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options ...ApplyObjectOption) (bool, error) {
 	// gets the meta accessor to the new resource
-	// gets the meta accessor to the new resource
 	config := newApplyObjectConfiguration(options...)
 
 	// creates a deepcopy of the new resource to be used to check if it already exists
@@ -113,7 +113,7 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	if config.saveConfiguration {
 		// set current object as annotation
 		annotations := obj.GetAnnotations()
-		newConfiguration = getNewConfiguration(obj)
+		newConfiguration = GetNewConfiguration(obj)
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
@@ -124,6 +124,7 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	namespacedName := types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}
 	if err := c.Client.Get(ctx, namespacedName, existing); err != nil {
 		if apierrors.IsNotFound(err) {
+			obj.SetResourceVersion("") // reset resource version when creating to avoid error: resourceVersion should not be set on objects to be created
 			return true, c.createObj(ctx, obj, config.owner)
 		}
 		return false, errors.Wrapf(err, "unable to get the resource '%v'", existing)
@@ -133,7 +134,8 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	if !config.forceUpdate {
 		existingAnnotations := existing.GetAnnotations()
 		if existingAnnotations != nil {
-			if newConfiguration == existingAnnotations[LastAppliedConfigurationAnnotationKey] {
+			lastApplied, lastAppliedFound := existingAnnotations[LastAppliedConfigurationAnnotationKey]
+			if lastAppliedFound && newConfiguration != "" && newConfiguration == lastApplied {
 				return false, nil
 			}
 		}
@@ -144,6 +146,16 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	// `nstemplatetiers.toolchain.dev.openshift.com "base1ns" is invalid: metadata.resourceVersion: Invalid value: 0x0: must be specified for an update`
 	originalGeneration := existing.GetGeneration()
 	obj.SetResourceVersion(existing.GetResourceVersion())
+
+	// Special handling of ServiceAccounts is required because if a ServiceAccount is reapplied when it already exists, it causes Kubernetes controllers to
+	// automatically create new Secrets for the ServiceAccounts. After enough time the number of Secrets created will hit the Secrets quota and then no new
+	// Secrets can be created. To prevent this from happening, we keep the existing refs to secrets.
+	if strings.EqualFold(obj.GetObjectKind().GroupVersionKind().Kind, "ServiceAccount") {
+		MergeAnnotations(existing, obj.GetAnnotations()) // copy existing annotations
+		MergeLabels(existing, obj.GetLabels())
+		// let's use the existing object so that we keep the references to the existing secrets
+		obj = existing
+	}
 
 	// also, if the resource to create is a Service and there's a previous version, we should retain its `spec.ClusterIP`, otherwise
 	// the update will fail with the following error:
@@ -195,13 +207,21 @@ func clusterIP(obj runtime.Object) (string, bool, error) {
 	}
 }
 
-func getNewConfiguration(newResource runtime.Object) string {
-	newJSON, err := marshalObjectContent(newResource)
+func GetNewConfiguration(newResource client.Object) string {
+	// reset the previous config to avoid recursive embedding of the object
+	copyResource := removeAnnotation(newResource, LastAppliedConfigurationAnnotationKey)
+	newJSON, err := marshalObjectContent(copyResource)
 	if err != nil {
-		log.Error(err, "unable to marshal the object", "object", newResource)
-		return fmt.Sprintf("%v", newResource)
+		log.Error(err, "unable to marshal the object", "object", copyResource)
+		return fmt.Sprintf("%v", copyResource)
 	}
 	return string(newJSON)
+}
+
+func removeAnnotation(newResource client.Object, annotationKey string) client.Object {
+	copyResource := newResource.DeepCopyObject().(client.Object)
+	delete(copyResource.GetAnnotations(), annotationKey)
+	return copyResource
 }
 
 func marshalObjectContent(newResource runtime.Object) ([]byte, error) {
@@ -260,4 +280,19 @@ func MergeAnnotations(toolchainObject client.Object, newAnnotations map[string]s
 		annotations[key] = value
 	}
 	toolchainObject.SetAnnotations(annotations)
+}
+
+// ApplyUnstructuredObjectsWithNewLabels applies the given Unstructured objects on the cluster.
+func ApplyUnstructuredObjectsWithNewLabels(ctx context.Context, cl client.Client, unstructuredObjects []*unstructured.Unstructured, newLabels map[string]string) error {
+	applyClient := NewApplyClient(cl)
+	for _, unstructuredObj := range unstructuredObjects {
+		log.Info("applying object", "object_namespace", unstructuredObj.GetNamespace(), "object_name", unstructuredObj.GetObjectKind().GroupVersionKind().Kind+"/"+unstructuredObj.GetName())
+		MergeLabels(unstructuredObj, newLabels)
+		_, err := applyClient.ApplyObject(ctx, unstructuredObj, SaveConfiguration(false))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

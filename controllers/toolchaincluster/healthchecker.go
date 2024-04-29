@@ -2,24 +2,16 @@ package toolchaincluster
 
 import (
 	"context"
-	"fmt"
 	"strings"
-	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
-	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	kubeclientset "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
-
-var logger = logf.Log.WithName("toolchaincluster_healthcheck")
 
 const (
 	healthzOk              = "/healthz responded with ok"
@@ -28,63 +20,11 @@ const (
 	clusterReachableMsg    = "cluster is reachable"
 )
 
-func StartHealthChecks(ctx context.Context, mgr manager.Manager, namespace string, period time.Duration) {
-	logger.Info("starting health checks", "period", period)
-	go wait.Until(func() {
-		updateClusterStatuses(ctx, namespace, mgr.GetClient())
-	}, period, ctx.Done())
-}
-
 type HealthChecker struct {
 	localClusterClient     client.Client
 	remoteClusterClient    client.Client
 	remoteClusterClientset *kubeclientset.Clientset
 	logger                 logr.Logger
-}
-
-// updateClusterStatuses checks cluster health and updates status of all ToolchainClusters
-func updateClusterStatuses(ctx context.Context, namespace string, cl client.Client) {
-	clusters := &toolchainv1alpha1.ToolchainClusterList{}
-	err := cl.List(ctx, clusters, client.InNamespace(namespace))
-	if err != nil {
-		logger.Error(err, "unable to list existing ToolchainClusters")
-		return
-	}
-	if len(clusters.Items) == 0 {
-		logger.Info("no ToolchainCluster found")
-	}
-
-	for _, obj := range clusters.Items {
-		clusterObj := obj.DeepCopy()
-		clusterLogger := logger.WithValues("cluster-name", clusterObj.Name)
-
-		cachedCluster, ok := cluster.GetCachedToolchainCluster(clusterObj.Name)
-		if !ok {
-			clusterLogger.Error(fmt.Errorf("cluster %s not found in cache", clusterObj.Name), "failed to retrieve stored data for cluster")
-			clusterObj.Status.Conditions = []toolchainv1alpha1.ToolchainClusterCondition{clusterOfflineCondition()}
-			if err := cl.Status().Update(ctx, clusterObj); err != nil {
-				clusterLogger.Error(err, "failed to update the status of ToolchainCluster")
-			}
-			continue
-		}
-
-		clientSet, err := kubeclientset.NewForConfig(cachedCluster.RestConfig)
-		if err != nil {
-			clusterLogger.Error(err, "cannot create ClientSet for a ToolchainCluster")
-			continue
-		}
-
-		healthChecker := &HealthChecker{
-			localClusterClient:     cl,
-			remoteClusterClient:    cachedCluster.Client,
-			remoteClusterClientset: clientSet,
-			logger:                 clusterLogger,
-		}
-		// clusterLogger.Info("getting the current state of ToolchainCluster")
-		if err := healthChecker.updateIndividualClusterStatus(ctx, clusterObj); err != nil {
-			clusterLogger.Error(err, "unable to update cluster status of ToolchainCluster")
-		}
-	}
 }
 
 func (hc *HealthChecker) updateIndividualClusterStatus(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
