@@ -1,6 +1,0 @@
-[allowlist]
-  description = "Global Allowlist"
-
-  paths = [
-    '''^pkg/test/auth/tokenmanager.go$''',
-  ]
