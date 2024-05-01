@@ -85,40 +85,11 @@ func (o AutomaticApprovalOption) Enabled(value bool) AutomaticApprovalOption {
 	return o
 }
 
-// Deprecated: This is no longer used for anything.
-type CapacityThresholdsOption struct {
-	*ToolchainConfigOptionImpl
-}
-
-// Deprecated: This is no longer used for anything.
-func CapacityThresholds() *CapacityThresholdsOption {
-	c := &CapacityThresholdsOption{
-		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
-	}
-	return c
-}
-
-// Deprecated: This is no longer used for anything.
-func (c CapacityThresholdsOption) ResourceCapacityThreshold(defaultThreshold int, perMember ...PerMemberClusterOptionInt) CapacityThresholdsOption {
-	c.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.DefaultThreshold = &defaultThreshold
-		config.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.SpecificPerMemberCluster = map[string]int{}
-		for _, add := range perMember {
-			add(config.Spec.Host.CapacityThresholds.ResourceCapacityThreshold.SpecificPerMemberCluster)
-		}
+func (o AutomaticApprovalOption) Domains(value string) AutomaticApprovalOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.AutomaticApproval.Domains = &value
 	})
-	return c
-}
-
-// Deprecated: This is no longer used for anything.
-func (c CapacityThresholdsOption) MaxNumberOfSpaces(perMember ...PerMemberClusterOptionInt) CapacityThresholdsOption {
-	c.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.CapacityThresholds.MaxNumberOfSpacesPerMemberCluster = map[string]int{}
-		for _, add := range perMember {
-			add(config.Spec.Host.CapacityThresholds.MaxNumberOfSpacesPerMemberCluster)
-		}
-	})
-	return c
+	return o
 }
 
 type DeactivationOption struct {
