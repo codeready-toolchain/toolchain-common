@@ -32,7 +32,7 @@ require (
 	github.com/migueleliasweb/go-github-mock v0.0.18
 	golang.org/x/oauth2 v0.7.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
+	k8s.io/utils v0.0.0-20230209194617-a36077c30491
 )
 
 require (
