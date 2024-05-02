@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -82,7 +82,7 @@ func generateName(notification *toolchainv1alpha1.Notification) {
 			notification.ObjectMeta.GenerateName = fmt.Sprintf("%s-untyped", username)
 			return
 		}
-		notification.ObjectMeta.GenerateName = fmt.Sprintf("%s-untyped", uuid.Must(uuid.NewV4()).String())
+		notification.ObjectMeta.GenerateName = fmt.Sprintf("%s-untyped", uuid.NewString())
 	}
 }
 

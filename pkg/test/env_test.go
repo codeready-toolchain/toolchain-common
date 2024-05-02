@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"github.com/magiconair/properties/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -138,7 +138,7 @@ func TestUnsetEnvVarAndRestore(t *testing.T) {
 }
 
 func unsetVariable(t *testing.T) string {
-	u, err := uuid.NewV4()
+	u, err := uuid.NewRandom()
 	require.NoError(t, err)
 	varName := u.String()
 	err = os.Unsetenv(varName)
@@ -149,11 +149,11 @@ func unsetVariable(t *testing.T) string {
 }
 
 func setVariable(t *testing.T) (string, string) {
-	u, err := uuid.NewV4()
+	u, err := uuid.NewRandom()
 	require.NoError(t, err)
 	key := u.String()
 
-	u, err = uuid.NewV4()
+	u, err = uuid.NewRandom()
 	require.NoError(t, err)
 	value := u.String()
 

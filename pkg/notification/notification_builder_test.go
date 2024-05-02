@@ -10,7 +10,7 @@ import (
 	testusersignup "github.com/codeready-toolchain/toolchain-common/pkg/test/usersignup"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gofrs/uuid/v5"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -101,7 +101,7 @@ func TestNotificationBuilder(t *testing.T) {
 
 	t.Run("success with hard coded notification name", func(t *testing.T) {
 		// given
-		name := uuid.Must(uuid.NewV4()).String()
+		name := uuid.NewString()
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
 			WithName(name).
