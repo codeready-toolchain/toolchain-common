@@ -114,4 +114,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/codeready-toolchain/api => github.com/fbm3307/toolchainapi v0.0.0-20240425095952-cd8e9731b967
+replace github.com/codeready-toolchain/api => github.com/fbm3307/toolchainapi v0.0.0-20240502095518-0d75583a5baf
