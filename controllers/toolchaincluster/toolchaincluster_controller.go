@@ -7,6 +7,7 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubeclientset "k8s.io/client-go/kubernetes"
@@ -15,6 +16,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+// TODO: move this to somewhere more appropriate - maybe somewhere in the api module?
+// We can live with this here for now, because this label is not used for anything yet.
+var ToolchainClusterLabel = toolchainv1alpha1.LabelKeyPrefix + "toolchain-cluster"
 
 // Reconciler reconciles a ToolchainCluster object
 type Reconciler struct {
@@ -51,6 +56,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		return reconcile.Result{}, err
 	}
 
+	// this is a migration step to make sure that we are forwards-compatible with
+	// the secrets labeled by the toolchainCluster name, which are going to be the basis
+	// for *creating* toolchain clusters in the future.
+	if err := r.labelTokenSecret(ctx, toolchainCluster); err != nil {
+		reqLogger.Error(err, "unable to check the labels in the associated secret")
+		return reconcile.Result{}, err
+	}
+
 	cachedCluster, ok := cluster.GetCachedToolchainCluster(toolchainCluster.Name)
 	if !ok {
 		err := fmt.Errorf("cluster %s not found in cache", toolchainCluster.Name)
@@ -72,11 +85,42 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		remoteClusterClientset: clientSet,
 		logger:                 reqLogger,
 	}
-	//update the status of the individual cluster.
+	// update the status of the individual cluster.
 	if err := healthChecker.updateIndividualClusterStatus(ctx, toolchainCluster); err != nil {
 		reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
 		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{RequeueAfter: r.RequeAfter}, nil
+}
+
+func (r *Reconciler) labelTokenSecret(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
+	if toolchainCluster.Spec.SecretRef.Name == "" {
+		return nil
+	}
+
+	secret := &corev1.Secret{}
+	if err := r.Client.Get(ctx, client.ObjectKey{Name: toolchainCluster.Spec.SecretRef.Name, Namespace: toolchainCluster.Namespace}, secret); err != nil {
+		if errors.IsNotFound(err) {
+			// The referenced secret does not exist yet, so we can't really label it.
+			// Because the reconciler runs periodically (not just on ToolchainCluster change), we will
+			// recover from this condition once the secret appears in the cluster.
+			return nil
+		}
+		return err
+	}
+
+	if secret.Labels[ToolchainClusterLabel] != toolchainCluster.Name {
+		if secret.Labels == nil {
+			secret.Labels = map[string]string{}
+		}
+
+		secret.Labels[ToolchainClusterLabel] = toolchainCluster.Name
+
+		if err := r.Client.Update(ctx, secret); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

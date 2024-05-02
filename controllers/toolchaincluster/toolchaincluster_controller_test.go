@@ -11,6 +11,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
+	"gotest.tools/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -58,7 +59,6 @@ func TestClusterControllerChecks(t *testing.T) {
 		// then
 		require.Equal(t, err, nil)
 		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recresult)
-
 	})
 
 	t.Run("Error while getting ToolchainCluster", func(t *testing.T) {
@@ -82,7 +82,6 @@ func TestClusterControllerChecks(t *testing.T) {
 		// then
 		require.EqualError(t, err, "mock error")
 		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recresult)
-
 	})
 
 	t.Run("reconcile successful and requeued", func(t *testing.T) {
@@ -101,7 +100,6 @@ func TestClusterControllerChecks(t *testing.T) {
 		require.Equal(t, err, nil)
 		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
 		assertClusterStatus(t, cl, "stable", healthy())
-
 	})
 
 	t.Run("toolchain cluster cache not found", func(t *testing.T) {
@@ -121,9 +119,30 @@ func TestClusterControllerChecks(t *testing.T) {
 		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: "stable", Namespace: tcNs}, actualtoolchaincluster)
 		require.NoError(t, err)
 		assertClusterStatus(t, cl, "stable", offline())
-
 	})
 
+	t.Run("pre-existing secret is updated with the label linking it to the toolchaincluster resource", func(t *testing.T) {
+		// given
+		tc, secret := newToolchainCluster("tc", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
+
+		cl := test.NewFakeClient(t, tc, secret)
+		reset := setupCachedClusters(t, cl, tc)
+		defer reset()
+		controller, req := prepareReconcile(tc, cl, requeAfter)
+
+		// just make sure that there is label on the secret yet...
+		require.Empty(t, secret.Labels[ToolchainClusterLabel])
+
+		// when
+		_, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.NoError(t, err)
+		linkedSecret := &corev1.Secret{}
+		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: tc.Spec.SecretRef.Name, Namespace: tcNs}, linkedSecret)
+		require.NoError(t, err)
+		assert.Equal(t, "tc", linkedSecret.Labels[ToolchainClusterLabel])
+	})
 }
 
 func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolchainv1alpha1.ToolchainCluster) func() {
