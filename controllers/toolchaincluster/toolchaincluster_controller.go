@@ -105,6 +105,7 @@ func (r *Reconciler) labelTokenSecret(ctx context.Context, toolchainCluster *too
 			// The referenced secret does not exist yet, so we can't really label it.
 			// Because the reconciler runs periodically (not just on ToolchainCluster change), we will
 			// recover from this condition once the secret appears in the cluster.
+			log.FromContext(ctx).Info("failed to find the referenced secret. Cluster cache might be broken until it is created.", "expectedSecretName", toolchainCluster.Spec.SecretRef.Name)
 			return nil
 		}
 		return err
