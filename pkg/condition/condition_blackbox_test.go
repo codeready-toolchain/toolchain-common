@@ -543,3 +543,52 @@ func reverseStatus(status apiv1.ConditionStatus) apiv1.ConditionStatus {
 		return apiv1.ConditionFalse
 	}
 }
+
+func TestConditionsMatch(t *testing.T) {
+	conditions1 := []toolchainv1alpha1.Condition{
+		{
+			Type:    toolchainv1alpha1.UserSignupComplete,
+			Status:  apiv1.ConditionTrue,
+			Reason:  toolchainv1alpha1.UserSignupApprovedAutomaticallyReason,
+			Message: "",
+		},
+		{
+			Type:    toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated,
+			Status:  apiv1.ConditionTrue,
+			Reason:  toolchainv1alpha1.UserSignupUserDeactivatingReason,
+			Message: "",
+		},
+	}
+	conditions2 := []toolchainv1alpha1.Condition{
+		{
+			Type:    toolchainv1alpha1.UserSignupComplete,
+			Status:  apiv1.ConditionTrue,
+			Reason:  toolchainv1alpha1.UserSignupApprovedAutomaticallyReason,
+			Message: "",
+		},
+		{
+			Type:    toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated,
+			Status:  apiv1.ConditionFalse,
+			Reason:  "Foo",
+			Message: "",
+		},
+	}
+
+	// The conditions are different so no match
+	require.False(t, condition.ConditionsMatch(conditions1, conditions2))
+
+	// Update the condition so that they now match
+	conditions2[1].Status = apiv1.ConditionTrue
+	conditions2[1].Reason = toolchainv1alpha1.UserSignupUserDeactivatingReason
+	require.True(t, condition.ConditionsMatch(conditions1, conditions2))
+
+	// Add another condition, now they should not match
+	conditions2 = append(conditions2, toolchainv1alpha1.Condition{
+		Type:    toolchainv1alpha1.UserSignupUserDeactivatedNotificationCreated,
+		Status:  apiv1.ConditionTrue,
+		Reason:  toolchainv1alpha1.UserSignupUserDeactivatedReason,
+		Message: "",
+	})
+
+	require.False(t, condition.ConditionsMatch(conditions1, conditions2))
+}
