@@ -591,4 +591,10 @@ func TestConditionsMatch(t *testing.T) {
 	})
 
 	require.False(t, condition.ConditionsMatch(conditions1, conditions2))
+
+	conditions3 := []toolchainv1alpha1.Condition{}
+	conditions3 = append(conditions3, conditions2[0])
+	conditions3 = append(conditions3, conditions2[2])
+
+	require.False(t, condition.ConditionsMatch(conditions1, conditions3))
 }
