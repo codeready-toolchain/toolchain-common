@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
@@ -56,29 +57,11 @@ func AssertTimestampsAreRecent(t T, conditions []toolchainv1alpha1.Condition) {
 // ConditionsMatch returns true if the specified list A of conditions is equal to specified
 // list B of conditions ignoring the order of the elements
 func ConditionsMatch(actual []toolchainv1alpha1.Condition, expected ...toolchainv1alpha1.Condition) bool {
-	if len(expected) != len(actual) {
-		return false
-	}
-	for _, c := range expected {
-		if !ContainsCondition(actual, c) {
-			return false
-		}
-	}
-	for _, c := range actual {
-		if !ContainsCondition(expected, c) {
-			return false
-		}
-	}
-	return true
+	return condition.ConditionsMatch(actual, expected)
 }
 
 // ContainsCondition returns true if the specified list of conditions contains the specified condition.
 // LastTransitionTime is ignored.
 func ContainsCondition(conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition) bool {
-	for _, c := range conditions {
-		if c.Type == contains.Type {
-			return contains.Status == c.Status && contains.Reason == c.Reason && contains.Message == c.Message
-		}
-	}
-	return false
+	return condition.ContainsCondition(conditions, contains)
 }
