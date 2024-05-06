@@ -72,6 +72,7 @@ func clusterReadyCondition() toolchainv1alpha1.ToolchainClusterCondition {
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterReadyReason,
 		Message:            healthzOk,
 		LastProbeTime:      currentTime,
+		LastUpdatedTime:    &currentTime,
 		LastTransitionTime: &currentTime,
 	}
 }
@@ -84,6 +85,7 @@ func clusterNotReadyCondition() toolchainv1alpha1.ToolchainClusterCondition {
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterNotReadyReason,
 		Message:            healthzNotOk,
 		LastProbeTime:      currentTime,
+		LastUpdatedTime:    &currentTime,
 		LastTransitionTime: &currentTime,
 	}
 }
@@ -96,6 +98,7 @@ func clusterOfflineCondition() toolchainv1alpha1.ToolchainClusterCondition {
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterNotReachableReason,
 		Message:            clusterNotReachableMsg,
 		LastProbeTime:      currentTime,
+		LastUpdatedTime:    &currentTime,
 		LastTransitionTime: &currentTime,
 	}
 }
@@ -108,6 +111,7 @@ func clusterNotOfflineCondition() toolchainv1alpha1.ToolchainClusterCondition {
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterReachableReason,
 		Message:            clusterReachableMsg,
 		LastProbeTime:      currentTime,
+		LastUpdatedTime:    &currentTime,
 		LastTransitionTime: &currentTime,
 	}
 }

@@ -211,10 +211,11 @@ func NewFakeGetHostCluster(ok bool, conditionType toolchainv1alpha1.ToolchainClu
 			},
 			ClusterStatus: &toolchainv1alpha1.ToolchainClusterStatus{
 				Conditions: []toolchainv1alpha1.ToolchainClusterCondition{{
-					Type:          conditionType,
-					Reason:        reason,
-					Status:        status,
-					LastProbeTime: lastProbeTime,
+					Type:            conditionType,
+					Reason:          reason,
+					Status:          status,
+					LastProbeTime:   lastProbeTime,
+					LastUpdatedTime: &lastProbeTime,
 				}},
 			},
 		}
