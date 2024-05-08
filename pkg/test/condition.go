@@ -54,14 +54,28 @@ func AssertTimestampsAreRecent(t T, conditions []toolchainv1alpha1.Condition) {
 	}
 }
 
-// ConditionsMatch returns true if the specified list A of conditions is equal to specified
-// list B of conditions ignoring the order of the elements
-func ConditionsMatch(actual []toolchainv1alpha1.Condition, expected ...toolchainv1alpha1.Condition) bool {
-	return condition.ConditionsMatch(actual, expected)
+// ConditionsMatch returns true if the specified list of conditions (first) is equal to the other specified
+// list of conditions (second) ignoring the order of the elements, and comparing the message properties also.
+// Note that the alternative ConditionsMatch function in the condition package does *NOT* compare the message properties
+func ConditionsMatch(first []toolchainv1alpha1.Condition, second ...toolchainv1alpha1.Condition) bool {
+	if len(first) != len(second) {
+		return false
+	}
+	for _, c := range first {
+		if !condition.ContainsConditionWithMessage(second, c) {
+			return false
+		}
+	}
+	for _, c := range second {
+		if !condition.ContainsConditionWithMessage(first, c) {
+			return false
+		}
+	}
+	return true
 }
 
 // ContainsCondition returns true if the specified list of conditions contains the specified condition.
 // LastTransitionTime is ignored.
 func ContainsCondition(conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition) bool {
-	return condition.ContainsCondition(conditions, contains)
+	return condition.ContainsConditionWithMessage(conditions, contains)
 }

@@ -147,7 +147,8 @@ func HasConditionReason(conditions []toolchainv1alpha1.Condition, conditionType 
 	return found && con.Reason == reason
 }
 
-// ConditionsMatch checks whether the specified conditions match and return true if they do
+// ConditionsMatch checks whether the specified conditions match and return true if they do, ignoring the value of the
+// message property.
 func ConditionsMatch(first, second []toolchainv1alpha1.Condition) bool {
 	if len(first) != len(second) {
 		return false
@@ -165,13 +166,24 @@ func ConditionsMatch(first, second []toolchainv1alpha1.Condition) bool {
 	return true
 }
 
-// ContainsCondition returns true if the specified list of conditions contains the specified condition and the statuses of the conditions match.
-// LastTransitionTime is ignored.
-func ContainsCondition(conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition) bool {
+func containsConditions(conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition, ignoreMessage bool) bool {
 	for _, c := range conditions {
 		if c.Type == contains.Type {
+			if ignoreMessage {
+				return contains.Status == c.Status && contains.Reason == c.Reason
+			}
 			return contains.Status == c.Status && contains.Reason == c.Reason && contains.Message == c.Message
 		}
 	}
 	return false
+}
+
+// ContainsCondition returns true if the specified list of conditions contains the specified condition and the statuses of the conditions match.
+// LastTransitionTime is ignored.
+func ContainsCondition(conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition) bool {
+	return containsConditions(conditions, contains, true)
+}
+
+func ContainsConditionWithMessage(conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition) bool {
+	return containsConditions(conditions, contains, false)
 }
