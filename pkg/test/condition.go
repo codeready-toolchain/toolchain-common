@@ -66,11 +66,6 @@ func ConditionsMatch(first []toolchainv1alpha1.Condition, second ...toolchainv1a
 			return false
 		}
 	}
-	for _, c := range second {
-		if !condition.ContainsConditionWithMessage(first, c) {
-			return false
-		}
-	}
 	return true
 }
 

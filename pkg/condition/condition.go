@@ -158,11 +158,6 @@ func ConditionsMatch(first, second []toolchainv1alpha1.Condition) bool {
 			return false
 		}
 	}
-	for _, c := range second {
-		if !ContainsCondition(first, c) {
-			return false
-		}
-	}
 	return true
 }
 
