@@ -131,7 +131,7 @@ func TestClusterControllerChecks(t *testing.T) {
 		controller, req := prepareReconcile(tc, cl, requeAfter)
 
 		// just make sure that there is label on the secret yet...
-		require.Empty(t, secret.Labels[ToolchainClusterLabel])
+		require.Empty(t, secret.Labels[toolchainv1alpha1.ToolchainClusterLabel])
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -141,7 +141,7 @@ func TestClusterControllerChecks(t *testing.T) {
 		linkedSecret := &corev1.Secret{}
 		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: tc.Spec.SecretRef.Name, Namespace: tcNs}, linkedSecret)
 		require.NoError(t, err)
-		assert.Equal(t, "tc", linkedSecret.Labels[ToolchainClusterLabel])
+		assert.Equal(t, "tc", linkedSecret.Labels[toolchainv1alpha1.ToolchainClusterLabel])
 	})
 }
 

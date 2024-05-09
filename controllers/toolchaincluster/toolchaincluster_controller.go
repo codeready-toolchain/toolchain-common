@@ -17,10 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// TODO: move this to somewhere more appropriate - maybe somewhere in the api module?
-// We can live with this here for now, because this label is not used for anything yet.
-var ToolchainClusterLabel = toolchainv1alpha1.LabelKeyPrefix + "toolchain-cluster"
-
 // Reconciler reconciles a ToolchainCluster object
 type Reconciler struct {
 	Client     client.Client
@@ -111,12 +107,12 @@ func (r *Reconciler) labelTokenSecret(ctx context.Context, toolchainCluster *too
 		return err
 	}
 
-	if secret.Labels[ToolchainClusterLabel] != toolchainCluster.Name {
+	if secret.Labels[toolchainv1alpha1.ToolchainClusterLabel] != toolchainCluster.Name {
 		if secret.Labels == nil {
 			secret.Labels = map[string]string{}
 		}
 
-		secret.Labels[ToolchainClusterLabel] = toolchainCluster.Name
+		secret.Labels[toolchainv1alpha1.ToolchainClusterLabel] = toolchainCluster.Name
 
 		if err := r.Client.Update(ctx, secret); err != nil {
 			return err
