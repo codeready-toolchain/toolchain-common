@@ -5,7 +5,7 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -18,7 +18,7 @@ func NewSpaceBindingRequest(name, namespace string, options ...Option) *toolchai
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
-			UID:       types.UID(uuid.Must(uuid.NewV4()).String()),
+			UID:       types.UID(uuid.NewString()),
 		},
 	}
 	for _, apply := range options {

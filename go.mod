@@ -5,7 +5,6 @@ go 1.20
 require (
 	github.com/codeready-toolchain/api v0.0.0-20240425165440-d0a6da0060a5
 	github.com/go-logr/logr v1.2.3
-	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/lestrrat-go/jwx v1.2.29
 	github.com/magiconair/properties v1.8.5
@@ -29,6 +28,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github/v52 v52.0.0
+	github.com/google/uuid v1.6.0
 	github.com/migueleliasweb/go-github-mock v0.0.18
 	golang.org/x/oauth2 v0.7.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -63,7 +63,6 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
-	github.com/google/uuid v1.1.2 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
 	github.com/huandu/xstrings v1.3.1 // indirect
