@@ -143,6 +143,30 @@ func TestClusterControllerChecks(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "tc", linkedSecret.Labels[toolchainv1alpha1.ToolchainClusterLabel])
 	})
+
+	t.Run("secret labeling does not break on missing secret even though the missing secret breaks the tc cache", func(t *testing.T) {
+		// given
+		stable, secret := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
+
+		// we need the secret to be able to initialize the cluster cache
+		cl := test.NewFakeClient(t, stable, secret)
+
+		controller, req := prepareReconcile(stable, cl, requeAfter)
+		// initialize the cluster cache at the point in time we still have the secret
+		reset := setupCachedClusters(t, cl, stable)
+		defer reset()
+
+		// now enter the invalid state - delete the secret before the actual reconcile and check that we don't get an error.
+		// we don't care here that the cluster is essentially in an invalid state because all we test here is that the labeling
+		// doesn't introduce a new failure mode.
+		require.NoError(t, cl.Delete(context.TODO(), secret))
+
+		// when
+		_, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.NoError(t, err)
+	})
 }
 
 func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolchainv1alpha1.ToolchainCluster) func() {
