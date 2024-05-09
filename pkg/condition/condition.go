@@ -173,12 +173,16 @@ func containsConditions(conditions []toolchainv1alpha1.Condition, contains toolc
 	return false
 }
 
-// ContainsCondition returns true if the specified list of conditions contains the specified condition and the statuses of the conditions match.
+// ContainsCondition returns true if the specified list of conditions contains the specified condition and the statuses
+// of the conditions match. This function does not compare the values of the message property.
 // LastTransitionTime is ignored.
 func ContainsCondition(conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition) bool {
 	return containsConditions(conditions, contains, true)
 }
 
+// ContainsConditionWithMessage returns true if the specified list of conditions contains the specified condition and the
+// statuses and the message property of the conditions match.
+// LastTransitionTime is ignored.
 func ContainsConditionWithMessage(conditions []toolchainv1alpha1.Condition, contains toolchainv1alpha1.Condition) bool {
 	return containsConditions(conditions, contains, false)
 }

@@ -544,6 +544,38 @@ func reverseStatus(status apiv1.ConditionStatus) apiv1.ConditionStatus {
 	}
 }
 
+func TestContainsConditionWithMessage(t *testing.T) {
+	conditions1 := []toolchainv1alpha1.Condition{
+		{
+			Type:    toolchainv1alpha1.UserSignupComplete,
+			Status:  apiv1.ConditionTrue,
+			Reason:  toolchainv1alpha1.UserSignupApprovedAutomaticallyReason,
+			Message: "foo",
+		},
+		{
+			Type:    toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated,
+			Status:  apiv1.ConditionTrue,
+			Reason:  toolchainv1alpha1.UserSignupUserDeactivatingReason,
+			Message: "bar",
+		},
+	}
+	require.True(t, condition.ContainsConditionWithMessage(conditions1,
+		toolchainv1alpha1.Condition{
+			Type:    toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated,
+			Status:  apiv1.ConditionTrue,
+			Reason:  toolchainv1alpha1.UserSignupUserDeactivatingReason,
+			Message: "bar",
+		}))
+
+	require.False(t, condition.ContainsConditionWithMessage(conditions1,
+		toolchainv1alpha1.Condition{
+			Type:    toolchainv1alpha1.UserSignupUserDeactivatingNotificationCreated,
+			Status:  apiv1.ConditionTrue,
+			Reason:  toolchainv1alpha1.UserSignupUserDeactivatingReason,
+			Message: "foo",
+		}))
+}
+
 func TestConditionsMatch(t *testing.T) {
 	conditions1 := []toolchainv1alpha1.Condition{
 		{
