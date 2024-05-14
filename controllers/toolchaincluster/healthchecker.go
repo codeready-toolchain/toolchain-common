@@ -71,14 +71,8 @@ func clusterReadyCondition() toolchainv1alpha1.Condition {
 		Status:             corev1.ConditionTrue,
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterReadyReason,
 		Message:            healthzOk,
-<<<<<<< HEAD
+		LastUpdatedTime:    &currentTime,
 		LastTransitionTime: currentTime,
-		LastUpdatedTime:    &currentTime,
-=======
-		LastProbeTime:      currentTime,
-		LastUpdatedTime:    &currentTime,
-		LastTransitionTime: &currentTime,
->>>>>>> master
 	}
 }
 
@@ -89,14 +83,8 @@ func clusterNotReadyCondition() toolchainv1alpha1.Condition {
 		Status:             corev1.ConditionFalse,
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterNotReadyReason,
 		Message:            healthzNotOk,
-<<<<<<< HEAD
+		LastUpdatedTime:    &currentTime,
 		LastTransitionTime: currentTime,
-		LastUpdatedTime:    &currentTime,
-=======
-		LastProbeTime:      currentTime,
-		LastUpdatedTime:    &currentTime,
-		LastTransitionTime: &currentTime,
->>>>>>> master
 	}
 }
 
@@ -107,14 +95,8 @@ func clusterOfflineCondition() toolchainv1alpha1.Condition {
 		Status:             corev1.ConditionTrue,
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterNotReachableReason,
 		Message:            clusterNotReachableMsg,
-<<<<<<< HEAD
+		LastUpdatedTime:    &currentTime,
 		LastTransitionTime: currentTime,
-		LastUpdatedTime:    &currentTime,
-=======
-		LastProbeTime:      currentTime,
-		LastUpdatedTime:    &currentTime,
-		LastTransitionTime: &currentTime,
->>>>>>> master
 	}
 }
 
@@ -125,13 +107,7 @@ func clusterNotOfflineCondition() toolchainv1alpha1.Condition {
 		Status:             corev1.ConditionFalse,
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterReachableReason,
 		Message:            clusterReachableMsg,
-<<<<<<< HEAD
+		LastUpdatedTime:    &currentTime,
 		LastTransitionTime: currentTime,
-		LastUpdatedTime:    &currentTime,
-=======
-		LastProbeTime:      currentTime,
-		LastUpdatedTime:    &currentTime,
-		LastTransitionTime: &currentTime,
->>>>>>> master
 	}
 }

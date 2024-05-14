@@ -47,12 +47,7 @@ func GetToolchainClusterConditions(logger logr.Logger, attrs ToolchainClusterAtt
 	foundLastProbeTime := false
 	for _, condition := range toolchainCluster.ClusterStatus.Conditions {
 		if condition.Type == toolchainv1alpha1.ToolchainClusterReady {
-			lastProbeTime = func() metav1.Time {
-				if condition.LastUpdatedTime != nil {
-					return *condition.LastUpdatedTime
-				}
-				return condition.LastProbeTime
-			}()
+			lastProbeTime = *condition.LastUpdatedTime
 			foundLastProbeTime = true
 		}
 
