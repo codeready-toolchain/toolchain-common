@@ -18,7 +18,9 @@ import (
 
 var fakeToolchainClusterReason = "AToolchainClusterReason"
 var fakeToolchainClusterMsg = "AToolchainClusterMsg"
-
+var probtime = metav1.Now()
+var probtime1 = metav1.NewTime(metav1.Now().Add(time.Duration(-10) * time.Minute))
+var updatetime = metav1.NewTime(metav1.Now().Add(time.Duration(-3) * time.Second))
 var log = logf.Log.WithName("toolchaincluster_test")
 
 func TestGetToolchainClusterConditions(t *testing.T) {
@@ -170,34 +172,34 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 			assert.Contains(t, err.Error(), msg)
 			test.AssertConditionsMatchAndRecentTimestamps(t, conditions, expected)
 		})
+
 	})
 }
 
 func newGetHostClusterReady() cluster.GetHostClusterFunc {
-	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue, metav1.Now(), fakeToolchainClusterReason, "")
+	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue, probtime1, fakeToolchainClusterReason, "", &updatetime)
 }
 
 func newGetHostClusterNotOk() cluster.GetHostClusterFunc {
-	return NewFakeGetHostCluster(false, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse, metav1.Now(), fakeToolchainClusterReason, fakeToolchainClusterMsg)
+	return NewFakeGetHostCluster(false, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse, probtime, fakeToolchainClusterReason, fakeToolchainClusterMsg, nil)
 }
 
 func newGetHostClusterOkButNotReady(message string) cluster.GetHostClusterFunc {
-	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse, metav1.Now(), fakeToolchainClusterReason, message)
+	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse, probtime, fakeToolchainClusterReason, message, nil)
 }
 
 func newGetHostClusterOkWithClusterOfflineCondition() cluster.GetHostClusterFunc {
-	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterOffline, corev1.ConditionFalse, metav1.Now(), fakeToolchainClusterReason, fakeToolchainClusterMsg)
+	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterOffline, corev1.ConditionFalse, probtime, fakeToolchainClusterReason, fakeToolchainClusterMsg, nil)
 }
 
 func newGetHostClusterLastProbeTimeExceeded() cluster.GetHostClusterFunc {
-	tenMinsAgo := metav1.Now().Add(time.Duration(-10) * time.Minute)
-	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue, metav1.NewTime(tenMinsAgo), fakeToolchainClusterReason, fakeToolchainClusterMsg)
+	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue, probtime1, fakeToolchainClusterReason, fakeToolchainClusterMsg, nil)
 }
 
 // NewGetHostCluster returns cluster.GetHostClusterFunc function. The cluster.CachedToolchainCluster
 // that is returned by the function then contains the given client and the given status and lastProbeTime.
 // If ok == false, then the function returns nil for the cluster.
-func NewFakeGetHostCluster(ok bool, conditionType toolchainv1alpha1.ToolchainClusterConditionType, status corev1.ConditionStatus, lastProbeTime metav1.Time, reason, message string) cluster.GetHostClusterFunc {
+func NewFakeGetHostCluster(ok bool, conditionType toolchainv1alpha1.ToolchainClusterConditionType, status corev1.ConditionStatus, lastProbeTime metav1.Time, reason, message string, lastUpdatedTime *metav1.Time) cluster.GetHostClusterFunc {
 	if !ok {
 		return func() (*cluster.CachedToolchainCluster, bool) {
 			return nil, false
@@ -211,10 +213,11 @@ func NewFakeGetHostCluster(ok bool, conditionType toolchainv1alpha1.ToolchainClu
 			},
 			ClusterStatus: &toolchainv1alpha1.ToolchainClusterStatus{
 				Conditions: []toolchainv1alpha1.ToolchainClusterCondition{{
-					Type:          conditionType,
-					Reason:        reason,
-					Status:        status,
-					LastProbeTime: lastProbeTime,
+					Type:            conditionType,
+					Reason:          reason,
+					Status:          status,
+					LastProbeTime:   lastProbeTime,
+					LastUpdatedTime: lastUpdatedTime,
 				}},
 			},
 		}
