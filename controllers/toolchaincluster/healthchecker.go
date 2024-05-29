@@ -67,7 +67,7 @@ func (hc *HealthChecker) getClusterHealthStatus(ctx context.Context) *toolchainv
 func clusterReadyCondition() toolchainv1alpha1.Condition {
 	currentTime := metav1.Now()
 	return toolchainv1alpha1.Condition{
-		Type:               toolchainv1alpha1.ToolchainClusterReady,
+		Type:               toolchainv1alpha1.ConditionReady,
 		Status:             corev1.ConditionTrue,
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterReadyReason,
 		Message:            healthzOk,
@@ -79,7 +79,7 @@ func clusterReadyCondition() toolchainv1alpha1.Condition {
 func clusterNotReadyCondition() toolchainv1alpha1.Condition {
 	currentTime := metav1.Now()
 	return toolchainv1alpha1.Condition{
-		Type:               toolchainv1alpha1.ToolchainClusterReady,
+		Type:               toolchainv1alpha1.ConditionReady,
 		Status:             corev1.ConditionFalse,
 		Reason:             toolchainv1alpha1.ToolchainClusterClusterNotReadyReason,
 		Message:            healthzNotOk,

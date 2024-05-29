@@ -218,7 +218,7 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 
 func IsReady(clusterStatus *toolchainv1alpha1.ToolchainClusterStatus) bool {
 	for _, condition := range clusterStatus.Conditions {
-		if condition.Type == toolchainv1alpha1.ToolchainClusterReady {
+		if condition.Type == toolchainv1alpha1.ConditionReady {
 			if condition.Status == v1.ConditionTrue {
 				return true
 			}

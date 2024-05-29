@@ -176,15 +176,15 @@ func TestGetToolchainClusterConditions(t *testing.T) {
 }
 
 func newGetHostClusterReady() cluster.GetHostClusterFunc {
-	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue, fakeToolchainClusterReason, "", &updatetime)
+	return NewFakeGetHostCluster(true, toolchainv1alpha1.ConditionReady, corev1.ConditionTrue, fakeToolchainClusterReason, "", &updatetime)
 }
 
 func newGetHostClusterNotOk() cluster.GetHostClusterFunc {
-	return NewFakeGetHostCluster(false, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse, fakeToolchainClusterReason, fakeToolchainClusterMsg, &updatetime)
+	return NewFakeGetHostCluster(false, toolchainv1alpha1.ConditionReady, corev1.ConditionFalse, fakeToolchainClusterReason, fakeToolchainClusterMsg, &updatetime)
 }
 
 func newGetHostClusterOkButNotReady(message string) cluster.GetHostClusterFunc {
-	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionFalse, fakeToolchainClusterReason, message, &updatetime)
+	return NewFakeGetHostCluster(true, toolchainv1alpha1.ConditionReady, corev1.ConditionFalse, fakeToolchainClusterReason, message, &updatetime)
 }
 
 func newGetHostClusterOkWithClusterOfflineCondition() cluster.GetHostClusterFunc {
@@ -192,7 +192,7 @@ func newGetHostClusterOkWithClusterOfflineCondition() cluster.GetHostClusterFunc
 }
 
 func newGetHostClusterLastProbeTimeExceeded() cluster.GetHostClusterFunc {
-	return NewFakeGetHostCluster(true, toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue, fakeToolchainClusterReason, fakeToolchainClusterMsg, &updatetime1)
+	return NewFakeGetHostCluster(true, toolchainv1alpha1.ConditionReady, corev1.ConditionTrue, fakeToolchainClusterReason, fakeToolchainClusterMsg, &updatetime1)
 }
 
 // NewGetHostCluster returns cluster.GetHostClusterFunc function. The cluster.CachedToolchainCluster

@@ -148,14 +148,14 @@ ExpConditions:
 }
 func healthy() toolchainv1alpha1.Condition {
 	return toolchainv1alpha1.Condition{
-		Type:    toolchainv1alpha1.ToolchainClusterReady,
+		Type:    toolchainv1alpha1.ConditionReady,
 		Status:  corev1.ConditionTrue,
 		Reason:  "ClusterReady",
 		Message: "/healthz responded with ok",
 	}
 }
 func unhealthy() toolchainv1alpha1.Condition {
-	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ToolchainClusterReady,
+	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ConditionReady,
 		Status:  corev1.ConditionFalse,
 		Reason:  "ClusterNotReady",
 		Message: "/healthz responded without ok",

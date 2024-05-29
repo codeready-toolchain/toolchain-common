@@ -68,7 +68,7 @@ func TestDeleteToolchainClusterWhenDoesNotExist(t *testing.T) {
 
 func TestListToolchainClusterConfigs(t *testing.T) {
 	// given
-	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
+	status := test.NewClusterStatus(toolchainv1alpha1.ConditionReady, corev1.ConditionTrue)
 	require.NoError(t, toolchainv1alpha1.AddToScheme(scheme.Scheme))
 
 	m1, sec1 := test.NewToolchainClusterWithEndpoint("east", test.HostOperatorNs, "secret1", "http://m1.com", status, map[string]string{"ownerClusterName": "m1ClusterName", "namespace": test.MemberOperatorNs, cluster.RoleLabel(cluster.Tenant): ""})
