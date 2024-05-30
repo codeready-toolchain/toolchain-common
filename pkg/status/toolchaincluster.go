@@ -44,15 +44,15 @@ func GetToolchainClusterConditions(logger logr.Logger, attrs ToolchainClusterAtt
 	}
 
 	var lastUpdatedTime metav1.Time
-	foundLastProbeTime := false
+	foundLastUpdatedTime := false
 	for _, condition := range toolchainCluster.ClusterStatus.Conditions {
 		if condition.Type == toolchainv1alpha1.ConditionReady {
 			lastUpdatedTime = *condition.LastUpdatedTime
-			foundLastProbeTime = true
+			foundLastUpdatedTime = true
 		}
 
 	}
-	if !foundLastProbeTime {
+	if !foundLastUpdatedTime {
 		lastProbeNotFoundMsg := "the time of the last probe could not be determined"
 		return []toolchainv1alpha1.Condition{*NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusClusterConnectionNotReadyReason, lastProbeNotFoundMsg)}
 	}
