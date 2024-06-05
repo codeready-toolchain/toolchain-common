@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
+	"github.com/codeready-toolchain/api/api/v1alpha1"
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclientset "k8s.io/client-go/kubernetes"
@@ -27,41 +27,21 @@ type HealthChecker struct {
 	logger                 logr.Logger
 }
 
-func (hc *HealthChecker) updateIndividualClusterStatus(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster) error {
-
-	currentClusterStatus := hc.getClusterHealthStatus(ctx)
-
-	for index, currentCond := range currentClusterStatus.Conditions {
-		for _, previousCond := range toolchainCluster.Status.Conditions {
-			if currentCond.Type == previousCond.Type && currentCond.Status == previousCond.Status {
-				currentClusterStatus.Conditions[index].LastTransitionTime = previousCond.LastTransitionTime
-			}
-		}
-	}
-
-	toolchainCluster.Status = *currentClusterStatus
-	if err := hc.localClusterClient.Status().Update(ctx, toolchainCluster); err != nil {
-		return errors.Wrapf(err, "Failed to update the status of cluster %s", toolchainCluster.Name)
-	}
-	return nil
-}
-
 // getClusterHealthStatus gets the kubernetes cluster health status by requesting "/healthz"
-func (hc *HealthChecker) getClusterHealthStatus(ctx context.Context) *toolchainv1alpha1.ToolchainClusterStatus {
-	clusterStatus := toolchainv1alpha1.ToolchainClusterStatus{}
+func (hc *HealthChecker) getClusterHealthStatus(ctx context.Context) []v1alpha1.Condition {
+	conditions := []v1alpha1.Condition{}
 	body, err := hc.remoteClusterClientset.DiscoveryClient.RESTClient().Get().AbsPath("/healthz").Do(ctx).Raw()
 	if err != nil {
 		hc.logger.Error(err, "Failed to do cluster health check for a ToolchainCluster")
-		clusterStatus.Conditions = append(clusterStatus.Conditions, clusterOfflineCondition())
+		conditions = append(conditions, clusterOfflineCondition())
 	} else {
 		if !strings.EqualFold(string(body), "ok") {
-			clusterStatus.Conditions = append(clusterStatus.Conditions, clusterNotReadyCondition(), clusterNotOfflineCondition())
+			conditions = append(conditions, clusterNotReadyCondition(), clusterNotOfflineCondition())
 		} else {
-			clusterStatus.Conditions = append(clusterStatus.Conditions, clusterReadyCondition())
+			conditions = append(conditions, clusterReadyCondition())
 		}
 	}
-
-	return &clusterStatus
+	return conditions
 }
 
 func clusterReadyCondition() toolchainv1alpha1.Condition {
