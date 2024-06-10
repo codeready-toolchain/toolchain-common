@@ -7,7 +7,6 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,10 +20,10 @@ import (
 
 // Reconciler reconciles a ToolchainCluster object
 type Reconciler struct {
-	Client                  client.Client
-	Scheme                  *runtime.Scheme
-	RequeAfter              time.Duration
-	overwriteRunHealthcheck func(ctx context.Context, lcl client.Client, rcl client.Client, rclset *kubeclientset.Clientset, tc *toolchainv1alpha1.ToolchainCluster, lgr logr.Logger) ([]toolchainv1alpha1.Condition, error)
+	Client      client.Client
+	Scheme      *runtime.Scheme
+	RequeAfter  time.Duration
+	CheckHealth func(context.Context, *kubeclientset.Clientset) []toolchainv1alpha1.Condition
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -80,11 +79,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	}
 
 	// execute healthcheck
-	healthcheckResult, err := r.runHealthcheck(ctx, r.Client, cachedCluster.Client, clientSet, toolchainCluster, reqLogger)
-	if err != nil {
-		reqLogger.Error(err, "unable to run healthcheck for ToolchainCluster")
-		return reconcile.Result{}, err
-	}
+	healthcheckResult := r.runCheckHealthOrDefault(ctx, clientSet)
+
 	// update the status of the individual cluster.
 	if err := r.updateStatus(ctx, toolchainCluster, healthcheckResult); err != nil {
 		reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
@@ -92,20 +88,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	}
 	return reconcile.Result{RequeueAfter: r.RequeAfter}, nil
 }
-func (r *Reconciler) runHealthcheck(ctx context.Context, lcl client.Client, rcl client.Client, rclset *kubeclientset.Clientset, tc *toolchainv1alpha1.ToolchainCluster, lgr logr.Logger) ([]toolchainv1alpha1.Condition, error) {
-	if r.overwriteRunHealthcheck != nil {
-		return r.overwriteRunHealthcheck(ctx, lcl, rcl, rclset, tc, lgr)
-	}
-	healthChecker := &HealthChecker{
-		localClusterClient:     lcl,
-		remoteClusterClient:    rcl,
-		remoteClusterClientset: rclset,
-		logger:                 lgr,
-	}
-	// update the status of the individual cluster.
-	clstatus := healthChecker.getClusterHealthStatus(ctx)
-	return clstatus, nil
 
+func (r *Reconciler) runCheckHealthOrDefault(ctx context.Context, rcc *kubeclientset.Clientset) []toolchainv1alpha1.Condition {
+	if r.CheckHealth != nil {
+		return r.CheckHealth(ctx, rcc)
+	}
+	hcond := getClusterHealthStatus(ctx, rcc)
+	return hcond
 }
 
 func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster, currentconditions []toolchainv1alpha1.Condition) error {

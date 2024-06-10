@@ -6,11 +6,10 @@ import (
 
 	"github.com/codeready-toolchain/api/api/v1alpha1"
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclientset "k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -20,19 +19,13 @@ const (
 	clusterReachableMsg    = "cluster is reachable"
 )
 
-type HealthChecker struct {
-	localClusterClient     client.Client
-	remoteClusterClient    client.Client
-	remoteClusterClientset *kubeclientset.Clientset
-	logger                 logr.Logger
-}
-
 // getClusterHealthStatus gets the kubernetes cluster health status by requesting "/healthz"
-func (hc *HealthChecker) getClusterHealthStatus(ctx context.Context) []v1alpha1.Condition {
+func getClusterHealthStatus(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) []v1alpha1.Condition {
+	lgr := log.FromContext(ctx)
 	conditions := []v1alpha1.Condition{}
-	body, err := hc.remoteClusterClientset.DiscoveryClient.RESTClient().Get().AbsPath("/healthz").Do(ctx).Raw()
+	body, err := remoteClusterClientset.DiscoveryClient.RESTClient().Get().AbsPath("/healthz").Do(ctx).Raw()
 	if err != nil {
-		hc.logger.Error(err, "Failed to do cluster health check for a ToolchainCluster")
+		lgr.Error(err, "Failed to do cluster health check for a ToolchainCluster")
 		conditions = append(conditions, clusterOfflineCondition())
 	} else {
 		if !strings.EqualFold(string(body), "ok") {
