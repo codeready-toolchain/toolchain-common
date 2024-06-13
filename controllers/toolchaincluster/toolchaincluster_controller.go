@@ -7,6 +7,9 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
+	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
+	"github.com/pkg/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubeclientset "k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -54,7 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	cachedCluster, ok := cluster.GetCachedToolchainCluster(toolchainCluster.Name)
 	if !ok {
 		err := fmt.Errorf("cluster %s not found in cache", toolchainCluster.Name)
-		toolchainCluster.Status.Conditions = []toolchainv1alpha1.Condition{clusterOfflineCondition()}
+		toolchainCluster.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(toolchainCluster.Status.Conditions, clusterOfflineCondition())
 		if err := r.Client.Status().Update(ctx, toolchainCluster); err != nil {
 			reqLogger.Error(err, "failed to update the status of ToolchainCluster")
 		}
@@ -64,6 +67,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	clientSet, err := kubeclientset.NewForConfig(cachedCluster.RestConfig)
 	if err != nil {
 		reqLogger.Error(err, "cannot create ClientSet for the ToolchainCluster")
+		toolchainCluster.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(toolchainCluster.Status.Conditions, clusterNotReadyCondition())
 		return reconcile.Result{}, err
 	}
 
@@ -76,4 +80,21 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{RequeueAfter: r.RequeAfter}, nil
+}
+
+func (r *Reconciler) runCheckHealthOrDefault(ctx context.Context, rcc *kubeclientset.Clientset) []toolchainv1alpha1.Condition {
+	if r.CheckHealth != nil {
+		return r.CheckHealth(ctx, rcc)
+	}
+	hcond := getClusterHealthStatus(ctx, rcc)
+	return hcond
+}
+
+func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster, currentconditions []toolchainv1alpha1.Condition) error {
+
+	toolchainCluster.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(toolchainCluster.Status.Conditions, currentconditions...)
+	if err := r.Client.Status().Update(ctx, toolchainCluster); err != nil {
+		return errors.Wrapf(err, "Failed to update the status of cluster %s", toolchainCluster.Name)
+	}
+	return nil
 }
