@@ -38,8 +38,9 @@ func NewToolchainClusterWithEndpoint(name, tcNs, secName, apiEndpoint string, st
 			SecretRef: toolchainv1alpha1.LocalSecretReference{
 				Name: secName,
 			},
-			APIEndpoint: apiEndpoint,
-			CABundle:    "",
+			APIEndpoint:            apiEndpoint,
+			CABundle:               "",
+			DisabledTLSValidations: []toolchainv1alpha1.TLSValidation{toolchainv1alpha1.TLSAll},
 		},
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,
