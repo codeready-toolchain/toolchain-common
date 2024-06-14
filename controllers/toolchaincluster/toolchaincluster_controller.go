@@ -7,7 +7,6 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
-	"golang.org/x/exp/slices"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -114,13 +113,27 @@ func (r *Reconciler) migrateSecretToKubeConfig(ctx context.Context, tc *toolchai
 	origKubeConfigData := secret.Data["kubeconfig"]
 	secret.Data["kubeconfig"] = data
 
-	if !slices.Equal(origKubeConfigData, data) {
+	if !bytesEqual(origKubeConfigData, data) {
 		if err = r.Client.Update(ctx, secret); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func bytesEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+
+	return true
 }
 
 func composeKubeConfigFromData(token []byte, apiEndpoint, operatorNamespace, caCertificate string) clientcmdapi.Config {
