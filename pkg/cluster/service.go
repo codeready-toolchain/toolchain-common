@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"reflect"
 	"time"
@@ -192,13 +191,8 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 		return nil, err
 	}
 
-	if toolchainCluster.Spec.CABundle != "" {
-		ca, err := base64.StdEncoding.DecodeString(toolchainCluster.Spec.CABundle)
-		if err != nil {
-			return nil, err
-		}
-		restConfig.CAData = ca
-	} else {
+	if len(toolchainCluster.Spec.DisabledTLSValidations) == 1 &&
+		toolchainCluster.Spec.DisabledTLSValidations[0] == toolchainv1alpha1.TLSAll {
 		restConfig.Insecure = true
 	}
 	restConfig.BearerToken = string(token)
