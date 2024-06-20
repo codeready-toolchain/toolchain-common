@@ -8,11 +8,13 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
+	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	kubeclientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -72,7 +74,6 @@ func TestClusterControllerChecks(t *testing.T) {
 			}
 			return cl.Client.Get(ctx, key, obj, opts...)
 		}
-
 		controller, req := prepareReconcile(tc, cl, requeAfter)
 
 		// when
@@ -89,6 +90,7 @@ func TestClusterControllerChecks(t *testing.T) {
 
 		cl := test.NewFakeClient(t, stable, sec)
 		reset := setupCachedClusters(t, cl, stable)
+		stable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(stable.Status.Conditions, clusterReadyCondition())
 		defer reset()
 		controller, req := prepareReconcile(stable, cl, requeAfter)
 
@@ -106,7 +108,7 @@ func TestClusterControllerChecks(t *testing.T) {
 		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, stable)
-
+		stable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(stable.Status.Conditions, clusterOfflineCondition())
 		controller, req := prepareReconcile(stable, cl, requeAfter)
 
 		// when
@@ -151,6 +153,9 @@ func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *
 		Client:     cl,
 		Scheme:     scheme.Scheme,
 		RequeAfter: requeAfter,
+		CheckHealth: func(context.Context, *kubeclientset.Clientset) []toolchainv1alpha1.Condition {
+			return toolchainCluster.Status.Conditions
+		},
 	}
 	req := reconcile.Request{
 		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
