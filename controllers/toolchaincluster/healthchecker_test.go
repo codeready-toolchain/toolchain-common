@@ -42,57 +42,57 @@ func TestClusterHealthChecks(t *testing.T) {
 		status            toolchainv1alpha1.ToolchainClusterStatus
 	}{
 		//ToolchainCluster.status doesn't contain any conditions
-		// "UnstableNoCondition": {
-		// 	tctype:            "unstable",
-		// 	apiendpoint:       "http://unstable.com",
-		// 	clusterconditions: []toolchainv1alpha1.Condition{unhealthy(), notOffline()},
-		// 	status:            toolchainv1alpha1.ToolchainClusterStatus{},
-		// },
+		"UnstableNoCondition": {
+			tctype:            "unstable",
+			apiendpoint:       "http://unstable.com",
+			clusterconditions: []toolchainv1alpha1.Condition{unhealthy(), notOffline()},
+			status:            toolchainv1alpha1.ToolchainClusterStatus{},
+		},
 		"StableNoCondition": {
 			tctype:            "stable",
 			apiendpoint:       "http://cluster.com",
 			clusterconditions: []toolchainv1alpha1.Condition{healthy()},
 			status:            toolchainv1alpha1.ToolchainClusterStatus{},
 		},
-		// "NotFoundNoCondition": {
-		// 	tctype:            "not-found",
-		// 	apiendpoint:       "http://not-found.com",
-		// 	clusterconditions: []toolchainv1alpha1.Condition{offline()},
-		// 	status:            toolchainv1alpha1.ToolchainClusterStatus{},
-		// },
+		"NotFoundNoCondition": {
+			tctype:            "not-found",
+			apiendpoint:       "http://not-found.com",
+			clusterconditions: []toolchainv1alpha1.Condition{offline()},
+			status:            toolchainv1alpha1.ToolchainClusterStatus{},
+		},
 		//ToolchainCluster.status already contains conditions
-		// "UnstableContainsCondition": {
-		// 	tctype:            "unstable",
-		// 	apiendpoint:       "http://unstable.com",
-		// 	clusterconditions: []toolchainv1alpha1.Condition{unhealthy(), notOffline()},
-		// 	status:            withStatus(healthy()),
-		// },
-		// "StableContainsCondition": {
-		// 	tctype:            "stable",
-		// 	apiendpoint:       "http://cluster.com",
-		// 	clusterconditions: []toolchainv1alpha1.Condition{healthy()},
-		// 	status:            withStatus(offline()),
-		// },
-		// "NotFoundContainsCondition": {
-		// 	tctype:            "not-found",
-		// 	apiendpoint:       "http://not-found.com",
-		// 	clusterconditions: []toolchainv1alpha1.Condition{offline()},
-		// 	status:            withStatus(healthy()),
-		// },
-		// //if the connection cannot be established at beginning, then it should be offline
-		// "OfflineConnectionNotEstablished": {
-		// 	tctype:            "failing",
-		// 	apiendpoint:       "http://failing.com",
-		// 	clusterconditions: []toolchainv1alpha1.Condition{offline()},
-		// 	status:            toolchainv1alpha1.ToolchainClusterStatus{},
-		// },
-		// //if no zones nor region is retrieved, then keep the current
-		// "NoZoneKeepCurrent": {
-		// 	tctype:            "stable",
-		// 	apiendpoint:       "http://cluster.com",
-		// 	clusterconditions: []toolchainv1alpha1.Condition{healthy()},
-		// 	status:            withStatus(offline()),
-		// },
+		"UnstableContainsCondition": {
+			tctype:            "unstable",
+			apiendpoint:       "http://unstable.com",
+			clusterconditions: []toolchainv1alpha1.Condition{unhealthy(), notOffline()},
+			status:            withStatus(healthy()),
+		},
+		"StableContainsCondition": {
+			tctype:            "stable",
+			apiendpoint:       "http://cluster.com",
+			clusterconditions: []toolchainv1alpha1.Condition{healthy()},
+			status:            withStatus(offline()),
+		},
+		"NotFoundContainsCondition": {
+			tctype:            "not-found",
+			apiendpoint:       "http://not-found.com",
+			clusterconditions: []toolchainv1alpha1.Condition{offline()},
+			status:            withStatus(healthy()),
+		},
+		//if the connection cannot be established at beginning, then it should be offline
+		"OfflineConnectionNotEstablished": {
+			tctype:            "failing",
+			apiendpoint:       "http://failing.com",
+			clusterconditions: []toolchainv1alpha1.Condition{offline()},
+			status:            toolchainv1alpha1.ToolchainClusterStatus{},
+		},
+		//if no zones nor region is retrieved, then keep the current
+		"NoZoneKeepCurrent": {
+			tctype:            "stable",
+			apiendpoint:       "http://cluster.com",
+			clusterconditions: []toolchainv1alpha1.Condition{healthy()},
+			status:            withStatus(offline()),
+		},
 	}
 	for k, tc := range tests {
 		t.Run(k, func(t *testing.T) {
@@ -117,11 +117,11 @@ func TestClusterHealthChecks(t *testing.T) {
 	}
 }
 
-//	func withStatus(conditions ...toolchainv1alpha1.Condition) toolchainv1alpha1.ToolchainClusterStatus {
-//		return toolchainv1alpha1.ToolchainClusterStatus{
-//			Conditions: conditions,
-//		}
-//	}
+func withStatus(conditions ...toolchainv1alpha1.Condition) toolchainv1alpha1.ToolchainClusterStatus {
+	return toolchainv1alpha1.ToolchainClusterStatus{
+		Conditions: conditions,
+	}
+}
 func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clusterConds ...toolchainv1alpha1.Condition) {
 	tc := &toolchainv1alpha1.ToolchainCluster{}
 	err := cl.Get(context.TODO(), test.NamespacedName("test-namespace", clusterName), tc)
