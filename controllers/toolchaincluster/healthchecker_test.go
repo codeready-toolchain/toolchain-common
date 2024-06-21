@@ -12,7 +12,6 @@ import (
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
 	kubeclientset "k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestClusterHealthChecks(t *testing.T) {
@@ -46,52 +45,44 @@ func TestClusterHealthChecks(t *testing.T) {
 			tctype:            "unstable",
 			apiendpoint:       "http://unstable.com",
 			clusterconditions: []toolchainv1alpha1.Condition{unhealthy(), notOffline()},
-			status:            toolchainv1alpha1.ToolchainClusterStatus{},
 		},
 		"StableNoCondition": {
 			tctype:            "stable",
 			apiendpoint:       "http://cluster.com",
 			clusterconditions: []toolchainv1alpha1.Condition{healthy()},
-			status:            toolchainv1alpha1.ToolchainClusterStatus{},
 		},
 		"NotFoundNoCondition": {
 			tctype:            "not-found",
 			apiendpoint:       "http://not-found.com",
 			clusterconditions: []toolchainv1alpha1.Condition{offline()},
-			status:            toolchainv1alpha1.ToolchainClusterStatus{},
 		},
 		//ToolchainCluster.status already contains conditions
 		"UnstableContainsCondition": {
 			tctype:            "unstable",
 			apiendpoint:       "http://unstable.com",
 			clusterconditions: []toolchainv1alpha1.Condition{unhealthy(), notOffline()},
-			status:            withStatus(healthy()),
 		},
 		"StableContainsCondition": {
 			tctype:            "stable",
 			apiendpoint:       "http://cluster.com",
 			clusterconditions: []toolchainv1alpha1.Condition{healthy()},
-			status:            withStatus(offline()),
 		},
 		"NotFoundContainsCondition": {
 			tctype:            "not-found",
 			apiendpoint:       "http://not-found.com",
 			clusterconditions: []toolchainv1alpha1.Condition{offline()},
-			status:            withStatus(healthy()),
 		},
 		//if the connection cannot be established at beginning, then it should be offline
 		"OfflineConnectionNotEstablished": {
 			tctype:            "failing",
 			apiendpoint:       "http://failing.com",
 			clusterconditions: []toolchainv1alpha1.Condition{offline()},
-			status:            toolchainv1alpha1.ToolchainClusterStatus{},
 		},
 		//if no zones nor region is retrieved, then keep the current
 		"NoZoneKeepCurrent": {
 			tctype:            "stable",
 			apiendpoint:       "http://cluster.com",
 			clusterconditions: []toolchainv1alpha1.Condition{healthy()},
-			status:            withStatus(offline()),
 		},
 	}
 	for k, tc := range tests {
@@ -127,29 +118,6 @@ func TestClusterHealthChecks(t *testing.T) {
 	}
 }
 
-func withStatus(conditions ...toolchainv1alpha1.Condition) toolchainv1alpha1.ToolchainClusterStatus {
-	return toolchainv1alpha1.ToolchainClusterStatus{
-		Conditions: conditions,
-	}
-}
-func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clusterConds ...toolchainv1alpha1.Condition) {
-	tc := &toolchainv1alpha1.ToolchainCluster{}
-	err := cl.Get(context.TODO(), test.NamespacedName("test-namespace", clusterName), tc)
-	require.NoError(t, err)
-	assert.Len(t, tc.Status.Conditions, len(clusterConds))
-ExpConditions:
-	for _, expCond := range clusterConds {
-		for _, cond := range tc.Status.Conditions {
-			if expCond.Type == cond.Type {
-				assert.Equal(t, expCond.Status, cond.Status)
-				assert.Equal(t, expCond.Reason, cond.Reason)
-				assert.Equal(t, expCond.Message, cond.Message)
-				continue ExpConditions
-			}
-		}
-		assert.Failf(t, "condition not found", "the list of conditions %v doesn't contain the expected condition %v", tc.Status.Conditions, expCond)
-	}
-}
 func healthy() toolchainv1alpha1.Condition {
 	return toolchainv1alpha1.Condition{
 		Type:    toolchainv1alpha1.ConditionReady,

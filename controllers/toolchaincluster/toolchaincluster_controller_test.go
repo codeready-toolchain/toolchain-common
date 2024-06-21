@@ -10,6 +10,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
@@ -121,6 +122,45 @@ func TestClusterControllerChecks(t *testing.T) {
 		assertClusterStatus(t, cl, "stable", healthy())
 	})
 
+	t.Run("Updates the empty condition with a new one ", func(t *testing.T) {
+		// given
+		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
+
+		cl := test.NewFakeClient(t, stable, sec)
+		reset := setupCachedClusters(t, cl, stable)
+		defer reset()
+		controller, req := prepareReconcile(stable, cl, requeAfter)
+		controller.CheckHealth = func(ctx context.Context, c *kubeclientset.Clientset) []toolchainv1alpha1.Condition {
+			return []toolchainv1alpha1.Condition{healthy()}
+		}
+		// when
+		recresult, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.Equal(t, err, nil)
+		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
+		assertClusterStatus(t, cl, "stable", healthy())
+	})
+
+	t.Run("adds a new condition when tc already has a condition ", func(t *testing.T) {
+		// given
+		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(notOffline()))
+
+		cl := test.NewFakeClient(t, stable, sec)
+		reset := setupCachedClusters(t, cl, stable)
+		defer reset()
+		controller, req := prepareReconcile(stable, cl, requeAfter)
+		controller.CheckHealth = func(ctx context.Context, c *kubeclientset.Clientset) []toolchainv1alpha1.Condition {
+			return []toolchainv1alpha1.Condition{healthy()}
+		}
+		// when
+		recresult, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.Equal(t, err, nil)
+		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
+		assertClusterStatus(t, cl, "stable", notOffline(), healthy())
+	})
 	t.Run("toolchain cluster cache not found", func(t *testing.T) {
 		// given
 		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
@@ -191,4 +231,28 @@ func prepareCheckHealthDefaultReconcile(toolchainCluster *toolchainv1alpha1.Tool
 		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
 	}
 	return controller, req
+}
+
+func withStatus(conditions ...toolchainv1alpha1.Condition) toolchainv1alpha1.ToolchainClusterStatus {
+	return toolchainv1alpha1.ToolchainClusterStatus{
+		Conditions: conditions,
+	}
+}
+func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clusterConds ...toolchainv1alpha1.Condition) {
+	tc := &toolchainv1alpha1.ToolchainCluster{}
+	err := cl.Get(context.TODO(), test.NamespacedName("test-namespace", clusterName), tc)
+	require.NoError(t, err)
+	assert.Len(t, tc.Status.Conditions, len(clusterConds))
+ExpConditions:
+	for _, expCond := range clusterConds {
+		for _, cond := range tc.Status.Conditions {
+			if expCond.Type == cond.Type {
+				assert.Equal(t, expCond.Status, cond.Status)
+				assert.Equal(t, expCond.Reason, cond.Reason)
+				assert.Equal(t, expCond.Message, cond.Message)
+				continue ExpConditions
+			}
+		}
+		assert.Failf(t, "condition not found", "the list of conditions %v doesn't contain the expected condition %v", tc.Status.Conditions, expCond)
+	}
 }
