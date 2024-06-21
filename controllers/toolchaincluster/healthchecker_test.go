@@ -107,12 +107,22 @@ func TestClusterHealthChecks(t *testing.T) {
 
 			//when
 			hcond := getClusterHealthStatus(context.TODO(), cacheclient)
-			//fmt.Printf("hcond %+v", hcond)
+
 			//then
-			require.NoError(t, err)
-			//fmt.Printf("tc cond %+v", tc.clusterconditions)
-			//assertClusterStatus(t, cl, tc.tctype, hcond...)
-			assert.Equal(t, hcond[0].Status, tc.clusterconditions[0].Status)
+			assert.Len(t, tc.clusterconditions, len(hcond))
+		SetConditions:
+			for _, hc := range hcond {
+				for _, tco := range tc.clusterconditions {
+					if hc.Type == tco.Type {
+						assert.Equal(t, tco.Status, hc.Status)
+						assert.Equal(t, tco.Reason, hc.Reason)
+						assert.Equal(t, tco.Message, hc.Message)
+						continue SetConditions
+					}
+				}
+				assert.Failf(t, "condition not found", "the list of conditions %v doesn't contain the expected condition %v", tc.clusterconditions, hc)
+			}
+
 		})
 	}
 }

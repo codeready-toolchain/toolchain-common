@@ -67,7 +67,6 @@ func TestClusterControllerChecks(t *testing.T) {
 		tc, sec := newToolchainCluster("tc", tcNs, "http://tc.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, sec)
-
 		cl.MockGet = func(ctx context.Context, key runtimeclient.ObjectKey, obj runtimeclient.Object, opts ...runtimeclient.GetOption) error {
 			if _, ok := obj.(*toolchainv1alpha1.ToolchainCluster); ok {
 				return fmt.Errorf("mock error")
@@ -93,6 +92,25 @@ func TestClusterControllerChecks(t *testing.T) {
 		stable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(stable.Status.Conditions, clusterReadyCondition())
 		defer reset()
 		controller, req := prepareReconcile(stable, cl, requeAfter)
+
+		// when
+		recresult, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.Equal(t, err, nil)
+		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
+		assertClusterStatus(t, cl, "stable", healthy())
+	})
+
+	t.Run("Checking the run check health default ", func(t *testing.T) {
+		// given
+		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
+
+		cl := test.NewFakeClient(t, stable, sec)
+		reset := setupCachedClusters(t, cl, stable)
+		stable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(stable.Status.Conditions, clusterReadyCondition())
+		defer reset()
+		controller, req := prepareCheckHealthDefaultReconcile(stable, cl, requeAfter)
 
 		// when
 		recresult, err := controller.Reconcile(context.TODO(), req)
@@ -156,6 +174,18 @@ func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *
 		CheckHealth: func(context.Context, *kubeclientset.Clientset) []toolchainv1alpha1.Condition {
 			return toolchainCluster.Status.Conditions
 		},
+	}
+	req := reconcile.Request{
+		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
+	}
+	return controller, req
+}
+
+func prepareCheckHealthDefaultReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, requeAfter time.Duration) (Reconciler, reconcile.Request) {
+	controller := Reconciler{
+		Client:     cl,
+		Scheme:     scheme.Scheme,
+		RequeAfter: requeAfter,
 	}
 	req := reconcile.Request{
 		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
