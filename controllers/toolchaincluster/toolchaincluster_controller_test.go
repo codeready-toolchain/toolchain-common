@@ -133,7 +133,7 @@ func TestClusterControllerChecks(t *testing.T) {
 		defer reset()
 
 		controller, req := prepareReconcile(tc, cl, requeAfter)
-		expectedKubeConfig := composeKubeConfigFromData([]byte("mycooltoken"), "http://cluster.com", "test-namespace", "")
+		expectedKubeConfig := composeKubeConfigFromData([]byte("mycooltoken"), "http://cluster.com", "test-namespace", true)
 
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
@@ -162,7 +162,7 @@ func TestClusterControllerChecks(t *testing.T) {
 
 func TestComposeKubeConfig(t *testing.T) {
 	// when
-	kubeConfig := composeKubeConfigFromData([]byte("token"), "http://over.the.rainbow", "the-namespace", "secure-certificate")
+	kubeConfig := composeKubeConfigFromData([]byte("token"), "http://over.the.rainbow", "the-namespace", false)
 
 	// then
 	context := kubeConfig.Contexts[kubeConfig.CurrentContext]
@@ -170,7 +170,7 @@ func TestComposeKubeConfig(t *testing.T) {
 	assert.Equal(t, "token", kubeConfig.AuthInfos[context.AuthInfo].Token)
 	assert.Equal(t, "http://over.the.rainbow", kubeConfig.Clusters[context.Cluster].Server)
 	assert.Equal(t, "the-namespace", context.Namespace)
-	assert.Equal(t, []byte("secure-certificate"), kubeConfig.Clusters[context.Cluster].CertificateAuthorityData)
+	assert.False(t, kubeConfig.Clusters[context.Cluster].InsecureSkipTLSVerify)
 }
 
 func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolchainv1alpha1.ToolchainCluster) func() {

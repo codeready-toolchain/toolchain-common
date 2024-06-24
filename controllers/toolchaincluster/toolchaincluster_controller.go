@@ -1,6 +1,7 @@
 package toolchaincluster
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -54,10 +55,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		return reconcile.Result{}, err
 	}
 
-	if err = r.migrateSecretToKubeConfig(ctx, toolchainCluster); err != nil {
-		return reconcile.Result{}, err
-	}
-
 	cachedCluster, ok := cluster.GetCachedToolchainCluster(toolchainCluster.Name)
 	if !ok {
 		err := fmt.Errorf("cluster %s not found in cache", toolchainCluster.Name)
@@ -65,6 +62,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		if err := r.Client.Status().Update(ctx, toolchainCluster); err != nil {
 			reqLogger.Error(err, "failed to update the status of ToolchainCluster")
 		}
+		return reconcile.Result{}, err
+	}
+
+	if err = r.migrateSecretToKubeConfig(ctx, toolchainCluster); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -101,9 +102,10 @@ func (r *Reconciler) migrateSecretToKubeConfig(ctx context.Context, tc *toolchai
 	token := secret.Data["token"]
 	apiEndpoint := tc.Spec.APIEndpoint
 	operatorNamespace := tc.Labels["namespace"]
-	caCertificate := tc.Spec.CABundle
-
-	kubeConfig := composeKubeConfigFromData(token, apiEndpoint, operatorNamespace, caCertificate)
+	insecureTls := len(tc.Spec.DisabledTLSValidations) == 1 && tc.Spec.DisabledTLSValidations[0] == "*"
+	// we ignore the Spec.CABundle here because we don't want it migrated. The new configurations are free
+	// to use the certificate data for the connections but we don't want to migrate the existing certificates.
+	kubeConfig := composeKubeConfigFromData(token, apiEndpoint, operatorNamespace, insecureTls)
 
 	data, err := clientcmd.Write(kubeConfig)
 	if err != nil {
@@ -113,7 +115,7 @@ func (r *Reconciler) migrateSecretToKubeConfig(ctx context.Context, tc *toolchai
 	origKubeConfigData := secret.Data["kubeconfig"]
 	secret.Data["kubeconfig"] = data
 
-	if !bytesEqual(origKubeConfigData, data) {
+	if !bytes.Equal(origKubeConfigData, data) {
 		if err = r.Client.Update(ctx, secret); err != nil {
 			return err
 		}
@@ -122,26 +124,7 @@ func (r *Reconciler) migrateSecretToKubeConfig(ctx context.Context, tc *toolchai
 	return nil
 }
 
-func bytesEqual(a, b []byte) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-
-	return true
-}
-
-func composeKubeConfigFromData(token []byte, apiEndpoint, operatorNamespace, caCertificate string) clientcmdapi.Config {
-	var caCertificateBytes []byte
-	if len(caCertificate) > 0 {
-		caCertificateBytes = []byte(caCertificate)
-	}
-
+func composeKubeConfigFromData(token []byte, apiEndpoint, operatorNamespace string, insecureTls bool) clientcmdapi.Config {
 	return clientcmdapi.Config{
 		Contexts: map[string]*clientcmdapi.Context{
 			"ctx": {
@@ -153,8 +136,8 @@ func composeKubeConfigFromData(token []byte, apiEndpoint, operatorNamespace, caC
 		CurrentContext: "ctx",
 		Clusters: map[string]*clientcmdapi.Cluster{
 			"cluster": {
-				Server:                   apiEndpoint,
-				CertificateAuthorityData: caCertificateBytes,
+				Server:                apiEndpoint,
+				InsecureSkipTLSVerify: insecureTls,
 			},
 		},
 		AuthInfos: map[string]*clientcmdapi.AuthInfo{
