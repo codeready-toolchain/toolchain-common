@@ -51,6 +51,23 @@ func TestGetInt(t *testing.T) {
 	})
 }
 
+func TestGetUint(t *testing.T) {
+	t.Run("when value is nil use default value", func(t *testing.T) {
+		// when
+		res := GetUint(nil, 5)
+		// then
+		assert.Equal(t, uint(5), res)
+	})
+	t.Run("use value when provided", func(t *testing.T) {
+		// given
+		var v uint = 10
+		// when
+		res := GetUint(&v, 5)
+		// then
+		assert.Equal(t, uint(10), res)
+	})
+}
+
 func TestGetInt32(t *testing.T) {
 	t.Run("when value is nil use default value", func(t *testing.T) {
 		// when

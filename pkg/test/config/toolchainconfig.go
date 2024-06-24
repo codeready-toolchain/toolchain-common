@@ -579,6 +579,19 @@ func (o TiersOption) DurationBeforeChangeTierRequestDeletion(value string) Tiers
 	return o
 }
 
+func (o TiersOption) FeatureToggle(name string, weight *uint) TiersOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		if config.Spec.Host.Tiers.FeatureToggles == nil {
+			config.Spec.Host.Tiers.FeatureToggles = make([]toolchainv1alpha1.FeatureToggle, 0)
+		}
+		config.Spec.Host.Tiers.FeatureToggles = append(config.Spec.Host.Tiers.FeatureToggles, toolchainv1alpha1.FeatureToggle{
+			Name:   name,
+			Weight: weight,
+		})
+	})
+	return o
+}
+
 type ToolchainStatusOption struct {
 	*ToolchainConfigOptionImpl
 }
