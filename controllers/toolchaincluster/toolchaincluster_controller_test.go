@@ -86,11 +86,11 @@ func TestClusterControllerChecks(t *testing.T) {
 
 	t.Run("reconcile successful and requeued", func(t *testing.T) {
 		// given
-		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(healthy()))
 
 		cl := test.NewFakeClient(t, stable, sec)
 		reset := setupCachedClusters(t, cl, stable)
-		stable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(stable.Status.Conditions, clusterReadyCondition())
+
 		defer reset()
 		controller, req := prepareReconcile(stable, cl, requeAfter)
 
@@ -105,11 +105,10 @@ func TestClusterControllerChecks(t *testing.T) {
 
 	t.Run("Checking the run check health default ", func(t *testing.T) {
 		// given
-		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(healthy()))
 
 		cl := test.NewFakeClient(t, stable, sec)
 		reset := setupCachedClusters(t, cl, stable)
-		stable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(stable.Status.Conditions, clusterReadyCondition())
 		defer reset()
 		controller, req := prepareCheckHealthDefaultReconcile(stable, cl, requeAfter)
 
