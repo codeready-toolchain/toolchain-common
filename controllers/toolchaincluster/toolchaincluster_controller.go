@@ -57,7 +57,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	cachedCluster, ok := cluster.GetCachedToolchainCluster(toolchainCluster.Name)
 	if !ok {
 		err := fmt.Errorf("cluster %s not found in cache", toolchainCluster.Name)
-		r.updateStatus(ctx, toolchainCluster, clusterOfflineCondition())
+		if err := r.updateStatus(ctx, toolchainCluster, clusterOfflineCondition()); err != nil {
+			reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
+		}
 		return reconcile.Result{}, err
 	}
 
@@ -65,7 +67,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	clientSet, err := kubeclientset.NewForConfig(cachedCluster.RestConfig)
 	if err != nil {
 		reqLogger.Error(err, "cannot create ClientSet for the ToolchainCluster")
-		r.updateStatus(ctx, toolchainCluster, clusterNotReadyCondition())
+		if err := r.updateStatus(ctx, toolchainCluster, clusterNotReadyCondition()); err != nil {
+			reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
+		}
 		return reconcile.Result{}, err
 	}
 
