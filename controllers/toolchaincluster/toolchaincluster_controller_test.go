@@ -121,6 +121,53 @@ func TestClusterControllerChecks(t *testing.T) {
 		require.NoError(t, err)
 		assertClusterStatus(t, cl, "unstable", offline())
 	})
+
+	t.Run("error while updating a toolchain cluster status on cache not found", func(t *testing.T) {
+		// given
+		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		stable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(stable.Status.Conditions, healthy())
+
+		cl := test.NewFakeClient(t, stable)
+		cl.MockStatusUpdate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
+			return fmt.Errorf("mock error")
+		}
+		stable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(stable.Status.Conditions, clusterOfflineCondition())
+		controller, req := prepareReconcile(stable, cl, requeAfter)
+
+		// when
+		recresult, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.EqualError(t, err, "cluster stable not found in cache")
+		require.Equal(t, reconcile.Result{}, recresult)
+
+		actualtoolchaincluster := &toolchainv1alpha1.ToolchainCluster{}
+		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: "stable", Namespace: tcNs}, actualtoolchaincluster)
+		require.NoError(t, err)
+		assertClusterStatus(t, cl, "stable", healthy())
+	})
+
+	t.Run("error while updating a toolchain cluster status", func(t *testing.T) {
+		// given
+		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(healthy()))
+		serr := fmt.Errorf("my test error")
+		cl := test.NewFakeClient(t, stable, sec)
+		cl.MockStatusUpdate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
+			return serr
+		}
+		reset := setupCachedClusters(t, cl, stable)
+
+		defer reset()
+		controller, req := prepareReconcile(stable, cl, requeAfter)
+
+		// when
+		recresult, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.EqualError(t, err, fmt.Sprintf("Failed to update the status of cluster %s: %v", stable.Name, serr))
+		require.Equal(t, reconcile.Result{}, recresult)
+		assertClusterStatus(t, cl, "stable", healthy())
+	})
 }
 
 func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolchainv1alpha1.ToolchainCluster) func() {
