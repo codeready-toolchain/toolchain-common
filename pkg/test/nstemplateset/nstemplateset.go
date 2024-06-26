@@ -122,3 +122,12 @@ func WithDeletionTimestamp(ts time.Time) Option {
 		nstmplSet.DeletionTimestamp = &metav1.Time{Time: ts}
 	}
 }
+
+func WithAnnotation(key, value string) Option {
+	return func(nstmplSet *toolchainv1alpha1.NSTemplateSet) {
+		if nstmplSet.ObjectMeta.Annotations == nil {
+			nstmplSet.ObjectMeta.Annotations = map[string]string{}
+		}
+		nstmplSet.ObjectMeta.Annotations[key] = value
+	}
+}

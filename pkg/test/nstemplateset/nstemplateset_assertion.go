@@ -142,6 +142,14 @@ func (a *Assertion) HasSpaceRoles(expectedSpaceRoles ...toolchainv1alpha1.NSTemp
 	return a
 }
 
+func (a *Assertion) HasAnnotationWithValue(key, value string) *Assertion {
+	err := a.loadNSTemplateSet()
+	require.NoError(a.t, err)
+	require.NotNil(a.t, a.nsTmplSet.Annotations)
+	assert.Equal(a.t, value, a.nsTmplSet.Annotations[key])
+	return a
+}
+
 func SpaceRole(templateRef string, usernames ...string) toolchainv1alpha1.NSTemplateSetSpaceRole {
 	return toolchainv1alpha1.NSTemplateSetSpaceRole{
 		TemplateRef: templateRef,
