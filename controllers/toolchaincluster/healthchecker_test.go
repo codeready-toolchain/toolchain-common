@@ -97,7 +97,7 @@ func TestClusterHealthChecks(t *testing.T) {
 			require.NoError(t, err)
 
 			//when
-			hcond := getClusterHealthStatus(context.TODO(), cacheclient)
+			hcond := GetClusterHealthStatus(context.TODO(), cacheclient)
 
 			//then
 			assert.Len(t, tc.clusterconditions, len(hcond))

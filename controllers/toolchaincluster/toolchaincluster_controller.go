@@ -57,10 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	cachedCluster, ok := cluster.GetCachedToolchainCluster(toolchainCluster.Name)
 	if !ok {
 		err := fmt.Errorf("cluster %s not found in cache", toolchainCluster.Name)
-		toolchainCluster.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(toolchainCluster.Status.Conditions, clusterOfflineCondition())
-		if err := r.Client.Status().Update(ctx, toolchainCluster); err != nil {
-			reqLogger.Error(err, "failed to update the status of ToolchainCluster")
-		}
+		r.updateStatus(ctx, toolchainCluster, clusterOfflineCondition())
 		return reconcile.Result{}, err
 	}
 
@@ -68,30 +65,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	clientSet, err := kubeclientset.NewForConfig(cachedCluster.RestConfig)
 	if err != nil {
 		reqLogger.Error(err, "cannot create ClientSet for the ToolchainCluster")
-		toolchainCluster.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(toolchainCluster.Status.Conditions, clusterNotReadyCondition())
+		r.updateStatus(ctx, toolchainCluster, clusterNotReadyCondition())
 		return reconcile.Result{}, err
 	}
 
 	// execute healthcheck
-	healthcheckResult := r.runCheckHealthOrDefault(ctx, clientSet)
+	healthcheckResult := r.CheckHealth(ctx, clientSet)
 
 	// update the status of the individual cluster.
-	if err := r.updateStatus(ctx, toolchainCluster, healthcheckResult); err != nil {
+	if err := r.updateStatus(ctx, toolchainCluster, healthcheckResult...); err != nil {
 		reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{RequeueAfter: r.RequeAfter}, nil
 }
 
-func (r *Reconciler) runCheckHealthOrDefault(ctx context.Context, rcc *kubeclientset.Clientset) []toolchainv1alpha1.Condition {
-	if r.CheckHealth != nil {
-		return r.CheckHealth(ctx, rcc)
-	}
-	hcond := getClusterHealthStatus(ctx, rcc)
-	return hcond
-}
-
-func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster, currentconditions []toolchainv1alpha1.Condition) error {
+func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster, currentconditions ...toolchainv1alpha1.Condition) error {
 
 	toolchainCluster.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(toolchainCluster.Status.Conditions, currentconditions...)
 	if err := r.Client.Status().Update(ctx, toolchainCluster); err != nil {

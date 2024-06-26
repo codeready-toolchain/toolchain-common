@@ -19,8 +19,8 @@ const (
 	clusterReachableMsg    = "cluster is reachable"
 )
 
-// getClusterHealthStatus gets the kubernetes cluster health status by requesting "/healthz"
-func getClusterHealthStatus(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) []v1alpha1.Condition {
+// GetClusterHealthStatus gets the kubernetes cluster health status by requesting "/healthz"
+func GetClusterHealthStatus(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) []v1alpha1.Condition {
 	lgr := log.FromContext(ctx)
 	conditions := []v1alpha1.Condition{}
 	body, err := remoteClusterClientset.DiscoveryClient.RESTClient().Get().AbsPath("/healthz").Do(ctx).Raw()

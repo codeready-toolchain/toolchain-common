@@ -103,63 +103,6 @@ func TestClusterControllerChecks(t *testing.T) {
 		assertClusterStatus(t, cl, "stable", healthy())
 	})
 
-	t.Run("Checking the run check health default ", func(t *testing.T) {
-		// given
-		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(healthy()))
-
-		cl := test.NewFakeClient(t, stable, sec)
-		reset := setupCachedClusters(t, cl, stable)
-		defer reset()
-		controller, req := prepareCheckHealthDefaultReconcile(stable, cl, requeAfter)
-
-		// when
-		recresult, err := controller.Reconcile(context.TODO(), req)
-
-		// then
-		require.Equal(t, err, nil)
-		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
-		assertClusterStatus(t, cl, "stable", healthy())
-	})
-
-	t.Run("Updates the empty condition with a new one ", func(t *testing.T) {
-		// given
-		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
-
-		cl := test.NewFakeClient(t, stable, sec)
-		reset := setupCachedClusters(t, cl, stable)
-		defer reset()
-		controller, req := prepareReconcile(stable, cl, requeAfter)
-		controller.CheckHealth = func(ctx context.Context, c *kubeclientset.Clientset) []toolchainv1alpha1.Condition {
-			return []toolchainv1alpha1.Condition{healthy()}
-		}
-		// when
-		recresult, err := controller.Reconcile(context.TODO(), req)
-
-		// then
-		require.Equal(t, err, nil)
-		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
-		assertClusterStatus(t, cl, "stable", healthy())
-	})
-
-	t.Run("adds a new condition when tc already has a condition ", func(t *testing.T) {
-		// given
-		unstable, sec := newToolchainCluster("unstable", tcNs, "http://cluster.com", withStatus(notOffline()))
-
-		cl := test.NewFakeClient(t, unstable, sec)
-		reset := setupCachedClusters(t, cl, unstable)
-		defer reset()
-		controller, req := prepareReconcile(unstable, cl, requeAfter)
-		controller.CheckHealth = func(ctx context.Context, c *kubeclientset.Clientset) []toolchainv1alpha1.Condition {
-			return []toolchainv1alpha1.Condition{healthy()}
-		}
-		// when
-		recresult, err := controller.Reconcile(context.TODO(), req)
-
-		// then
-		require.Equal(t, err, nil)
-		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
-		assertClusterStatus(t, cl, "unstable", notOffline(), healthy())
-	})
 	t.Run("toolchain cluster cache not found", func(t *testing.T) {
 		// given
 		unstable, _ := newToolchainCluster("unstable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
@@ -213,18 +156,6 @@ func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *
 		CheckHealth: func(context.Context, *kubeclientset.Clientset) []toolchainv1alpha1.Condition {
 			return toolchainCluster.Status.Conditions
 		},
-	}
-	req := reconcile.Request{
-		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
-	}
-	return controller, req
-}
-
-func prepareCheckHealthDefaultReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *test.FakeClient, requeAfter time.Duration) (Reconciler, reconcile.Request) {
-	controller := Reconciler{
-		Client:     cl,
-		Scheme:     scheme.Scheme,
-		RequeAfter: requeAfter,
 	}
 	req := reconcile.Request{
 		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
