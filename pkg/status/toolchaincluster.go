@@ -43,21 +43,22 @@ func GetToolchainClusterConditions(logger logr.Logger, attrs ToolchainClusterAtt
 		return []toolchainv1alpha1.Condition{*NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusClusterConnectionNotReadyReason, genericErrMsg)}
 	}
 
-	var lastProbeTime metav1.Time
-	foundLastProbeTime := false
+	var lastUpdatedTime metav1.Time
+	foundLastUpdatedTime := false
 	for _, condition := range toolchainCluster.ClusterStatus.Conditions {
-		if condition.Type == toolchainv1alpha1.ToolchainClusterReady {
-			lastProbeTime = condition.LastProbeTime
-			foundLastProbeTime = true
+		if condition.Type == toolchainv1alpha1.ConditionReady {
+			lastUpdatedTime = *condition.LastUpdatedTime
+			foundLastUpdatedTime = true
 		}
+
 	}
-	if !foundLastProbeTime {
+	if !foundLastUpdatedTime {
 		lastProbeNotFoundMsg := "the time of the last probe could not be determined"
 		return []toolchainv1alpha1.Condition{*NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusClusterConnectionNotReadyReason, lastProbeNotFoundMsg)}
 	}
 	maxDuration := attrs.Period + attrs.Timeout
 	// check that the last probe time is within limits. It should be less than period + timeout
-	timeSinceLastProbe := time.Since(lastProbeTime.Time)
+	timeSinceLastProbe := time.Since(lastUpdatedTime.Time)
 	if timeSinceLastProbe > maxDuration {
 		err := fmt.Errorf("%s: %s", ErrMsgClusterConnectionLastProbeTimeExceeded, maxDuration.String())
 		logger.Error(err, fmt.Sprintf("the last probe for %s happened before: %s, see: %+v", toolchainCluster.Name, timeSinceLastProbe.String(), toolchainCluster.ClusterStatus))

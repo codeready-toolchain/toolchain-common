@@ -41,59 +41,59 @@ func TestClusterHealthChecks(t *testing.T) {
 	tests := map[string]struct {
 		tctype            string
 		apiendpoint       string
-		clusterconditions []toolchainv1alpha1.ToolchainClusterCondition
+		clusterconditions []toolchainv1alpha1.Condition
 		status            toolchainv1alpha1.ToolchainClusterStatus
 	}{
 		//ToolchainCluster.status doesn't contain any conditions
 		"UnstableNoCondition": {
 			tctype:            "unstable",
 			apiendpoint:       "http://unstable.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{unhealthy(), notOffline()},
+			clusterconditions: []toolchainv1alpha1.Condition{unhealthy(), notOffline()},
 			status:            toolchainv1alpha1.ToolchainClusterStatus{},
 		},
 		"StableNoCondition": {
 			tctype:            "stable",
 			apiendpoint:       "http://cluster.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{healthy()},
+			clusterconditions: []toolchainv1alpha1.Condition{healthy()},
 			status:            toolchainv1alpha1.ToolchainClusterStatus{},
 		},
 		"NotFoundNoCondition": {
 			tctype:            "not-found",
 			apiendpoint:       "http://not-found.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{offline()},
+			clusterconditions: []toolchainv1alpha1.Condition{offline()},
 			status:            toolchainv1alpha1.ToolchainClusterStatus{},
 		},
 		//ToolchainCluster.status already contains conditions
 		"UnstableContainsCondition": {
 			tctype:            "unstable",
 			apiendpoint:       "http://unstable.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{unhealthy(), notOffline()},
+			clusterconditions: []toolchainv1alpha1.Condition{unhealthy(), notOffline()},
 			status:            withStatus(healthy()),
 		},
 		"StableContainsCondition": {
 			tctype:            "stable",
 			apiendpoint:       "http://cluster.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{healthy()},
+			clusterconditions: []toolchainv1alpha1.Condition{healthy()},
 			status:            withStatus(offline()),
 		},
 		"NotFoundContainsCondition": {
 			tctype:            "not-found",
 			apiendpoint:       "http://not-found.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{offline()},
+			clusterconditions: []toolchainv1alpha1.Condition{offline()},
 			status:            withStatus(healthy()),
 		},
 		//if the connection cannot be established at beginning, then it should be offline
 		"OfflineConnectionNotEstablished": {
 			tctype:            "failing",
 			apiendpoint:       "http://failing.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{offline()},
+			clusterconditions: []toolchainv1alpha1.Condition{offline()},
 			status:            toolchainv1alpha1.ToolchainClusterStatus{},
 		},
 		//if no zones nor region is retrieved, then keep the current
 		"NoZoneKeepCurrent": {
 			tctype:            "stable",
 			apiendpoint:       "http://cluster.com",
-			clusterconditions: []toolchainv1alpha1.ToolchainClusterCondition{healthy()},
+			clusterconditions: []toolchainv1alpha1.Condition{healthy()},
 			status:            withStatus(offline()),
 		},
 	}
@@ -123,12 +123,12 @@ func TestClusterHealthChecks(t *testing.T) {
 	}
 }
 
-func withStatus(conditions ...toolchainv1alpha1.ToolchainClusterCondition) toolchainv1alpha1.ToolchainClusterStatus {
+func withStatus(conditions ...toolchainv1alpha1.Condition) toolchainv1alpha1.ToolchainClusterStatus {
 	return toolchainv1alpha1.ToolchainClusterStatus{
 		Conditions: conditions,
 	}
 }
-func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clusterConds ...toolchainv1alpha1.ToolchainClusterCondition) {
+func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clusterConds ...toolchainv1alpha1.Condition) {
 	tc := &toolchainv1alpha1.ToolchainCluster{}
 	err := cl.Get(context.TODO(), test.NamespacedName("test-namespace", clusterName), tc)
 	require.NoError(t, err)
@@ -146,30 +146,30 @@ ExpConditions:
 		assert.Failf(t, "condition not found", "the list of conditions %v doesn't contain the expected condition %v", tc.Status.Conditions, expCond)
 	}
 }
-func healthy() toolchainv1alpha1.ToolchainClusterCondition {
-	return toolchainv1alpha1.ToolchainClusterCondition{
-		Type:    toolchainv1alpha1.ToolchainClusterReady,
+func healthy() toolchainv1alpha1.Condition {
+	return toolchainv1alpha1.Condition{
+		Type:    toolchainv1alpha1.ConditionReady,
 		Status:  corev1.ConditionTrue,
 		Reason:  "ClusterReady",
 		Message: "/healthz responded with ok",
 	}
 }
-func unhealthy() toolchainv1alpha1.ToolchainClusterCondition {
-	return toolchainv1alpha1.ToolchainClusterCondition{Type: toolchainv1alpha1.ToolchainClusterReady,
+func unhealthy() toolchainv1alpha1.Condition {
+	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ConditionReady,
 		Status:  corev1.ConditionFalse,
 		Reason:  "ClusterNotReady",
 		Message: "/healthz responded without ok",
 	}
 }
-func offline() toolchainv1alpha1.ToolchainClusterCondition {
-	return toolchainv1alpha1.ToolchainClusterCondition{Type: toolchainv1alpha1.ToolchainClusterOffline,
+func offline() toolchainv1alpha1.Condition {
+	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ToolchainClusterOffline,
 		Status:  corev1.ConditionTrue,
 		Reason:  "ClusterNotReachable",
 		Message: "cluster is not reachable",
 	}
 }
-func notOffline() toolchainv1alpha1.ToolchainClusterCondition {
-	return toolchainv1alpha1.ToolchainClusterCondition{Type: toolchainv1alpha1.ToolchainClusterOffline,
+func notOffline() toolchainv1alpha1.Condition {
+	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ToolchainClusterOffline,
 		Status:  corev1.ConditionFalse,
 		Reason:  "ClusterReachable",
 		Message: "cluster is reachable",

@@ -19,7 +19,7 @@ import (
 func TestRefreshCacheInService(t *testing.T) {
 	// given
 	defer gock.Off()
-	status := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
+	status := test.NewClusterStatus(toolchainv1alpha1.ConditionReady, corev1.ConditionTrue)
 	toolchainCluster, sec := test.NewToolchainCluster("east", test.HostOperatorNs, "secret", status, map[string]string{"ownerClusterName": test.NameMember, "namespace": test.MemberOperatorNs})
 	s := scheme.Scheme
 	err := toolchainv1alpha1.AddToScheme(s)
@@ -74,7 +74,7 @@ func TestRefreshCacheInService(t *testing.T) {
 func TestUpdateClientBasedOnRestConfig(t *testing.T) {
 	// given
 	defer gock.Off()
-	statusTrue := test.NewClusterStatus(toolchainv1alpha1.ToolchainClusterReady, corev1.ConditionTrue)
+	statusTrue := test.NewClusterStatus(toolchainv1alpha1.ConditionReady, corev1.ConditionTrue)
 	toolchainCluster1, sec1 := test.NewToolchainCluster("east", test.HostOperatorNs, "secret1", statusTrue,
 		map[string]string{"namespace": test.HostOperatorNs})
 

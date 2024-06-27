@@ -5,6 +5,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"github.com/google/uuid"
 	"io/fs"
 	"path/filepath"
 	"regexp"
@@ -21,7 +22,6 @@ import (
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/ghodss/yaml"
-	"github.com/gofrs/uuid"
 	templatev1 "github.com/openshift/api/template/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -191,7 +191,7 @@ func TestGenerateTiers(t *testing.T) {
 
 		t.Run("create only", func(t *testing.T) {
 			// given
-			namespace := "host-operator" + uuid.Must(uuid.NewV4()).String()[:7]
+			namespace := "host-operator" + uuid.NewString()[:7]
 			clt := test.NewFakeClient(t)
 			// verify that no NSTemplateTier resources exist prior to creation
 			nsTmplTiers := toolchainv1alpha1.NSTemplateTierList{}
@@ -273,7 +273,7 @@ func TestGenerateTiers(t *testing.T) {
 
 		t.Run("create then update with same tier templates", func(t *testing.T) {
 			// given
-			namespace := "host-operator" + uuid.Must(uuid.NewV4()).String()[:7]
+			namespace := "host-operator" + uuid.NewString()[:7]
 			clt := test.NewFakeClient(t)
 
 			// when
@@ -329,7 +329,7 @@ func TestGenerateTiers(t *testing.T) {
 
 		t.Run("create then update with new tier templates", func(t *testing.T) {
 			// given
-			namespace := "host-operator" + uuid.Must(uuid.NewV4()).String()[:7]
+			namespace := "host-operator" + uuid.NewString()[:7]
 			clt := test.NewFakeClient(t)
 
 			// when
@@ -446,7 +446,7 @@ func TestGenerateTiers(t *testing.T) {
 
 	t.Run("failures", func(t *testing.T) {
 
-		namespace := "host-operator" + uuid.Must(uuid.NewV4()).String()[:7]
+		namespace := "host-operator" + uuid.NewString()[:7]
 
 		t.Run("nstemplatetiers", func(t *testing.T) {
 
@@ -671,7 +671,7 @@ func TestNewNSTemplateTier(t *testing.T) {
 
 		t.Run("with test assets", func(t *testing.T) {
 			// given
-			namespace := "host-operator-" + uuid.Must(uuid.NewV4()).String()[:7]
+			namespace := "host-operator-" + uuid.NewString()[:7]
 			tc, err := newNSTemplateTierGenerator(s, nil, namespace, getTestMetadata(), getTestTemplates(t))
 			require.NoError(t, err)
 			clusterResourcesRevisions := map[string]string{
@@ -736,7 +736,7 @@ func TestNewNSTemplateTier(t *testing.T) {
 
 func TestNewTierTemplate(t *testing.T) {
 	s := addToScheme(t)
-	namespace := "host-operator-" + uuid.Must(uuid.NewV4()).String()[:7]
+	namespace := "host-operator-" + uuid.NewString()[:7]
 
 	t.Run("ok", func(t *testing.T) {
 
@@ -867,7 +867,7 @@ func TestNewNSTemplateTiers(t *testing.T) {
 
 	t.Run("ok", func(t *testing.T) {
 		// given
-		namespace := "host-operator-" + uuid.Must(uuid.NewV4()).String()[:7]
+		namespace := "host-operator-" + uuid.NewString()[:7]
 		// when
 		tc, err := newNSTemplateTierGenerator(s, nil, namespace, getTestMetadata(), getTestTemplates(t))
 		require.NoError(t, err)
