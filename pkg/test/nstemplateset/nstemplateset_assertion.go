@@ -150,6 +150,13 @@ func (a *Assertion) HasAnnotationWithValue(key, value string) *Assertion {
 	return a
 }
 
+func (a *Assertion) DoesNotHaveAnnotation(key string) *Assertion {
+	err := a.loadNSTemplateSet()
+	require.NoError(a.t, err)
+	require.NotContains(a.t, a.nsTmplSet.Annotations, key)
+	return a
+}
+
 func SpaceRole(templateRef string, usernames ...string) toolchainv1alpha1.NSTemplateSetSpaceRole {
 	return toolchainv1alpha1.NSTemplateSetSpaceRole{
 		TemplateRef: templateRef,
