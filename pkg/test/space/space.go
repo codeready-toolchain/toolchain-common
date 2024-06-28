@@ -60,6 +60,15 @@ func WithLabel(key, value string) Option {
 	}
 }
 
+func WithAnnotation(key, value string) Option {
+	return func(space *toolchainv1alpha1.Space) {
+		if space.ObjectMeta.Annotations == nil {
+			space.ObjectMeta.Annotations = map[string]string{}
+		}
+		space.ObjectMeta.Annotations[key] = value
+	}
+}
+
 func WithDefaultTier() Option {
 	return func(space *toolchainv1alpha1.Space) {
 		space.Spec.TierName = ""
