@@ -111,6 +111,21 @@ func (a *Assertion) HasLabelWithValue(key, value string) *Assertion {
 	return a
 }
 
+func (a *Assertion) HasAnnotationWithValue(key, value string) *Assertion {
+	err := a.loadResource()
+	require.NoError(a.t, err)
+	require.NotNil(a.t, a.space.Annotations)
+	assert.Equal(a.t, value, a.space.Annotations[key])
+	return a
+}
+
+func (a *Assertion) DoesNotHaveAnnotation(key string) *Assertion {
+	err := a.loadResource()
+	require.NoError(a.t, err)
+	require.NotContains(a.t, a.space.Annotations, key)
+	return a
+}
+
 func (a *Assertion) HasMatchingTierLabelForTier(tier *toolchainv1alpha1.NSTemplateTier) *Assertion {
 	err := a.loadResource()
 	require.NoError(a.t, err)
