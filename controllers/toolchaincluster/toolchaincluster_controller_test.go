@@ -332,3 +332,20 @@ ExpConditions:
 		assert.Failf(t, "condition not found", "the list of conditions %v doesn't contain the expected condition %v", tc.Status.Conditions, expCond)
 	}
 }
+
+func healthy() toolchainv1alpha1.Condition {
+	return toolchainv1alpha1.Condition{
+		Type:    toolchainv1alpha1.ConditionReady,
+		Status:  corev1.ConditionTrue,
+		Reason:  "ClusterReady",
+		Message: "/healthz responded with ok",
+	}
+}
+
+func offline() toolchainv1alpha1.Condition {
+	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ToolchainClusterOffline,
+		Status:  corev1.ConditionTrue,
+		Reason:  "ClusterNotReachable",
+		Message: "cluster is not reachable",
+	}
+}

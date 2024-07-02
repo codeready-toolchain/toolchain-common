@@ -9,7 +9,6 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
-	corev1 "k8s.io/api/core/v1"
 	kubeclientset "k8s.io/client-go/kubernetes"
 )
 
@@ -88,34 +87,4 @@ func TestClusterHealthChecks(t *testing.T) {
 		require.Equal(t, false, health)
 
 	})
-}
-
-func healthy() toolchainv1alpha1.Condition {
-	return toolchainv1alpha1.Condition{
-		Type:    toolchainv1alpha1.ConditionReady,
-		Status:  corev1.ConditionTrue,
-		Reason:  "ClusterReady",
-		Message: "/healthz responded with ok",
-	}
-}
-func unhealthy() toolchainv1alpha1.Condition {
-	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ConditionReady,
-		Status:  corev1.ConditionFalse,
-		Reason:  "ClusterNotReady",
-		Message: "/healthz responded without ok",
-	}
-}
-func offline() toolchainv1alpha1.Condition {
-	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ToolchainClusterOffline,
-		Status:  corev1.ConditionTrue,
-		Reason:  "ClusterNotReachable",
-		Message: "cluster is not reachable",
-	}
-}
-func notOffline() toolchainv1alpha1.Condition {
-	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ToolchainClusterOffline,
-		Status:  corev1.ConditionFalse,
-		Reason:  "ClusterReachable",
-		Message: "cluster is reachable",
-	}
 }
