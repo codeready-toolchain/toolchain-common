@@ -7,7 +7,6 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,88 +33,61 @@ func TestClusterHealthChecks(t *testing.T) {
 		Persist().
 		Reply(404)
 
-	tests := map[string]struct {
-		tctype            string
-		apiendpoint       string
-		clusterconditions []toolchainv1alpha1.Condition
-		status            toolchainv1alpha1.ToolchainClusterStatus
-	}{
-		//ToolchainCluster.status doesn't contain any conditions
-		"UnstableNoCondition": {
-			tctype:            "unstable",
-			apiendpoint:       "http://unstable.com",
-			clusterconditions: []toolchainv1alpha1.Condition{unhealthy(), notOffline()},
-		},
-		"StableNoCondition": {
-			tctype:            "stable",
-			apiendpoint:       "http://cluster.com",
-			clusterconditions: []toolchainv1alpha1.Condition{healthy()},
-		},
-		"NotFoundNoCondition": {
-			tctype:            "not-found",
-			apiendpoint:       "http://not-found.com",
-			clusterconditions: []toolchainv1alpha1.Condition{offline()},
-		},
-		//ToolchainCluster.status already contains conditions
-		"UnstableContainsCondition": {
-			tctype:            "unstable",
-			apiendpoint:       "http://unstable.com",
-			clusterconditions: []toolchainv1alpha1.Condition{unhealthy(), notOffline()},
-		},
-		"StableContainsCondition": {
-			tctype:            "stable",
-			apiendpoint:       "http://cluster.com",
-			clusterconditions: []toolchainv1alpha1.Condition{healthy()},
-		},
-		"NotFoundContainsCondition": {
-			tctype:            "not-found",
-			apiendpoint:       "http://not-found.com",
-			clusterconditions: []toolchainv1alpha1.Condition{offline()},
-		},
-		//if the connection cannot be established at beginning, then it should be offline
-		"OfflineConnectionNotEstablished": {
-			tctype:            "failing",
-			apiendpoint:       "http://failing.com",
-			clusterconditions: []toolchainv1alpha1.Condition{offline()},
-		},
-		//if no zones nor region is retrieved, then keep the current
-		"NoZoneKeepCurrent": {
-			tctype:            "stable",
-			apiendpoint:       "http://cluster.com",
-			clusterconditions: []toolchainv1alpha1.Condition{healthy()},
-		},
-	}
-	for k, tc := range tests {
-		t.Run(k, func(t *testing.T) {
-			tctype, sec := newToolchainCluster(tc.tctype, tcNs, tc.apiendpoint, tc.status)
-			cl := test.NewFakeClient(t, tctype, sec)
-			reset := setupCachedClusters(t, cl, tctype)
-			defer reset()
-			cachedtc, found := cluster.GetCachedToolchainCluster(tctype.Name)
-			require.True(t, found)
-			cacheclient, err := kubeclientset.NewForConfig(cachedtc.RestConfig)
-			require.NoError(t, err)
+	t.Run("When cluster health is ok", func(t *testing.T) {
+		tctype, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		cl := test.NewFakeClient(t, tctype, sec)
+		reset := setupCachedClusters(t, cl, tctype)
+		defer reset()
+		cachedtc, found := cluster.GetCachedToolchainCluster(tctype.Name)
+		require.True(t, found)
+		cacheclient, err := kubeclientset.NewForConfig(cachedtc.RestConfig)
+		require.NoError(t, err)
 
-			//when
-			hcond := GetClusterHealthStatus(context.TODO(), cacheclient)
+		//when
+		health, errh := GetClusterHealth(context.TODO(), cacheclient)
 
-			//then
-			assert.Len(t, tc.clusterconditions, len(hcond))
-		SetConditions:
-			for _, hc := range hcond {
-				for _, tco := range tc.clusterconditions {
-					if hc.Type == tco.Type {
-						assert.Equal(t, tco.Status, hc.Status)
-						assert.Equal(t, tco.Reason, hc.Reason)
-						assert.Equal(t, tco.Message, hc.Message)
-						continue SetConditions
-					}
-				}
-				assert.Failf(t, "condition not found", "the list of conditions %v doesn't contain the expected condition %v", tc.clusterconditions, hc)
-			}
+		//then
+		require.NoError(t, errh)
+		require.Equal(t, true, health)
 
-		})
-	}
+	})
+	t.Run("When cluster health is Not ok but no error", func(t *testing.T) {
+		tctype, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		cl := test.NewFakeClient(t, tctype, sec)
+		reset := setupCachedClusters(t, cl, tctype)
+		defer reset()
+		cachedtc, found := cluster.GetCachedToolchainCluster(tctype.Name)
+		require.True(t, found)
+		cacheclient, err := kubeclientset.NewForConfig(cachedtc.RestConfig)
+		require.NoError(t, err)
+
+		//when
+		health, errh := GetClusterHealth(context.TODO(), cacheclient)
+
+		//then
+		require.NoError(t, errh)
+		require.Equal(t, false, health)
+
+	})
+
+	t.Run("Error while doing cluster health", func(t *testing.T) {
+		tctype, sec := newToolchainCluster("Notfound", tcNs, "http://not-found.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		cl := test.NewFakeClient(t, tctype, sec)
+		reset := setupCachedClusters(t, cl, tctype)
+		defer reset()
+		cachedtc, found := cluster.GetCachedToolchainCluster(tctype.Name)
+		require.True(t, found)
+		cacheclient, err := kubeclientset.NewForConfig(cachedtc.RestConfig)
+		require.NoError(t, err)
+
+		//when
+		health, errh := GetClusterHealth(context.TODO(), cacheclient)
+
+		//then
+		require.Error(t, errh)
+		require.Equal(t, false, health)
+
+	})
 }
 
 func healthy() toolchainv1alpha1.Condition {

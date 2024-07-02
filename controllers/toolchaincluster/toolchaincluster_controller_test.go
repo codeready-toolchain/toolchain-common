@@ -163,7 +163,9 @@ func TestClusterControllerChecks(t *testing.T) {
 
 		defer reset()
 		controller, req := prepareReconcile(stable, cl, requeAfter)
-
+		controller.CheckHealth = func(context.Context, *kubeclientset.Clientset) (bool, error) {
+			return false, serr
+		}
 		// when
 		recresult, err := controller.Reconcile(context.TODO(), req)
 
@@ -171,6 +173,32 @@ func TestClusterControllerChecks(t *testing.T) {
 		require.EqualError(t, err, fmt.Sprintf("Failed to update the status of cluster %s: %v", stable.Name, serr))
 		require.Equal(t, reconcile.Result{}, recresult)
 		assertClusterStatus(t, cl, "stable", healthy())
+	})
+
+	t.Run("Last transition time is not updated for same condition", func(t *testing.T) {
+		// given
+		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(healthy()))
+
+		cl := test.NewFakeClient(t, stable, sec)
+		reset := setupCachedClusters(t, cl, stable)
+
+		defer reset()
+		controller, req := prepareReconcile(stable, cl, requeAfter)
+		controller.CheckHealth = func(context.Context, *kubeclientset.Clientset) (bool, error) {
+			return true, nil
+		}
+
+		// when
+		recresult, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+
+		require.Equal(t, err, nil)
+		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
+		tc := &toolchainv1alpha1.ToolchainCluster{}
+		err = cl.Get(context.TODO(), test.NamespacedName("test-namespace", stable.Name), tc)
+		require.NoError(t, err)
+		assert.Equal(t, stable.Status, tc.Status)
 	})
 
 	t.Run("migrates connection settings to kubeconfig in secret", func(t *testing.T) {
@@ -208,6 +236,29 @@ func TestClusterControllerChecks(t *testing.T) {
 	})
 }
 
+func TestGetClusterHealth(t *testing.T) {
+	t.Run("Checkhealth deafualt", func(t *testing.T) {
+		// given
+		stable, sec := newToolchainCluster("stable", "test-namespace", "http://cluster.com", withStatus(healthy()))
+
+		cl := test.NewFakeClient(t, stable, sec)
+		reset := setupCachedClusters(t, cl, stable)
+
+		defer reset()
+		controller, req := prepareReconcile(stable, cl, requeAfter)
+		controller.CheckHealth = func(context.Context, *kubeclientset.Clientset) (bool, error) {
+			return true, nil
+		}
+
+		// when
+		recresult, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.Equal(t, err, nil)
+		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
+		assertClusterStatus(t, cl, "stable", healthy())
+	})
+}
 func TestComposeKubeConfig(t *testing.T) {
 	// when
 	kubeConfig := composeKubeConfigFromData([]byte("token"), "http://over.the.rainbow", "the-namespace", false)
@@ -251,9 +302,6 @@ func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *
 		Client:     cl,
 		Scheme:     scheme.Scheme,
 		RequeAfter: requeAfter,
-		CheckHealth: func(context.Context, *kubeclientset.Clientset) []toolchainv1alpha1.Condition {
-			return toolchainCluster.Status.Conditions
-		},
 	}
 	req := reconcile.Request{
 		NamespacedName: test.NamespacedName(toolchainCluster.Namespace, toolchainCluster.Name),
