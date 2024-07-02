@@ -258,6 +258,27 @@ func TestGetClusterHealth(t *testing.T) {
 		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
 		assertClusterStatus(t, cl, "stable", healthy())
 	})
+	t.Run("get health condition when health obtained is false ", func(t *testing.T) {
+		// given
+		stable, sec := newToolchainCluster("stable", "test-namespace", "http://cluster.com", withStatus(healthy()))
+
+		cl := test.NewFakeClient(t, stable, sec)
+		reset := setupCachedClusters(t, cl, stable)
+
+		defer reset()
+		controller, req := prepareReconcile(stable, cl, requeAfter)
+		controller.CheckHealth = func(context.Context, *kubeclientset.Clientset) (bool, error) {
+			return false, nil
+		}
+
+		// when
+		recresult, err := controller.Reconcile(context.TODO(), req)
+
+		// then
+		require.Equal(t, err, nil)
+		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
+		assertClusterStatus(t, cl, "stable", notOffline(), unhealthy())
+	})
 }
 func TestComposeKubeConfig(t *testing.T) {
 	// when
@@ -341,11 +362,24 @@ func healthy() toolchainv1alpha1.Condition {
 		Message: "/healthz responded with ok",
 	}
 }
-
+func unhealthy() toolchainv1alpha1.Condition {
+	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ConditionReady,
+		Status:  corev1.ConditionFalse,
+		Reason:  "ClusterNotReady",
+		Message: "/healthz responded without ok",
+	}
+}
 func offline() toolchainv1alpha1.Condition {
 	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ToolchainClusterOffline,
 		Status:  corev1.ConditionTrue,
 		Reason:  "ClusterNotReachable",
 		Message: "cluster is not reachable",
+	}
+}
+func notOffline() toolchainv1alpha1.Condition {
+	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ToolchainClusterOffline,
+		Status:  corev1.ConditionFalse,
+		Reason:  "ClusterReachable",
+		Message: "cluster is reachable",
 	}
 }
