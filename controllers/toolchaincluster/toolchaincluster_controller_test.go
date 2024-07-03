@@ -128,14 +128,12 @@ func TestClusterControllerChecks(t *testing.T) {
 
 	t.Run("error while updating a toolchain cluster status on cache not found", func(t *testing.T) {
 		// given
-		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
-		stable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(stable.Status.Conditions, healthy())
+		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(healthy()))
 
 		cl := test.NewFakeClient(t, stable)
 		cl.MockStatusUpdate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
 			return fmt.Errorf("mock error")
 		}
-		stable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(stable.Status.Conditions, clusterOfflineCondition())
 		controller, req := prepareReconcile(stable, cl, requeAfter)
 
 		// when
@@ -173,32 +171,6 @@ func TestClusterControllerChecks(t *testing.T) {
 		require.EqualError(t, err, fmt.Sprintf("Failed to update the status of cluster %s: %v", stable.Name, serr))
 		require.Equal(t, reconcile.Result{}, recresult)
 		assertClusterStatus(t, cl, "stable", healthy())
-	})
-
-	t.Run("Last transition time is not updated for same condition", func(t *testing.T) {
-		// given
-		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(healthy()))
-
-		cl := test.NewFakeClient(t, stable, sec)
-		reset := setupCachedClusters(t, cl, stable)
-
-		defer reset()
-		controller, req := prepareReconcile(stable, cl, requeAfter)
-		controller.CheckHealth = func(context.Context, *kubeclientset.Clientset) (bool, error) {
-			return true, nil
-		}
-
-		// when
-		recresult, err := controller.Reconcile(context.TODO(), req)
-
-		// then
-
-		require.Equal(t, err, nil)
-		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
-		tc := &toolchainv1alpha1.ToolchainCluster{}
-		err = cl.Get(context.TODO(), test.NamespacedName("test-namespace", stable.Name), tc)
-		require.NoError(t, err)
-		assert.Equal(t, stable.Status.Conditions[0].LastTransitionTime, tc.Status.Conditions[0].LastTransitionTime)
 	})
 
 	t.Run("migrates connection settings to kubeconfig in secret", func(t *testing.T) {

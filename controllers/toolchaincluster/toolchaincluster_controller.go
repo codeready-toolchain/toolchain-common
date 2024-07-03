@@ -106,19 +106,16 @@ func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolcha
 }
 
 func (r *Reconciler) getClusterHealthCondition(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) []v1alpha1.Condition {
-	conditions := []v1alpha1.Condition{}
 
 	healthcheck, errhealth := r.getClusterHealth(ctx, remoteClusterClientset)
 	if errhealth != nil {
-		conditions = append(conditions, clusterOfflineCondition())
-	} else {
-		if !healthcheck {
-			conditions = append(conditions, clusterNotReadyCondition(), clusterNotOfflineCondition())
-		} else {
-			conditions = append(conditions, clusterReadyCondition())
-		}
+		return []v1alpha1.Condition{clusterOfflineCondition()}
 	}
-	return conditions
+	if !healthcheck {
+		return []v1alpha1.Condition{clusterNotReadyCondition(), clusterNotOfflineCondition()}
+	}
+	return []v1alpha1.Condition{clusterReadyCondition()}
+
 }
 
 func (r *Reconciler) getClusterHealth(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) (bool, error) {

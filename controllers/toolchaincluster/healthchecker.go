@@ -23,11 +23,7 @@ func getClusterHealthStatus(ctx context.Context, remoteClusterClientset *kubecli
 	if err != nil {
 		lgr.Error(err, "Failed to do cluster health check for a ToolchainCluster")
 		return false, err
-	} else {
-		if !strings.EqualFold(string(body), "ok") {
-			return false, nil
-		} else {
-			return true, nil
-		}
 	}
+	return strings.EqualFold(string(body), "ok"), nil
+
 }
