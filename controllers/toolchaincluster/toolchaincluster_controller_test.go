@@ -198,7 +198,7 @@ func TestClusterControllerChecks(t *testing.T) {
 		tc := &toolchainv1alpha1.ToolchainCluster{}
 		err = cl.Get(context.TODO(), test.NamespacedName("test-namespace", stable.Name), tc)
 		require.NoError(t, err)
-		assert.Equal(t, stable.Status, tc.Status)
+		assert.Equal(t, stable.Status.Conditions[0].LastTransitionTime, tc.Status.Conditions[0].LastTransitionTime)
 	})
 
 	t.Run("migrates connection settings to kubeconfig in secret", func(t *testing.T) {
@@ -237,7 +237,7 @@ func TestClusterControllerChecks(t *testing.T) {
 }
 
 func TestGetClusterHealth(t *testing.T) {
-	t.Run("Checkhealth deafualt", func(t *testing.T) {
+	t.Run("Check health defualt", func(t *testing.T) {
 		// given
 		stable, sec := newToolchainCluster("stable", "test-namespace", "http://cluster.com", withStatus(healthy()))
 

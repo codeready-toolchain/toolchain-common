@@ -32,59 +32,53 @@ func TestClusterHealthChecks(t *testing.T) {
 		Persist().
 		Reply(404)
 
-	t.Run("When cluster health is ok", func(t *testing.T) {
-		tctype, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
-		cl := test.NewFakeClient(t, tctype, sec)
-		reset := setupCachedClusters(t, cl, tctype)
-		defer reset()
-		cachedtc, found := cluster.GetCachedToolchainCluster(tctype.Name)
-		require.True(t, found)
-		cacheclient, err := kubeclientset.NewForConfig(cachedtc.RestConfig)
-		require.NoError(t, err)
+	tests := map[string]struct {
+		tctype      string
+		apiendpoint string
+		healthcheck bool
+		errh        error
+	}{
+		"HealthOkay": {
+			tctype:      "stable",
+			apiendpoint: "http://cluster.com",
+			healthcheck: true,
+			errh:        nil,
+		},
+		"HealthNotOkayButNoError": {
+			tctype:      "unstable",
+			apiendpoint: "http://unstable.com",
+			healthcheck: false,
+			errh:        nil,
+		},
+		"ErrorWhileDoingHealth": {
+			tctype:      "Notfound",
+			apiendpoint: "http://not-found.com",
+			healthcheck: false,
+		},
+	}
+	for k, tc := range tests {
+		t.Run(k, func(t *testing.T) {
+			//given
+			tctype, sec := newToolchainCluster(tc.tctype, tcNs, tc.apiendpoint, toolchainv1alpha1.ToolchainClusterStatus{})
+			cl := test.NewFakeClient(t, tctype, sec)
+			reset := setupCachedClusters(t, cl, tctype)
+			defer reset()
+			cachedtc, found := cluster.GetCachedToolchainCluster(tctype.Name)
+			require.True(t, found)
+			cacheclient, err := kubeclientset.NewForConfig(cachedtc.RestConfig)
+			require.NoError(t, err)
 
-		//when
-		health, errh := GetClusterHealth(context.TODO(), cacheclient)
+			//when
+			healthcheck, errh := getClusterHealthStatus(context.TODO(), cacheclient)
 
-		//then
-		require.NoError(t, errh)
-		require.Equal(t, true, health)
+			//then
+			require.Equal(t, tc.healthcheck, healthcheck)
+			if tc.tctype == "Notfound" {
+				require.Error(t, errh)
+			} else {
+				require.Equal(t, tc.errh, errh)
+			}
 
-	})
-	t.Run("When cluster health is Not ok but no error", func(t *testing.T) {
-		tctype, sec := newToolchainCluster("unstable", tcNs, "http://unstable.com", toolchainv1alpha1.ToolchainClusterStatus{})
-		cl := test.NewFakeClient(t, tctype, sec)
-		reset := setupCachedClusters(t, cl, tctype)
-		defer reset()
-		cachedtc, found := cluster.GetCachedToolchainCluster(tctype.Name)
-		require.True(t, found)
-		cacheclient, err := kubeclientset.NewForConfig(cachedtc.RestConfig)
-		require.NoError(t, err)
-
-		//when
-		health, errh := GetClusterHealth(context.TODO(), cacheclient)
-
-		//then
-		require.NoError(t, errh)
-		require.Equal(t, false, health)
-
-	})
-
-	t.Run("Error while doing cluster health", func(t *testing.T) {
-		tctype, sec := newToolchainCluster("Notfound", tcNs, "http://not-found.com", toolchainv1alpha1.ToolchainClusterStatus{})
-		cl := test.NewFakeClient(t, tctype, sec)
-		reset := setupCachedClusters(t, cl, tctype)
-		defer reset()
-		cachedtc, found := cluster.GetCachedToolchainCluster(tctype.Name)
-		require.True(t, found)
-		cacheclient, err := kubeclientset.NewForConfig(cachedtc.RestConfig)
-		require.NoError(t, err)
-
-		//when
-		health, errh := GetClusterHealth(context.TODO(), cacheclient)
-
-		//then
-		require.Error(t, errh)
-		require.Equal(t, false, health)
-
-	})
+		})
+	}
 }

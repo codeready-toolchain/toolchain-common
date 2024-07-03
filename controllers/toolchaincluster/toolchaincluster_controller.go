@@ -73,7 +73,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		return reconcile.Result{}, err
 	}
 
-	//Not testing as this as this is being tested in cluster package
 	clientSet, err := kubeclientset.NewForConfig(cachedCluster.RestConfig)
 	if err != nil {
 		reqLogger.Error(err, "cannot create ClientSet for the ToolchainCluster")
@@ -84,7 +83,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	}
 
 	// execute healthcheck
-	healthcheckResult := r.GetClusterHealthCondition(ctx, clientSet)
+	healthcheckResult := r.getClusterHealthCondition(ctx, clientSet)
 
 	// update the status of the individual cluster.
 	if err := r.updateStatus(ctx, toolchainCluster, healthcheckResult...); err != nil {
@@ -106,7 +105,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolcha
 	return nil
 }
 
-func (r *Reconciler) GetClusterHealthCondition(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) []v1alpha1.Condition {
+func (r *Reconciler) getClusterHealthCondition(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) []v1alpha1.Condition {
 	conditions := []v1alpha1.Condition{}
 
 	healthcheck, errhealth := r.getClusterHealth(ctx, remoteClusterClientset)
@@ -126,7 +125,7 @@ func (r *Reconciler) getClusterHealth(ctx context.Context, remoteClusterClientse
 	if r.CheckHealth != nil {
 		return r.CheckHealth(ctx, remoteClusterClientset)
 	}
-	return GetClusterHealth(ctx, remoteClusterClientset)
+	return getClusterHealthStatus(ctx, remoteClusterClientset)
 }
 
 func clusterReadyCondition() toolchainv1alpha1.Condition {
