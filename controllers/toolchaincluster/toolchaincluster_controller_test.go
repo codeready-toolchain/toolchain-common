@@ -237,7 +237,7 @@ func TestClusterControllerChecks(t *testing.T) {
 }
 
 func TestGetClusterHealth(t *testing.T) {
-	t.Run("Check health defualt", func(t *testing.T) {
+	t.Run("Check health default", func(t *testing.T) {
 		// given
 		stable, sec := newToolchainCluster("stable", "test-namespace", "http://cluster.com", withStatus(healthy()))
 
