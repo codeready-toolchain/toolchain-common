@@ -42,13 +42,11 @@ func TestClusterHealthChecks(t *testing.T) {
 			tctype:      "stable",
 			apiendpoint: "http://cluster.com",
 			healthcheck: true,
-			errh:        nil,
 		},
 		"HealthNotOkayButNoError": {
 			tctype:      "unstable",
 			apiendpoint: "http://unstable.com",
 			healthcheck: false,
-			errh:        nil,
 		},
 		"ErrorWhileDoingHealth": {
 			tctype:      "Notfound",
@@ -76,7 +74,7 @@ func TestClusterHealthChecks(t *testing.T) {
 			if tc.tctype == "Notfound" {
 				require.Error(t, errh)
 			} else {
-				require.Equal(t, tc.errh, errh)
+				require.NoError(t, errh)
 			}
 
 		})

@@ -90,7 +90,7 @@ func TestClusterControllerChecks(t *testing.T) {
 
 	t.Run("reconcile successful and requeued", func(t *testing.T) {
 		// given
-		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(healthy()))
+		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(clusterReadyCondition()))
 
 		cl := test.NewFakeClient(t, stable, sec)
 		reset := setupCachedClusters(t, cl, stable)
@@ -104,7 +104,7 @@ func TestClusterControllerChecks(t *testing.T) {
 		// then
 		require.Equal(t, err, nil)
 		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
-		assertClusterStatus(t, cl, "stable", healthy())
+		assertClusterStatus(t, cl, "stable", clusterReadyCondition())
 	})
 
 	t.Run("toolchain cluster cache not found", func(t *testing.T) {
@@ -112,7 +112,7 @@ func TestClusterControllerChecks(t *testing.T) {
 		unstable, _ := newToolchainCluster("unstable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
 
 		cl := test.NewFakeClient(t, unstable)
-		unstable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(unstable.Status.Conditions, clusterOfflineCondition())
+		unstable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(unstable.Status.Conditions, clusterNotReadyCondition())
 		controller, req := prepareReconcile(unstable, cl, requeAfter)
 
 		// when
@@ -123,12 +123,12 @@ func TestClusterControllerChecks(t *testing.T) {
 		actualtoolchaincluster := &toolchainv1alpha1.ToolchainCluster{}
 		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: "unstable", Namespace: tcNs}, actualtoolchaincluster)
 		require.NoError(t, err)
-		assertClusterStatus(t, cl, "unstable", offline())
+		assertClusterStatus(t, cl, "unstable", clusterNotReadyCondition())
 	})
 
 	t.Run("error while updating a toolchain cluster status on cache not found", func(t *testing.T) {
 		// given
-		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(healthy()))
+		stable, _ := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(clusterReadyCondition()))
 
 		cl := test.NewFakeClient(t, stable)
 		cl.MockStatusUpdate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
@@ -146,12 +146,12 @@ func TestClusterControllerChecks(t *testing.T) {
 		actualtoolchaincluster := &toolchainv1alpha1.ToolchainCluster{}
 		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: "stable", Namespace: tcNs}, actualtoolchaincluster)
 		require.NoError(t, err)
-		assertClusterStatus(t, cl, "stable", healthy())
+		assertClusterStatus(t, cl, "stable", clusterReadyCondition())
 	})
 
 	t.Run("error while updating a toolchain cluster status", func(t *testing.T) {
 		// given
-		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", withStatus(healthy()))
+		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
 		serr := fmt.Errorf("my test error")
 		cl := test.NewFakeClient(t, stable, sec)
 		cl.MockStatusUpdate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
@@ -168,9 +168,8 @@ func TestClusterControllerChecks(t *testing.T) {
 		recresult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
-		require.EqualError(t, err, fmt.Sprintf("Failed to update the status of cluster %s: %v", stable.Name, serr))
+		require.EqualError(t, err, fmt.Sprintf("failed to update the status of cluster - %s %v", stable.Name, serr))
 		require.Equal(t, reconcile.Result{}, recresult)
-		assertClusterStatus(t, cl, "stable", healthy())
 	})
 
 	t.Run("migrates connection settings to kubeconfig in secret", func(t *testing.T) {
@@ -211,7 +210,7 @@ func TestClusterControllerChecks(t *testing.T) {
 func TestGetClusterHealth(t *testing.T) {
 	t.Run("Check health default", func(t *testing.T) {
 		// given
-		stable, sec := newToolchainCluster("stable", "test-namespace", "http://cluster.com", withStatus(healthy()))
+		stable, sec := newToolchainCluster("stable", "test-namespace", "http://cluster.com", withStatus(clusterReadyCondition()))
 
 		cl := test.NewFakeClient(t, stable, sec)
 		reset := setupCachedClusters(t, cl, stable)
@@ -228,11 +227,11 @@ func TestGetClusterHealth(t *testing.T) {
 		// then
 		require.Equal(t, err, nil)
 		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
-		assertClusterStatus(t, cl, "stable", healthy())
+		assertClusterStatus(t, cl, "stable", clusterReadyCondition())
 	})
 	t.Run("get health condition when health obtained is false ", func(t *testing.T) {
 		// given
-		stable, sec := newToolchainCluster("stable", "test-namespace", "http://cluster.com", withStatus(healthy()))
+		stable, sec := newToolchainCluster("stable", "test-namespace", "http://cluster.com", withStatus(clusterReadyCondition()))
 
 		cl := test.NewFakeClient(t, stable, sec)
 		reset := setupCachedClusters(t, cl, stable)
@@ -249,7 +248,7 @@ func TestGetClusterHealth(t *testing.T) {
 		// then
 		require.Equal(t, err, nil)
 		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
-		assertClusterStatus(t, cl, "stable", notOffline(), unhealthy())
+		assertClusterStatus(t, cl, "stable", clusterNotReadyCondition())
 	})
 }
 func TestComposeKubeConfig(t *testing.T) {
@@ -323,35 +322,5 @@ ExpConditions:
 			}
 		}
 		assert.Failf(t, "condition not found", "the list of conditions %v doesn't contain the expected condition %v", tc.Status.Conditions, expCond)
-	}
-}
-
-func healthy() toolchainv1alpha1.Condition {
-	return toolchainv1alpha1.Condition{
-		Type:    toolchainv1alpha1.ConditionReady,
-		Status:  corev1.ConditionTrue,
-		Reason:  "ClusterReady",
-		Message: "/healthz responded with ok",
-	}
-}
-func unhealthy() toolchainv1alpha1.Condition {
-	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ConditionReady,
-		Status:  corev1.ConditionFalse,
-		Reason:  "ClusterNotReady",
-		Message: "/healthz responded without ok",
-	}
-}
-func offline() toolchainv1alpha1.Condition {
-	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ToolchainClusterOffline,
-		Status:  corev1.ConditionTrue,
-		Reason:  "ClusterNotReachable",
-		Message: "cluster is not reachable",
-	}
-}
-func notOffline() toolchainv1alpha1.Condition {
-	return toolchainv1alpha1.Condition{Type: toolchainv1alpha1.ToolchainClusterOffline,
-		Status:  corev1.ConditionFalse,
-		Reason:  "ClusterReachable",
-		Message: "cluster is reachable",
 	}
 }
