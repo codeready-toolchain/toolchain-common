@@ -81,10 +81,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	}
 
 	// execute healthcheck
-	healthcheckResult := r.getClusterHealthCondition(ctx, clientSet)
+	healthCheckResult := r.getClusterHealthCondition(ctx, clientSet)
 
 	// update the status of the individual cluster.
-	if err := r.updateStatus(ctx, toolchainCluster, healthcheckResult); err != nil {
+	if err := r.updateStatus(ctx, toolchainCluster, healthCheckResult); err != nil {
 		reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
 		return reconcile.Result{}, err
 	}
