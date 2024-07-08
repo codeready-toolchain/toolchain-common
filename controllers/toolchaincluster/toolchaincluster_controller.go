@@ -27,7 +27,7 @@ type Reconciler struct {
 	Client      client.Client
 	Scheme      *runtime.Scheme
 	RequeAfter  time.Duration
-	CheckHealth func(context.Context, *kubeclientset.Clientset) (bool, error)
+	checkHealth func(context.Context, *kubeclientset.Clientset) (bool, error)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -84,7 +84,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	healthcheckResult := r.getClusterHealthCondition(ctx, clientSet)
 
 	// update the status of the individual cluster.
-	if err := r.updateStatus(ctx, toolchainCluster, healthcheckResult...); err != nil {
+	if err := r.updateStatus(ctx, toolchainCluster, healthcheckResult); err != nil {
 		reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
 		return reconcile.Result{}, err
 	}
@@ -99,21 +99,32 @@ func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolcha
 	return nil
 }
 
-func (r *Reconciler) getClusterHealthCondition(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) []v1alpha1.Condition {
+func (r *Reconciler) getClusterHealthCondition(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) v1alpha1.Condition {
 
-	healthcheck, errhealth := r.getClusterHealth(ctx, remoteClusterClientset)
-	if errhealth != nil || !healthcheck {
-		return []v1alpha1.Condition{clusterNotReadyCondition()}
+	ishealthy, err := r.getClusterHealth(ctx, remoteClusterClientset)
+	if err != nil {
+		return clusterOfflineCondition(err.Error())
+	} else {
+		if !ishealthy {
+			return clusterNotReadyCondition()
+		}
+		return clusterReadyCondition()
 	}
-	return []v1alpha1.Condition{clusterReadyCondition()}
-
 }
 
 func (r *Reconciler) getClusterHealth(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) (bool, error) {
-	if r.CheckHealth != nil {
-		return r.CheckHealth(ctx, remoteClusterClientset)
+	if r.checkHealth != nil {
+		return r.checkHealth(ctx, remoteClusterClientset)
 	}
 	return getClusterHealthStatus(ctx, remoteClusterClientset)
+}
+func clusterOfflineCondition(errMsg string) toolchainv1alpha1.Condition {
+	return toolchainv1alpha1.Condition{
+		Type:    toolchainv1alpha1.ConditionReady,
+		Status:  corev1.ConditionFalse,
+		Reason:  toolchainv1alpha1.ToolchainClusterClusterNotReachableReason,
+		Message: errMsg,
+	}
 }
 
 func clusterReadyCondition() toolchainv1alpha1.Condition {

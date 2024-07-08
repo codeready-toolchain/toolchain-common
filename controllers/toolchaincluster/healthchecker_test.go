@@ -2,6 +2,7 @@ package toolchaincluster
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
@@ -52,6 +53,7 @@ func TestClusterHealthChecks(t *testing.T) {
 			tctype:      "Notfound",
 			apiendpoint: "http://not-found.com",
 			healthcheck: false,
+			errh:        fmt.Errorf("the server could not find the requested resource"),
 		},
 	}
 	for k, tc := range tests {
@@ -71,8 +73,8 @@ func TestClusterHealthChecks(t *testing.T) {
 
 			//then
 			require.Equal(t, tc.healthcheck, healthcheck)
-			if tc.tctype == "Notfound" {
-				require.Error(t, errh)
+			if tc.errh != nil {
+				require.EqualError(t, errh, tc.errh.Error())
 			} else {
 				require.NoError(t, errh)
 			}

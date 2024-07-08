@@ -137,11 +137,11 @@ func TestClusterControllerChecks(t *testing.T) {
 		controller, req := prepareReconcile(stable, cl, requeAfter)
 
 		// when
-		recresult, err := controller.Reconcile(context.TODO(), req)
+		recResult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
 		require.EqualError(t, err, "cluster stable not found in cache")
-		require.Equal(t, reconcile.Result{}, recresult)
+		require.Equal(t, reconcile.Result{}, recResult)
 
 		actualtoolchaincluster := &toolchainv1alpha1.ToolchainCluster{}
 		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: "stable", Namespace: tcNs}, actualtoolchaincluster)
@@ -149,7 +149,7 @@ func TestClusterControllerChecks(t *testing.T) {
 		assertClusterStatus(t, cl, "stable", clusterReadyCondition())
 	})
 
-	t.Run("error while updating a toolchain cluster status", func(t *testing.T) {
+	t.Run("error while updating a toolchain cluster status when health-check failed", func(t *testing.T) {
 		// given
 		stable, sec := newToolchainCluster("stable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
 		serr := fmt.Errorf("my test error")
@@ -161,7 +161,7 @@ func TestClusterControllerChecks(t *testing.T) {
 
 		defer reset()
 		controller, req := prepareReconcile(stable, cl, requeAfter)
-		controller.CheckHealth = func(context.Context, *kubeclientset.Clientset) (bool, error) {
+		controller.checkHealth = func(context.Context, *kubeclientset.Clientset) (bool, error) {
 			return false, serr
 		}
 		// when
@@ -217,7 +217,7 @@ func TestGetClusterHealth(t *testing.T) {
 
 		defer reset()
 		controller, req := prepareReconcile(stable, cl, requeAfter)
-		controller.CheckHealth = func(context.Context, *kubeclientset.Clientset) (bool, error) {
+		controller.checkHealth = func(context.Context, *kubeclientset.Clientset) (bool, error) {
 			return true, nil
 		}
 
@@ -238,7 +238,7 @@ func TestGetClusterHealth(t *testing.T) {
 
 		defer reset()
 		controller, req := prepareReconcile(stable, cl, requeAfter)
-		controller.CheckHealth = func(context.Context, *kubeclientset.Clientset) (bool, error) {
+		controller.checkHealth = func(context.Context, *kubeclientset.Clientset) (bool, error) {
 			return false, nil
 		}
 
@@ -314,12 +314,10 @@ func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clu
 ExpConditions:
 	for _, expCond := range clusterConds {
 		for _, cond := range tc.Status.Conditions {
-			if expCond.Type == cond.Type {
-				assert.Equal(t, expCond.Status, cond.Status)
-				assert.Equal(t, expCond.Reason, cond.Reason)
-				assert.Equal(t, expCond.Message, cond.Message)
-				continue ExpConditions
-			}
+			assert.Equal(t, expCond.Status, cond.Status)
+			assert.Equal(t, expCond.Reason, cond.Reason)
+			assert.Equal(t, expCond.Message, cond.Message)
+			continue ExpConditions
 		}
 		assert.Failf(t, "condition not found", "the list of conditions %v doesn't contain the expected condition %v", tc.Status.Conditions, expCond)
 	}
