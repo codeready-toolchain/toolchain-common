@@ -9,10 +9,8 @@ import (
 )
 
 const (
-	healthzOk              = "/healthz responded with ok"
-	healthzNotOk           = "/healthz responded without ok"
-	clusterNotReachableMsg = "cluster is not reachable"
-	clusterReachableMsg    = "cluster is reachable"
+	healthzOk    = "/healthz responded with ok"
+	healthzNotOk = "/healthz responded without ok"
 )
 
 // getClusterHealth gets the kubernetes cluster health status by requesting "/healthz"
