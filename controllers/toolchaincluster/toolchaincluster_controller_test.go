@@ -8,7 +8,6 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
-	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
@@ -60,11 +59,11 @@ func TestClusterControllerChecks(t *testing.T) {
 		controller, req := prepareReconcile(NotFound, cl, requeAfter)
 
 		// when
-		recresult, err := controller.Reconcile(context.TODO(), req)
+		recResult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
 		require.Equal(t, err, nil)
-		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recresult)
+		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recResult)
 	})
 
 	t.Run("Error while getting ToolchainCluster", func(t *testing.T) {
@@ -81,11 +80,11 @@ func TestClusterControllerChecks(t *testing.T) {
 		controller, req := prepareReconcile(tc, cl, requeAfter)
 
 		// when
-		recresult, err := controller.Reconcile(context.TODO(), req)
+		recResult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
 		require.EqualError(t, err, "mock error")
-		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recresult)
+		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recResult)
 	})
 
 	t.Run("reconcile successful and requeued", func(t *testing.T) {
@@ -99,20 +98,19 @@ func TestClusterControllerChecks(t *testing.T) {
 		controller, req := prepareReconcile(stable, cl, requeAfter)
 
 		// when
-		recresult, err := controller.Reconcile(context.TODO(), req)
+		recResult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
 		require.Equal(t, err, nil)
-		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
+		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recResult)
 		assertClusterStatus(t, cl, "stable", clusterReadyCondition())
 	})
 
 	t.Run("toolchain cluster cache not found", func(t *testing.T) {
 		// given
-		unstable, _ := newToolchainCluster("unstable", tcNs, "http://cluster.com", toolchainv1alpha1.ToolchainClusterStatus{})
+		unstable, _ := newToolchainCluster("unstable", tcNs, "http://unstable.com", withStatus(clusterOfflineCondition("mock error")))
 
 		cl := test.NewFakeClient(t, unstable)
-		unstable.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(unstable.Status.Conditions, clusterNotReadyCondition())
 		controller, req := prepareReconcile(unstable, cl, requeAfter)
 
 		// when
@@ -120,10 +118,10 @@ func TestClusterControllerChecks(t *testing.T) {
 
 		// then
 		require.EqualError(t, err, "cluster unstable not found in cache")
-		actualtoolchaincluster := &toolchainv1alpha1.ToolchainCluster{}
-		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: "unstable", Namespace: tcNs}, actualtoolchaincluster)
+		actualToolchainCluster := &toolchainv1alpha1.ToolchainCluster{}
+		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: "unstable", Namespace: tcNs}, actualToolchainCluster)
 		require.NoError(t, err)
-		assertClusterStatus(t, cl, "unstable", clusterNotReadyCondition())
+		assertClusterStatus(t, cl, "unstable", clusterOfflineCondition("cluster unstable not found in cache"))
 	})
 
 	t.Run("error while updating a toolchain cluster status on cache not found", func(t *testing.T) {
@@ -143,8 +141,8 @@ func TestClusterControllerChecks(t *testing.T) {
 		require.EqualError(t, err, "cluster stable not found in cache")
 		require.Equal(t, reconcile.Result{}, recResult)
 
-		actualtoolchaincluster := &toolchainv1alpha1.ToolchainCluster{}
-		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: "stable", Namespace: tcNs}, actualtoolchaincluster)
+		actualToolchainCluster := &toolchainv1alpha1.ToolchainCluster{}
+		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: "stable", Namespace: tcNs}, actualToolchainCluster)
 		require.NoError(t, err)
 		assertClusterStatus(t, cl, "stable", clusterReadyCondition())
 	})
@@ -165,11 +163,11 @@ func TestClusterControllerChecks(t *testing.T) {
 			return false, serr
 		}
 		// when
-		recresult, err := controller.Reconcile(context.TODO(), req)
+		recResult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
 		require.EqualError(t, err, fmt.Sprintf("failed to update the status of cluster - %s %v", stable.Name, serr))
-		require.Equal(t, reconcile.Result{}, recresult)
+		require.Equal(t, reconcile.Result{}, recResult)
 	})
 
 	t.Run("migrates connection settings to kubeconfig in secret", func(t *testing.T) {
@@ -222,11 +220,11 @@ func TestGetClusterHealth(t *testing.T) {
 		}
 
 		// when
-		recresult, err := controller.Reconcile(context.TODO(), req)
+		recResult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
 		require.Equal(t, err, nil)
-		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
+		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recResult)
 		assertClusterStatus(t, cl, "stable", clusterReadyCondition())
 	})
 	t.Run("get health condition when health obtained is false ", func(t *testing.T) {
@@ -243,11 +241,11 @@ func TestGetClusterHealth(t *testing.T) {
 		}
 
 		// when
-		recresult, err := controller.Reconcile(context.TODO(), req)
+		recResult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
 		require.Equal(t, err, nil)
-		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
+		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recResult)
 		assertClusterStatus(t, cl, "stable", clusterNotReadyCondition())
 	})
 }
@@ -310,15 +308,5 @@ func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clu
 	tc := &toolchainv1alpha1.ToolchainCluster{}
 	err := cl.Get(context.TODO(), test.NamespacedName("test-namespace", clusterName), tc)
 	require.NoError(t, err)
-	assert.Len(t, tc.Status.Conditions, len(clusterConds))
-ExpConditions:
-	for _, expCond := range clusterConds {
-		for _, cond := range tc.Status.Conditions {
-			assert.Equal(t, expCond.Status, cond.Status)
-			assert.Equal(t, expCond.Reason, cond.Reason)
-			assert.Equal(t, expCond.Message, cond.Message)
-			continue ExpConditions
-		}
-		assert.Failf(t, "condition not found", "the list of conditions %v doesn't contain the expected condition %v", tc.Status.Conditions, expCond)
-	}
+	test.AssertConditionsMatch(t, tc.Status.Conditions, clusterConds...)
 }

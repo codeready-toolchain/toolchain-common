@@ -34,49 +34,49 @@ func TestClusterHealthChecks(t *testing.T) {
 		Reply(404)
 
 	tests := map[string]struct {
-		tctype      string
-		apiendpoint string
-		healthcheck bool
-		errh        error
+		tcType      string
+		apiEndPoint string
+		healthCheck bool
+		err         error
 	}{
 		"HealthOkay": {
-			tctype:      "stable",
-			apiendpoint: "http://cluster.com",
-			healthcheck: true,
+			tcType:      "stable",
+			apiEndPoint: "http://cluster.com",
+			healthCheck: true,
 		},
 		"HealthNotOkayButNoError": {
-			tctype:      "unstable",
-			apiendpoint: "http://unstable.com",
-			healthcheck: false,
+			tcType:      "unstable",
+			apiEndPoint: "http://unstable.com",
+			healthCheck: false,
 		},
 		"ErrorWhileDoingHealth": {
-			tctype:      "Notfound",
-			apiendpoint: "http://not-found.com",
-			healthcheck: false,
-			errh:        fmt.Errorf("the server could not find the requested resource"),
+			tcType:      "Notfound",
+			apiEndPoint: "http://not-found.com",
+			healthCheck: false,
+			err:         fmt.Errorf("the server could not find the requested resource"),
 		},
 	}
 	for k, tc := range tests {
 		t.Run(k, func(t *testing.T) {
 			//given
-			tctype, sec := newToolchainCluster(tc.tctype, tcNs, tc.apiendpoint, toolchainv1alpha1.ToolchainClusterStatus{})
-			cl := test.NewFakeClient(t, tctype, sec)
-			reset := setupCachedClusters(t, cl, tctype)
+			tcType, sec := newToolchainCluster(tc.tcType, tcNs, tc.apiEndPoint, toolchainv1alpha1.ToolchainClusterStatus{})
+			cl := test.NewFakeClient(t, tcType, sec)
+			reset := setupCachedClusters(t, cl, tcType)
 			defer reset()
-			cachedtc, found := cluster.GetCachedToolchainCluster(tctype.Name)
+			cachedTC, found := cluster.GetCachedToolchainCluster(tcType.Name)
 			require.True(t, found)
-			cacheclient, err := kubeclientset.NewForConfig(cachedtc.RestConfig)
+			cacheClient, err := kubeclientset.NewForConfig(cachedTC.RestConfig)
 			require.NoError(t, err)
 
 			//when
-			healthcheck, errh := getClusterHealthStatus(context.TODO(), cacheclient)
+			healthCheck, err := getClusterHealthStatus(context.TODO(), cacheClient)
 
 			//then
-			require.Equal(t, tc.healthcheck, healthcheck)
-			if tc.errh != nil {
-				require.EqualError(t, errh, tc.errh.Error())
+			require.Equal(t, tc.healthCheck, healthCheck)
+			if tc.err != nil {
+				require.EqualError(t, err, tc.err.Error())
 			} else {
-				require.NoError(t, errh)
+				require.NoError(t, err)
 			}
 
 		})
