@@ -91,8 +91,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	return reconcile.Result{RequeueAfter: r.RequeAfter}, nil
 }
 
-func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster, currentconditions ...toolchainv1alpha1.Condition) error {
-	toolchainCluster.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(toolchainCluster.Status.Conditions, currentconditions...)
+func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster, currentConditions ...toolchainv1alpha1.Condition) error {
+	toolchainCluster.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(toolchainCluster.Status.Conditions, currentConditions...)
 	if err := r.Client.Status().Update(ctx, toolchainCluster); err != nil {
 		return fmt.Errorf("failed to update the status of cluster - %s "+err.Error(), toolchainCluster.Name)
 	}
@@ -101,15 +101,15 @@ func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolcha
 
 func (r *Reconciler) getClusterHealthCondition(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) v1alpha1.Condition {
 
-	ishealthy, err := r.getClusterHealth(ctx, remoteClusterClientset)
+	isHealthy, err := r.getClusterHealth(ctx, remoteClusterClientset)
 	if err != nil {
 		return clusterOfflineCondition(err.Error())
-	} else {
-		if !ishealthy {
-			return clusterNotReadyCondition()
-		}
-		return clusterReadyCondition()
 	}
+	if !isHealthy {
+		return clusterNotReadyCondition()
+	}
+	return clusterReadyCondition()
+
 }
 
 func (r *Reconciler) getClusterHealth(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) (bool, error) {
