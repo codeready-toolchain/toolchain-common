@@ -59,22 +59,22 @@ func TestNewBannedUser(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := NewBannedUser(test.userSignup, test.bannedBy)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewBannedUser(tt.userSignup, tt.bannedBy)
 
-			if test.wantError {
+			if tt.wantError {
 				require.Error(t, err)
-				assert.Equal(t, test.wantErrorMsg, err.Error())
+				assert.Equal(t, tt.wantErrorMsg, err.Error())
 				require.Nil(t, got)
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, got)
 
-				assert.Equal(t, test.expectedBannedUser.ObjectMeta.Namespace, got.ObjectMeta.Namespace)
-				assert.Equal(t, test.expectedBannedUser.ObjectMeta.Name, got.ObjectMeta.Name)
-				assert.Equal(t, test.expectedBannedUser.Spec.Email, got.Spec.Email)
-				reflect.DeepEqual(test.expectedBannedUser.ObjectMeta.Labels, got.ObjectMeta.Labels)
+				assert.Equal(t, tt.expectedBannedUser.ObjectMeta.Namespace, got.ObjectMeta.Namespace)
+				assert.Equal(t, tt.expectedBannedUser.ObjectMeta.Name, got.ObjectMeta.Name)
+				assert.Equal(t, tt.expectedBannedUser.Spec.Email, got.Spec.Email)
+				reflect.DeepEqual(tt.expectedBannedUser.ObjectMeta.Labels, got.ObjectMeta.Labels)
 			}
 		})
 	}
@@ -96,18 +96,19 @@ func TestIsAlreadyBanned(t *testing.T) {
 		name       string
 		toBan      *toolchainv1alpha1.BannedUser
 		wantResult bool
-		wantErr    bool
+		wantError  bool
 	}{
 		{
 			name:       "user is already banned",
 			toBan:      bannedUser1,
 			wantResult: true,
+			wantError:  false,
 		},
 		{
 			name:       "user is not banned",
 			toBan:      bannedUser2,
 			wantResult: false,
-			wantErr:    false,
+			wantError:  false,
 		},
 	}
 
@@ -115,10 +116,12 @@ func TestIsAlreadyBanned(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotResult, err := IsAlreadyBanned(ctx, tt.toBan, fakeClient, test.HostOperatorNs)
 
-			fmt.Println("gotResult", gotResult)
-
-			require.NoError(t, err)
-			assert.Equal(t, tt.wantResult, gotResult)
+			if tt.wantError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.wantResult, gotResult)
+			}
 		})
 	}
 }
