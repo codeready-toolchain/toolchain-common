@@ -15,7 +15,6 @@ import (
 	"gopkg.in/h2non/gock.v1"
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	kubeclientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -118,9 +117,6 @@ func TestClusterControllerChecks(t *testing.T) {
 
 		// then
 		require.EqualError(t, err, "cluster unstable not found in cache")
-		actualToolchainCluster := &toolchainv1alpha1.ToolchainCluster{}
-		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: "unstable", Namespace: tcNs}, actualToolchainCluster)
-		require.NoError(t, err)
 		assertClusterStatus(t, cl, "unstable", clusterOfflineCondition("cluster unstable not found in cache"))
 	})
 
@@ -141,9 +137,7 @@ func TestClusterControllerChecks(t *testing.T) {
 		require.EqualError(t, err, "cluster stable not found in cache")
 		require.Equal(t, reconcile.Result{}, recResult)
 
-		actualToolchainCluster := &toolchainv1alpha1.ToolchainCluster{}
-		err = cl.Client.Get(context.TODO(), types.NamespacedName{Name: "stable", Namespace: tcNs}, actualToolchainCluster)
-		require.NoError(t, err)
+		assertClusterStatus(t, cl, "stable")
 	})
 
 	t.Run("error while updating a toolchain cluster status when health-check failed", func(t *testing.T) {
@@ -165,8 +159,9 @@ func TestClusterControllerChecks(t *testing.T) {
 		recResult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
-		require.EqualError(t, err, fmt.Sprintf("failed to update the status of cluster - %s %v", stable.Name, expectedErr))
+		require.EqualError(t, err, fmt.Sprintf("failed to update the status of cluster - %s: %v", stable.Name, expectedErr))
 		require.Equal(t, reconcile.Result{}, recResult)
+		assertClusterStatus(t, cl, "stable")
 	})
 
 	t.Run("migrates connection settings to kubeconfig in secret", func(t *testing.T) {

@@ -94,7 +94,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster, currentConditions ...toolchainv1alpha1.Condition) error {
 	toolchainCluster.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(toolchainCluster.Status.Conditions, currentConditions...)
 	if err := r.Client.Status().Update(ctx, toolchainCluster); err != nil {
-		return fmt.Errorf("failed to update the status of cluster - %s "+err.Error(), toolchainCluster.Name)
+		return fmt.Errorf("failed to update the status of cluster - %s: %w", toolchainCluster.Name, err)
 	}
 	return nil
 }
