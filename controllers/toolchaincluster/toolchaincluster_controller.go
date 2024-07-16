@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/codeready-toolchain/api/api/v1alpha1"
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
+	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubeclientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -22,9 +24,10 @@ import (
 
 // Reconciler reconciles a ToolchainCluster object
 type Reconciler struct {
-	Client     client.Client
-	Scheme     *runtime.Scheme
-	RequeAfter time.Duration
+	Client      client.Client
+	Scheme      *runtime.Scheme
+	RequeAfter  time.Duration
+	checkHealth func(context.Context, *kubeclientset.Clientset) (bool, error)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -47,7 +50,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	toolchainCluster := &toolchainv1alpha1.ToolchainCluster{}
 	err := r.Client.Get(ctx, request.NamespacedName, toolchainCluster)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if kerrors.IsNotFound(err) {
 			// Stop monitoring the toolchain cluster as it is deleted
 			return reconcile.Result{}, nil
 		}
@@ -58,9 +61,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	cachedCluster, ok := cluster.GetCachedToolchainCluster(toolchainCluster.Name)
 	if !ok {
 		err := fmt.Errorf("cluster %s not found in cache", toolchainCluster.Name)
-		toolchainCluster.Status.Conditions = []toolchainv1alpha1.Condition{clusterOfflineCondition()}
-		if err := r.Client.Status().Update(ctx, toolchainCluster); err != nil {
-			reqLogger.Error(err, "failed to update the status of ToolchainCluster")
+		if err := r.updateStatus(ctx, toolchainCluster, clusterOfflineCondition(err.Error())); err != nil {
+			reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
 		}
 		return reconcile.Result{}, err
 	}
@@ -72,21 +74,75 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	clientSet, err := kubeclientset.NewForConfig(cachedCluster.RestConfig)
 	if err != nil {
 		reqLogger.Error(err, "cannot create ClientSet for the ToolchainCluster")
-		return reconcile.Result{}, err
-	}
-	healthChecker := &HealthChecker{
-		localClusterClient:     r.Client,
-		remoteClusterClient:    cachedCluster.Client,
-		remoteClusterClientset: clientSet,
-		logger:                 reqLogger,
-	}
-	// update the status of the individual cluster.
-	if err := healthChecker.updateIndividualClusterStatus(ctx, toolchainCluster); err != nil {
-		reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
+		if err := r.updateStatus(ctx, toolchainCluster, clusterOfflineCondition(err.Error())); err != nil {
+			reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
+		}
 		return reconcile.Result{}, err
 	}
 
+	// execute healthcheck
+	healthCheckResult := r.getClusterHealthCondition(ctx, clientSet)
+
+	// update the status of the individual cluster.
+	if err := r.updateStatus(ctx, toolchainCluster, healthCheckResult); err != nil {
+		reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
+		return reconcile.Result{}, err
+	}
 	return reconcile.Result{RequeueAfter: r.RequeAfter}, nil
+}
+
+func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolchainv1alpha1.ToolchainCluster, currentConditions ...toolchainv1alpha1.Condition) error {
+	toolchainCluster.Status.Conditions = condition.AddOrUpdateStatusConditionsWithLastUpdatedTimestamp(toolchainCluster.Status.Conditions, currentConditions...)
+	if err := r.Client.Status().Update(ctx, toolchainCluster); err != nil {
+		return fmt.Errorf("failed to update the status of cluster - %s: %w", toolchainCluster.Name, err)
+	}
+	return nil
+}
+
+func (r *Reconciler) getClusterHealthCondition(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) v1alpha1.Condition {
+	isHealthy, err := r.getClusterHealth(ctx, remoteClusterClientset)
+	if err != nil {
+		return clusterOfflineCondition(err.Error())
+	}
+	if !isHealthy {
+		return clusterNotReadyCondition()
+	}
+	return clusterReadyCondition()
+
+}
+
+func (r *Reconciler) getClusterHealth(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) (bool, error) {
+	if r.checkHealth != nil {
+		return r.checkHealth(ctx, remoteClusterClientset)
+	}
+	return getClusterHealthStatus(ctx, remoteClusterClientset)
+}
+
+func clusterOfflineCondition(errMsg string) toolchainv1alpha1.Condition {
+	return toolchainv1alpha1.Condition{
+		Type:    toolchainv1alpha1.ConditionReady,
+		Status:  corev1.ConditionFalse,
+		Reason:  toolchainv1alpha1.ToolchainClusterClusterNotReachableReason,
+		Message: errMsg,
+	}
+}
+
+func clusterReadyCondition() toolchainv1alpha1.Condition {
+	return toolchainv1alpha1.Condition{
+		Type:    toolchainv1alpha1.ConditionReady,
+		Status:  corev1.ConditionTrue,
+		Reason:  toolchainv1alpha1.ToolchainClusterClusterReadyReason,
+		Message: healthzOk,
+	}
+}
+
+func clusterNotReadyCondition() toolchainv1alpha1.Condition {
+	return toolchainv1alpha1.Condition{
+		Type:    toolchainv1alpha1.ConditionReady,
+		Status:  corev1.ConditionFalse,
+		Reason:  toolchainv1alpha1.ToolchainClusterClusterNotReadyReason,
+		Message: healthzNotOk,
+	}
 }
 
 func (r *Reconciler) migrateSecretToKubeConfig(ctx context.Context, tc *toolchainv1alpha1.ToolchainCluster) error {
