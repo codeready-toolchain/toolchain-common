@@ -56,7 +56,7 @@ func TestNewBannedUser(t *testing.T) {
 			},
 		},
 		{
-			name:               "userSignup without email hash label and phone has label",
+			name:               "userSignup without email hash label and phone hash label",
 			userSignup:         userSignup2,
 			bannedBy:           "admin",
 			wantError:          true,
