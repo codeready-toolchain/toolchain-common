@@ -42,7 +42,7 @@ type ToolchainClusterService struct {
 
 type NewClient func(config *rest.Config, options client.Options) (client.Client, error)
 
-// NewToolchainClusterServiceWithClient creates a new instance of ToolchainClusterService object and assigns the given newClient functione to be used for creating a client
+// NewToolchainClusterServiceWithClient creates a new instance of ToolchainClusterService object and assigns the given newClient function to be used for creating a client
 func NewToolchainClusterServiceWithClient(client client.Client, log logr.Logger, namespace string, timeout time.Duration, newClient NewClient) ToolchainClusterService {
 	service := NewToolchainClusterService(client, log, namespace, timeout)
 	service.newClient = newClient

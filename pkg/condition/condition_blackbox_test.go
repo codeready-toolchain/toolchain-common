@@ -11,7 +11,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	apiv1 "k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -522,7 +521,7 @@ func conditions(size int, prefix string) []toolchainv1alpha1.Condition {
 		conditions[i] = toolchainv1alpha1.Condition{
 			Type:    toolchainv1alpha1.ConditionType(fmt.Sprintf("%sTestConditionType%d", prefix, i)),
 			Message: fmt.Sprintf("%s Message %d", prefix, i),
-			Status:  apiv1.ConditionTrue,
+			Status:  corev1.ConditionTrue,
 			Reason:  fmt.Sprintf("%sReason%d", prefix, i),
 		}
 		if prefix == "Existing" {
@@ -532,14 +531,14 @@ func conditions(size int, prefix string) []toolchainv1alpha1.Condition {
 	return conditions
 }
 
-func reverseStatus(status apiv1.ConditionStatus) apiv1.ConditionStatus {
+func reverseStatus(status corev1.ConditionStatus) corev1.ConditionStatus {
 	switch status {
-	case apiv1.ConditionTrue, apiv1.ConditionUnknown:
-		return apiv1.ConditionFalse
-	case apiv1.ConditionFalse:
-		return apiv1.ConditionTrue
+	case corev1.ConditionTrue, corev1.ConditionUnknown:
+		return corev1.ConditionFalse
+	case corev1.ConditionFalse:
+		return corev1.ConditionTrue
 	default:
 		// Unknown
-		return apiv1.ConditionFalse
+		return corev1.ConditionFalse
 	}
 }

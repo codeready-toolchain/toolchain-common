@@ -61,8 +61,8 @@ func TestClusterControllerChecks(t *testing.T) {
 		recResult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
-		require.Equal(t, err, nil)
-		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recResult)
+		require.NoError(t, err)
+		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recresult)
 	})
 
 	t.Run("Error while getting ToolchainCluster", func(t *testing.T) {
@@ -100,9 +100,9 @@ func TestClusterControllerChecks(t *testing.T) {
 		recResult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
-		require.Equal(t, err, nil)
-		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recResult)
-		assertClusterStatus(t, cl, "stable", clusterReadyCondition())
+		require.NoError(t, err)
+		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
+		assertClusterStatus(t, cl, "stable", healthy())
 	})
 
 	t.Run("toolchain cluster cache not found", func(t *testing.T) {
@@ -177,7 +177,7 @@ func TestClusterControllerChecks(t *testing.T) {
 		// when
 		_, err := controller.Reconcile(context.TODO(), req)
 		secretAfterReconcile := &corev1.Secret{}
-		require.NoError(t, cl.Get(context.TODO(), client.ObjectKeyFromObject(secret), secretAfterReconcile))
+		require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(secret), secretAfterReconcile))
 		actualKubeConfig, loadErr := clientcmd.Load(secretAfterReconcile.Data["kubeconfig"])
 
 		// then
@@ -257,10 +257,10 @@ func TestComposeKubeConfig(t *testing.T) {
 }
 
 func setupCachedClusters(t *testing.T, cl *test.FakeClient, clusters ...*toolchainv1alpha1.ToolchainCluster) func() {
-	service := cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, test.MemberOperatorNs, 0, func(config *rest.Config, options client.Options) (client.Client, error) {
+	service := cluster.NewToolchainClusterServiceWithClient(cl, logf.Log, test.MemberOperatorNs, 0, func(config *rest.Config, options runtimeclient.Options) (runtimeclient.Client, error) {
 		// make sure that insecure is false to make Gock mocking working properly
 		config.Insecure = false
-		return client.New(config, options)
+		return runtimeclient.New(config, options)
 	})
 	for _, clustr := range clusters {
 		err := service.AddOrUpdateToolchainCluster(clustr)

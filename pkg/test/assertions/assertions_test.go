@@ -39,7 +39,7 @@ func TestExplain(t *testing.T) {
 		expl := Explain(pred, actual)
 
 		// then
-		assert.Equal(t, expl, "predicate 'assertions.predicateWithoutFixing' didn't match the object")
+		assert.Equal(t, "predicate 'assertions.predicateWithoutFixing' didn't match the object", expl)
 	})
 }
 

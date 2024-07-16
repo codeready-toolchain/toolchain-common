@@ -5,12 +5,13 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"github.com/google/uuid"
 	"io/fs"
 	"path/filepath"
 	"regexp"
 	"testing"
 	texttemplate "text/template"
+
+	"github.com/google/uuid"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	commonclient "github.com/codeready-toolchain/toolchain-common/pkg/client"
@@ -616,7 +617,7 @@ func TestLoadTemplatesByTiers(t *testing.T) {
 			_, err := loadTemplatesByTiers(dummyMetadata, dummyTemplates)
 			// then
 			require.Error(t, err)
-			assert.EqualError(t, err, "unable to load templates: invalid name format for file '.DS_Store'")
+			require.EqualError(t, err, "unable to load templates: invalid name format for file '.DS_Store'")
 		})
 
 		t.Run("invalid filename scope", func(t *testing.T) {
