@@ -62,7 +62,7 @@ func TestClusterControllerChecks(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recresult)
+		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recResult)
 	})
 
 	t.Run("Error while getting ToolchainCluster", func(t *testing.T) {
@@ -101,8 +101,8 @@ func TestClusterControllerChecks(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recresult)
-		assertClusterStatus(t, cl, "stable", healthy())
+		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recResult)
+		assertClusterStatus(t, cl, "stable", clusterReadyCondition())
 	})
 
 	t.Run("toolchain cluster cache not found", func(t *testing.T) {
