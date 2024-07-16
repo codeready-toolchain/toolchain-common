@@ -47,12 +47,9 @@ func IsAlreadyBanned(ctx context.Context, bannedUser *toolchainv1alpha1.BannedUs
 	})
 	bannedUsers := &toolchainv1alpha1.BannedUserList{}
 
-	fmt.Println("list", hostClient.List(ctx, bannedUsers, emailHashLabelMatch, client.InNamespace(hostNamespace)))
 	if err := hostClient.List(ctx, bannedUsers, emailHashLabelMatch, client.InNamespace(hostNamespace)); err != nil {
 		return false, err
 	}
-
-	fmt.Println("bannedUsers", bannedUsers)
 
 	return len(bannedUsers.Items) > 0, nil
 }
