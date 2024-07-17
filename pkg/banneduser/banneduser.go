@@ -9,9 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const bannedByLabel = toolchainv1alpha1.LabelKeyPrefix + "banned-by"
-
-// NewBannedUser creates a BannedUser resource
+// NewBannedUser creates a bannedUser resource
 func NewBannedUser(userSignup *toolchainv1alpha1.UserSignup, bannedBy string) (*toolchainv1alpha1.BannedUser, error) {
 	var emailHashLbl, phoneHashLbl string
 	var exists bool
@@ -26,7 +24,7 @@ func NewBannedUser(userSignup *toolchainv1alpha1.UserSignup, bannedBy string) (*
 			Name:      fmt.Sprintf("banneduser-%s", emailHashLbl),
 			Labels: map[string]string{
 				toolchainv1alpha1.BannedUserEmailHashLabelKey: emailHashLbl,
-				bannedByLabel: bannedBy,
+				toolchainv1alpha1.BannedByLabelKey:            bannedBy,
 			},
 		},
 		Spec: toolchainv1alpha1.BannedUserSpec{
