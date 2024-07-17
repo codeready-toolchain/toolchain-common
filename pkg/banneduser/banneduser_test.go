@@ -47,7 +47,7 @@ func TestNewBannedUser(t *testing.T) {
 					Name:      fmt.Sprintf("banneduser-%s", userSignup1UserEmailHash),
 					Labels: map[string]string{
 						toolchainv1alpha1.BannedUserEmailHashLabelKey: userSignup1UserEmailHash,
-						bannedByLabel: "admin",
+						toolchainv1alpha1.BannedByLabelKey:            "admin",
 					},
 				},
 				Spec: toolchainv1alpha1.BannedUserSpec{
@@ -74,8 +74,8 @@ func TestNewBannedUser(t *testing.T) {
 					Namespace: userSignup3.Namespace,
 					Name:      fmt.Sprintf("banneduser-%s", userSignup3EmailHash),
 					Labels: map[string]string{
-						toolchainv1alpha1.BannedUserEmailHashLabelKey: userSignup3EmailHash,
-						bannedByLabel: "admin",
+						toolchainv1alpha1.BannedUserEmailHashLabelKey:     userSignup3EmailHash,
+						toolchainv1alpha1.BannedByLabelKey:                "admin",
 						toolchainv1alpha1.UserSignupUserPhoneHashLabelKey: userSignup3PhoneHash,
 					},
 				},
