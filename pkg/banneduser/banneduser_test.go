@@ -3,6 +3,7 @@ package banneduser
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"testing"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
@@ -102,8 +103,8 @@ func TestNewBannedUser(t *testing.T) {
 				assert.Equal(t, tt.expectedBannedUser.ObjectMeta.Name, got.ObjectMeta.Name)
 				assert.Equal(t, tt.expectedBannedUser.Spec.Email, got.Spec.Email)
 
-				if tt.expectedBannedUser != nil && !compareMaps(tt.expectedBannedUser.Labels, got.Labels) {
-					t.Errorf("compareMaps(%v, %v) = false, expected = true", tt.expectedBannedUser.Labels, got.Labels)
+				if tt.expectedBannedUser != nil {
+					assert.True(t, reflect.DeepEqual(tt.expectedBannedUser.Labels, got.Labels))
 				}
 			}
 		})
@@ -167,22 +168,4 @@ func TestIsAlreadyBanned(t *testing.T) {
 			}
 		})
 	}
-}
-
-func compareMaps(map1, map2 map[string]string) bool {
-	if len(map1) != len(map2) {
-		return false
-	}
-
-	for key, value1 := range map1 {
-		value2, ok := map2[key]
-		if !ok {
-			return false
-		}
-		if value1 != value2 {
-			return false
-		}
-	}
-
-	return true
 }
