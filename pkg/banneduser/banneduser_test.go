@@ -8,8 +8,8 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	commonsignup "github.com/codeready-toolchain/toolchain-common/pkg/test/usersignup"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -17,15 +17,15 @@ import (
 
 func TestNewBannedUser(t *testing.T) {
 	userSignup1 := commonsignup.NewUserSignup(commonsignup.WithName("johny"), commonsignup.WithEmail("jonhy@example.com"))
-	userSignup1UserEmailHashLabelKey := userSignup1.Labels[toolchainv1alpha1.UserSignupUserEmailHashLabelKey]
+	userSignup1UserEmailHash := userSignup1.Labels[toolchainv1alpha1.UserSignupUserEmailHashLabelKey]
 
 	userSignup2 := commonsignup.NewUserSignup(commonsignup.WithName("bob"), commonsignup.WithEmail("bob@example.com"))
-	userSignup2.Labels = map[string]string{}
+	userSignup2.Labels = nil
 
 	userSignup3 := commonsignup.NewUserSignup(commonsignup.WithName("oliver"), commonsignup.WithEmail("oliver@example.com"))
-	userSignup3PhoneHashLabelKey := "fd276563a8232d16620da8ec85d0575f"
-	userSignup3.Labels[toolchainv1alpha1.UserSignupUserPhoneHashLabelKey] = userSignup3PhoneHashLabelKey
-	userSignup3UserEmailHashLabelKey := userSignup3.Labels[toolchainv1alpha1.UserSignupUserEmailHashLabelKey]
+	userSignup3PhoneHash := "fd276563a8232d16620da8ec85d0575f"
+	userSignup3.Labels[toolchainv1alpha1.UserSignupUserPhoneHashLabelKey] = userSignup3PhoneHash
+	userSignup3EmailHash := userSignup3.Labels[toolchainv1alpha1.UserSignupUserEmailHashLabelKey]
 
 	tests := []struct {
 		name               string
@@ -44,9 +44,9 @@ func TestNewBannedUser(t *testing.T) {
 			expectedBannedUser: &toolchainv1alpha1.BannedUser{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: userSignup1.Namespace,
-					Name:      fmt.Sprintf("banneduser-%s", userSignup1UserEmailHashLabelKey),
+					Name:      fmt.Sprintf("banneduser-%s", userSignup1UserEmailHash),
 					Labels: map[string]string{
-						toolchainv1alpha1.BannedUserEmailHashLabelKey: userSignup1UserEmailHashLabelKey,
+						toolchainv1alpha1.BannedUserEmailHashLabelKey: userSignup1UserEmailHash,
 						bannedByLabel: "admin",
 					},
 				},
@@ -72,11 +72,11 @@ func TestNewBannedUser(t *testing.T) {
 			expectedBannedUser: &toolchainv1alpha1.BannedUser{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: userSignup3.Namespace,
-					Name:      fmt.Sprintf("banneduser-%s", userSignup3UserEmailHashLabelKey),
+					Name:      fmt.Sprintf("banneduser-%s", userSignup3EmailHash),
 					Labels: map[string]string{
-						toolchainv1alpha1.BannedUserEmailHashLabelKey: userSignup3UserEmailHashLabelKey,
+						toolchainv1alpha1.BannedUserEmailHashLabelKey: userSignup3EmailHash,
 						bannedByLabel: "admin",
-						toolchainv1alpha1.UserSignupUserPhoneHashLabelKey: userSignup3PhoneHashLabelKey,
+						toolchainv1alpha1.UserSignupUserPhoneHashLabelKey: userSignup3PhoneHash,
 					},
 				},
 				Spec: toolchainv1alpha1.BannedUserSpec{
@@ -157,7 +157,7 @@ func TestIsAlreadyBanned(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotResult, err := IsAlreadyBanned(ctx, tt.toBan, tt.fakeClient, test.HostOperatorNs)
+			gotResult, err := IsAlreadyBanned(ctx, tt.toBan.Labels[toolchainv1alpha1.BannedUserEmailHashLabelKey], tt.fakeClient, test.HostOperatorNs)
 
 			if tt.wantError {
 				require.Error(t, err)

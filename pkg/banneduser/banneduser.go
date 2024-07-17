@@ -41,9 +41,9 @@ func NewBannedUser(userSignup *toolchainv1alpha1.UserSignup, bannedBy string) (*
 }
 
 // IsAlreadyBanned checks if the user was already banned
-func IsAlreadyBanned(ctx context.Context, bannedUser *toolchainv1alpha1.BannedUser, hostClient client.Client, hostNamespace string) (bool, error) {
+func IsAlreadyBanned(ctx context.Context, userEmailHash string, hostClient client.Client, hostNamespace string) (bool, error) {
 	emailHashLabelMatch := client.MatchingLabels(map[string]string{
-		toolchainv1alpha1.BannedUserEmailHashLabelKey: bannedUser.Labels[toolchainv1alpha1.BannedUserEmailHashLabelKey],
+		toolchainv1alpha1.BannedUserEmailHashLabelKey: userEmailHash,
 	})
 	bannedUsers := &toolchainv1alpha1.BannedUserList{}
 
