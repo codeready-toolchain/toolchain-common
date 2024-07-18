@@ -20,7 +20,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -217,7 +216,7 @@ func TestGetClusterHealth(t *testing.T) {
 		recResult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
-		require.Equal(t, err, nil)
+		require.NoError(t, err)
 		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recResult)
 		assertClusterStatus(t, cl, "stable", clusterReadyCondition())
 	})
@@ -238,7 +237,7 @@ func TestGetClusterHealth(t *testing.T) {
 		recResult, err := controller.Reconcile(context.TODO(), req)
 
 		// then
-		require.Equal(t, err, nil)
+		require.NoError(t, err)
 		require.Equal(t, reconcile.Result{RequeueAfter: requeAfter}, recResult)
 		assertClusterStatus(t, cl, "stable", clusterNotReadyCondition())
 	})
@@ -293,7 +292,7 @@ func prepareReconcile(toolchainCluster *toolchainv1alpha1.ToolchainCluster, cl *
 	return controller, req
 }
 
-func assertClusterStatus(t *testing.T, cl client.Client, clusterName string, clusterConds ...toolchainv1alpha1.Condition) {
+func assertClusterStatus(t *testing.T, cl runtimeclient.Client, clusterName string, clusterConds ...toolchainv1alpha1.Condition) {
 	tc := &toolchainv1alpha1.ToolchainCluster{}
 	err := cl.Get(context.TODO(), test.NamespacedName("test-namespace", clusterName), tc)
 	require.NoError(t, err)
