@@ -111,7 +111,7 @@ func TestNewBannedUser(t *testing.T) {
 	}
 }
 
-func TestIsAlreadyBanned(t *testing.T) {
+func TestGetBannedUser(t *testing.T) {
 	userSignup1 := commonsignup.NewUserSignup(commonsignup.WithName("johny"), commonsignup.WithEmail("johny@example.com"))
 	userSignup2 := commonsignup.NewUserSignup(commonsignup.WithName("bob"), commonsignup.WithEmail("bob@example.com"))
 	userSignup3 := commonsignup.NewUserSignup(commonsignup.WithName("oliver"), commonsignup.WithEmail("oliver@example.com"))
@@ -158,7 +158,7 @@ func TestIsAlreadyBanned(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotResult, err := IsAlreadyBanned(ctx, tt.toBan.Labels[toolchainv1alpha1.BannedUserEmailHashLabelKey], tt.fakeClient, test.HostOperatorNs)
+			gotResult, err := GetBannedUser(ctx, tt.toBan.Labels[toolchainv1alpha1.BannedUserEmailHashLabelKey], tt.fakeClient, test.HostOperatorNs)
 
 			if tt.wantError {
 				require.Error(t, err)
