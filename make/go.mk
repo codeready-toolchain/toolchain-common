@@ -28,3 +28,17 @@ tidy:
 .PHONY: vet
 vet:
 	go vet ./...
+
+
+REPO_PATH = ""
+
+.PHONY: replace
+replace:
+	$(eval C_PATH = $(PWD))\
+	$(foreach repo,host-operator member-operator toolchain-e2e registration-service ,\
+	$(eval REPO_PATH = /tmp/$(repo)) \
+	rm -rf ${REPO_PATH}; \
+	git clone https://github.com/codeready-toolchain/$(repo).git ${REPO_PATH}; \
+	cd ${REPO_PATH}; \
+	go mod edit -replace github.com/codeready-toolchain/toolchain-common=${C_PATH}; \
+	)
