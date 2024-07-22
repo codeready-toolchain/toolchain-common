@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/codeready-toolchain/api/api/v1alpha1"
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
@@ -99,7 +98,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, toolchainCluster *toolcha
 	return nil
 }
 
-func (r *Reconciler) getClusterHealthCondition(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) v1alpha1.Condition {
+func (r *Reconciler) getClusterHealthCondition(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) toolchainv1alpha1.Condition {
 	isHealthy, err := r.getClusterHealth(ctx, remoteClusterClientset)
 	if err != nil {
 		return clusterOfflineCondition(err.Error())
