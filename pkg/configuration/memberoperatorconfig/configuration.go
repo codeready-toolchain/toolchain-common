@@ -24,7 +24,6 @@ type Configuration struct {
 // then retrieves the latest config using the provided client and updates the cache
 func GetConfiguration(cl client.Client) (Configuration, error) {
 	config, secrets, err := commonconfig.GetConfig(cl, &toolchainv1alpha1.MemberOperatorConfig{})
-	fmt.Println("aqui vai err", err)
 	if err != nil {
 		// return default config
 		logger.Error(err, "failed to retrieve Configuration")
