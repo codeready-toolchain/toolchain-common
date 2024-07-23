@@ -8,6 +8,7 @@ import (
 	commonconfig "github.com/codeready-toolchain/toolchain-common/pkg/configuration"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -23,6 +24,7 @@ type Configuration struct {
 // then retrieves the latest config using the provided client and updates the cache
 func GetConfiguration(cl client.Client) (Configuration, error) {
 	config, secrets, err := commonconfig.GetConfig(cl, &toolchainv1alpha1.MemberOperatorConfig{})
+	fmt.Println("aqui vai err", err)
 	if err != nil {
 		// return default config
 		logger.Error(err, "failed to retrieve Configuration")
@@ -267,4 +269,18 @@ func (a WebConsolePluginConfig) PendoKey() string {
 
 func (a WebConsolePluginConfig) PendoHost() string {
 	return commonconfig.GetString(a.w.PendoHost, "cdn.pendo.io")
+}
+
+// GetCRTConfiguration creates the client used for configuration and
+// returns the loaded CRT configuration
+func GetCRTConfiguration(config *rest.Config, scheme *runtime.Scheme) (Configuration, error) {
+	// create client that will be used for retrieving the member operator config maps
+	cl, err := client.New(config, client.Options{
+		Scheme: scheme,
+	})
+	if err != nil {
+		return Configuration{}, err
+	}
+
+	return GetConfiguration(cl)
 }

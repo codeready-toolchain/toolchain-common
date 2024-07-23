@@ -6,8 +6,13 @@ import (
 
 	commonconfig "github.com/codeready-toolchain/toolchain-common/pkg/configuration"
 	testconfig "github.com/codeready-toolchain/toolchain-common/pkg/test/config"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 
+	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAuth(t *testing.T) {
@@ -299,4 +304,23 @@ func TestWebConsolePlugin(t *testing.T) {
 
 		assert.Equal(t, "abc.pendo.io", memberOperatorCfg.WebConsolePlugin().PendoHost())
 	})
+}
+
+func TestGetCRTConfiguration(t *testing.T) {
+	scheme := runtime.NewScheme()
+	mockGetter := new(MockConfigGetter)
+	mockGetter.On("GetCRTConfiguration", mock.Anything, mock.Anything).Return(Configuration{cfg: &toolchainv1alpha1.MemberOperatorConfigSpec{}}, nil)
+
+	t.Run("succeeds", func(t *testing.T) {
+		crtConfig, err := mockGetter.GetCRTConfiguration(&rest.Config{}, scheme)
+		require.NoError(t, err)
+		assert.NotEmpty(t, crtConfig)
+	})
+
+	t.Run("fails", func(t *testing.T) {
+		crtConfig, err := GetCRTConfiguration(&rest.Config{}, scheme)
+		require.Error(t, err)
+		assert.Empty(t, crtConfig)
+	})
+
 }
