@@ -277,42 +277,6 @@ func (o WebhookOption) VMSSHKey(value string) WebhookOption {
 	return o
 }
 
-type WebConsolePluginOption struct {
-	*MemberOperatorConfigOptionImpl
-}
-
-func WebConsolePlugin() *WebConsolePluginOption {
-	o := &WebConsolePluginOption{
-		&MemberOperatorConfigOptionImpl{},
-	}
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.WebConsolePlugin = toolchainv1alpha1.WebConsolePlugin{}
-	})
-
-	return o
-}
-
-func (o WebConsolePluginOption) Deploy(value bool) WebConsolePluginOption {
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.WebConsolePlugin.Deploy = &value
-	})
-	return o
-}
-
-func (o WebConsolePluginOption) PendoKey(value string) WebConsolePluginOption {
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.WebConsolePlugin.PendoKey = &value
-	})
-	return o
-}
-
-func (o WebConsolePluginOption) PendoHost(value string) WebConsolePluginOption {
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.WebConsolePlugin.PendoHost = &value
-	})
-	return o
-}
-
 func NewMemberOperatorConfigObj(options ...MemberOperatorConfigOption) *toolchainv1alpha1.MemberOperatorConfig {
 	memberOperatorConfig := &toolchainv1alpha1.MemberOperatorConfig{
 		ObjectMeta: metav1.ObjectMeta{
