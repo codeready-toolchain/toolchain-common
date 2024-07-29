@@ -43,10 +43,10 @@ GH_TC = $(GH_BASE_URL_CRT)toolchain-common
 .PHONY: verify-replace-run
 verify-replace-run:
 	$(eval C_PATH = $(PWD))\
-	$(foreach repo,${GH_HOST},\
+	$(foreach repo,${GH_HOST} ${GH_MEMBER} ${GH_REGSVC} ${GH_E2E} ${GH_KSCTL},\
 	$(eval REPO_PATH = ${BASE_REPO_PATH}/$(shell basename $(repo))) \
 	git clone --depth=1 $(repo) ${REPO_PATH}; \
 	cd ${REPO_PATH}; \
 	go mod edit -replace github.com/codeready-toolchain/toolchain-common=${C_PATH}; \
-	$(MAKE) verify-dependencies 1>/dev/null; \
+	$(MAKE) verify-dependencies; \
 	)
