@@ -3,7 +3,7 @@ module github.com/codeready-toolchain/toolchain-common
 go 1.20
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20240717145630-bb67a632867a
+	github.com/codeready-toolchain/api v0.0.0-20240801160201-ed4387f19137
 	github.com/go-logr/logr v1.2.3
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/lestrrat-go/jwx v1.2.29
@@ -23,8 +23,6 @@ require (
 	k8s.io/client-go v0.25.0
 	sigs.k8s.io/controller-runtime v0.13.0
 )
-
-replace github.com/codeready-toolchain/api => github.com/xcoulon/api v0.0.0-20240725145329-0fc7541fe19e
 
 require (
 	github.com/ghodss/yaml v1.0.0
