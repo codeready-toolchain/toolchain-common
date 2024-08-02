@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
-
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake" //nolint: staticcheck // not deprecated anymore: see https://github.com/kubernetes-sigs/controller-runtime/pull/1101
 )
@@ -20,10 +21,13 @@ func NewFakeClient(t T, initObjs ...client.Object) *FakeClient {
 	s := scheme.Scheme
 	err := toolchainv1alpha1.AddToScheme(s)
 	require.NoError(t, err)
+
+	toolchainObjs := getAllToolchainResources(s)
+
 	cl := fake.NewClientBuilder().
 		WithScheme(s).
 		WithObjects(initObjs...).
-		WithStatusSubresource(initObjs...).
+		WithStatusSubresource(toolchainObjs...).
 		Build()
 	return &FakeClient{Client: cl, T: t}
 }
@@ -186,6 +190,22 @@ func toMap(obj runtime.Object) (map[string]interface{}, error) {
 	}
 
 	return m, nil
+}
+
+func getAllToolchainResources(s *runtime.Scheme) []client.Object {
+	toolchainObjs := make([]client.Object, 0)
+	KindToTypeMap := s.KnownTypes(toolchainv1alpha1.GroupVersion)
+	var kinds []string
+	for key, _ := range KindToTypeMap {
+		kinds = append(kinds, key)
+	}
+	for _, k := range kinds {
+		obj := &unstructured.Unstructured{}
+		gvk := schema.GroupVersionKind{Group: toolchainv1alpha1.GroupVersion.Group, Version: toolchainv1alpha1.GroupVersion.Version, Kind: k}
+		obj.SetGroupVersionKind(gvk)
+		toolchainObjs = append(toolchainObjs, obj)
+	}
+	return toolchainObjs
 }
 
 func (c *FakeClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
