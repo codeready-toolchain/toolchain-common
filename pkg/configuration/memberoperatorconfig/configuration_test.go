@@ -54,6 +54,20 @@ func TestAutoscaler(t *testing.T) {
 			assert.Equal(t, "5GiB", memberOperatorCfg.Autoscaler().BufferMemory())
 		})
 	})
+	t.Run("buffer cpu", func(t *testing.T) {
+		t.Run("default", func(t *testing.T) {
+			cfg := commonconfig.NewMemberOperatorConfigWithReset(t)
+			memberOperatorCfg := Configuration{cfg: &cfg.Spec}
+
+			assert.Equal(t, "50m", memberOperatorCfg.Autoscaler().BufferCPU())
+		})
+		t.Run("non-default", func(t *testing.T) {
+			cfg := commonconfig.NewMemberOperatorConfigWithReset(t, testconfig.Autoscaler().BufferCPU("2000m"))
+			memberOperatorCfg := Configuration{cfg: &cfg.Spec}
+
+			assert.Equal(t, "2000m", memberOperatorCfg.Autoscaler().BufferCPU())
+		})
+	})
 	t.Run("buffer replicas", func(t *testing.T) {
 		t.Run("default", func(t *testing.T) {
 			cfg := commonconfig.NewMemberOperatorConfigWithReset(t)
@@ -271,32 +285,5 @@ func TestWebhook(t *testing.T) {
 
 		assert.False(t, memberOperatorCfg.Webhook().Deploy())
 		assert.Equal(t, "ssh-rsa abc-123", memberOperatorCfg.Webhook().VMSSHKey())
-	})
-}
-
-func TestWebConsolePlugin(t *testing.T) {
-	t.Run("default", func(t *testing.T) {
-		cfg := commonconfig.NewMemberOperatorConfigWithReset(t)
-		memberOperatorCfg := Configuration{cfg: &cfg.Spec}
-
-		assert.False(t, memberOperatorCfg.WebConsolePlugin().Deploy())
-	})
-	t.Run("non-default", func(t *testing.T) {
-		cfg := commonconfig.NewMemberOperatorConfigWithReset(t, testconfig.WebConsolePlugin().Deploy(true))
-		memberOperatorCfg := Configuration{cfg: &cfg.Spec}
-
-		assert.True(t, memberOperatorCfg.WebConsolePlugin().Deploy())
-	})
-	t.Run("with PendoKey set", func(t *testing.T) {
-		cfg := commonconfig.NewMemberOperatorConfigWithReset(t, testconfig.WebConsolePlugin().PendoKey("XXXX"))
-		memberOperatorCfg := Configuration{cfg: &cfg.Spec}
-
-		assert.Equal(t, "XXXX", memberOperatorCfg.WebConsolePlugin().PendoKey())
-	})
-	t.Run("with PendoHost set", func(t *testing.T) {
-		cfg := commonconfig.NewMemberOperatorConfigWithReset(t, testconfig.WebConsolePlugin().PendoHost("abc.pendo.io"))
-		memberOperatorCfg := Configuration{cfg: &cfg.Spec}
-
-		assert.Equal(t, "abc.pendo.io", memberOperatorCfg.WebConsolePlugin().PendoHost())
 	})
 }

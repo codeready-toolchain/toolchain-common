@@ -115,10 +115,6 @@ func (c *Configuration) Webhook() WebhookConfig {
 	}
 }
 
-func (c *Configuration) WebConsolePlugin() WebConsolePluginConfig {
-	return WebConsolePluginConfig{c.cfg.WebConsolePlugin}
-}
-
 type AuthConfig struct {
 	auth toolchainv1alpha1.AuthConfig
 }
@@ -136,7 +132,11 @@ func (a AutoscalerConfig) Deploy() bool {
 }
 
 func (a AutoscalerConfig) BufferMemory() string {
-	return commonconfig.GetString(a.autoscaler.BufferMemory, "50Mi") // TODO temporarily changed to e2e value, should be changed back to "" after autoscaler handling is moved to memberoperatorconfig controller
+	return commonconfig.GetString(a.autoscaler.BufferMemory, "50Mi")
+}
+
+func (a AutoscalerConfig) BufferCPU() string {
+	return commonconfig.GetString(a.autoscaler.BufferCPU, "50m")
 }
 
 func (a AutoscalerConfig) BufferReplicas() int {
@@ -251,20 +251,4 @@ func (a WebhookConfig) VMSSHKey() string {
 	}
 	vmAccessKey := commonconfig.GetString(a.w.Secret.VirtualMachineAccessKey, "")
 	return a.webhookSecret(vmAccessKey)
-}
-
-type WebConsolePluginConfig struct {
-	w toolchainv1alpha1.WebConsolePlugin
-}
-
-func (a WebConsolePluginConfig) Deploy() bool {
-	return commonconfig.GetBool(a.w.Deploy, false)
-}
-
-func (a WebConsolePluginConfig) PendoKey() string {
-	return commonconfig.GetString(a.w.PendoKey, "")
-}
-
-func (a WebConsolePluginConfig) PendoHost() string {
-	return commonconfig.GetString(a.w.PendoHost, "cdn.pendo.io")
 }

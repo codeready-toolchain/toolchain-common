@@ -75,6 +75,13 @@ func (o AutoscalerOption) BufferMemory(value string) AutoscalerOption {
 	return o
 }
 
+func (o AutoscalerOption) BufferCPU(value string) AutoscalerOption {
+	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		config.Spec.Autoscaler.BufferCPU = &value
+	})
+	return o
+}
+
 func (o AutoscalerOption) BufferReplicas(value int) AutoscalerOption {
 	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
 		config.Spec.Autoscaler.BufferReplicas = &value
@@ -273,42 +280,6 @@ func (o WebhookOption) VMSSHKey(value string) WebhookOption {
 			config.Spec.Webhook.Secret = &toolchainv1alpha1.WebhookSecret{}
 		}
 		config.Spec.Webhook.Secret.VirtualMachineAccessKey = &value
-	})
-	return o
-}
-
-type WebConsolePluginOption struct {
-	*MemberOperatorConfigOptionImpl
-}
-
-func WebConsolePlugin() *WebConsolePluginOption {
-	o := &WebConsolePluginOption{
-		&MemberOperatorConfigOptionImpl{},
-	}
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.WebConsolePlugin = toolchainv1alpha1.WebConsolePlugin{}
-	})
-
-	return o
-}
-
-func (o WebConsolePluginOption) Deploy(value bool) WebConsolePluginOption {
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.WebConsolePlugin.Deploy = &value
-	})
-	return o
-}
-
-func (o WebConsolePluginOption) PendoKey(value string) WebConsolePluginOption {
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.WebConsolePlugin.PendoKey = &value
-	})
-	return o
-}
-
-func (o WebConsolePluginOption) PendoHost(value string) WebConsolePluginOption {
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.WebConsolePlugin.PendoHost = &value
 	})
 	return o
 }
