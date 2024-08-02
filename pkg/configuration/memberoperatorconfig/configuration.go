@@ -132,7 +132,11 @@ func (a AutoscalerConfig) Deploy() bool {
 }
 
 func (a AutoscalerConfig) BufferMemory() string {
-	return commonconfig.GetString(a.autoscaler.BufferMemory, "50Mi") // TODO temporarily changed to e2e value, should be changed back to "" after autoscaler handling is moved to memberoperatorconfig controller
+	return commonconfig.GetString(a.autoscaler.BufferMemory, "50Mi")
+}
+
+func (a AutoscalerConfig) BufferCPU() string {
+	return commonconfig.GetString(a.autoscaler.BufferCPU, "50m")
 }
 
 func (a AutoscalerConfig) BufferReplicas() int {

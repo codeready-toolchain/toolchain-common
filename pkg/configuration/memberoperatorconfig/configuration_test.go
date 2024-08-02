@@ -54,6 +54,20 @@ func TestAutoscaler(t *testing.T) {
 			assert.Equal(t, "5GiB", memberOperatorCfg.Autoscaler().BufferMemory())
 		})
 	})
+	t.Run("buffer cpu", func(t *testing.T) {
+		t.Run("default", func(t *testing.T) {
+			cfg := commonconfig.NewMemberOperatorConfigWithReset(t)
+			memberOperatorCfg := Configuration{cfg: &cfg.Spec}
+
+			assert.Equal(t, "50m", memberOperatorCfg.Autoscaler().BufferCPU())
+		})
+		t.Run("non-default", func(t *testing.T) {
+			cfg := commonconfig.NewMemberOperatorConfigWithReset(t, testconfig.Autoscaler().BufferCPU("2000m"))
+			memberOperatorCfg := Configuration{cfg: &cfg.Spec}
+
+			assert.Equal(t, "2000m", memberOperatorCfg.Autoscaler().BufferCPU())
+		})
+	})
 	t.Run("buffer replicas", func(t *testing.T) {
 		t.Run("default", func(t *testing.T) {
 			cfg := commonconfig.NewMemberOperatorConfigWithReset(t)

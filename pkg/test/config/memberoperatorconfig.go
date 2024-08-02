@@ -75,6 +75,13 @@ func (o AutoscalerOption) BufferMemory(value string) AutoscalerOption {
 	return o
 }
 
+func (o AutoscalerOption) BufferCPU(value string) AutoscalerOption {
+	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
+		config.Spec.Autoscaler.BufferCPU = &value
+	})
+	return o
+}
+
 func (o AutoscalerOption) BufferReplicas(value int) AutoscalerOption {
 	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
 		config.Spec.Autoscaler.BufferReplicas = &value
