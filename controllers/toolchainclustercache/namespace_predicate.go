@@ -4,7 +4,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-// CreateAndUpdateOnlyPredicate will filter out all events out of the provided namespace
+// namespacePredicate will filter out all events out of the provided namespace
 type namespacePredicate struct {
 	namespace string
 }
