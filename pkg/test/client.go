@@ -4,25 +4,30 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
-
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake" //nolint: staticcheck // not deprecated anymore: see https://github.com/kubernetes-sigs/controller-runtime/pull/1101
 )
 
 // NewFakeClient creates a fake K8s client with ability to override specific Get/List/Create/Update/StatusUpdate/Delete functions
-func NewFakeClient(t T, initObjs ...runtime.Object) *FakeClient {
+func NewFakeClient(t T, initObjs ...client.Object) *FakeClient {
 	s := scheme.Scheme
 	err := toolchainv1alpha1.AddToScheme(s)
 	require.NoError(t, err)
+
+	toolchainObjs := getAllToolchainResources(s)
+
 	cl := fake.NewClientBuilder().
 		WithScheme(s).
-		WithRuntimeObjects(initObjs...).
+		WithObjects(initObjs...).
+		WithStatusSubresource(toolchainObjs...).
 		Build()
 	return &FakeClient{Client: cl, T: t}
 }
@@ -35,22 +40,27 @@ type FakeClient struct {
 	MockCreate       func(ctx context.Context, obj client.Object, opts ...client.CreateOption) error
 	MockUpdate       func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
 	MockPatch        func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error
-	MockStatusUpdate func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
-	MockStatusPatch  func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error
+	MockStatusUpdate func(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error
+	MockStatusPatch  func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error
 	MockDelete       func(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
 	MockDeleteAllOf  func(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error
 }
 
 type mockStatusUpdate struct {
-	mockUpdate func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
-	mockPatch  func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error
+	mockCreate func(ctx context.Context, obj client.Object, subResource client.Object, opts ...client.SubResourceCreateOption) error
+	mockUpdate func(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error
+	mockPatch  func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error
 }
 
-func (m *mockStatusUpdate) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+func (m *mockStatusUpdate) Create(ctx context.Context, obj client.Object, subResource client.Object, opts ...client.SubResourceCreateOption) error {
+	return m.mockCreate(ctx, obj, subResource, opts...)
+}
+
+func (m *mockStatusUpdate) Update(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error {
 	return m.mockUpdate(ctx, obj, opts...)
 }
 
-func (m *mockStatusUpdate) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+func (m *mockStatusUpdate) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error {
 	return m.mockPatch(ctx, obj, patch, opts...)
 }
 
@@ -180,6 +190,22 @@ func toMap(obj runtime.Object) (map[string]interface{}, error) {
 	}
 
 	return m, nil
+}
+
+func getAllToolchainResources(s *runtime.Scheme) []client.Object {
+	toolchainObjs := make([]client.Object, 0)
+	KindToTypeMap := s.KnownTypes(toolchainv1alpha1.GroupVersion)
+	var kinds []string
+	for key := range KindToTypeMap {
+		kinds = append(kinds, key)
+	}
+	for _, k := range kinds {
+		obj := &unstructured.Unstructured{}
+		gvk := schema.GroupVersionKind{Group: toolchainv1alpha1.GroupVersion.Group, Version: toolchainv1alpha1.GroupVersion.Version, Kind: k}
+		obj.SetGroupVersionKind(gvk)
+		toolchainObjs = append(toolchainObjs, obj)
+	}
+	return toolchainObjs
 }
 
 func (c *FakeClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {

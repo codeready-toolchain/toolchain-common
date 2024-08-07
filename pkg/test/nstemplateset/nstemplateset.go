@@ -1,6 +1,7 @@
 package nstemplateset
 
 import (
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
@@ -123,11 +124,18 @@ func WithDeletionTimestamp(ts time.Time) Option {
 	}
 }
 
+func WithFinalizer() Option {
+	return func(nstmplSet *toolchainv1alpha1.NSTemplateSet) {
+		controllerutil.AddFinalizer(nstmplSet, toolchainv1alpha1.FinalizerName)
+	}
+}
+
 func WithAnnotation(key, value string) Option {
 	return func(nstmplSet *toolchainv1alpha1.NSTemplateSet) {
 		if nstmplSet.ObjectMeta.Annotations == nil {
 			nstmplSet.ObjectMeta.Annotations = map[string]string{}
 		}
 		nstmplSet.ObjectMeta.Annotations[key] = value
+
 	}
 }

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,6 +16,7 @@ func TestMapToOwnerByLabel(t *testing.T) {
 
 	t.Run("resource with expected label", func(t *testing.T) {
 		// given
+		ctx := context.TODO()
 		objMeta := metav1.ObjectMeta{
 			Name: "bar",
 			Labels: map[string]string{
@@ -27,7 +29,7 @@ func TestMapToOwnerByLabel(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToOwnerByLabel("ns", "owner")(obj)
+		result := MapToOwnerByLabel("ns", "owner")(ctx, obj)
 		// then
 		require.Len(t, result, 1)
 		assert.Equal(t, reconcile.Request{
@@ -40,6 +42,7 @@ func TestMapToOwnerByLabel(t *testing.T) {
 
 	t.Run("resource without expected label", func(t *testing.T) {
 		// given
+		ctx := context.TODO()
 		objMeta := metav1.ObjectMeta{
 			Name: "bar",
 			Labels: map[string]string{
@@ -50,7 +53,7 @@ func TestMapToOwnerByLabel(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToOwnerByLabel("ns", "owner")(&obj)
+		result := MapToOwnerByLabel("ns", "owner")(ctx, &obj)
 		// then
 		require.Empty(t, result)
 	})
@@ -73,7 +76,7 @@ func TestMapToControllerByMatchingLabel(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToControllerByMatchingLabel("owner", "foo")(obj)
+		result := MapToControllerByMatchingLabel("owner", "foo")(context.TODO(), obj)
 		// then
 		require.Len(t, result, 1)
 		assert.Equal(t, reconcile.Request{
@@ -96,7 +99,7 @@ func TestMapToControllerByMatchingLabel(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToControllerByMatchingLabel("owner", "foo")(&obj)
+		result := MapToControllerByMatchingLabel("owner", "foo")(context.TODO(), &obj)
 		// then
 		require.Empty(t, result)
 	})
@@ -113,7 +116,7 @@ func TestMapToControllerByMatchingLabel(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToControllerByMatchingLabel("owner", "bar")(&obj)
+		result := MapToControllerByMatchingLabel("owner", "bar")(context.TODO(), &obj)
 		// then
 		require.Empty(t, result)
 	})
@@ -128,7 +131,7 @@ func TestMapToControllerByMatchingLabel(t *testing.T) {
 			ObjectMeta: objMeta,
 		}
 		// when
-		result := MapToControllerByMatchingLabel("owner", "bar")(&obj)
+		result := MapToControllerByMatchingLabel("owner", "bar")(context.TODO(), &obj)
 		// then
 		require.Empty(t, result)
 	})
