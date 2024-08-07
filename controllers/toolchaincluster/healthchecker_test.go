@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/stretchr/testify/require"
@@ -59,7 +58,7 @@ func TestClusterHealthChecks(t *testing.T) {
 	for k, tc := range tests {
 		t.Run(k, func(t *testing.T) {
 			//given
-			tcType, sec := newToolchainCluster(tc.tcType, tcNs, tc.apiEndPoint, toolchainv1alpha1.ToolchainClusterStatus{})
+			tcType, sec := newToolchainCluster(tc.tcType, tcNs, tc.apiEndPoint)
 			cl := test.NewFakeClient(t, tcType, sec)
 			reset := setupCachedClusters(t, cl, tcType)
 			defer reset()

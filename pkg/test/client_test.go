@@ -126,7 +126,10 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("status update fails when the objects being updated doesn't have status", func(t *testing.T) {
 			created, _ := createAndGetSecret(t, fclient)
-			require.Error(t, fclient.Status().Update(context.TODO(), created))
+			err := fclient.Status().Update(context.TODO(), created)
+			require.Error(t, err)
+			errString := "secrets \"" + created.Name + "\" not found"
+			require.EqualError(t, err, errString)
 		})
 
 		t.Run("patch", func(t *testing.T) {

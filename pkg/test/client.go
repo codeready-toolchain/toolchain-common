@@ -196,7 +196,7 @@ func getAllToolchainResources(s *runtime.Scheme) []client.Object {
 	toolchainObjs := make([]client.Object, 0)
 	KindToTypeMap := s.KnownTypes(toolchainv1alpha1.GroupVersion)
 	var kinds []string
-	for key, _ := range KindToTypeMap {
+	for key := range KindToTypeMap {
 		kinds = append(kinds, key)
 	}
 	for _, k := range kinds {
