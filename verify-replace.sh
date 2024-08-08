@@ -15,6 +15,11 @@ ERRORLIST=()
 echo Initiating verify-replace on dependent repos
 for repo in ${GH_HOST} ${GH_REGSVC} ${GH_KSCTL} ${GH_MEMBER} ${GH_E2E}
 do
+    echo =========================================================================================
+    echo  
+    echo $(basename $repo)
+    echo                                                                     
+    echo =========================================================================================                                            
     REPO_PATH=$BASE_REPO_PATH/$(basename $repo)
     echo Cloning repo in /tmp
     git clone --depth=1 $repo $REPO_PATH
@@ -23,6 +28,9 @@ do
     echo Initiating 'go mod replace' of current toolchain common version in dependent repos
     go mod edit -replace github.com/codeready-toolchain/toolchain-common=$C_PATH
     make verify-dependencies || ERRORLIST+=($(basename $repo))
+    echo                                                          
+    echo =========================================================================================
+    echo                                                           
 done
 if [ ${#ERRORLIST[@]} -ne 0 ]; then
     echo Below are the repos with error:
