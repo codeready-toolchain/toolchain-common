@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"reflect"
@@ -193,16 +192,12 @@ func toMap(obj runtime.Object) (map[string]interface{}, error) {
 }
 
 func getAllToolchainResources(s *runtime.Scheme) []client.Object {
-	toolchainObjs := make([]client.Object, 0)
-	KindToTypeMap := s.KnownTypes(toolchainv1alpha1.GroupVersion)
-	var kinds []string
-	for key := range KindToTypeMap {
-		kinds = append(kinds, key)
-	}
-	for _, k := range kinds {
+
+	kindToTypeMap := s.KnownTypes(toolchainv1alpha1.GroupVersion)
+	toolchainObjs := make([]client.Object, 0, len(kindToTypeMap))
+	for kind := range kindToTypeMap {
 		obj := &unstructured.Unstructured{}
-		gvk := schema.GroupVersionKind{Group: toolchainv1alpha1.GroupVersion.Group, Version: toolchainv1alpha1.GroupVersion.Version, Kind: k}
-		obj.SetGroupVersionKind(gvk)
+		obj.SetGroupVersionKind(toolchainv1alpha1.GroupVersion.WithKind(kind))
 		toolchainObjs = append(toolchainObjs, obj)
 	}
 	return toolchainObjs
