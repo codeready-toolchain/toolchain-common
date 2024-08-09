@@ -343,11 +343,11 @@ func TestMultipleExecutionsInParallel(t *testing.T) {
 			config, secrets, err := GetConfig(cl, &toolchainv1alpha1.ToolchainConfig{})
 
 			// then
-			assert.NoError(t, err)
+			assert.NoError(t, err) // go-require: require must only be used in the goroutine running the test function (testifylint)
 			toolchaincfg, ok := config.(*toolchainv1alpha1.ToolchainConfig)
-			assert.True(t, ok)
-			assert.NotEmpty(t, toolchaincfg.Spec)
-			assert.NotEmpty(t, secrets)
+			assert.True(t, ok)                    // go-require: require must only be used in the goroutine running the test function (testifylint)
+			assert.NotEmpty(t, toolchaincfg.Spec) // go-require: require must only be used in the goroutine running the test function (testifylint)
+			assert.NotEmpty(t, secrets)           //go-require: require must only be used in the goroutine running the test function (testifylint)
 		}()
 		go func(i int) {
 			defer waitForFinished.Done()
