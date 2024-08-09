@@ -192,7 +192,6 @@ func toMap(obj runtime.Object) (map[string]interface{}, error) {
 }
 
 func getAllToolchainResources(s *runtime.Scheme) []client.Object {
-
 	kindToTypeMap := s.KnownTypes(toolchainv1alpha1.GroupVersion)
 	toolchainObjs := make([]client.Object, 0, len(kindToTypeMap))
 	for kind := range kindToTypeMap {
