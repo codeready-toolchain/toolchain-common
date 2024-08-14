@@ -31,4 +31,4 @@ vet:
 
 .PHONY: verify-replace-run
 verify-replace-run:
-	./verify-replace.sh; 
+	./scripts/verify-replace.sh; 
