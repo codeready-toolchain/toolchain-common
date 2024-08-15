@@ -90,4 +90,14 @@ func TestNewSocialEvent(t *testing.T) {
 		assert.Equal(t, metav1.NewTime(end), e.Spec.EndTime) // custom
 	})
 
+	t.Run("with custom target cluster", func(t *testing.T) {
+		// when
+		e := testsocialevent.NewSocialEvent(test.HostOperatorNs, socialevent.NewName(), testsocialevent.WithTargetCluster("member-1"))
+		// then
+		assert.Equal(t, "deactivate30", e.Spec.UserTier)  // default
+		assert.Equal(t, "base1ns", e.Spec.SpaceTier)      // default
+		assert.Equal(t, 10, e.Spec.MaxAttendees)          // default
+		assert.Equal(t, 0, e.Status.ActivationCount)      // default
+		assert.Equal(t, "member-1", e.Spec.TargetCluster) // default
+	})
 }
