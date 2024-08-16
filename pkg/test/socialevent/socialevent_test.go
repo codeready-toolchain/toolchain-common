@@ -98,6 +98,6 @@ func TestNewSocialEvent(t *testing.T) {
 		assert.Equal(t, "base1ns", e.Spec.SpaceTier)      // default
 		assert.Equal(t, 10, e.Spec.MaxAttendees)          // default
 		assert.Equal(t, 0, e.Status.ActivationCount)      // default
-		assert.Equal(t, "member-1", e.Spec.TargetCluster) // default
+		assert.Equal(t, "member-1", e.Spec.TargetCluster) // custom
 	})
 }
