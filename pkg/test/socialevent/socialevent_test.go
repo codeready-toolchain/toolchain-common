@@ -22,6 +22,7 @@ func TestNewSocialEvent(t *testing.T) {
 		assert.Equal(t, "base1ns", e.Spec.SpaceTier)     // default
 		assert.Equal(t, 10, e.Spec.MaxAttendees)         // default
 		assert.Equal(t, 0, e.Status.ActivationCount)     // default
+		assert.Empty(t, e.Spec.TargetCluster)            // default
 	})
 
 	t.Run("with custom user tier", func(t *testing.T) {
@@ -32,6 +33,7 @@ func TestNewSocialEvent(t *testing.T) {
 		assert.Equal(t, "base1ns", e.Spec.SpaceTier)     // default
 		assert.Equal(t, 10, e.Spec.MaxAttendees)         // default
 		assert.Equal(t, 0, e.Status.ActivationCount)     // default
+		assert.Empty(t, e.Spec.TargetCluster)            // default
 	})
 
 	t.Run("with custom space tier", func(t *testing.T) {
@@ -52,6 +54,7 @@ func TestNewSocialEvent(t *testing.T) {
 		assert.Equal(t, "base1ns", e.Spec.SpaceTier)     // default
 		assert.Equal(t, 5, e.Spec.MaxAttendees)          // custom
 		assert.Equal(t, 0, e.Status.ActivationCount)     // default
+		assert.Empty(t, e.Spec.TargetCluster)            // default
 	})
 
 	t.Run("with custom activation count", func(t *testing.T) {
@@ -62,6 +65,7 @@ func TestNewSocialEvent(t *testing.T) {
 		assert.Equal(t, "base1ns", e.Spec.SpaceTier)     // default
 		assert.Equal(t, 10, e.Spec.MaxAttendees)         // default
 		assert.Equal(t, 1, e.Status.ActivationCount)     // custom
+		assert.Empty(t, e.Spec.TargetCluster)            // default
 	})
 
 	t.Run("with custom start time", func(t *testing.T) {
@@ -75,6 +79,7 @@ func TestNewSocialEvent(t *testing.T) {
 		assert.Equal(t, 10, e.Spec.MaxAttendees)                 // default
 		assert.Equal(t, 0, e.Status.ActivationCount)             // default
 		assert.Equal(t, metav1.NewTime(start), e.Spec.StartTime) // custom
+		assert.Empty(t, e.Spec.TargetCluster)                    // default
 	})
 
 	t.Run("with custom end time", func(t *testing.T) {
@@ -88,6 +93,7 @@ func TestNewSocialEvent(t *testing.T) {
 		assert.Equal(t, 10, e.Spec.MaxAttendees)             // default
 		assert.Equal(t, 0, e.Status.ActivationCount)         // default
 		assert.Equal(t, metav1.NewTime(end), e.Spec.EndTime) // custom
+		assert.Empty(t, e.Spec.TargetCluster)                // default
 	})
 
 	t.Run("with custom target cluster", func(t *testing.T) {
