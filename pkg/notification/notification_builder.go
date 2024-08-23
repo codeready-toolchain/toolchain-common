@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/mail"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,6 +26,7 @@ type Builder interface {
 	WithControllerReference(owner v1.Object, scheme *runtime.Scheme) Builder
 	WithKeysAndValues(keysAndValues map[string]string) Builder
 	WithUserContext(userSignup *toolchainv1alpha1.UserSignup) Builder
+	WithUserTierContext(userTier *toolchainv1alpha1.UserTier) Builder
 	Create(ctx context.Context, recipient string) (*toolchainv1alpha1.Notification, error)
 }
 
@@ -152,6 +154,18 @@ func (b *notificationBuilderImpl) WithUserContext(userSignup *toolchainv1alpha1.
 			n.Spec.Context["UserEmail"] = userSignup.Spec.IdentityClaims.Email
 		}
 
+		return nil
+	})
+	return b
+}
+
+func (b *notificationBuilderImpl) WithUserTierContext(userTier *toolchainv1alpha1.UserTier) Builder {
+	b.options = append(b.options, func(n *toolchainv1alpha1.Notification) error {
+		if userTier.Spec.DeactivationTimeoutDays > 0 {
+			n.Spec.Context["DeactivationTimeoutDays"] = strconv.Itoa(userTier.Spec.DeactivationTimeoutDays)
+		} else {
+			n.Spec.Context["DeactivationTimeoutDays"] = "(unlimited)"
+		}
 		return nil
 	})
 	return b
