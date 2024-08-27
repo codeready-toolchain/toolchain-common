@@ -15,7 +15,6 @@ const (
 
 // getClusterHealth gets the kubernetes cluster health status by requesting "/healthz"
 func getClusterHealthStatus(ctx context.Context, remoteClusterClientset *kubeclientset.Clientset) (bool, error) {
-
 	lgr := log.FromContext(ctx)
 	body, err := remoteClusterClientset.DiscoveryClient.RESTClient().Get().AbsPath("/healthz").Do(ctx).Raw()
 	if err != nil {
@@ -23,5 +22,4 @@ func getClusterHealthStatus(ctx context.Context, remoteClusterClientset *kubecli
 		return false, err
 	}
 	return strings.EqualFold(string(body), "ok"), nil
-
 }

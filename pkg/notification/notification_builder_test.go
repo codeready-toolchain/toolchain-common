@@ -146,6 +146,45 @@ func TestNotificationBuilder(t *testing.T) {
 		assert.Equal(t, "bar", notification.Spec.Context["foo"])
 	})
 
+	t.Run("success with user tier", func(t *testing.T) {
+		tests := map[string]struct {
+			daysInTier      int
+			expectedContext string
+		}{
+			"no deactivation with zero days in tier": {
+				daysInTier:      0,
+				expectedContext: "(unlimited)",
+			},
+			"no deactivation with negative days in tier": {
+				daysInTier:      -1,
+				expectedContext: "(unlimited)",
+			},
+			"deactivation with positive days in tier": {
+				daysInTier:      15,
+				expectedContext: "15",
+			},
+		}
+		for k, tc := range tests {
+			t.Run(k, func(t *testing.T) {
+				// given
+				userTier := &toolchainv1alpha1.UserTier{
+					Spec: toolchainv1alpha1.UserTierSpec{
+						DeactivationTimeoutDays: tc.daysInTier,
+					},
+				}
+
+				// when
+				notification, err := NewNotificationBuilder(client, test.HostOperatorNs).
+					WithUserTierContext(userTier).
+					Create(context.TODO(), "foo@bar.com")
+
+				// then
+				require.NoError(t, err)
+				assert.Equal(t, tc.expectedContext, notification.Spec.Context["DeactivationTimeoutDays"])
+			})
+		}
+	})
+
 	t.Run("success with notification type", func(t *testing.T) {
 		// when
 		notification, err := NewNotificationBuilder(client, test.HostOperatorNs).

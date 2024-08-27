@@ -65,3 +65,9 @@ func WithMaxAttendees(value int) Option {
 		event.Spec.MaxAttendees = value
 	}
 }
+
+func WithTargetCluster(target string) Option {
+	return func(event *toolchainv1alpha1.SocialEvent) {
+		event.Spec.TargetCluster = target
+	}
+}

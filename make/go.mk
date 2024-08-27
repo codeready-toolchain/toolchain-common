@@ -28,3 +28,7 @@ tidy:
 .PHONY: vet
 vet:
 	go vet ./...
+
+.PHONY: verify-replace-run
+verify-replace-run:
+	./scripts/verify-replace.sh; 
