@@ -41,7 +41,7 @@ func TestNewBannedUser(t *testing.T) {
 			name:         "userSignup with email hash label",
 			userSignup:   userSignup1,
 			bannedBy:     "admin",
-			banReason:    "ban reason",
+			banReason:    "ban reason 1",
 			wantError:    false,
 			wantErrorMsg: "",
 			expectedBannedUser: &toolchainv1alpha1.BannedUser{
@@ -54,7 +54,8 @@ func TestNewBannedUser(t *testing.T) {
 					},
 				},
 				Spec: toolchainv1alpha1.BannedUserSpec{
-					Email: userSignup1.Spec.IdentityClaims.Email,
+					Email:  userSignup1.Spec.IdentityClaims.Email,
+					Reason: "ban reason 1",
 				},
 			},
 		},
@@ -62,7 +63,7 @@ func TestNewBannedUser(t *testing.T) {
 			name:               "userSignup without email hash label and phone hash label",
 			userSignup:         userSignup2,
 			bannedBy:           "admin",
-			banReason:          "ban reason",
+			banReason:          "ban reason 2",
 			wantError:          true,
 			wantErrorMsg:       fmt.Sprintf("the UserSignup %s doesn't have the label '%s' set", userSignup2.Name, toolchainv1alpha1.UserSignupUserEmailHashLabelKey),
 			expectedBannedUser: nil,
@@ -71,7 +72,7 @@ func TestNewBannedUser(t *testing.T) {
 			name:         "userSignup with email hash label and phone hash label",
 			userSignup:   userSignup3,
 			bannedBy:     "admin",
-			banReason:    "ban reason",
+			banReason:    "ban reason 3",
 			wantError:    false,
 			wantErrorMsg: "",
 			expectedBannedUser: &toolchainv1alpha1.BannedUser{
@@ -85,7 +86,8 @@ func TestNewBannedUser(t *testing.T) {
 					},
 				},
 				Spec: toolchainv1alpha1.BannedUserSpec{
-					Email: userSignup3.Spec.IdentityClaims.Email,
+					Email:  userSignup3.Spec.IdentityClaims.Email,
+					Reason: "ban reason 3",
 				},
 			},
 		},
