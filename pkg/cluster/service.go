@@ -188,7 +188,7 @@ func loadConfigFromKubeConfig(toolchainCluster *toolchainv1alpha1.ToolchainClust
 
 	operatorNamespace, _, err := clientCfg.Namespace()
 	if err != nil {
-		return nil, fmt.Errorf("Could not determine the operator namespace from the current context in the provided kubeconfig because of: %w", err)
+		return nil, fmt.Errorf("could not determine the operator namespace from the current context in the provided kubeconfig because of: %w", err)
 	}
 
 	return &Config{
