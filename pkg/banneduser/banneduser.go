@@ -10,7 +10,7 @@ import (
 )
 
 // NewBannedUser creates a bannedUser resource
-func NewBannedUser(userSignup *toolchainv1alpha1.UserSignup, bannedBy string, banReason string) (*toolchainv1alpha1.BannedUser, error) {
+func NewBannedUser(userSignup *toolchainv1alpha1.UserSignup, bannedBy, banReason string) (*toolchainv1alpha1.BannedUser, error) {
 	var emailHashLbl, phoneHashLbl string
 	var exists bool
 
