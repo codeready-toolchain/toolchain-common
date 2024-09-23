@@ -19,15 +19,10 @@ import (
 )
 
 const (
-	labelNamespace        = "namespace"
 	labelOwnerClusterName = "ownerClusterName"
 	LabelType             = "type"
 	// labelClusterRolePrefix is the prefix that defines the cluster role as label key
 	labelClusterRolePrefix = "cluster-role"
-
-	toolchainAPIQPS   = 20.0
-	toolchainAPIBurst = 30
-	toolchainTokenKey = "token"
 )
 
 // ToolchainClusterService manages cached cluster kube clients and related ToolchainCluster CRDs
@@ -174,48 +169,7 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 		return nil, errors.Wrapf(err, "unable to get secret %s for cluster %s", name, toolchainCluster.Name)
 	}
 
-	if _, ok := secret.Data["kubeconfig"]; ok {
-		return loadConfigFromKubeConfig(toolchainCluster, secret, timeout)
-	} else {
-		return loadConfigFromLegacyToolchainCluster(toolchainCluster, secret, timeout)
-	}
-}
-
-func loadConfigFromLegacyToolchainCluster(toolchainCluster *toolchainv1alpha1.ToolchainCluster, secret *v1.Secret, timeout time.Duration) (*Config, error) {
-	clusterName := toolchainCluster.Name
-
-	apiEndpoint := toolchainCluster.Spec.APIEndpoint
-	if apiEndpoint == "" {
-		return nil, errors.Errorf("the api endpoint of cluster %s is empty", clusterName)
-	}
-
-	token, tokenFound := secret.Data[toolchainTokenKey]
-	if !tokenFound || len(token) == 0 {
-		return nil, errors.Errorf("the secret for cluster %s is missing a non-empty value for %q", clusterName, toolchainTokenKey)
-	}
-
-	restConfig, err := clientcmd.BuildConfigFromFlags(apiEndpoint, "")
-	if err != nil {
-		return nil, err
-	}
-
-	if len(toolchainCluster.Spec.DisabledTLSValidations) == 1 &&
-		toolchainCluster.Spec.DisabledTLSValidations[0] == toolchainv1alpha1.TLSAll {
-		restConfig.Insecure = true
-	}
-	restConfig.BearerToken = string(token)
-	restConfig.QPS = toolchainAPIQPS
-	restConfig.Burst = toolchainAPIBurst
-	restConfig.Timeout = timeout
-
-	return &Config{
-		Name:              clusterName,
-		APIEndpoint:       apiEndpoint,
-		RestConfig:        restConfig,
-		OperatorNamespace: toolchainCluster.Labels[labelNamespace],
-		OwnerClusterName:  toolchainCluster.Labels[labelOwnerClusterName],
-		Labels:            toolchainCluster.Labels,
-	}, nil
+	return loadConfigFromKubeConfig(toolchainCluster, secret, timeout)
 }
 
 func loadConfigFromKubeConfig(toolchainCluster *toolchainv1alpha1.ToolchainCluster, secret *v1.Secret, timeout time.Duration) (*Config, error) {
@@ -234,7 +188,7 @@ func loadConfigFromKubeConfig(toolchainCluster *toolchainv1alpha1.ToolchainClust
 
 	operatorNamespace, _, err := clientCfg.Namespace()
 	if err != nil {
-		return nil, fmt.Errorf("Could not determine the operator namespace from the current context in the provided kubeconfig because of: %w", err)
+		return nil, fmt.Errorf("could not determine the operator namespace from the current context in the provided kubeconfig because of: %w", err)
 	}
 
 	return &Config{

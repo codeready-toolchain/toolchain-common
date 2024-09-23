@@ -20,7 +20,7 @@ func TestRefreshCacheInService(t *testing.T) {
 	// given
 	defer gock.Off()
 	status := test.NewClusterStatus(toolchainv1alpha1.ConditionReady, corev1.ConditionTrue)
-	toolchainCluster, sec := test.NewToolchainCluster("east", test.HostOperatorNs, "secret", status, map[string]string{"ownerClusterName": test.NameMember, "namespace": test.MemberOperatorNs})
+	toolchainCluster, sec := test.NewToolchainCluster(t, "east", test.HostOperatorNs, test.MemberOperatorNs, "secret", status, false)
 	s := scheme.Scheme
 	err := toolchainv1alpha1.AddToScheme(s)
 	require.NoError(t, err)
@@ -75,8 +75,7 @@ func TestUpdateClientBasedOnRestConfig(t *testing.T) {
 	// given
 	defer gock.Off()
 	statusTrue := test.NewClusterStatus(toolchainv1alpha1.ConditionReady, corev1.ConditionTrue)
-	toolchainCluster1, sec1 := test.NewToolchainCluster("east", test.HostOperatorNs, "secret1", statusTrue,
-		map[string]string{"namespace": test.HostOperatorNs})
+	toolchainCluster1, sec1 := test.NewToolchainCluster(t, "east", test.HostOperatorNs, test.HostOperatorNs, "secret1", statusTrue, false)
 
 	t.Run("don't update when RestConfig is the same", func(t *testing.T) {
 		// given
@@ -136,6 +135,5 @@ func newToolchainClusterService(cl client.Client, timeout time.Duration, tcNs st
 
 func assertMemberCluster(t *testing.T, cachedCluster *CachedToolchainCluster, status toolchainv1alpha1.ToolchainClusterStatus) {
 	assert.Equal(t, status, *cachedCluster.ClusterStatus)
-	assert.Equal(t, test.NameMember, cachedCluster.OwnerClusterName)
-	assert.Equal(t, "http://cluster.com", cachedCluster.APIEndpoint)
+	assert.Equal(t, "https://cluster.com", cachedCluster.APIEndpoint)
 }

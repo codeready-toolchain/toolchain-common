@@ -13,21 +13,20 @@ import (
 )
 
 func TestClusterHealthChecks(t *testing.T) {
-
 	// given
 	defer gock.Off()
 	tcNs := "test-namespace"
-	gock.New("http://cluster.com").
+	gock.New("https://cluster.com").
 		Get("healthz").
 		Persist().
 		Reply(200).
 		BodyString("ok")
-	gock.New("http://unstable.com").
+	gock.New("https://unstable.com").
 		Get("healthz").
 		Persist().
 		Reply(200).
 		BodyString("unstable")
-	gock.New("http://not-found.com").
+	gock.New("https://not-found.com").
 		Get("healthz").
 		Persist().
 		Reply(404)
@@ -40,25 +39,25 @@ func TestClusterHealthChecks(t *testing.T) {
 	}{
 		"HealthOkay": {
 			tcType:      "stable",
-			apiEndPoint: "http://cluster.com",
+			apiEndPoint: "https://cluster.com",
 			healthCheck: true,
 		},
 		"HealthNotOkayButNoError": {
 			tcType:      "unstable",
-			apiEndPoint: "http://unstable.com",
+			apiEndPoint: "https://unstable.com",
 			healthCheck: false,
 		},
 		"ErrorWhileDoingHealth": {
 			tcType:      "Notfound",
-			apiEndPoint: "http://not-found.com",
+			apiEndPoint: "https://not-found.com",
 			healthCheck: false,
 			err:         fmt.Errorf("the server could not find the requested resource"),
 		},
 	}
 	for k, tc := range tests {
 		t.Run(k, func(t *testing.T) {
-			//given
-			tcType, sec := newToolchainCluster(tc.tcType, tcNs, tc.apiEndPoint)
+			// given
+			tcType, sec := newToolchainCluster(t, tc.tcType, tcNs, tc.apiEndPoint)
 			cl := test.NewFakeClient(t, tcType, sec)
 			reset := setupCachedClusters(t, cl, tcType)
 			defer reset()
@@ -67,17 +66,16 @@ func TestClusterHealthChecks(t *testing.T) {
 			cacheClient, err := kubeclientset.NewForConfig(cachedTC.RestConfig)
 			require.NoError(t, err)
 
-			//when
+			// when
 			healthCheck, err := getClusterHealthStatus(context.TODO(), cacheClient)
 
-			//then
+			// then
 			require.Equal(t, tc.healthCheck, healthCheck)
 			if tc.err != nil {
 				require.EqualError(t, err, tc.err.Error())
 			} else {
 				require.NoError(t, err)
 			}
-
 		})
 	}
 }

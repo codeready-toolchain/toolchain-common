@@ -75,10 +75,10 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 	status := test.NewClusterStatus(toolchainv1alpha1.ConditionReady, corev1.ConditionTrue)
 	require.NoError(t, toolchainv1alpha1.AddToScheme(scheme.Scheme))
 
-	m1, sec1 := test.NewToolchainClusterWithEndpoint("east", test.HostOperatorNs, "secret1", "http://m1.com", status, map[string]string{"ownerClusterName": "m1ClusterName", "namespace": test.MemberOperatorNs, cluster.RoleLabel(cluster.Tenant): ""})
-	m2, sec2 := test.NewToolchainClusterWithEndpoint("west", test.HostOperatorNs, "secret2", "http://m2.com", status, map[string]string{"ownerClusterName": "m2ClusterName", "namespace": test.MemberOperatorNs, cluster.RoleLabel(cluster.Tenant): ""})
-	host, secHost := test.NewToolchainCluster("host", test.MemberOperatorNs, "secretHost", status, verify.Labels(test.HostOperatorNs, "hostClusterName"))
-	noise, secNoise := test.NewToolchainCluster("noise", "noise-namespace", "secretNoise", status, verify.Labels(test.MemberOperatorNs, "noiseClusterName"))
+	m1, sec1 := test.NewToolchainClusterWithEndpoint(t, "east", test.HostOperatorNs, test.MemberOperatorNs, "secret1", "https://m1.com", status, false)
+	m2, sec2 := test.NewToolchainClusterWithEndpoint(t, "west", test.HostOperatorNs, test.MemberOperatorNs, "secret2", "https://m2.com", status, false)
+	host, secHost := test.NewToolchainCluster(t, "host", test.MemberOperatorNs, test.HostOperatorNs, "secretHost", status, false)
+	noise, secNoise := test.NewToolchainCluster(t, "noise", "noise-namespace", "secretNoise", test.MemberOperatorNs, status, false)
 	require.NoError(t, toolchainv1alpha1.AddToScheme(scheme.Scheme))
 
 	cl := test.NewFakeClient(t, m1, m2, host, noise, sec1, sec2, secHost, secNoise)
@@ -93,17 +93,13 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 		verify.AssertClusterConfigThat(t, clusterConfigs[0]).
 			HasName("east").
 			HasOperatorNamespace("toolchain-member-operator").
-			HasOwnerClusterName("m1ClusterName").
-			HasAPIEndpoint("http://m1.com").
-			ContainsLabel(cluster.RoleLabel(cluster.Tenant)). // the value is not used only the key matters
-			RestConfigHasHost("http://m1.com")
+			HasAPIEndpoint("https://m1.com").
+			RestConfigHasHost("https://m1.com")
 		verify.AssertClusterConfigThat(t, clusterConfigs[1]).
 			HasName("west").
 			HasOperatorNamespace("toolchain-member-operator").
-			HasOwnerClusterName("m2ClusterName").
-			HasAPIEndpoint("http://m2.com").
-			ContainsLabel(cluster.RoleLabel(cluster.Tenant)). // the value is not used only the key matters
-			RestConfigHasHost("http://m2.com")
+			HasAPIEndpoint("https://m2.com").
+			RestConfigHasHost("https://m2.com")
 	})
 
 	t.Run("list host", func(t *testing.T) {
@@ -118,9 +114,8 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 		verify.AssertClusterConfigThat(t, clusterConfigs[0]).
 			HasName("host").
 			HasOperatorNamespace("toolchain-host-operator").
-			HasOwnerClusterName("hostClusterName").
-			HasAPIEndpoint("http://cluster.com").
-			RestConfigHasHost("http://cluster.com")
+			HasAPIEndpoint("https://cluster.com").
+			RestConfigHasHost("https://cluster.com")
 	})
 
 	t.Run("list members when there is none present", func(t *testing.T) {
@@ -167,24 +162,7 @@ func TestListToolchainClusterConfigs(t *testing.T) {
 }
 
 func TestNewClusterConfig(t *testing.T) {
-	legacyTc := func() *toolchainv1alpha1.ToolchainCluster {
-		return &toolchainv1alpha1.ToolchainCluster{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "tc",
-				Namespace: "ns",
-				Labels: map[string]string{
-					"namespace": "operatorns",
-				},
-			},
-			Spec: toolchainv1alpha1.ToolchainClusterSpec{
-				APIEndpoint: "https://over.the.rainbow",
-				SecretRef: toolchainv1alpha1.LocalSecretReference{
-					Name: "secret",
-				},
-			},
-		}
-	}
-	newFormTc := func() *toolchainv1alpha1.ToolchainCluster {
+	tc := func() *toolchainv1alpha1.ToolchainCluster {
 		return &toolchainv1alpha1.ToolchainCluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "tc",
@@ -198,17 +176,6 @@ func TestNewClusterConfig(t *testing.T) {
 		}
 	}
 
-	legacySecret := func() *corev1.Secret {
-		return &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "secret",
-				Namespace: "ns",
-			},
-			Data: map[string][]byte{
-				"token": []byte("token"),
-			},
-		}
-	}
 	kubeconfigSecret := func(t *testing.T) *corev1.Secret {
 		t.Helper()
 		kubeconfig := clientcmdapi.Config{
@@ -245,40 +212,9 @@ func TestNewClusterConfig(t *testing.T) {
 		}
 	}
 
-	t.Run("using legacy fields in ToolchainCluster and token in secret", func(t *testing.T) {
-		tc := legacyTc()
-		secret := legacySecret()
-
-		cl := test.NewFakeClient(t, tc, secret)
-
-		cfg, err := cluster.NewClusterConfig(cl, tc, 1*time.Second)
-		require.NoError(t, err)
-
-		assert.Equal(t, "https://over.the.rainbow", cfg.APIEndpoint)
-		assert.Equal(t, "operatorns", cfg.OperatorNamespace)
-		assert.Equal(t, "token", cfg.RestConfig.BearerToken)
-	})
-
 	t.Run("using kubeconfig in secret", func(t *testing.T) {
-		tc := newFormTc()
+		tc := tc()
 		secret := kubeconfigSecret(t)
-
-		cl := test.NewFakeClient(t, tc, secret)
-
-		cfg, err := cluster.NewClusterConfig(cl, tc, 1*time.Second)
-		require.NoError(t, err)
-
-		assert.Equal(t, "https://over.the.rainbow", cfg.APIEndpoint)
-		assert.Equal(t, "operatorns", cfg.OperatorNamespace)
-		assert.Equal(t, "token", cfg.RestConfig.BearerToken)
-	})
-
-	t.Run("uses kubeconfig in precedence over legacy fields", func(t *testing.T) {
-		tc := newFormTc()
-		// Combine the kubeconfig and the token in the same secret.
-		// We should see auth from the kubeconfig used...
-		secret := kubeconfigSecret(t)
-		secret.Data["token"] = []byte("not-the-token-we-want")
 
 		cl := test.NewFakeClient(t, tc, secret)
 

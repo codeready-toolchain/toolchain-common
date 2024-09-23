@@ -1,7 +1,6 @@
 package toolchaincluster
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -13,8 +12,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubeclientset "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -63,10 +60,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		if err := r.updateStatus(ctx, toolchainCluster, nil, clusterOfflineCondition(err.Error())); err != nil {
 			reqLogger.Error(err, "unable to update cluster status of ToolchainCluster")
 		}
-		return reconcile.Result{}, err
-	}
-
-	if err = r.migrateSecretToKubeConfig(ctx, toolchainCluster); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -149,64 +142,5 @@ func clusterNotReadyCondition() toolchainv1alpha1.Condition {
 		Status:  corev1.ConditionFalse,
 		Reason:  toolchainv1alpha1.ToolchainClusterClusterNotReadyReason,
 		Message: healthzNotOk,
-	}
-}
-
-func (r *Reconciler) migrateSecretToKubeConfig(ctx context.Context, tc *toolchainv1alpha1.ToolchainCluster) error {
-	if len(tc.Spec.SecretRef.Name) == 0 {
-		return nil
-	}
-
-	secret := &corev1.Secret{}
-	if err := r.Client.Get(ctx, client.ObjectKey{Name: tc.Spec.SecretRef.Name, Namespace: tc.Namespace}, secret); err != nil {
-		return err
-	}
-
-	token := secret.Data["token"]
-	apiEndpoint := tc.Spec.APIEndpoint
-	operatorNamespace := tc.Labels["namespace"]
-	insecureTls := len(tc.Spec.DisabledTLSValidations) == 1 && tc.Spec.DisabledTLSValidations[0] == "*"
-	// we ignore the Spec.CABundle here because we don't want it migrated. The new configurations are free
-	// to use the certificate data for the connections but we don't want to migrate the existing certificates.
-	kubeConfig := composeKubeConfigFromData(token, apiEndpoint, operatorNamespace, insecureTls)
-
-	data, err := clientcmd.Write(kubeConfig)
-	if err != nil {
-		return err
-	}
-
-	origKubeConfigData := secret.Data["kubeconfig"]
-	secret.Data["kubeconfig"] = data
-
-	if !bytes.Equal(origKubeConfigData, data) {
-		if err = r.Client.Update(ctx, secret); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func composeKubeConfigFromData(token []byte, apiEndpoint, operatorNamespace string, insecureTls bool) clientcmdapi.Config {
-	return clientcmdapi.Config{
-		Contexts: map[string]*clientcmdapi.Context{
-			"ctx": {
-				Cluster:   "cluster",
-				Namespace: operatorNamespace,
-				AuthInfo:  "auth",
-			},
-		},
-		CurrentContext: "ctx",
-		Clusters: map[string]*clientcmdapi.Cluster{
-			"cluster": {
-				Server:                apiEndpoint,
-				InsecureSkipTLSVerify: insecureTls,
-			},
-		},
-		AuthInfos: map[string]*clientcmdapi.AuthInfo{
-			"auth": {
-				Token: string(token),
-			},
-		},
 	}
 }

@@ -32,6 +32,7 @@ func TestNewBannedUser(t *testing.T) {
 		name               string
 		userSignup         *toolchainv1alpha1.UserSignup
 		bannedBy           string
+		banReason          string
 		wantError          bool
 		wantErrorMsg       string
 		expectedBannedUser *toolchainv1alpha1.BannedUser
@@ -40,6 +41,7 @@ func TestNewBannedUser(t *testing.T) {
 			name:         "userSignup with email hash label",
 			userSignup:   userSignup1,
 			bannedBy:     "admin",
+			banReason:    "ban reason 1",
 			wantError:    false,
 			wantErrorMsg: "",
 			expectedBannedUser: &toolchainv1alpha1.BannedUser{
@@ -52,7 +54,8 @@ func TestNewBannedUser(t *testing.T) {
 					},
 				},
 				Spec: toolchainv1alpha1.BannedUserSpec{
-					Email: userSignup1.Spec.IdentityClaims.Email,
+					Email:  userSignup1.Spec.IdentityClaims.Email,
+					Reason: "ban reason 1",
 				},
 			},
 		},
@@ -60,6 +63,7 @@ func TestNewBannedUser(t *testing.T) {
 			name:               "userSignup without email hash label and phone hash label",
 			userSignup:         userSignup2,
 			bannedBy:           "admin",
+			banReason:          "ban reason 2",
 			wantError:          true,
 			wantErrorMsg:       fmt.Sprintf("the UserSignup %s doesn't have the label '%s' set", userSignup2.Name, toolchainv1alpha1.UserSignupUserEmailHashLabelKey),
 			expectedBannedUser: nil,
@@ -68,6 +72,7 @@ func TestNewBannedUser(t *testing.T) {
 			name:         "userSignup with email hash label and phone hash label",
 			userSignup:   userSignup3,
 			bannedBy:     "admin",
+			banReason:    "ban reason 3",
 			wantError:    false,
 			wantErrorMsg: "",
 			expectedBannedUser: &toolchainv1alpha1.BannedUser{
@@ -81,7 +86,8 @@ func TestNewBannedUser(t *testing.T) {
 					},
 				},
 				Spec: toolchainv1alpha1.BannedUserSpec{
-					Email: userSignup3.Spec.IdentityClaims.Email,
+					Email:  userSignup3.Spec.IdentityClaims.Email,
+					Reason: "ban reason 3",
 				},
 			},
 		},
@@ -89,7 +95,7 @@ func TestNewBannedUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewBannedUser(tt.userSignup, tt.bannedBy)
+			got, err := NewBannedUser(tt.userSignup, tt.bannedBy, tt.banReason)
 
 			if tt.wantError {
 				require.Error(t, err)
@@ -102,6 +108,7 @@ func TestNewBannedUser(t *testing.T) {
 				assert.Equal(t, tt.expectedBannedUser.ObjectMeta.Namespace, got.ObjectMeta.Namespace)
 				assert.Equal(t, tt.expectedBannedUser.ObjectMeta.Name, got.ObjectMeta.Name)
 				assert.Equal(t, tt.expectedBannedUser.Spec.Email, got.Spec.Email)
+				assert.Equal(t, tt.expectedBannedUser.Spec.Reason, got.Spec.Reason)
 
 				if tt.expectedBannedUser != nil {
 					assert.True(t, reflect.DeepEqual(tt.expectedBannedUser.Labels, got.Labels))
@@ -115,11 +122,11 @@ func TestGetBannedUser(t *testing.T) {
 	userSignup1 := commonsignup.NewUserSignup(commonsignup.WithName("johny"), commonsignup.WithEmail("johny@example.com"))
 	userSignup2 := commonsignup.NewUserSignup(commonsignup.WithName("bob"), commonsignup.WithEmail("bob@example.com"))
 	userSignup3 := commonsignup.NewUserSignup(commonsignup.WithName("oliver"), commonsignup.WithEmail("oliver@example.com"))
-	bannedUser1, err := NewBannedUser(userSignup1, "admin")
+	bannedUser1, err := NewBannedUser(userSignup1, "admin", "")
 	require.NoError(t, err)
-	bannedUser2, err := NewBannedUser(userSignup2, "admin")
+	bannedUser2, err := NewBannedUser(userSignup2, "admin", "")
 	require.NoError(t, err)
-	bannedUser3, err := NewBannedUser(userSignup3, "admin")
+	bannedUser3, err := NewBannedUser(userSignup3, "admin", "")
 	require.NoError(t, err)
 
 	mockT := test.NewMockT()
