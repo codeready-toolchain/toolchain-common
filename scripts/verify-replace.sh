@@ -20,6 +20,9 @@ do
     git clone --depth=1 ${repo} ${repo_path}
     echo "Repo cloned successfully"
     cd ${repo_path}
+    if [ $(basename ${repo}) == "host-operator" ]; then
+        make generate
+    fi
     echo "Initiating 'go mod replace' of current toolchain common version in dependent repos"
     go mod edit -replace github.com/codeready-toolchain/toolchain-common=${C_PATH}
     make verify-dependencies || ERRORLIST+="($(basename ${repo}))"
