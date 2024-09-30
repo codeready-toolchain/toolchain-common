@@ -7,9 +7,11 @@ declare -a REPOS=("${GH_BASE_URL_KS}ksctl" "${GH_BASE_URL_CRT}host-operator" "${
 C_PATH=${PWD}
 ERRORLIST=()
 
+
 echo Initiating verify-replace on dependent repos
 for repo in "${REPOS[@]}"
 do
+    result=0
     echo =========================================================================================
     echo  
     echo                        "$(basename ${repo})"
@@ -20,7 +22,10 @@ do
     git clone --depth=1 ${repo} ${repo_path}
     echo "Repo cloned successfully"
     cd ${repo_path}
-    make pre-verify || ERRORLIST+="($(basename ${repo}))"
+    make pre-verify || ERRORLIST+="($(basename ${repo}))" result=${$?}
+    if [ ${result} -ne 0 ]; then
+        continue
+    fi
     echo "Initiating 'go mod replace' of current toolchain common version in dependent repos"
     go mod edit -replace github.com/codeready-toolchain/toolchain-common=${C_PATH}
     make verify-dependencies || ERRORLIST+="($(basename ${repo}))"
