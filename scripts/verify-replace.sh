@@ -7,11 +7,9 @@ declare -a REPOS=("${GH_BASE_URL_KS}ksctl" "${GH_BASE_URL_CRT}host-operator" "${
 C_PATH=${PWD}
 ERRORLIST=()
 
-
 echo Initiating verify-replace on dependent repos
 for repo in "${REPOS[@]}"
 do
-    result=0
     echo =========================================================================================
     echo  
     echo                        "$(basename ${repo})"
