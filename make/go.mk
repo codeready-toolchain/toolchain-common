@@ -8,27 +8,26 @@ GO111MODULE?=on
 export GO111MODULE
 
 .PHONY: build
-## Build
-build: $(shell find . -path ./vendor -prune -o -name '*.go' -print)
+## runs go build
+build:
 	$(Q)CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
 	    go build ./...
-
-.PHONY: vendor
-vendor:
-	$(Q)go mod vendor
 
 .PHONY: verify-dependencies
 ## Runs commands to verify after the updated dependecies of toolchain-common/API(go mod replace), if the repo needs any changes to be made
 verify-dependencies: tidy vet build test lint-go-code
 
 .PHONY: tidy
+## runs go mod tidy
 tidy: 
 	go mod tidy
 
 .PHONY: vet
+## runs go mod vet ./...
 vet:
 	go vet ./...
 
 .PHONY: verify-replace-run
+## downloads all the repos that depend on toolchain-common, installs the current version of the library and runs all the verifications in order to check for compatibility and breaking changes
 verify-replace-run:
 	./scripts/verify-replace.sh; 
