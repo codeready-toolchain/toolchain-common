@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -10,8 +11,8 @@ import (
 // another resource whose name if found in a given label
 // it maps the namespace to a request on the "owner" (or "associated") resource
 // (if the label exists)
-func MapToOwnerByLabel(namespace, label string) func(object client.Object) []reconcile.Request {
-	return func(obj client.Object) []reconcile.Request {
+func MapToOwnerByLabel(namespace, label string) func(context context.Context, object client.Object) []reconcile.Request {
+	return func(ctx context.Context, obj client.Object) []reconcile.Request {
 		if name, exists := obj.GetLabels()[label]; exists {
 			return []reconcile.Request{
 				{
@@ -30,8 +31,8 @@ func MapToOwnerByLabel(namespace, label string) func(object client.Object) []rec
 // MapToControllerByMatchingLabel returns an event handler will convert events on a resource to requests
 // if the resource matches a given label key and value
 // (if the label exists)
-func MapToControllerByMatchingLabel(labelKey, labelValue string) func(object client.Object) []reconcile.Request {
-	return func(obj client.Object) []reconcile.Request {
+func MapToControllerByMatchingLabel(labelKey, labelValue string) func(ctx context.Context, object client.Object) []reconcile.Request {
+	return func(ctx context.Context, obj client.Object) []reconcile.Request {
 		if labelValueFound, exists := obj.GetLabels()[labelKey]; exists && labelValue == labelValueFound {
 			return []reconcile.Request{
 				{

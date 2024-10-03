@@ -119,7 +119,7 @@ func TestClusterControllerChecks(t *testing.T) {
 		stable, _ := newToolchainCluster(t, "stable", tcNs, "https://cluster.com")
 
 		cl := test.NewFakeClient(t, stable)
-		cl.MockStatusUpdate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
+		cl.MockStatusUpdate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.SubResourceUpdateOption) error {
 			return fmt.Errorf("mock error")
 		}
 		controller, req := prepareReconcile(stable, cl, requeAfter)
@@ -139,7 +139,7 @@ func TestClusterControllerChecks(t *testing.T) {
 		stable, sec := newToolchainCluster(t, "stable", tcNs, "https://cluster.com")
 		expectedErr := fmt.Errorf("my test error")
 		cl := test.NewFakeClient(t, stable, sec)
-		cl.MockStatusUpdate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.UpdateOption) error {
+		cl.MockStatusUpdate = func(ctx context.Context, obj runtimeclient.Object, opts ...runtimeclient.SubResourceUpdateOption) error {
 			return expectedErr
 		}
 		reset := setupCachedClusters(t, cl, stable)

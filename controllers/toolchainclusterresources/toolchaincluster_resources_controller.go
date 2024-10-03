@@ -19,7 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // ResourceControllerLabelValue is being added to all the resources managed by this controller.
@@ -44,7 +43,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, operatorNamespace string
 	}
 	mapToOwnerByLabel := handler.EnqueueRequestsFromMapFunc(commoncontroller.MapToControllerByMatchingLabel(toolchainv1alpha1.ProviderLabelKey, ResourceControllerLabelValue))
 	for _, obj := range r.templateObjects {
-		build = build.Watches(&source.Kind{Type: obj.DeepCopyObject().(runtimeclient.Object)}, mapToOwnerByLabel, builder.WithPredicates(commonpredicates.LabelsAndGenerationPredicate{}))
+		build = build.Watches(obj.DeepCopyObject().(runtimeclient.Object), mapToOwnerByLabel, builder.WithPredicates(commonpredicates.LabelsAndGenerationPredicate{}))
 	}
 	return build.Complete(r)
 }
