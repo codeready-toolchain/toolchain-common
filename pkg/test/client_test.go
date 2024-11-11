@@ -155,6 +155,11 @@ func TestNewClient(t *testing.T) {
 			require.NoError(t, fclient.Status().Patch(context.TODO(), retrieved, depPatch))
 		})
 
+		t.Run("status create fails", func(t *testing.T) {
+			_, retrieved := createAndGetDeployment(t, fclient)
+			require.EqualError(t, fclient.Status().Create(context.TODO(), retrieved, retrieved), "fakeSubResourceWriter does not support create for status")
+		})
+
 		t.Run("delete", func(t *testing.T) {
 			created, retrieved := createAndGetSecret(t, fclient)
 			require.NoError(t, fclient.Delete(context.TODO(), created))
@@ -246,7 +251,7 @@ func TestNewClient(t *testing.T) {
 			fclient.MockStatusUpdate = func(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error {
 				return expectedErr
 			}
-			require.EqualError(t, fclient.MockStatusUpdate(context.TODO(), &v1.Secret{}), expectedErr.Error())
+			require.EqualError(t, fclient.Status().Update(context.TODO(), &v1.Secret{}), expectedErr.Error())
 		})
 
 		t.Run("mock Status Patch", func(t *testing.T) {
@@ -254,7 +259,15 @@ func TestNewClient(t *testing.T) {
 			fclient.MockStatusPatch = func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error {
 				return expectedErr
 			}
-			require.EqualError(t, fclient.MockStatusPatch(context.TODO(), &v1.Secret{}, client.RawPatch(types.MergePatchType, []byte{})), expectedErr.Error())
+			require.EqualError(t, fclient.Status().Patch(context.TODO(), &v1.Secret{}, client.RawPatch(types.MergePatchType, []byte{})), expectedErr.Error())
+		})
+
+		t.Run("mock Status Create", func(t *testing.T) {
+			defer func() { fclient.MockStatusCreate = nil }()
+			fclient.MockStatusCreate = func(ctx context.Context, obj client.Object, subResoource client.Object, opts ...client.SubResourceCreateOption) error {
+				return expectedErr
+			}
+			require.EqualError(t, fclient.Status().Create(context.TODO(), &v1.Secret{}, nil), expectedErr.Error())
 		})
 	})
 }

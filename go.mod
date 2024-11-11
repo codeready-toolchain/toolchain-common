@@ -9,7 +9,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.29
 	github.com/magiconair/properties v1.8.5
 	// using latest commit from 'github.com/openshift/api branch release-4.12'
-	github.com/openshift/api v0.0.0-20240304080513-3e8192a10b13
+	github.com/openshift/api v0.0.0-20241031180523-b1c90a6cf9a3
 	// using latest commit from 'github.com/openshift/library-go branch release-4.12'
 	github.com/openshift/library-go v0.0.0-20230301092340-c13b89190a26
 	github.com/pkg/errors v0.9.1
@@ -18,8 +18,8 @@ require (
 	gopkg.in/h2non/gock.v1 v1.0.14
 	gopkg.in/square/go-jose.v2 v2.3.0
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.27.2
-	k8s.io/apimachinery v0.27.2
+	k8s.io/api v0.27.7
+	k8s.io/apimachinery v0.27.7
 	k8s.io/client-go v0.27.2
 	sigs.k8s.io/controller-runtime v0.15.0
 )
@@ -111,4 +111,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/codeready-toolchain/api v0.0.0-20240909145803-3b27dcfb3ded => github.com/ranakan19/api v0.0.0-20241030160547-6a9cb22b0be5
+replace github.com/codeready-toolchain/api v0.0.0-20240909145803-3b27dcfb3ded => github.com/ranakan19/api v0.0.0-20241108053314-93842107015c

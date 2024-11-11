@@ -39,6 +39,7 @@ type FakeClient struct {
 	MockCreate       func(ctx context.Context, obj client.Object, opts ...client.CreateOption) error
 	MockUpdate       func(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
 	MockPatch        func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error
+	MockStatusCreate func(ctx context.Context, obj client.Object, subResource client.Object, opts ...client.SubResourceCreateOption) error
 	MockStatusUpdate func(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error
 	MockStatusPatch  func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error
 	MockDelete       func(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
@@ -92,7 +93,7 @@ func Create(ctx context.Context, cl *FakeClient, obj client.Object, opts ...clie
 
 func (c *FakeClient) Status() client.StatusWriter {
 	m := mockStatusUpdate{}
-	if c.MockStatusUpdate == nil && c.MockStatusPatch == nil {
+	if c.MockStatusUpdate == nil && c.MockStatusPatch == nil && c.MockStatusCreate == nil {
 		return c.Client.Status()
 	}
 	if c.MockStatusUpdate != nil {
@@ -100,6 +101,9 @@ func (c *FakeClient) Status() client.StatusWriter {
 	}
 	if c.MockStatusPatch != nil {
 		m.mockPatch = c.MockStatusPatch
+	}
+	if c.MockStatusCreate != nil {
+		m.mockCreate = c.MockStatusCreate
 	}
 	return &m
 }
