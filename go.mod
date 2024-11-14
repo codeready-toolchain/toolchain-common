@@ -15,8 +15,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/redhat-cop/operator-utils v1.3.6
 	github.com/stretchr/testify v1.9.0
+	gopkg.in/go-jose/go-jose.v2 v2.6.3
 	gopkg.in/h2non/gock.v1 v1.0.14
-	gopkg.in/square/go-jose.v2 v2.3.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.27.7
 	k8s.io/apimachinery v0.27.7

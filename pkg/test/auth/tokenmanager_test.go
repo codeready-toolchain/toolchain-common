@@ -12,7 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	jose "gopkg.in/square/go-jose.v2"
+	jose "gopkg.in/go-jose/go-jose.v2"
 	"gotest.tools/assert"
 )
 
@@ -220,7 +220,6 @@ func TestTokenManagerTokens(t *testing.T) {
 		claims, ok := decodedToken.Claims.(*MyClaims)
 		require.True(t, ok)
 		require.Equal(t, "jane", claims.GivenName)
-
 	})
 	t.Run("create token with family name extra claim", func(t *testing.T) {
 		username := uuid.NewString()
@@ -259,7 +258,6 @@ func TestTokenManagerTokens(t *testing.T) {
 		claims, ok := decodedToken.Claims.(*MyClaims)
 		require.True(t, ok)
 		require.Equal(t, "test-preferred-username", claims.PreferredUsername)
-
 	})
 	t.Run("create token with company extra claim", func(t *testing.T) {
 		username := uuid.NewString()
