@@ -6,12 +6,14 @@ import (
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/hash"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
+	"golang.org/x/exp/slices"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -353,4 +355,193 @@ func (a *Assertion) loadSubSpace() error {
 		a.space = &spaces.Items[0]
 	}
 	return err
+}
+
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+/////// Example conversion to predicates //////////////////////////
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+
+func Finalizer() test.Predicate[*toolchainv1alpha1.Space] {
+	return &hasFinalizer{}
+}
+
+func NoFinalizer() test.Predicate[*toolchainv1alpha1.Space] {
+	return &hasFinalizer{negate: true}
+}
+
+func Tier(tierName string) test.Predicate[*toolchainv1alpha1.Space] {
+	return &hasTier{name: tierName}
+}
+
+func DisableInheritance(disabled bool) test.Predicate[*toolchainv1alpha1.Space] {
+	return &hasInheritance{disabled: disabled}
+}
+
+func ParentSpace(parentSpaceName string) test.Predicate[*toolchainv1alpha1.Space] {
+	return &hasParentSpace{name: parentSpaceName}
+}
+
+// predicates on labels and annotations are implemented generically, so we don't have
+// to redefine and reimplement them here...
+
+func MatchingTierLabelForTier(tier *toolchainv1alpha1.NSTemplateTier) test.Predicate[*toolchainv1alpha1.Space] {
+	return &hasMatchingTierLabel{tier: tier}
+}
+
+func StateLabel(value string) test.Predicate[client.Object] {
+	return test.Labels(map[string]string{toolchainv1alpha1.SpaceStateLabelKey: value})
+}
+
+func TargetCluster(cluster string) test.Predicate[*toolchainv1alpha1.Space] {
+	return &hasTargetCluster{cluster: cluster}
+}
+
+func TargetClusterRoles(roles []string) test.Predicate[*toolchainv1alpha1.Space] {
+	return &hasTargetClusterRoles{roles: roles}
+}
+
+func StatusTargetCluster(cluster string) test.Predicate[*toolchainv1alpha1.Space] {
+	return &hasStatusTargetCluster{cluster: cluster}
+}
+
+func ProvisionedNamespaces(provisionedNamespaces []toolchainv1alpha1.SpaceNamespace) test.Predicate[*toolchainv1alpha1.Space] {
+	return &hasProvisionedNamespaces{namespaces: provisionedNamespaces}
+}
+
+// condition predicates are done generically
+
+func Conditions(pred test.Predicate[[]toolchainv1alpha1.Condition]) test.Predicate[*toolchainv1alpha1.Space] {
+	return test.BridgeToConditions(func(s *toolchainv1alpha1.Space) *[]toolchainv1alpha1.Condition {
+		return &s.Status.Conditions
+	}, pred)
+}
+
+// impls
+
+type (
+	hasFinalizer         struct{ negate bool }
+	hasTier              struct{ name string }
+	hasInheritance       struct{ disabled bool }
+	hasParentSpace       struct{ name string }
+	hasMatchingTierLabel struct {
+		tier *toolchainv1alpha1.NSTemplateTier
+	}
+	hasTargetCluster         struct{ cluster string }
+	hasTargetClusterRoles    struct{ roles []string }
+	hasStatusTargetCluster   struct{ cluster string }
+	hasProvisionedNamespaces struct {
+		namespaces []toolchainv1alpha1.SpaceNamespace
+	}
+)
+
+func (p *hasFinalizer) Matches(s *toolchainv1alpha1.Space) bool {
+	return slices.Contains(s.Finalizers, toolchainv1alpha1.FinalizerName)
+}
+
+func (p *hasFinalizer) FixToMatch(s *toolchainv1alpha1.Space) *toolchainv1alpha1.Space {
+	if slices.Contains(s.Finalizers, toolchainv1alpha1.FinalizerName) != p.negate {
+		s = s.DeepCopy()
+		if p.negate {
+			s.Finalizers = slices.DeleteFunc(s.Finalizers, func(e string) bool {
+				return e == toolchainv1alpha1.FinalizerName
+			})
+		} else {
+			s.Finalizers = append(s.Finalizers, toolchainv1alpha1.FinalizerName)
+		}
+	}
+	return s
+}
+
+func (p *hasTier) Matches(s *toolchainv1alpha1.Space) bool {
+	return s.Spec.TierName == p.name
+}
+
+func (p *hasTier) FixToMatch(s *toolchainv1alpha1.Space) *toolchainv1alpha1.Space {
+	s = s.DeepCopy()
+	s.Spec.TierName = p.name
+	return s
+}
+
+func (p *hasInheritance) Matches(s *toolchainv1alpha1.Space) bool {
+	return s.Spec.DisableInheritance == p.disabled
+}
+
+func (p *hasInheritance) FixToMatch(s *toolchainv1alpha1.Space) *toolchainv1alpha1.Space {
+	s = s.DeepCopy()
+	s.Spec.DisableInheritance = p.disabled
+	return s
+}
+
+func (p *hasParentSpace) Matches(s *toolchainv1alpha1.Space) bool {
+	return s.Spec.ParentSpace == p.name
+}
+
+func (p *hasParentSpace) FixToMatch(s *toolchainv1alpha1.Space) *toolchainv1alpha1.Space {
+	s = s.DeepCopy()
+	s.Spec.ParentSpace = p.name
+	return s
+}
+
+func (p *hasMatchingTierLabel) Matches(s *toolchainv1alpha1.Space) bool {
+	key, hash := p.labelKeyAndHash()
+	return s.Labels[key] == hash
+}
+
+func (p *hasMatchingTierLabel) FixToMatch(s *toolchainv1alpha1.Space) *toolchainv1alpha1.Space {
+	s = s.DeepCopy()
+	key, hash := p.labelKeyAndHash()
+	if s.Labels == nil {
+		s.Labels = map[string]string{}
+	}
+	s.Labels[key] = hash
+	return s
+}
+
+func (p *hasMatchingTierLabel) labelKeyAndHash() (string, string) {
+	key := hash.TemplateTierHashLabelKey(p.tier.Name)
+	// TODO: ignoring the error is not ideal - maybe we could support failable predicates?
+	hash, _ := hash.ComputeHashForNSTemplateTier(p.tier)
+	return key, hash
+}
+
+func (p *hasTargetCluster) Matches(s *toolchainv1alpha1.Space) bool {
+	return s.Spec.TargetCluster == p.cluster
+}
+
+func (p *hasTargetCluster) FixToMatch(s *toolchainv1alpha1.Space) *toolchainv1alpha1.Space {
+	s = s.DeepCopy()
+	s.Spec.TargetCluster = p.cluster
+	return s
+}
+
+func (p *hasTargetClusterRoles) Matches(s *toolchainv1alpha1.Space) bool {
+	return slices.Equal(s.Spec.TargetClusterRoles, p.roles)
+}
+
+func (p *hasTargetClusterRoles) FixToMatch(s *toolchainv1alpha1.Space) *toolchainv1alpha1.Space {
+	s = s.DeepCopy()
+	s.Spec.TargetClusterRoles = p.roles
+	return s
+}
+
+func (p *hasStatusTargetCluster) Matches(s *toolchainv1alpha1.Space) bool {
+	return s.Status.TargetCluster == p.cluster
+}
+
+func (p *hasStatusTargetCluster) FixToMatch(s *toolchainv1alpha1.Space) *toolchainv1alpha1.Space {
+	s = s.DeepCopy()
+	s.Status.TargetCluster = p.cluster
+	return s
+}
+
+func (p *hasProvisionedNamespaces) Matches(s *toolchainv1alpha1.Space) bool {
+	return slices.Equal(s.Status.ProvisionedNamespaces, p.namespaces)
+}
+
+func (p *hasProvisionedNamespaces) FixToMatch(s *toolchainv1alpha1.Space) *toolchainv1alpha1.Space {
+	s = s.DeepCopy()
+	s.Status.ProvisionedNamespaces = p.namespaces
+	return s
 }

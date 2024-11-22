@@ -1,18 +1,16 @@
-package assertions
+package test
 
 import (
 	"fmt"
 	"reflect"
 	"strings"
-	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // AssertThat is a helper function that tests that the provided object satisfies given predicate.
-// It is a exactly implemented as:
+// If it accepted only a single predicate, it would be exactly implemented as:
 //
 //	assert.True(t, predicate.Matches(object))
 //
@@ -26,7 +24,7 @@ import (
 //
 // Note that this method accepts multiple predicates and reports any failures in them using
 // the Explain function.
-func AssertThat(t *testing.T, object client.Object, predicates ...Predicate[client.Object]) {
+func AssertThat(t T, object any, predicates ...Predicate[any]) {
 	t.Helper()
 	message := assertThat(object, predicates...)
 	if message != "" {
@@ -37,7 +35,7 @@ func AssertThat(t *testing.T, object client.Object, predicates ...Predicate[clie
 // assertThat contains the actual logic of the AssertThat function. This is separated out into
 // its own testable function because we cannot cannot capture the result of assert.Fail() in
 // another test.
-func assertThat(object client.Object, predicates ...Predicate[client.Object]) string {
+func assertThat(object any, predicates ...Predicate[any]) string {
 	results := make([]bool, len(predicates))
 	failure := false
 	for i, p := range predicates {
@@ -70,7 +68,7 @@ func assertThat(object client.Object, predicates ...Predicate[client.Object]) st
 //
 // Note that this function doesn't actually check if the predicate matches the object so it can produce
 // slightly misleading output if called with a predicate that matches given object.
-func Explain[T client.Object](predicate Predicate[client.Object], actual T) string {
+func Explain[T any](predicate Predicate[any], actual T) string {
 	// this is used for reporting the type of the predicate
 	var reportedPredicateType reflect.Type
 
@@ -86,7 +84,7 @@ func Explain[T client.Object](predicate Predicate[client.Object], actual T) stri
 		predVal = predVal.Elem()
 	}
 	typName := predVal.Type().Name()
-	if strings.HasPrefix(typName, "cast[") {
+	if strings.HasPrefix(typName, "cast[") || strings.HasPrefix(typName, "fixingCast[") {
 		// Interestingly, predVal.FieldByName("Inner").Type() returns the type of the field
 		// not the type of the value. So we need to get the actual value using .Interface()
 		// and get the type of that. Also notice, that in order to be able to call .Interface()
@@ -101,12 +99,12 @@ func Explain[T client.Object](predicate Predicate[client.Object], actual T) stri
 	}
 
 	prefix := fmt.Sprintf("predicate '%s' didn't match the object", reportedPredicateType.String())
-	fix, ok := predicate.(PredicateMatchFixer[client.Object])
+	fix, ok := predicate.(PredicateMatchFixer[any])
 	if !ok {
 		return prefix
 	}
 
-	expected := fix.FixToMatch(actual.DeepCopyObject().(client.Object))
+	expected := fix.FixToMatch(actual)
 	diff := cmp.Diff(expected, actual)
 
 	return fmt.Sprintf("%s because of the following differences (- indicates the expected values, + the actual values):\n%s", prefix, diff)

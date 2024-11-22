@@ -2,6 +2,7 @@ package test
 
 // T our minimal testing interface for our custom assertions
 type T interface {
+	Helper()
 	Log(args ...interface{})
 	Logf(format string, args ...interface{})
 	Errorf(format string, args ...interface{})
@@ -22,6 +23,10 @@ type MockT struct {
 	fatalfCount  int
 	failnowCount int
 	failCount    int
+}
+
+func (t *MockT) Helper() {
+	// mock test does nothing here
 }
 
 func (t *MockT) Log(_ ...interface{}) {
