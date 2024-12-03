@@ -54,5 +54,5 @@ func GetBannedUser(ctx context.Context, userEmailHash string, hostClient client.
 		return &bannedUsers.Items[0], nil
 	}
 
-	return nil, nil
+	return nil, fmt.Errorf("failed to get banned user %s", userEmailHash)
 }

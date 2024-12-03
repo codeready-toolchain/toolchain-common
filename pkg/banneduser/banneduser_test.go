@@ -151,7 +151,7 @@ func TestGetBannedUser(t *testing.T) {
 			name:       "user is not banned",
 			toBan:      bannedUser2,
 			wantResult: nil,
-			wantError:  false,
+			wantError:  true,
 			fakeClient: fakeClient,
 		},
 		{
