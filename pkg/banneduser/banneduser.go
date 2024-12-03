@@ -39,7 +39,8 @@ func NewBannedUser(userSignup *toolchainv1alpha1.UserSignup, bannedBy, banReason
 	return bannedUser, nil
 }
 
-// GetBannedUser returns BannedUser with the provided user email hash if found. Otherwise it returns nil.
+// GetBannedUser returns BannedUser with the provided user email hash, if found.
+// If not found, it returns an error.
 func GetBannedUser(ctx context.Context, userEmailHash string, hostClient client.Client, hostNamespace string) (*toolchainv1alpha1.BannedUser, error) {
 	emailHashLabelMatch := client.MatchingLabels(map[string]string{
 		toolchainv1alpha1.BannedUserEmailHashLabelKey: userEmailHash,
