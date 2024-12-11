@@ -6,7 +6,6 @@ import (
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/cluster"
-	commonpredicates "github.com/codeready-toolchain/toolchain-common/pkg/predicate"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -32,7 +31,7 @@ func NewReconciler(mgr manager.Manager, namespace string, timeout time.Duration)
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&toolchainv1alpha1.ToolchainCluster{}, builder.WithPredicates(namespacePredicate{namespace: r.namespace}, commonpredicates.LabelsAndGenerationPredicate{})).
+		For(&toolchainv1alpha1.ToolchainCluster{}, builder.WithPredicates(namespacePredicate{namespace: r.namespace})).
 		Complete(r)
 }
 
