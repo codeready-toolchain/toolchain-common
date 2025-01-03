@@ -24,7 +24,7 @@ jobs:
         go-version-file: go.mod
 
     - name: Install golangci-lint
-      run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.2
+      run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3
 
     - name: Verify
       run: |
