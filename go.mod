@@ -13,8 +13,8 @@ require (
 	// using latest commit from 'github.com/openshift/library-go branch release-4.16'
 	github.com/openshift/library-go v0.0.0-20240711192904-190fec8c3f09
 	github.com/pkg/errors v0.9.1
-	github.com/redhat-cop/operator-utils v1.3.6
-	github.com/stretchr/testify v1.9.0
+	github.com/redhat-cop/operator-utils v1.3.8
+	github.com/stretchr/testify v1.10.0
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 	gopkg.in/h2non/gock.v1 v1.0.14
 	gotest.tools v2.2.0+incompatible
@@ -38,7 +38,7 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.2.1 // indirect
+	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
@@ -49,7 +49,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
-	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
+	github.com/evanphx/json-patch v5.7.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.8.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
