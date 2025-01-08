@@ -39,7 +39,7 @@ func ValidateComponentConditionReady(conditions ...toolchainv1alpha1.Condition) 
 	if !found {
 		return fmt.Errorf("a ready condition was not found")
 	} else if c.Status != corev1.ConditionTrue {
-		return fmt.Errorf(c.Message) // return an error with the message from the condition
+		return fmt.Errorf("%s", c.Message) // return an error with the message from the condition
 	}
 
 	return nil
