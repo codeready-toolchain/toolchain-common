@@ -39,13 +39,6 @@ func WithAccountID(accountID string) Modifier {
 	}
 }
 
-// ApprovedManually sets the UserSignup states to [`approved`]
-func ApprovedManually() Modifier {
-	return func(userSignup *toolchainv1alpha1.UserSignup) {
-		states.SetApprovedManually(userSignup, true)
-	}
-}
-
 // ApprovedManuallyAgo sets the UserSignup state to `approved` and adds a status condition
 func ApprovedManuallyAgo(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
@@ -60,13 +53,39 @@ func ApprovedManuallyAgo(before time.Duration) Modifier {
 	}
 }
 
+func ApprovedAutomaticallyAgo(before time.Duration) Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		states.SetApprovedManually(userSignup, true)
+		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
+			toolchainv1alpha1.Condition{
+				Type:               toolchainv1alpha1.UserSignupApproved,
+				Status:             corev1.ConditionTrue,
+				Reason:             toolchainv1alpha1.UserSignupApprovedAutomaticallyReason,
+				LastTransitionTime: metav1.Time{Time: time.Now().Add(-before)},
+			})
+	}
+}
+
 func Deactivated() Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		states.SetDeactivated(userSignup, true)
 	}
 }
 
-func DeactivatedWithLastTransitionTime(before time.Duration) Modifier {
+func VerificationRequired() Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		states.SetVerificationRequired(userSignup, true)
+	}
+}
+
+// ApprovedManually sets the UserSignup states to [`approved`]
+func ApprovedManually() Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		states.SetApprovedManually(userSignup, true)
+	}
+}
+
+func DeactivatedAgo(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		states.SetDeactivated(userSignup, true)
 
@@ -81,7 +100,19 @@ func DeactivatedWithLastTransitionTime(before time.Duration) Modifier {
 	}
 }
 
-func VerificationRequired(before time.Duration) Modifier {
+func BannedAgo(before time.Duration) Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
+			toolchainv1alpha1.Condition{
+				Type:               toolchainv1alpha1.UserSignupComplete,
+				Status:             corev1.ConditionTrue,
+				Reason:             toolchainv1alpha1.UserSignupUserBannedReason,
+				LastTransitionTime: metav1.Time{Time: time.Now().Add(-before)},
+			})
+	}
+}
+
+func VerificationRequiredAgo(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		states.SetVerificationRequired(userSignup, true)
 
