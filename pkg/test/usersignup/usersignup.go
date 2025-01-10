@@ -53,6 +53,7 @@ func ApprovedManuallyAgo(before time.Duration) Modifier {
 	}
 }
 
+// ApprovedAutomaticallyAgo sets the UserSignup state to `approved` and adds a status condition
 func ApprovedAutomaticallyAgo(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		states.SetApprovedManually(userSignup, true)
