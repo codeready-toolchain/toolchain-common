@@ -86,6 +86,7 @@ func ApprovedManually() Modifier {
 	}
 }
 
+// DeactivatedAgo sets the UserSignup states to [`deactivated`] and adds a status condition
 func DeactivatedAgo(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		states.SetDeactivated(userSignup, true)
