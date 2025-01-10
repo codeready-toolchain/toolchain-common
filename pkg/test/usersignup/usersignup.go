@@ -102,6 +102,7 @@ func DeactivatedAgo(before time.Duration) Modifier {
 	}
 }
 
+// BannedAgo adds the banned status condition
 func BannedAgo(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
