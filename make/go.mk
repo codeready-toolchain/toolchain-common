@@ -31,3 +31,7 @@ vet:
 ## downloads all the repos that depend on toolchain-common, installs the current version of the library and runs all the verifications in order to check for compatibility and breaking changes
 verify-replace-run:
 	./scripts/verify-replace.sh; 
+
+.PHONY: pre-verify
+pre-verify:
+	echo "No Pre-requisite needed"
