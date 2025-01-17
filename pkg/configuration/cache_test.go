@@ -3,7 +3,6 @@ package configuration
 import (
 	"context"
 	"fmt"
-	"k8s.io/utils/pointer"
 	"sync"
 	"testing"
 
@@ -354,7 +353,7 @@ func TestMultipleExecutionsInParallel(t *testing.T) {
 			defer waitForFinished.Done()
 			latch.Wait()
 			config := NewToolchainConfigObjWithReset(t, testconfig.Members().SpecificPerMemberCluster(fmt.Sprintf("member%d", i), toolchainv1alpha1.MemberOperatorConfigSpec{
-				Environment: pointer.String(fmt.Sprintf("env%d", i)),
+				Environment: ptr.To(fmt.Sprintf("env%d", i)),
 			}))
 
 			secretData := map[string]map[string]string{
