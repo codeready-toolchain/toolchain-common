@@ -3,7 +3,7 @@ module github.com/codeready-toolchain/toolchain-common
 go 1.21
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20241119094246-f6581d52dc80
+	github.com/codeready-toolchain/api v0.0.0-20250116110936-14cd9cc79fc6
 	github.com/go-logr/logr v1.4.1
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/lestrrat-go/jwx v1.2.29
