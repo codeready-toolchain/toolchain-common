@@ -3,7 +3,7 @@ module github.com/codeready-toolchain/toolchain-common
 go 1.20
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20241119094246-f6581d52dc80
+	github.com/codeready-toolchain/api v0.0.0-20250116110936-14cd9cc79fc6
 	github.com/go-logr/logr v1.2.4
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/lestrrat-go/jwx v1.2.29
@@ -26,7 +26,7 @@ require (
 
 require (
 	github.com/ghodss/yaml v1.0.0
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github/v52 v52.0.0
 	github.com/google/uuid v1.6.0
 	github.com/migueleliasweb/go-github-mock v0.0.18
@@ -98,7 +98,7 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
