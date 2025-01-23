@@ -37,6 +37,7 @@ do
     if [ ${rc} -ne 0 ]; then
     ERRORREPOLIST+="$(basename ${repo}) " 
     ERRORFILELIST+="${ERRFILE}  "
+    STDOUTFILELIST="${STDOUTFILE} "
     fi
     echo                                                          
     echo =========================================================================================
