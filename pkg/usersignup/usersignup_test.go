@@ -1,8 +1,9 @@
 package usersignup
 
 import (
-	"k8s.io/apimachinery/pkg/util/validation"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -47,4 +48,18 @@ func TestTransformUsername(t *testing.T) {
 func assertName(t *testing.T, expected, username string) {
 	assert.Empty(t, validation.IsDNS1123Label(TransformUsername(username, []string{"openshift", "kube", "default", "redhat", "sandbox"}, []string{"admin"})), "username is not a compliant DNS label")
 	assert.Equal(t, expected, TransformUsername(username, []string{"openshift", "kube", "default", "redhat", "sandbox"}, []string{"admin"}))
+}
+
+func TestEncodeUsername(t *testing.T) {
+	assertEncodedUsername(t, "abcde-12345", "abcde-12345")
+	assertEncodedUsername(t, "c0177ca4-abcde-12345", "abcde\\*-12345")
+	assertEncodedUsername(t, "ca3e1e0f-1234567", "-1234567")
+	assertEncodedUsername(t, "e3632025-0123456789abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqr", "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-01234567890123456789")
+	assertEncodedUsername(t, "a05a4053-abcxyz", "abc:xyz")
+	assertEncodedUsername(t, "ed6bd2b5-abc", "abc---")
+	assertEncodedUsername(t, "8fa24710-johnnykubesawcom", "johnny@kubesaw.com")
+}
+
+func assertEncodedUsername(t *testing.T, expected, username string) {
+	assert.Equal(t, expected, EncodeUserIdentifier(username))
 }
