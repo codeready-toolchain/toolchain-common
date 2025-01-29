@@ -168,6 +168,40 @@ func SignupComplete(reason string) Modifier {
 	}
 }
 
+// SignupIncomplete adds Complete condition with status false and with the given reason and message
+func SignupIncomplete(reason, message string) Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions,
+			toolchainv1alpha1.Condition{
+				Type:    toolchainv1alpha1.UserSignupComplete,
+				Status:  corev1.ConditionFalse,
+				Reason:  reason,
+				Message: message,
+			})
+	}
+}
+
+// WithCompliantUsername sets the given compliant username in the status
+func WithCompliantUsername(compliantUsername string) Modifier {
+	return func(signup *toolchainv1alpha1.UserSignup) {
+		signup.Status.CompliantUsername = compliantUsername
+	}
+}
+
+// WithHomeSpace sets the given homeSpace in the status
+func WithHomeSpace(homeSpace string) Modifier {
+	return func(signup *toolchainv1alpha1.UserSignup) {
+		signup.Status.HomeSpace = homeSpace
+	}
+}
+
+// WithScheduledDeactivationTimestamp sets the given scheduledDeactivationTimestamp in the status
+func WithScheduledDeactivationTimestamp(scheduledDeactivationTimestamp *metav1.Time) Modifier {
+	return func(signup *toolchainv1alpha1.UserSignup) {
+		signup.Status.ScheduledDeactivationTimestamp = scheduledDeactivationTimestamp
+	}
+}
+
 func CreatedBefore(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now().Add(-before)}
@@ -209,6 +243,15 @@ func WithoutAnnotations() Modifier {
 func WithName(name string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		userSignup.Name = name
+		userSignup.Spec.IdentityClaims.PreferredUsername = name
+	}
+}
+
+// WithEncodedName sets the encoded value as the name of the resource
+// and the original value as the PreferredUsername
+func WithEncodedName(name string) Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		userSignup.Name = usersignup.EncodeUserIdentifier(name)
 		userSignup.Spec.IdentityClaims.PreferredUsername = name
 	}
 }
