@@ -3,15 +3,13 @@ TMP_DIR=/tmp/
 BASE_REPO_PATH=$(mktemp -d ${TMP_DIR}replace-verify.XXX)
 GH_BASE_URL_KS=https://github.com/kubesaw/
 GH_BASE_URL_CRT=https://github.com/codeready-toolchain/
-declare -a REPOS=("${GH_BASE_URL_CRT}host-operator")
+declare -a REPOS=("${GH_BASE_URL_KS}ksctl" "${GH_BASE_URL_CRT}host-operator" "${GH_BASE_URL_CRT}member-operator" "${GH_BASE_URL_CRT}registration-service" "${GH_BASE_URL_CRT}toolchain-e2e")
 C_PATH=${PWD}
 ERROR_REPO_LIST=()
 ERROR_FILE_LIST=()
 STD_OUT_FILE_LIST=()
 GO_LINT_REGEX="[\s\w.\/]*:[0-9]*:[0-9]*:[\w\s)(*.\`]*"
-ERROR_REGEX="Error[:]*" #unit test or any other failure we log goes into stdoutput, hence making that regex too to fetch the error
-FAIL_REGEX="FAIL[:]*" #unit test or any other failure we log goes into stdoutput, hence making that regex too to fetch the error
-
+ERROR_REGEX="Error[:]*/|FAIL[:]*" #unit test or any other failure we log from our controllers other places goes into stdoutput, hence making that regex too, to fetch the error more precisely
 echo Initiating verify-replace on dependent repos
 for repo in "${REPOS[@]}"
 do
