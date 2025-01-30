@@ -68,7 +68,7 @@ if [ ${#ERROR_REPO_LIST[@]} -ne 0 ]; then
         for std_out_file_name in ${STD_OUT_FILE_LIST[*]}
             do
                 if [[ ${std_out_file_name} =~ ${error_repo_name} ]]; then 
-                    cat "${std_out_file_name}" | grep -E ${GO_LINT_REGEX}|${ERROR_REGEX}|${FAIL_REGEX}
+                    cat "${std_out_file_name}" | grep -E ${GO_LINT_REGEX}|${ERROR_REGEX}
                 fi
         done                                             
     done
