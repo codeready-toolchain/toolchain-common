@@ -9,7 +9,6 @@ ERRORREPOLIST=()
 ERRORFILELIST=()
 STDOUTFILELIST=()
 GOLINTREGEX="[\s\w.\/]*:[0-9]*:[0-9]*:[\w\s)(*.\`]*"
-LINTERERRORFILE=$(mktemp ${BASE_REPO_PATH}/LinterError.XXX)
 
 echo Initiating verify-replace on dependent repos
 for repo in "${REPOS[@]}"
@@ -70,10 +69,7 @@ if [ ${#ERRORREPOLIST[@]} -ne 0 ]; then
                 for stdoutfilename in ${STDOUTFILELIST[*]}
                 do
                     if [[ ${stdoutfilename} =~ ${errorreponame} ]]; then 
-                        cat "${stdoutfilename}" | grep -E ${GOLINTREGEX} > ${LINTERERRORFILE}
-                        if [ -s "${LINTERERRORFILE}" ]; then
-                            cat  "${LINTERERRORFILE}"   
-                        fi
+                        cat "${stdoutfilename}" | grep -E ${GOLINTREGEX} 
                     fi
                 done                                            
             fi
