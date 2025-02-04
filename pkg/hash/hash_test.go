@@ -34,6 +34,12 @@ func TestComputeHashForNSTemplateTier(t *testing.T) {
 				TemplateRef: "base1ns-clusterresources-e0e1f34-e0e1f34",
 			},
 		},
+		Status: toolchainv1alpha1.NSTemplateTierStatus{
+			Revisions: map[string]string{
+				"base1ns-dev-aeb78eb-aeb78eb":              "base1ns-dev-aeb78eb-aeb78eb",
+				"base1ns-clusterresources-e0e1f34-e0e1f34": "base1ns-clusterresources-e0e1f34-e0e1f34",
+			},
+		},
 	}
 	// when
 	h, err := hash.ComputeHashForNSTemplateTier(tier)
@@ -81,6 +87,13 @@ func TestTierHashMatches(t *testing.T) {
 				},
 				ClusterResources: &toolchainv1alpha1.NSTemplateTierClusterResources{
 					TemplateRef: "base1ns-clusterresources-e0e1f34-e0e1f34",
+				},
+			},
+			Status: toolchainv1alpha1.NSTemplateTierStatus{
+				Revisions: map[string]string{
+					"base1ns-dev-aeb78eb-aeb78eb":              "base1ns-dev-aeb78eb-aeb78eb",
+					"base1ns-clusterresources-e0e1f34-e0e1f34": "base1ns-clusterresources-e0e1f34-e0e1f34",
+					"base1ns-dev-aeb78eb-aeb78eb02":            "base1ns-dev-aeb78eb-aeb78eb02",
 				},
 			},
 		}
