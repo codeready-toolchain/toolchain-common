@@ -16,6 +16,7 @@ var Status = toolchainv1alpha1.NSTemplateTierStatus{
 	Revisions: map[string]string{
 		"base1ns-dev-aeb78eb-aeb78eb":              "base1ns-dev-aeb78eb-aeb78eb",
 		"base1ns-clusterresources-e0e1f34-e0e1f34": "base1ns-clusterresources-e0e1f34-e0e1f34",
+		"base1ns-admin-123456abc":                  "base1ns-admin-123456abc",
 	},
 }
 
@@ -40,6 +41,11 @@ func TestComputeHashForNSTemplateTier(t *testing.T) {
 			ClusterResources: &toolchainv1alpha1.NSTemplateTierClusterResources{
 				TemplateRef: "base1ns-clusterresources-e0e1f34-e0e1f34",
 			},
+			SpaceRoles: map[string]toolchainv1alpha1.NSTemplateTierSpaceRole{
+				"admin": {
+					TemplateRef: "base1ns-admin-123456abc",
+				},
+			},
 		},
 		Status: Status,
 	}
@@ -49,7 +55,7 @@ func TestComputeHashForNSTemplateTier(t *testing.T) {
 	require.NoError(t, err)
 	// verify hash
 	md5hash := md5.New() // nolint:gosec
-	_, _ = md5hash.Write([]byte(`{"refs":["base1ns-clusterresources-e0e1f34-e0e1f34","base1ns-dev-aeb78eb-aeb78eb"]}`))
+	_, _ = md5hash.Write([]byte(`{"refs":["base1ns-admin-123456abc","base1ns-clusterresources-e0e1f34-e0e1f34","base1ns-dev-aeb78eb-aeb78eb"]}`))
 	expected := hex.EncodeToString(md5hash.Sum(nil))
 	assert.Equal(t, expected, h)
 }
@@ -65,6 +71,11 @@ func TestComputeHashForNSTemplateSetSpec(t *testing.T) {
 		ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
 			TemplateRef: "base1ns-clusterresources-e0e1f34-e0e1f34",
 		},
+		SpaceRoles: []toolchainv1alpha1.NSTemplateSetSpaceRole{
+			{
+				TemplateRef: "base1ns-admin-123456abc",
+			},
+		},
 	}
 	// when
 	h, err := hash.ComputeHashForNSTemplateSetSpec(s)
@@ -72,7 +83,7 @@ func TestComputeHashForNSTemplateSetSpec(t *testing.T) {
 	require.NoError(t, err)
 	// verify hash
 	md5hash := md5.New() // nolint:gosec
-	_, _ = md5hash.Write([]byte(`{"refs":["base1ns-clusterresources-e0e1f34-e0e1f34","base1ns-dev-aeb78eb-aeb78eb"]}`))
+	_, _ = md5hash.Write([]byte(`{"refs":["base1ns-admin-123456abc","base1ns-clusterresources-e0e1f34-e0e1f34","base1ns-dev-aeb78eb-aeb78eb"]}`))
 	expected := hex.EncodeToString(md5hash.Sum(nil))
 	assert.Equal(t, expected, h)
 }
@@ -90,6 +101,11 @@ func TestTierHashMatches(t *testing.T) {
 				ClusterResources: &toolchainv1alpha1.NSTemplateTierClusterResources{
 					TemplateRef: "base1ns-clusterresources-e0e1f34-e0e1f34",
 				},
+				SpaceRoles: map[string]toolchainv1alpha1.NSTemplateTierSpaceRole{
+					"admin": {
+						TemplateRef: "base1ns-admin-123456abc",
+					},
+				},
 			},
 			Status: Status,
 		}
@@ -101,6 +117,11 @@ func TestTierHashMatches(t *testing.T) {
 			},
 			ClusterResources: &toolchainv1alpha1.NSTemplateSetClusterResources{
 				TemplateRef: "base1ns-clusterresources-e0e1f34-e0e1f34",
+			},
+			SpaceRoles: []toolchainv1alpha1.NSTemplateSetSpaceRole{
+				{
+					TemplateRef: "base1ns-admin-123456abc",
+				},
 			},
 		}
 		// when

@@ -30,6 +30,9 @@ func ComputeHashForNSTemplateSetSpec(s toolchainv1alpha1.NSTemplateSetSpec) (str
 	if s.ClusterResources != nil && s.ClusterResources.TemplateRef != "" { // ignore when ClusterResources only contains a custom template
 		refs = append(refs, s.ClusterResources.TemplateRef)
 	}
+	for _, sr := range s.SpaceRoles {
+		refs = append(refs, sr.TemplateRef)
+	}
 	return computeHash(refs)
 }
 
