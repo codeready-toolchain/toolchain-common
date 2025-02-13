@@ -21,21 +21,6 @@ func ComputeHashForNSTemplateTier(tier *toolchainv1alpha1.NSTemplateTier) (strin
 	return computeHash(refs)
 }
 
-// ComputeHashForNSTemplateSetSpec computes the hash of the `.spec.namespaces[].templateRef` + `.spec.clusteResource.TemplateRef`
-func ComputeHashForNSTemplateSetSpec(s toolchainv1alpha1.NSTemplateSetSpec) (string, error) {
-	refs := []string{}
-	for _, ns := range s.Namespaces {
-		refs = append(refs, ns.TemplateRef)
-	}
-	if s.ClusterResources != nil && s.ClusterResources.TemplateRef != "" { // ignore when ClusterResources only contains a custom template
-		refs = append(refs, s.ClusterResources.TemplateRef)
-	}
-	for _, sr := range s.SpaceRoles {
-		refs = append(refs, sr.TemplateRef)
-	}
-	return computeHash(refs)
-}
-
 type templateRefs struct {
 	Refs []string `json:"refs"`
 }
