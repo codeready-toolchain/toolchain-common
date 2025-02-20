@@ -39,6 +39,15 @@ func TestNewNSTemplateSet(t *testing.T) {
 				},
 			},
 		},
+		Status: toolchainv1alpha1.NSTemplateTierStatus{
+			Revisions: map[string]string{
+				"basic-clusterresources-123456new": "basic-clusterresources-123456new-cr",
+				"basic-dev-123456new":              "basic-dev-123456new-cr",
+				"basic-stage-123456new":            "basic-stage-123456new-cr",
+				"basic-admin-123456new":            "basic-admin-123456new-cr",
+				"basic-viewer-123456new":           "basic-viewer-123456new-cr",
+			},
+		},
 	}
 
 	t.Run("with default NSTemplateTier", func(t *testing.T) {
@@ -64,13 +73,13 @@ func TestNewNSTemplateSet(t *testing.T) {
 		result := nstemplateset.NewNSTemplateSet("foo", nstemplateset.WithReferencesFor(tier))
 		// then
 		require.NotNil(t, result.Spec.ClusterResources)
-		assert.Equal(t, "basic-clusterresources-123456new", result.Spec.ClusterResources.TemplateRef)
+		assert.Equal(t, "basic-clusterresources-123456new-cr", result.Spec.ClusterResources.TemplateRef)
 		assert.ElementsMatch(t, []toolchainv1alpha1.NSTemplateSetNamespace{
 			{
-				TemplateRef: "basic-dev-123456new",
+				TemplateRef: "basic-dev-123456new-cr",
 			},
 			{
-				TemplateRef: "basic-stage-123456new",
+				TemplateRef: "basic-stage-123456new-cr",
 			},
 		}, result.Spec.Namespaces)
 		assert.Empty(t, result.Spec.SpaceRoles)
@@ -86,18 +95,18 @@ func TestNewNSTemplateSet(t *testing.T) {
 		)
 		// then
 		require.NotNil(t, result.Spec.ClusterResources)
-		assert.Equal(t, "basic-clusterresources-123456new", result.Spec.ClusterResources.TemplateRef)
+		assert.Equal(t, "basic-clusterresources-123456new-cr", result.Spec.ClusterResources.TemplateRef)
 		assert.ElementsMatch(t, []toolchainv1alpha1.NSTemplateSetNamespace{
 			{
-				TemplateRef: "basic-dev-123456new",
+				TemplateRef: "basic-dev-123456new-cr",
 			},
 			{
-				TemplateRef: "basic-stage-123456new",
+				TemplateRef: "basic-stage-123456new-cr",
 			},
 		}, result.Spec.Namespaces)
 		assert.ElementsMatch(t, []toolchainv1alpha1.NSTemplateSetSpaceRole{
 			{
-				TemplateRef: "basic-admin-123456new",
+				TemplateRef: "basic-admin-123456new-cr",
 				Usernames:   []string{"john", "jack"},
 			},
 		}, result.Spec.SpaceRoles)
@@ -113,22 +122,22 @@ func TestNewNSTemplateSet(t *testing.T) {
 		)
 		// then
 		require.NotNil(t, result.Spec.ClusterResources)
-		assert.Equal(t, "basic-clusterresources-123456new", result.Spec.ClusterResources.TemplateRef)
+		assert.Equal(t, "basic-clusterresources-123456new-cr", result.Spec.ClusterResources.TemplateRef)
 		assert.ElementsMatch(t, []toolchainv1alpha1.NSTemplateSetNamespace{
 			{
-				TemplateRef: "basic-dev-123456new",
+				TemplateRef: "basic-dev-123456new-cr",
 			},
 			{
-				TemplateRef: "basic-stage-123456new",
+				TemplateRef: "basic-stage-123456new-cr",
 			},
 		}, result.Spec.Namespaces)
 		assert.ElementsMatch(t, []toolchainv1alpha1.NSTemplateSetSpaceRole{
 			{
-				TemplateRef: "basic-admin-123456new",
+				TemplateRef: "basic-admin-123456new-cr",
 				Usernames:   []string{"john"},
 			},
 			{
-				TemplateRef: "basic-viewer-123456new",
+				TemplateRef: "basic-viewer-123456new-cr",
 				Usernames:   []string{"jack"},
 			},
 		}, result.Spec.SpaceRoles)
