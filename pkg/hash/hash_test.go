@@ -26,9 +26,9 @@ func TestComputeHashForNSTemplateTier(t *testing.T) {
 	tier := &toolchainv1alpha1.NSTemplateTier{
 		Status: toolchainv1alpha1.NSTemplateTierStatus{
 			Revisions: map[string]string{
-				"base1ns-dev-aeb78eb-aeb78eb":              "base1ns-dev-aeb78eb-aeb78eb",
-				"base1ns-clusterresources-e0e1f34-e0e1f34": "base1ns-clusterresources-e0e1f34-e0e1f34",
-				"base1ns-admin-123456abc":                  "base1ns-admin-123456abc",
+				"base1ns-dev-aeb78eb-aeb78eb":              "base1ns-dev-aeb78eb-aeb78eb-cr",
+				"base1ns-clusterresources-e0e1f34-e0e1f34": "base1ns-clusterresources-e0e1f34-e0e1f34-cr",
+				"base1ns-admin-123456abc":                  "base1ns-admin-123456abc-cr",
 			},
 		},
 	}
@@ -38,7 +38,7 @@ func TestComputeHashForNSTemplateTier(t *testing.T) {
 	require.NoError(t, err)
 	// verify hash
 	md5hash := md5.New() // nolint:gosec
-	_, _ = md5hash.Write([]byte(`{"refs":["base1ns-admin-123456abc","base1ns-clusterresources-e0e1f34-e0e1f34","base1ns-dev-aeb78eb-aeb78eb"]}`))
+	_, _ = md5hash.Write([]byte(`{"refs":["base1ns-admin-123456abc-cr","base1ns-clusterresources-e0e1f34-e0e1f34-cr","base1ns-dev-aeb78eb-aeb78eb-cr"]}`))
 	expected := hex.EncodeToString(md5hash.Sum(nil))
 	assert.Equal(t, expected, h)
 }
