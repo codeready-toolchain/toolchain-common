@@ -1,8 +1,9 @@
 package nstemplateset
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
@@ -54,7 +55,7 @@ func WithReferencesFor(nstemplateTier *toolchainv1alpha1.NSTemplateTier, opts ..
 		// cluster resources
 		if nstemplateTier.Spec.ClusterResources != nil {
 			nstmplSet.Spec.ClusterResources = &toolchainv1alpha1.NSTemplateSetClusterResources{
-				TemplateRef: nstemplateTier.Spec.ClusterResources.TemplateRef,
+				TemplateRef: nstemplateTier.Status.Revisions[nstemplateTier.Spec.ClusterResources.TemplateRef],
 			}
 		}
 
@@ -62,7 +63,9 @@ func WithReferencesFor(nstemplateTier *toolchainv1alpha1.NSTemplateTier, opts ..
 		if len(nstemplateTier.Spec.Namespaces) > 0 {
 			nstmplSet.Spec.Namespaces = make([]toolchainv1alpha1.NSTemplateSetNamespace, len(nstemplateTier.Spec.Namespaces))
 			for i, ns := range nstemplateTier.Spec.Namespaces {
-				nstmplSet.Spec.Namespaces[i] = toolchainv1alpha1.NSTemplateSetNamespace(ns)
+				nstmplSet.Spec.Namespaces[i] = toolchainv1alpha1.NSTemplateSetNamespace{
+					TemplateRef: nstemplateTier.Status.Revisions[ns.TemplateRef],
+				}
 			}
 		}
 
@@ -79,14 +82,14 @@ func WithSpaceRole(role, username string) TierOption {
 		if tierSpaceRole, found := nstemplateTier.Spec.SpaceRoles[role]; found {
 			// find the space role matching the templateref in the NSTemplateSet, and add the username
 			for i := range nstmplSet.Spec.SpaceRoles {
-				if nstmplSet.Spec.SpaceRoles[i].TemplateRef == tierSpaceRole.TemplateRef {
+				if nstmplSet.Spec.SpaceRoles[i].TemplateRef == nstemplateTier.Status.Revisions[tierSpaceRole.TemplateRef] {
 					nstmplSet.Spec.SpaceRoles[i].Usernames = append(nstmplSet.Spec.SpaceRoles[i].Usernames, username)
 					return
 				}
 			}
 			// no entry for this space role yet, so let's add it
 			nstmplSet.Spec.SpaceRoles = append(nstmplSet.Spec.SpaceRoles, toolchainv1alpha1.NSTemplateSetSpaceRole{
-				TemplateRef: nstemplateTier.Spec.SpaceRoles[role].TemplateRef,
+				TemplateRef: nstemplateTier.Status.Revisions[nstemplateTier.Spec.SpaceRoles[role].TemplateRef],
 				Usernames:   []string{username},
 			})
 		}
