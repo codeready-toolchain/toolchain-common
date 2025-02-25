@@ -31,11 +31,14 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/migueleliasweb/go-github-mock v0.0.18
 	github.com/prometheus/client_golang v1.18.0
+	github.com/prometheus/client_model v0.5.0
 	golang.org/x/oauth2 v0.12.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/kubectl v0.29.2
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 )
+
+replace github.com/codeready-toolchain/api => github.com/matousjobanek/api v0.0.0-20250225114159-7e2aa7cf0ada
 
 require (
 	github.com/BurntSushi/toml v1.3.2 // indirect
@@ -86,7 +89,6 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.45.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect

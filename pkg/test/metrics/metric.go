@@ -1,11 +1,14 @@
 package metrics
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
 	promtestutil "github.com/prometheus/client_golang/prometheus/testutil"
+	promclientgo "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func AssertMetricsCounterEquals(t *testing.T, expected int, c prometheus.Counter) {
@@ -26,4 +29,26 @@ func AssertCounterGreaterOrEqualsInt(t *testing.T, threshold int, c prometheus.C
 
 func AssertMetricsGaugeEquals(t *testing.T, expected int, g prometheus.Gauge, msgAndArgs ...interface{}) {
 	assert.InDelta(t, float64(expected), promtestutil.ToFloat64(g), 0.01, msgAndArgs...)
+}
+
+func AssertHistogramBucketEquals(t *testing.T, expected, bucket int, h prometheus.Histogram, msgAndArgs ...interface{}) {
+	metric := promclientgo.Metric{}
+	err := h.Write(&metric)
+	require.NoError(t, err)
+	for _, buck := range metric.GetHistogram().GetBucket() {
+		if buck.GetUpperBound() == float64(bucket) {
+			assert.Equal(t, uint64(expected), buck.GetCumulativeCount(), msgAndArgs...)
+			return
+		}
+	}
+	assert.Fail(t, fmt.Sprintf("the bucket with the upper limit '%d' wasn't found, actual: %v", bucket, metric.GetHistogram().GetBucket()), msgAndArgs...)
+}
+
+func AssertAllHistogramBucketsAreEmpty(t *testing.T, h prometheus.Histogram, msgAndArgs ...interface{}) {
+	metric := promclientgo.Metric{}
+	err := h.Write(&metric)
+	require.NoError(t, err)
+	for _, buck := range metric.GetHistogram().GetBucket() {
+		assert.Empty(t, buck.GetCumulativeCount(), msgAndArgs...)
+	}
 }
