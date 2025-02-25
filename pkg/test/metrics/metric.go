@@ -37,7 +37,7 @@ func AssertHistogramBucketEquals(t *testing.T, expected, bucket int, h prometheu
 	require.NoError(t, err)
 	for _, buck := range metric.GetHistogram().GetBucket() {
 		if buck.GetUpperBound() == float64(bucket) {
-			assert.Equal(t, uint64(expected), buck.GetCumulativeCount(), msgAndArgs...) // nolint:gosec (expected value should be always non-negative)
+			assert.Equal(t, uint64(expected), buck.GetCumulativeCount(), msgAndArgs...) // nolint:gosec // (expected value should be always non-negative)
 			return
 		}
 	}
