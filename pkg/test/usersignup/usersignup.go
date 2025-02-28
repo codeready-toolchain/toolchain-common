@@ -228,6 +228,12 @@ func WithAnnotation(key, value string) Modifier {
 	}
 }
 
+func WithRequestReceivedTimeAnnotation(t time.Time) Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		userSignup.Annotations[toolchainv1alpha1.UserSignupRequestReceivedTimeAnnotationKey] = t.Format(time.RFC3339)
+	}
+}
+
 func WithoutAnnotation(key string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		delete(userSignup.Annotations, key)

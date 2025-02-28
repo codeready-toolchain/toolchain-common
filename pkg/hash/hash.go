@@ -12,41 +12,13 @@ func TemplateTierHashLabelKey(tierName string) string {
 	return toolchainv1alpha1.LabelKeyPrefix + tierName + "-tier-hash"
 }
 
-// ComputeHashForNSTemplateTier computes the hash of the `.spec.namespaces[].templateRef` + `.spec.clusteResource.TemplateRef`
+// ComputeHashForNSTemplateTier computes the hash of the value of `status.revisions[]`
 func ComputeHashForNSTemplateTier(tier *toolchainv1alpha1.NSTemplateTier) (string, error) {
 	refs := []string{}
-	for _, ns := range tier.Spec.Namespaces {
-		refs = append(refs, ns.TemplateRef)
-	}
-	if tier.Spec.ClusterResources != nil {
-		refs = append(refs, tier.Spec.ClusterResources.TemplateRef)
+	for _, rev := range tier.Status.Revisions {
+		refs = append(refs, rev)
 	}
 	return computeHash(refs)
-}
-
-// ComputeHashForNSTemplateSetSpec computes the hash of the `.spec.namespaces[].templateRef` + `.spec.clusteResource.TemplateRef`
-func ComputeHashForNSTemplateSetSpec(s toolchainv1alpha1.NSTemplateSetSpec) (string, error) {
-	refs := []string{}
-	for _, ns := range s.Namespaces {
-		refs = append(refs, ns.TemplateRef)
-	}
-	if s.ClusterResources != nil && s.ClusterResources.TemplateRef != "" { // ignore when ClusterResources only contains a custom template
-		refs = append(refs, s.ClusterResources.TemplateRef)
-	}
-	return computeHash(refs)
-}
-
-func TierHashMatches(tmplTier *toolchainv1alpha1.NSTemplateTier, nsTmplSetSpec toolchainv1alpha1.NSTemplateSetSpec) bool {
-	tierHash, err := ComputeHashForNSTemplateTier(tmplTier)
-	if err != nil {
-		return false
-	}
-
-	nsTmplSetSpecHash, err := ComputeHashForNSTemplateSetSpec(nsTmplSetSpec)
-	if err != nil {
-		return false
-	}
-	return tierHash == nsTmplSetSpecHash
 }
 
 type templateRefs struct {
