@@ -80,9 +80,9 @@ func (m *VersionCheckManager) CheckDeployedVersionIsUpToDate(ctx context.Context
 	return NewComponentReadyCondition(toolchainv1alpha1.ToolchainStatusDeploymentUpToDateReason)
 }
 
-type GetCommitFunc func(ctx context.Context, owner string, repo string, sha string, opts *github.ListOptions) (*github.RepositoryCommit, *github.Response, error)
+type getCommitFunc func(ctx context.Context, owner string, repo string, sha string, opts *github.ListOptions) (*github.RepositoryCommit, *github.Response, error)
 
-func getLatestCommit(ctx context.Context, GetCommit GetCommitFunc, githubRepo client.GitHubRepository) (*github.RepositoryCommit, error) {
+func getLatestCommit(ctx context.Context, GetCommit getCommitFunc, githubRepo client.GitHubRepository) (*github.RepositoryCommit, error) {
 	latestCommit, commitResponse, err := GetCommit(ctx, githubRepo.Org, githubRepo.Name, githubRepo.Branch, &github.ListOptions{})
 	defer func() {
 		if commitResponse != nil && commitResponse.Body != nil {
