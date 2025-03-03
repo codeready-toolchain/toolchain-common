@@ -2,6 +2,7 @@ package status
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -12,6 +13,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/google/go-github/v52/github"
 	errs "github.com/pkg/errors"
+	logger "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -59,22 +61,8 @@ func (m *VersionCheckManager) CheckDeployedVersionIsUpToDate(ctx context.Context
 	m.LastGHCallsPerRepo[githubRepo.Name] = time.Now()
 	githubClient := m.GetGithubClientFunc(ctx, accessTokenKey)
 	// get the latest commit from given repository and branch
-	latestCommit, commitResponse, err := githubClient.Repositories.GetCommit(ctx, githubRepo.Org, githubRepo.Name, githubRepo.Branch, &github.ListOptions{})
-	defer commitResponse.Body.Close()
+	latestCommit, err := getLatestCommit(ctx, githubClient.Repositories.GetCommit, githubRepo)
 	if err != nil {
-		errMsg := err.Error()
-		if ghErr, ok := err.(*github.ErrorResponse); ok { //nolint:errorlint
-			errMsg = ghErr.Message // this strips out the URL called, useful when unit testing since the port changes with each test execution.
-		}
-		return NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentRevisionCheckGitHubErrorReason, errMsg)
-	}
-	if commitResponse.StatusCode != http.StatusOK {
-		err = errs.New(fmt.Sprintf("invalid response code from github commits API. resp.Response.StatusCode: %d, repoName: %s, repoBranch: %s", commitResponse.Response.StatusCode, githubRepo.Name, githubRepo.Branch))
-		return NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentRevisionCheckGitHubErrorReason, err.Error())
-	}
-
-	if reflect.DeepEqual(latestCommit, &github.RepositoryCommit{}) {
-		err = errs.New(fmt.Sprintf("no commits returned. repoName: %s, repoBranch: %s", githubRepo.Name, githubRepo.Branch))
 		return NewComponentErrorCondition(toolchainv1alpha1.ToolchainStatusDeploymentRevisionCheckGitHubErrorReason, err.Error())
 	}
 	// check if there is a mismatch between the commit id of the running version and latest commit id from the source code repo (deployed version according to GitHub actions)
@@ -90,4 +78,34 @@ func (m *VersionCheckManager) CheckDeployedVersionIsUpToDate(ctx context.Context
 
 	// no problems with the deployment version, return a ready condition
 	return NewComponentReadyCondition(toolchainv1alpha1.ToolchainStatusDeploymentUpToDateReason)
+}
+
+type getCommitFunc func(ctx context.Context, owner string, repo string, sha string, opts *github.ListOptions) (*github.RepositoryCommit, *github.Response, error)
+
+func getLatestCommit(ctx context.Context, GetCommit getCommitFunc, githubRepo client.GitHubRepository) (*github.RepositoryCommit, error) {
+	latestCommit, commitResponse, err := GetCommit(ctx, githubRepo.Org, githubRepo.Name, githubRepo.Branch, &github.ListOptions{})
+	defer func() {
+		if commitResponse != nil && commitResponse.Body != nil {
+			if err := commitResponse.Body.Close(); err != nil {
+				logger.FromContext(ctx).Error(err, "unable to close response body")
+			}
+		}
+	}()
+	if err != nil {
+		errMsg := err.Error()
+		if ghErr, ok := err.(*github.ErrorResponse); ok { //nolint:errorlint
+			errMsg = ghErr.Message // this strips out the URL called, useful when unit testing since the port changes with each test execution.
+		}
+		return nil, errors.New(errMsg)
+	}
+	if commitResponse.StatusCode != http.StatusOK {
+		err = errs.New(fmt.Sprintf("invalid response code from github commits API. resp.Response.StatusCode: %d, repoName: %s, repoBranch: %s", commitResponse.Response.StatusCode, githubRepo.Name, githubRepo.Branch))
+		return nil, err
+	}
+
+	if latestCommit == nil || reflect.DeepEqual(latestCommit, &github.RepositoryCommit{}) {
+		err = errs.New(fmt.Sprintf("no commits returned. repoName: %s, repoBranch: %s", githubRepo.Name, githubRepo.Branch))
+		return nil, err
+	}
+	return latestCommit, nil
 }
