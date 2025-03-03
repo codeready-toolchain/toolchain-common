@@ -12,6 +12,7 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/condition"
 	"github.com/google/go-github/v52/github"
 	errs "github.com/pkg/errors"
+	logger "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -60,7 +61,13 @@ func (m *VersionCheckManager) CheckDeployedVersionIsUpToDate(ctx context.Context
 	githubClient := m.GetGithubClientFunc(ctx, accessTokenKey)
 	// get the latest commit from given repository and branch
 	latestCommit, commitResponse, err := githubClient.Repositories.GetCommit(ctx, githubRepo.Org, githubRepo.Name, githubRepo.Branch, &github.ListOptions{})
-	defer commitResponse.Body.Close()
+	defer func() {
+		if commitResponse != nil {
+			if err := commitResponse.Body.Close(); err != nil {
+				logger.FromContext(ctx).Error(err, "unable to close response body")
+			}
+		}
+	}()
 	if err != nil {
 		errMsg := err.Error()
 		if ghErr, ok := err.(*github.ErrorResponse); ok { //nolint:errorlint
