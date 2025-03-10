@@ -122,4 +122,4 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace github.com/codeready-toolchain/api => github.com/rsoaresd/api v0.0.0-20250228080234-cb35a07d92d1
+replace github.com/codeready-toolchain/api => github.com/rsoaresd/api v0.0.0-20250304130858-a7bdb1d138cc
