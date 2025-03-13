@@ -26,7 +26,7 @@ require (
 )
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20250304130838-c9c2ff18f4de
+	github.com/codeready-toolchain/api v0.0.0-20250313170542-4e3c4147cb80
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github/v52 v52.0.0
@@ -88,6 +88,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/onsi/gomega v1.33.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/common v0.45.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
