@@ -11,6 +11,9 @@ import (
 	"github.com/codeready-toolchain/toolchain-common/pkg/test"
 	"github.com/google/go-github/v52/github"
 	"github.com/migueleliasweb/go-github-mock/src/mock"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -226,6 +229,86 @@ func TestCheckDeployedVersionIsUpToDate(t *testing.T) {
 
 			// then
 			test.AssertConditionsMatchAndRecentTimestamps(t, []toolchainv1alpha1.Condition{*conditions}, expected)
+		})
+	})
+}
+
+func TestGetLatestCommit(t *testing.T) {
+	githubRepo := client.GitHubRepository{
+		Org:               toolchainv1alpha1.ProviderLabelValue,
+		Name:              "host-operator",
+		Branch:            "HEAD",
+		DeployedCommitSHA: "1234abcd",
+	}
+
+	t.Run("happy path", func(t *testing.T) {
+		// given
+		ghClient := test.MockGitHubClientForRepositoryCommits("1234abcd", time.Now().Add(-time.Hour*1))
+
+		// when
+		latestCommit, err := getLatestCommit(context.TODO(), ghClient(context.TODO(), "").Repositories.GetCommit, githubRepo)
+
+		// then
+		require.NoError(t, err)
+		require.NotNil(t, latestCommit)
+		assert.Equal(t, "1234abcd", *latestCommit.SHA)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		// when
+		latestCommit, err := getLatestCommit(context.TODO(), func(ctx context.Context, owner string, repo string, sha string, opts *github.ListOptions) (*github.RepositoryCommit, *github.Response, error) {
+			return nil, nil, errors.New("some error")
+		}, githubRepo)
+
+		// then
+		require.EqualError(t, err, "some error")
+		require.Nil(t, latestCommit)
+	})
+
+	t.Run("with not found response", func(t *testing.T) {
+		// when
+		latestCommit, err := getLatestCommit(context.TODO(), func(ctx context.Context, owner string, repo string, sha string, opts *github.ListOptions) (*github.RepositoryCommit, *github.Response, error) {
+			resp := &github.Response{
+				Response: &http.Response{
+					StatusCode: http.StatusNotFound,
+				},
+			}
+			return nil, resp, nil
+		}, githubRepo)
+
+		// then
+		require.EqualError(t, err, "invalid response code from github commits API. resp.Response.StatusCode: 404, repoName: host-operator, repoBranch: HEAD")
+		require.Nil(t, latestCommit)
+	})
+
+	t.Run("with empty latest commit", func(t *testing.T) {
+		// given
+		resp := &github.Response{
+			Response: &http.Response{
+				StatusCode: http.StatusOK,
+			},
+		}
+
+		t.Run("latest commit is nil", func(t *testing.T) {
+			// given
+			latestCommit, err := getLatestCommit(context.TODO(), func(ctx context.Context, owner string, repo string, sha string, opts *github.ListOptions) (*github.RepositoryCommit, *github.Response, error) {
+				return nil, resp, nil
+			}, githubRepo)
+
+			// then
+			require.EqualError(t, err, "no commits returned. repoName: host-operator, repoBranch: HEAD")
+			require.Nil(t, latestCommit)
+		})
+
+		t.Run("latest commit is empty", func(t *testing.T) {
+			// given
+			latestCommit, err := getLatestCommit(context.TODO(), func(ctx context.Context, owner string, repo string, sha string, opts *github.ListOptions) (*github.RepositoryCommit, *github.Response, error) {
+				return &github.RepositoryCommit{}, resp, nil
+			}, githubRepo)
+
+			// then
+			require.EqualError(t, err, "no commits returned. repoName: host-operator, repoBranch: HEAD")
+			require.Nil(t, latestCommit)
 		})
 	})
 }
