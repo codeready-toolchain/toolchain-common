@@ -3,9 +3,13 @@ package client
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/csaupgrade"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -14,16 +18,40 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ApplyClient the client to use when creating or updating objects
+// ApplyClient the client to use when creating or updating objects. It uses SSA to apply the objects
+// to the cluster and takes care of migrating the objects from ordinary "CRUD" flow to SSA.
 type SsaApplyClient struct {
-	client.Client
+	Client client.Client
+
+	// NonSSAFieldOwner is a the field owner that is used by the operations that do not set the field owner explicitly.
+	//
+	// If you don't use an explicit field owner in your CRUD operations, set this to the value obtained from GetDefaultFieldOwner.
+	NonSSAFieldOwner string
+
+	// The field owner to use for SSA-applied objects.
+	FieldOwner string
 }
 
-// NewSsaApplyClient returns a new ApplyClient
-func NewSsaApplyClient(cl client.Client) *SsaApplyClient {
-	return &SsaApplyClient{
-		Client: cl,
+// GetDefaultFieldOwner returns the default field owner that is applied if no explicit field owner is set.
+// This can be used to determine the field owner used by the non-SSA CRUD operations performed by
+// the kubernetes client.
+//
+// This value is obtained from the user agent header defined in the provided config, or, if it is not set,
+// from the default kubernetes user agent string.
+//
+// If the provided config is nil, the default kubernetes user agent is returned
+func GetDefaultFieldOwner(cfg *rest.Config) string {
+	var ua string
+	if cfg != nil {
+		ua = cfg.UserAgent
 	}
+
+	if len(ua) == 0 {
+		ua = rest.DefaultKubernetesUserAgent()
+	}
+
+	name := strings.Split(ua, "/")[0]
+	return name
 }
 
 type ssaApplyObjectConfiguration struct {
@@ -99,13 +127,13 @@ func (c *ssaApplyObjectConfiguration) Configure(obj client.Object, s *runtime.Sc
 // NOTE: the return boolean IS ALWAYS TRUE on success by default. This is much more efficient. If you truly need
 // to determine whether the object has been updated or not (which is not the case anywhere in the codebase but the tests),
 // you can use the DetermineUpdate() option.
-func (c SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, options ...SsaApplyObjectOption) (bool, error) {
+func (c *SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, options ...SsaApplyObjectOption) (bool, error) {
 	config := newSsaApplyObjectConfiguration(options...)
-	if err := config.Configure(obj, c.Scheme()); err != nil {
+	if err := config.Configure(obj, c.Client.Scheme()); err != nil {
 		return false, err
 	}
 
-	if err := prepareForSSA(obj, c.Scheme()); err != nil {
+	if err := prepareForSSA(obj, c.Client.Scheme()); err != nil {
 		return false, err
 	}
 
@@ -114,15 +142,21 @@ func (c SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, opti
 	}
 
 	updated := true
-	var orig client.Object
-	if config.determineUpdate {
-		orig = obj.DeepCopyObject().(client.Object)
-		if err := c.Get(ctx, client.ObjectKeyFromObject(obj), orig); err != nil && !apierrors.IsNotFound(err) {
+
+	// NOTE: once the SSA migration is not needed anymore, read the orig conditionally only when config.determineUpdate is true.
+	orig := obj.DeepCopyObject().(client.Object)
+	if err := c.Client.Get(ctx, client.ObjectKeyFromObject(obj), orig); err != nil && !apierrors.IsNotFound(err) {
+		return false, err
+	}
+
+	// NOTE: remove this once this code is used for all "apply-style" functionality and has updated all the objects in the cluster.
+	if isSsaMigrationNeeded(orig, c.NonSSAFieldOwner) {
+		if err := c.MigrateToSSA(ctx, orig); err != nil {
 			return false, err
 		}
 	}
 
-	if err := c.Patch(ctx, obj, client.Apply, client.FieldOwner("kubesaw"), client.ForceOwnership); err != nil {
+	if err := c.Client.Patch(ctx, obj, client.Apply, client.FieldOwner(c.FieldOwner), client.ForceOwnership); err != nil {
 		return false, fmt.Errorf("unable to patch '%s' called '%s' in namespace '%s': %w", obj.GetObjectKind().GroupVersionKind(), obj.GetName(), obj.GetNamespace(), err)
 	}
 
@@ -149,7 +183,7 @@ func prepareForSSA(obj client.Object, scheme *runtime.Scheme) error {
 // `false, nil` if nothing changed, and `false, err` if an error occurred
 //
 // NOTE: this is only used in tests
-func (c SsaApplyClient) Apply(ctx context.Context, toolchainObjects []client.Object, opts ...SsaApplyObjectOption) (bool, error) {
+func (c *SsaApplyClient) Apply(ctx context.Context, toolchainObjects []client.Object, opts ...SsaApplyObjectOption) (bool, error) {
 	createdOrUpdated := false
 	for _, toolchainObject := range toolchainObjects {
 		result, err := c.ApplyObject(ctx, toolchainObject, opts...)
@@ -159,4 +193,22 @@ func (c SsaApplyClient) Apply(ctx context.Context, toolchainObjects []client.Obj
 		createdOrUpdated = createdOrUpdated || result
 	}
 	return createdOrUpdated, nil
+}
+
+func (c *SsaApplyClient) MigrateToSSA(ctx context.Context, obj client.Object) error {
+	if err := csaupgrade.UpgradeManagedFields(obj, sets.New(c.NonSSAFieldOwner), c.FieldOwner); err != nil {
+		return err
+	}
+
+	return c.Client.Update(ctx, obj)
+}
+
+func isSsaMigrationNeeded(obj client.Object, nonSsaOwner string) bool {
+	for _, mf := range obj.GetManagedFields() {
+		if mf.Manager == nonSsaOwner {
+			return true
+		}
+	}
+
+	return false
 }
