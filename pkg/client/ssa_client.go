@@ -144,7 +144,11 @@ func (c *SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, opt
 	updated := true
 
 	// NOTE: once the SSA migration is not needed anymore, read the orig conditionally only when config.determineUpdate is true.
-	orig := obj.DeepCopyObject().(client.Object)
+
+	// this cannot fail - we would have failed previously already because the scheme wouldn't have known the object's kind
+	origRo, _ := c.Client.Scheme().New(obj.GetObjectKind().GroupVersionKind())
+	orig := origRo.(client.Object)
+
 	if err := c.Client.Get(ctx, client.ObjectKeyFromObject(obj), orig); err != nil && !apierrors.IsNotFound(err) {
 		return false, err
 	}
