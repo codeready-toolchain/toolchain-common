@@ -7,9 +7,11 @@ import (
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/csaupgrade"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -30,6 +32,15 @@ type SsaApplyClient struct {
 
 	// The field owner to use for SSA-applied objects.
 	FieldOwner string
+}
+
+// NewSsaApplyClient constructs a new apply client using the client and rest config of the manager.
+func NewSsaApplyClient(mgr ctrl.Manager, fieldOwner string) *SsaApplyClient {
+	return &SsaApplyClient{
+		Client:           mgr.GetClient(),
+		NonSSAFieldOwner: GetDefaultFieldOwner(mgr.GetConfig()),
+		FieldOwner:       fieldOwner,
+	}
 }
 
 // GetDefaultFieldOwner returns the default field owner that is applied if no explicit field owner is set.
@@ -72,8 +83,8 @@ func newSsaApplyObjectConfiguration(options ...SsaApplyObjectOption) ssaApplyObj
 // SsaApplyObjectOption an option when creating or updating a resource
 type SsaApplyObjectOption func(*ssaApplyObjectConfiguration)
 
-// SsaSetOwner sets the owner of the resource (default: `nil`)
-func SsaSetOwner(owner metav1.Object) SsaApplyObjectOption {
+// SetOwnerReference sets the owner reference of the resource (default: `nil`)
+func SetOwnerReference(owner metav1.Object) SsaApplyObjectOption {
 	return func(config *ssaApplyObjectConfiguration) {
 		config.owner = owner
 	}
@@ -118,11 +129,7 @@ func (c *ssaApplyObjectConfiguration) Configure(obj client.Object, s *runtime.Sc
 	return nil
 }
 
-// ApplyObject creates the object if is missing and if the owner object is provided, then it's set as a controller reference.
-// If the objects exists then when the spec content has changed (based on the content of the annotation in the original object) then it
-// is automatically updated. If it looks to be same then based on the value of forceUpdate param it updates the object or not.
-// The return boolean says if the object was either created or updated (`true`). If nothing changed (ie, the generation was not
-// incremented by the server), then it returns `false`.
+// ApplyObject creates the object if is missing or update it if it already exists using an SSA patch.
 //
 // NOTE: the return boolean IS ALWAYS TRUE on success by default. This is much more efficient. If you truly need
 // to determine whether the object has been updated or not (which is not the case anywhere in the codebase but the tests),
@@ -145,16 +152,17 @@ func (c *SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, opt
 
 	// NOTE: once the SSA migration is not needed anymore, read the orig conditionally only when config.determineUpdate is true.
 
-	// this cannot fail - we would have failed previously already because the scheme wouldn't have known the object's kind
-	origRo, _ := c.Client.Scheme().New(obj.GetObjectKind().GroupVersionKind())
-	orig := origRo.(client.Object)
-
-	if err := c.Client.Get(ctx, client.ObjectKeyFromObject(obj), orig); err != nil && !apierrors.IsNotFound(err) {
-		return false, err
+	orig := obj.DeepCopyObject().(client.Object)
+	if err := c.Client.Get(ctx, client.ObjectKeyFromObject(obj), orig); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return false, err
+		}
+		// we didn't find the original so let's clear it out
+		orig = nil
 	}
 
 	// NOTE: remove this once this code is used for all "apply-style" functionality and has updated all the objects in the cluster.
-	if isSsaMigrationNeeded(orig, c.NonSSAFieldOwner) {
+	if orig != nil && isSsaMigrationNeeded(orig, c.NonSSAFieldOwner) {
 		if err := c.MigrateToSSA(ctx, orig); err != nil {
 			return false, err
 		}
@@ -165,19 +173,32 @@ func (c *SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, opt
 	}
 
 	if config.determineUpdate {
-		updated = obj.GetGeneration() != orig.GetGeneration()
+		updated = orig == nil || obj.GetGeneration() != orig.GetGeneration()
 	}
 
 	return updated, nil
 }
 
 func prepareForSSA(obj client.Object, scheme *runtime.Scheme) error {
+	obj.SetManagedFields(nil)
+	return EnsureGVK(obj, scheme)
+}
+
+// EnsureGVK makes sure that the object has the GVK set.
+//
+// If the GVK is empty, it will consult the scheme.
+func EnsureGVK(obj client.Object, scheme *runtime.Scheme) error {
+	var empty schema.GroupVersionKind
+
+	if obj.GetObjectKind().GroupVersionKind() != empty {
+		return nil
+	}
+
 	gvk, err := apiutil.GVKForObject(obj, scheme)
 	if err != nil {
 		return err
 	}
 	obj.GetObjectKind().SetGroupVersionKind(gvk)
-	obj.SetManagedFields(nil)
 
 	return nil
 }

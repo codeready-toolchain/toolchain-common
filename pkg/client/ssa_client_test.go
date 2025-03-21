@@ -11,6 +11,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -75,7 +77,7 @@ func TestSsaClient(t *testing.T) {
 			cl, acl := NewTestSsaApplyClient(t, owner, obj)
 
 			// when
-			_, err := acl.ApplyObject(context.TODO(), obj, client.SsaSetOwner(owner))
+			_, err := acl.ApplyObject(context.TODO(), obj, client.SetOwnerReference(owner))
 			require.NoError(t, err)
 			inCluster := &corev1.ConfigMap{}
 			require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
@@ -164,36 +166,67 @@ func TestSsaClient(t *testing.T) {
 				assert.False(t, wasUpdated)
 			})
 		})
-		t.Run("migrate field owners", func(t *testing.T) {
-			// given
-			obj := &corev1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "obj",
-					Namespace: "default",
-					ManagedFields: []metav1.ManagedFieldsEntry{
-						{
-							FieldsType: "FieldsV1",
-							FieldsV1:   &metav1.FieldsV1{Raw: []byte(`{"f:spec": {"f:selector": {}}}`)},
-							Manager:    client.GetDefaultFieldOwner(nil),
-							Operation:  metav1.ManagedFieldsOperationUpdate,
-						},
-					},
+	})
+}
+
+func TestMigrateToSSA(t *testing.T) {
+	// given
+	obj := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "obj",
+			Namespace: "default",
+			ManagedFields: []metav1.ManagedFieldsEntry{
+				{
+					FieldsType: "FieldsV1",
+					FieldsV1:   &metav1.FieldsV1{Raw: []byte(`{"f:spec": {"f:selector": {}}}`)},
+					Manager:    client.GetDefaultFieldOwner(nil),
+					Operation:  metav1.ManagedFieldsOperationUpdate,
 				},
-				Spec: corev1.ServiceSpec{},
-			}
-			cl, acl := NewTestSsaApplyClient(t, obj)
+			},
+		},
+		Spec: corev1.ServiceSpec{},
+	}
+	cl, acl := NewTestSsaApplyClient(t, obj)
 
-			// when
-			inCluster := &corev1.Service{}
-			require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
-			require.NoError(t, acl.MigrateToSSA(context.TODO(), inCluster))
+	// when
+	inCluster := &corev1.Service{}
+	require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
+	require.NoError(t, acl.MigrateToSSA(context.TODO(), inCluster))
 
-			// then
-			inCluster = &corev1.Service{}
-			require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
-			assert.Equal(t, "test-field-owner", inCluster.ManagedFields[0].Manager)
-			assert.Equal(t, metav1.ManagedFieldsOperationApply, inCluster.ManagedFields[0].Operation)
-		})
+	// then
+	inCluster = &corev1.Service{}
+	require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
+	assert.Equal(t, "test-field-owner", inCluster.ManagedFields[0].Manager)
+	assert.Equal(t, metav1.ManagedFieldsOperationApply, inCluster.ManagedFields[0].Operation)
+}
+
+func TestEnsureGVK(t *testing.T) {
+	emptyScheme := runtime.NewScheme()
+
+	t.Run("scheme not consulted when GVK present", func(t *testing.T) {
+		// given
+		withGvk := &unstructured.Unstructured{
+			Object: map[string]any{
+				"apiVersion": "v1",
+				"kind":       "ConfigMap",
+			},
+		}
+
+		// when
+		err := client.EnsureGVK(withGvk, emptyScheme)
+
+		// then
+		require.NoError(t, err)
+	})
+
+	t.Run("scheme consulted when no GVK present", func(t *testing.T) {
+		withoutGvk := &corev1.ConfigMap{}
+
+		// when
+		err := client.EnsureGVK(withoutGvk, emptyScheme)
+
+		// then
+		require.Error(t, err)
 	})
 }
 
