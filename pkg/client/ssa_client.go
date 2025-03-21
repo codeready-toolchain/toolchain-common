@@ -18,7 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ApplyClient the client to use when creating or updating objects. It uses SSA to apply the objects
+// SsaApplyClient the client to use when creating or updating objects. It uses SSA to apply the objects
 // to the cluster and takes care of migrating the objects from ordinary "CRUD" flow to SSA.
 type SsaApplyClient struct {
 	Client client.Client
