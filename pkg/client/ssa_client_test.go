@@ -127,37 +127,6 @@ func TestSsaClient(t *testing.T) {
 	})
 }
 
-func TestMigrateToSSA(t *testing.T) {
-	// given
-	obj := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "obj",
-			Namespace: "default",
-			ManagedFields: []metav1.ManagedFieldsEntry{
-				{
-					FieldsType: "FieldsV1",
-					FieldsV1:   &metav1.FieldsV1{Raw: []byte(`{"f:spec": {"f:selector": {}}}`)},
-					Manager:    client.GetDefaultFieldOwner(nil),
-					Operation:  metav1.ManagedFieldsOperationUpdate,
-				},
-			},
-		},
-		Spec: corev1.ServiceSpec{},
-	}
-	cl, acl := NewTestSsaApplyClient(t, obj)
-
-	// when
-	inCluster := &corev1.Service{}
-	require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
-	require.NoError(t, acl.MigrateToSSA(context.TODO(), inCluster))
-
-	// then
-	inCluster = &corev1.Service{}
-	require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
-	assert.Equal(t, "test-field-owner", inCluster.ManagedFields[0].Manager)
-	assert.Equal(t, metav1.ManagedFieldsOperationApply, inCluster.ManagedFields[0].Operation)
-}
-
 func TestEnsureGVK(t *testing.T) {
 	emptyScheme := runtime.NewScheme()
 

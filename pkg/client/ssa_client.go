@@ -5,18 +5,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/csaupgrade"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -134,23 +130,6 @@ func (c *SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, opt
 		return nil
 	}
 
-	// NOTE: once the SSA migration is not needed anymore, we won't need to read the orig.
-	orig := obj.DeepCopyObject().(client.Object)
-	if err := c.Client.Get(ctx, client.ObjectKeyFromObject(obj), orig); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-		// we didn't find the original so let's clear it out
-		orig = nil
-	}
-
-	// NOTE: remove this once this code is used for all "apply-style" functionality and has updated all the objects in the cluster.
-	if orig != nil && isSsaMigrationNeeded(orig, c.NonSSAFieldOwner) {
-		if err := c.MigrateToSSA(ctx, orig); err != nil {
-			return err
-		}
-	}
-
 	if err := c.Client.Patch(ctx, obj, client.Apply, client.FieldOwner(c.FieldOwner), client.ForceOwnership); err != nil {
 		return fmt.Errorf("unable to patch '%s' called '%s' in namespace '%s': %w", obj.GetObjectKind().GroupVersionKind(), obj.GetName(), obj.GetNamespace(), err)
 	}
@@ -186,27 +165,13 @@ func EnsureGVK(obj client.Object, scheme *runtime.Scheme) error {
 func (c *SsaApplyClient) Apply(ctx context.Context, toolchainObjects []client.Object, opts ...SsaApplyObjectOption) error {
 	for _, toolchainObject := range toolchainObjects {
 		if err := c.ApplyObject(ctx, toolchainObject, opts...); err != nil {
-			return errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", toolchainObject.GetObjectKind().GroupVersionKind().Kind, toolchainObject.GetObjectKind().GroupVersionKind().Version)
+			return fmt.Errorf("unable to create resource of kind: %s, version: %s, name: %s, namespace: %s: %w",
+				toolchainObject.GetObjectKind().GroupVersionKind().Kind,
+				toolchainObject.GetObjectKind().GroupVersionKind().Version,
+				toolchainObject.GetName(),
+				toolchainObject.GetNamespace(),
+				err)
 		}
 	}
 	return nil
-}
-
-// MigrateToSSA updates the provided object in the cluster such that it only contains Apply operations for the FieldOwner of this apply client.
-func (c *SsaApplyClient) MigrateToSSA(ctx context.Context, obj client.Object) error {
-	if err := csaupgrade.UpgradeManagedFields(obj, sets.New(c.NonSSAFieldOwner), c.FieldOwner); err != nil {
-		return err
-	}
-
-	return c.Client.Update(ctx, obj)
-}
-
-func isSsaMigrationNeeded(obj client.Object, nonSsaOwner string) bool {
-	for _, mf := range obj.GetManagedFields() {
-		if mf.Manager == nonSsaOwner {
-			return true
-		}
-	}
-
-	return false
 }
