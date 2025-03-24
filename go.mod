@@ -6,7 +6,7 @@ toolchain go1.22.12
 
 require (
 	github.com/go-logr/logr v1.4.1
-	github.com/golang-jwt/jwt/v5 v5.2.0
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/lestrrat-go/jwx v1.2.29
 	github.com/magiconair/properties v1.8.5
 	// using latest commit from 'github.com/openshift/api branch release-4.17'
