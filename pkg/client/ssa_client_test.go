@@ -29,8 +29,7 @@ func TestSsaClient(t *testing.T) {
 			}
 
 			// when
-			_, err := acl.ApplyObject(context.TODO(), obj)
-			require.NoError(t, err)
+			require.NoError(t, acl.ApplyObject(context.TODO(), obj))
 
 			// then
 			inCluster := &corev1.ConfigMap{}
@@ -51,8 +50,7 @@ func TestSsaClient(t *testing.T) {
 			updated.Data["a"] = "c"
 
 			// when
-			_, err := acl.ApplyObject(context.TODO(), updated)
-			require.NoError(t, err)
+			require.NoError(t, acl.ApplyObject(context.TODO(), updated))
 			inCluster := &corev1.ConfigMap{}
 			require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
 
@@ -77,8 +75,7 @@ func TestSsaClient(t *testing.T) {
 			cl, acl := NewTestSsaApplyClient(t, owner, obj)
 
 			// when
-			_, err := acl.ApplyObject(context.TODO(), obj, client.SetOwnerReference(owner))
-			require.NoError(t, err)
+			require.NoError(t, acl.ApplyObject(context.TODO(), obj, client.SetOwnerReference(owner)))
 			inCluster := &corev1.ConfigMap{}
 			require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
 
@@ -98,8 +95,7 @@ func TestSsaClient(t *testing.T) {
 			cl, acl := NewTestSsaApplyClient(t, obj)
 
 			// when
-			_, err := acl.ApplyObject(context.TODO(), obj, client.EnsureLabels(map[string]string{"a": "b", "c": "d"}))
-			require.NoError(t, err)
+			require.NoError(t, acl.ApplyObject(context.TODO(), obj, client.EnsureLabels(map[string]string{"a": "b", "c": "d"})))
 			inCluster := &corev1.ConfigMap{}
 			require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
 
@@ -120,51 +116,13 @@ func TestSsaClient(t *testing.T) {
 			}
 
 			// when
-			_, err := acl.ApplyObject(context.TODO(), obj, client.SkipIf(func(o runtimeclient.Object) bool {
+			require.NoError(t, acl.ApplyObject(context.TODO(), obj, client.SkipIf(func(o runtimeclient.Object) bool {
 				return true
-			}))
-			require.NoError(t, err)
+			})))
 
 			// then
 			inCluster := &corev1.ConfigMap{}
 			require.True(t, errors.IsNotFound(cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster)))
-		})
-		t.Run("DetermineUpdate", func(t *testing.T) {
-			obj := &corev1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "obj",
-					Namespace: "default",
-				},
-			}
-			_, acl := NewTestSsaApplyClient(t, obj.DeepCopy())
-
-			// NOTE: the order of the tests IS SIGNIFICANT - we're doing the same thing twice and checking that no update happens
-			// the second time.
-
-			t.Run("detects change", func(t *testing.T) {
-				// given
-				updatedObj := obj.DeepCopy()
-				updatedObj.Spec.Selector = map[string]string{"a": "b"}
-
-				// when
-				wasUpdated, err := acl.ApplyObject(context.TODO(), updatedObj, client.DetermineUpdate(true))
-				require.NoError(t, err)
-
-				// then
-				assert.True(t, wasUpdated)
-			})
-			t.Run("detects no change", func(t *testing.T) {
-				// given
-				updatedObj := obj.DeepCopy()
-				updatedObj.Spec.Selector = map[string]string{"a": "b"}
-
-				// when
-				wasUpdated, err := acl.ApplyObject(context.TODO(), updatedObj, client.DetermineUpdate(true))
-				require.NoError(t, err)
-
-				// then
-				assert.False(t, wasUpdated)
-			})
 		})
 	})
 }

@@ -99,15 +99,6 @@ func SkipIf(test func(client.Object) bool) SsaApplyObjectOption {
 	}
 }
 
-// DetermineUpdate instructs the ApplyObject function to truly test whether the object
-// was updated or not during the apply operation. By default, the function always returns
-// true on success which is more efficient and sufficient in most circumstances.
-func DetermineUpdate(value bool) SsaApplyObjectOption {
-	return func(config *ssaApplyObjectConfiguration) {
-		config.determineUpdate = value
-	}
-}
-
 // EnsureLabels makes sure that the provided labels are applied to the object even if
 // the supplied object doesn't have them set.
 func EnsureLabels(labels map[string]string) SsaApplyObjectOption {
@@ -130,32 +121,25 @@ func (c *ssaApplyObjectConfiguration) Configure(obj client.Object, s *runtime.Sc
 }
 
 // ApplyObject creates the object if is missing or update it if it already exists using an SSA patch.
-//
-// NOTE: the return boolean IS ALWAYS TRUE on success by default. This is much more efficient. If you truly need
-// to determine whether the object has been updated or not (which is not the case anywhere in the codebase but the tests),
-// you can use the DetermineUpdate() option.
-func (c *SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, options ...SsaApplyObjectOption) (bool, error) {
+func (c *SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, options ...SsaApplyObjectOption) error {
 	config := newSsaApplyObjectConfiguration(options...)
 	if err := config.Configure(obj, c.Client.Scheme()); err != nil {
-		return false, err
+		return err
 	}
 
 	if err := prepareForSSA(obj, c.Client.Scheme()); err != nil {
-		return false, err
+		return err
 	}
 
 	if config.skipIf != nil && config.skipIf(obj) {
-		return false, nil
+		return nil
 	}
 
-	updated := true
-
-	// NOTE: once the SSA migration is not needed anymore, read the orig conditionally only when config.determineUpdate is true.
-
+	// NOTE: once the SSA migration is not needed anymore, we won't need to read the orig.
 	orig := obj.DeepCopyObject().(client.Object)
 	if err := c.Client.Get(ctx, client.ObjectKeyFromObject(obj), orig); err != nil {
 		if !apierrors.IsNotFound(err) {
-			return false, err
+			return err
 		}
 		// we didn't find the original so let's clear it out
 		orig = nil
@@ -164,19 +148,15 @@ func (c *SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, opt
 	// NOTE: remove this once this code is used for all "apply-style" functionality and has updated all the objects in the cluster.
 	if orig != nil && isSsaMigrationNeeded(orig, c.NonSSAFieldOwner) {
 		if err := c.MigrateToSSA(ctx, orig); err != nil {
-			return false, err
+			return err
 		}
 	}
 
 	if err := c.Client.Patch(ctx, obj, client.Apply, client.FieldOwner(c.FieldOwner), client.ForceOwnership); err != nil {
-		return false, fmt.Errorf("unable to patch '%s' called '%s' in namespace '%s': %w", obj.GetObjectKind().GroupVersionKind(), obj.GetName(), obj.GetNamespace(), err)
+		return fmt.Errorf("unable to patch '%s' called '%s' in namespace '%s': %w", obj.GetObjectKind().GroupVersionKind(), obj.GetName(), obj.GetNamespace(), err)
 	}
 
-	if config.determineUpdate {
-		updated = orig == nil || obj.GetGeneration() != orig.GetGeneration()
-	}
-
-	return updated, nil
+	return nil
 }
 
 func prepareForSSA(obj client.Object, scheme *runtime.Scheme) error {
@@ -203,23 +183,17 @@ func EnsureGVK(obj client.Object, scheme *runtime.Scheme) error {
 	return nil
 }
 
-// Apply applies the objects, ie, creates or updates them on the cluster
-// returns `true, nil` if at least one of the objects was created or modified,
-// `false, nil` if nothing changed, and `false, err` if an error occurred
-//
-// NOTE: this is only used in tests
-func (c *SsaApplyClient) Apply(ctx context.Context, toolchainObjects []client.Object, opts ...SsaApplyObjectOption) (bool, error) {
-	createdOrUpdated := false
+// Apply is a utility function that just calls `ApplyObject` in a loop on all the supplied objects.
+func (c *SsaApplyClient) Apply(ctx context.Context, toolchainObjects []client.Object, opts ...SsaApplyObjectOption) error {
 	for _, toolchainObject := range toolchainObjects {
-		result, err := c.ApplyObject(ctx, toolchainObject, opts...)
-		if err != nil {
-			return createdOrUpdated, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", toolchainObject.GetObjectKind().GroupVersionKind().Kind, toolchainObject.GetObjectKind().GroupVersionKind().Version)
+		if err := c.ApplyObject(ctx, toolchainObject, opts...); err != nil {
+			return errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", toolchainObject.GetObjectKind().GroupVersionKind().Kind, toolchainObject.GetObjectKind().GroupVersionKind().Version)
 		}
-		createdOrUpdated = createdOrUpdated || result
 	}
-	return createdOrUpdated, nil
+	return nil
 }
 
+// MigrateToSSA updates the provided object in the cluster such that it only contains Apply operations for the FieldOwner of this apply client.
 func (c *SsaApplyClient) MigrateToSSA(ctx context.Context, obj client.Object) error {
 	if err := csaupgrade.UpgradeManagedFields(obj, sets.New(c.NonSSAFieldOwner), c.FieldOwner); err != nil {
 		return err
