@@ -66,7 +66,6 @@ func FakeSSAPatchFunction(fakeClient *FakeClient) func(ctx context.Context, obj 
 			patch = client.Merge
 		}
 
-		shouldUpdateGeneration := false
 		if found {
 			dryRunOpts := make([]client.PatchOption, len(opts)+1)
 			copy(dryRunOpts, opts)
@@ -77,14 +76,14 @@ func FakeSSAPatchFunction(fakeClient *FakeClient) func(ctx context.Context, obj 
 			}
 
 			var err error
-			shouldUpdateGeneration, err = isGenerationChangeNeeded(orig, dryRunObj)
+			shouldUpdateGeneration, err := isGenerationChangeNeeded(orig, dryRunObj)
 			if err != nil {
 				return err
 			}
-		}
 
-		if shouldUpdateGeneration {
-			obj.SetGeneration(orig.GetGeneration() + 1)
+			if shouldUpdateGeneration {
+				obj.SetGeneration(orig.GetGeneration() + 1)
+			}
 		}
 
 		return fakeClient.Client.Patch(ctx, obj, patch, opts...)
