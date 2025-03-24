@@ -57,6 +57,8 @@ func GetDefaultFieldOwner(cfg *rest.Config) string {
 		ua = rest.DefaultKubernetesUserAgent()
 	}
 
+	// the default field owner is the name of the binary, which is also
+	// the first portion of the default User-Agent.
 	name := strings.Split(ua, "/")[0]
 	return name
 }
