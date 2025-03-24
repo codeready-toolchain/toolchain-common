@@ -66,10 +66,9 @@ func GetDefaultFieldOwner(cfg *rest.Config) string {
 }
 
 type ssaApplyObjectConfiguration struct {
-	owner           metav1.Object
-	newLabels       map[string]string
-	determineUpdate bool
-	skipIf          func(client.Object) bool
+	owner     metav1.Object
+	newLabels map[string]string
+	skipIf    func(client.Object) bool
 }
 
 func newSsaApplyObjectConfiguration(options ...SsaApplyObjectOption) ssaApplyObjectConfiguration {
