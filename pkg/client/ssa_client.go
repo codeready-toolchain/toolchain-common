@@ -119,11 +119,11 @@ func (c *ssaApplyObjectConfiguration) Configure(obj client.Object, s *runtime.Sc
 func (c *SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, options ...SsaApplyObjectOption) error {
 	config := newSsaApplyObjectConfiguration(options...)
 	if err := config.Configure(obj, c.Client.Scheme()); err != nil {
-		return err
+		return composeError(obj, fmt.Errorf("failed to configure the apply function: %w", err))
 	}
 
 	if err := prepareForSSA(obj, c.Client.Scheme()); err != nil {
-		return err
+		return composeError(obj, fmt.Errorf("failed to prepare the object for SSA: %w", err))
 	}
 
 	if config.skipIf != nil && config.skipIf(obj) {
@@ -131,10 +131,14 @@ func (c *SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, opt
 	}
 
 	if err := c.Client.Patch(ctx, obj, client.Apply, client.FieldOwner(c.FieldOwner), client.ForceOwnership); err != nil {
-		return fmt.Errorf("unable to patch '%s' called '%s' in namespace '%s': %w", obj.GetObjectKind().GroupVersionKind(), obj.GetName(), obj.GetNamespace(), err)
+		return composeError(obj, err)
 	}
 
 	return nil
+}
+
+func composeError(obj client.Object, err error) error {
+	return fmt.Errorf("unable to patch '%s' called '%s' in namespace '%s': %w", obj.GetObjectKind().GroupVersionKind(), obj.GetName(), obj.GetNamespace(), err)
 }
 
 func prepareForSSA(obj client.Object, scheme *runtime.Scheme) error {
@@ -165,12 +169,7 @@ func EnsureGVK(obj client.Object, scheme *runtime.Scheme) error {
 func (c *SsaApplyClient) Apply(ctx context.Context, toolchainObjects []client.Object, opts ...SsaApplyObjectOption) error {
 	for _, toolchainObject := range toolchainObjects {
 		if err := c.ApplyObject(ctx, toolchainObject, opts...); err != nil {
-			return fmt.Errorf("unable to create resource of kind: %s, version: %s, name: %s, namespace: %s: %w",
-				toolchainObject.GetObjectKind().GroupVersionKind().Kind,
-				toolchainObject.GetObjectKind().GroupVersionKind().Version,
-				toolchainObject.GetName(),
-				toolchainObject.GetNamespace(),
-				err)
+			return err
 		}
 	}
 	return nil
