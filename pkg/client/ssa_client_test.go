@@ -157,11 +157,11 @@ func TestEnsureGVK(t *testing.T) {
 	})
 }
 
-func NewTestSsaApplyClient(t *testing.T, initObjs ...runtimeclient.Object) (runtimeclient.Client, *client.SsaApplyClient) {
+func NewTestSsaApplyClient(t *testing.T, initObjs ...runtimeclient.Object) (runtimeclient.Client, *client.SSAApplyClient) {
 	cl := test.NewFakeClient(t, initObjs...)
 	test.FakeSSA(cl)
 
-	return cl, &client.SsaApplyClient{
+	return cl, &client.SSAApplyClient{
 		Client:           cl,
 		NonSSAFieldOwner: client.GetDefaultFieldOwner(nil),
 		FieldOwner:       "test-field-owner",

@@ -16,9 +16,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// SsaApplyClient the client to use when creating or updating objects. It uses SSA to apply the objects
+// SSAApplyClient the client to use when creating or updating objects. It uses SSA to apply the objects
 // to the cluster and takes care of migrating the objects from ordinary "CRUD" flow to SSA.
-type SsaApplyClient struct {
+type SSAApplyClient struct {
 	Client client.Client
 
 	// NonSSAFieldOwner is the field owner that is used by the operations that do not set the field owner explicitly.
@@ -30,9 +30,9 @@ type SsaApplyClient struct {
 	FieldOwner string
 }
 
-// NewSsaApplyClient constructs a new apply client using the client and rest config of the manager.
-func NewSsaApplyClient(mgr ctrl.Manager, fieldOwner string) *SsaApplyClient {
-	return &SsaApplyClient{
+// NewSSAApplyClient constructs a new apply client using the client and rest config of the manager.
+func NewSSAApplyClient(mgr ctrl.Manager, fieldOwner string) *SSAApplyClient {
+	return &SSAApplyClient{
 		Client:           mgr.GetClient(),
 		NonSSAFieldOwner: GetDefaultFieldOwner(mgr.GetConfig()),
 		FieldOwner:       fieldOwner,
@@ -69,7 +69,7 @@ type ssaApplyObjectConfiguration struct {
 	skipIf    func(client.Object) bool
 }
 
-func newSsaApplyObjectConfiguration(options ...SsaApplyObjectOption) ssaApplyObjectConfiguration {
+func newSSAApplyObjectConfiguration(options ...SSAApplyObjectOption) ssaApplyObjectConfiguration {
 	config := ssaApplyObjectConfiguration{}
 	for _, apply := range options {
 		apply(&config)
@@ -77,11 +77,11 @@ func newSsaApplyObjectConfiguration(options ...SsaApplyObjectOption) ssaApplyObj
 	return config
 }
 
-// SsaApplyObjectOption an option when creating or updating a resource
-type SsaApplyObjectOption func(*ssaApplyObjectConfiguration)
+// SSAApplyObjectOption an option when creating or updating a resource
+type SSAApplyObjectOption func(*ssaApplyObjectConfiguration)
 
 // SetOwnerReference sets the owner reference of the resource (default: `nil`)
-func SetOwnerReference(owner metav1.Object) SsaApplyObjectOption {
+func SetOwnerReference(owner metav1.Object) SSAApplyObjectOption {
 	return func(config *ssaApplyObjectConfiguration) {
 		config.owner = owner
 	}
@@ -90,7 +90,7 @@ func SetOwnerReference(owner metav1.Object) SsaApplyObjectOption {
 // SkipIf will cause the apply function skip the update of the object if
 // the provided function returns true. The supplied object is guaranteed to
 // have its GVK set.
-func SkipIf(test func(client.Object) bool) SsaApplyObjectOption {
+func SkipIf(test func(client.Object) bool) SSAApplyObjectOption {
 	return func(config *ssaApplyObjectConfiguration) {
 		config.skipIf = test
 	}
@@ -98,7 +98,7 @@ func SkipIf(test func(client.Object) bool) SsaApplyObjectOption {
 
 // EnsureLabels makes sure that the provided labels are applied to the object even if
 // the supplied object doesn't have them set.
-func EnsureLabels(labels map[string]string) SsaApplyObjectOption {
+func EnsureLabels(labels map[string]string) SSAApplyObjectOption {
 	return func(config *ssaApplyObjectConfiguration) {
 		config.newLabels = labels
 	}
@@ -118,8 +118,8 @@ func (c *ssaApplyObjectConfiguration) Configure(obj client.Object, s *runtime.Sc
 }
 
 // ApplyObject creates the object if is missing or update it if it already exists using an SSA patch.
-func (c *SsaApplyClient) ApplyObject(ctx context.Context, obj client.Object, options ...SsaApplyObjectOption) error {
-	config := newSsaApplyObjectConfiguration(options...)
+func (c *SSAApplyClient) ApplyObject(ctx context.Context, obj client.Object, options ...SSAApplyObjectOption) error {
+	config := newSSAApplyObjectConfiguration(options...)
 	if err := config.Configure(obj, c.Client.Scheme()); err != nil {
 		return composeError(obj, fmt.Errorf("failed to configure the apply function: %w", err))
 	}
@@ -168,7 +168,7 @@ func EnsureGVK(obj client.Object, scheme *runtime.Scheme) error {
 }
 
 // Apply is a utility function that just calls `ApplyObject` in a loop on all the supplied objects.
-func (c *SsaApplyClient) Apply(ctx context.Context, toolchainObjects []client.Object, opts ...SsaApplyObjectOption) error {
+func (c *SSAApplyClient) Apply(ctx context.Context, toolchainObjects []client.Object, opts ...SSAApplyObjectOption) error {
 	for _, toolchainObject := range toolchainObjects {
 		if err := c.ApplyObject(ctx, toolchainObject, opts...); err != nil {
 			return err
