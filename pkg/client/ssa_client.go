@@ -21,7 +21,7 @@ import (
 type SsaApplyClient struct {
 	Client client.Client
 
-	// NonSSAFieldOwner is a the field owner that is used by the operations that do not set the field owner explicitly.
+	// NonSSAFieldOwner is the field owner that is used by the operations that do not set the field owner explicitly.
 	//
 	// If you don't use an explicit field owner in your CRUD operations, set this to the value obtained from GetDefaultFieldOwner.
 	NonSSAFieldOwner string
