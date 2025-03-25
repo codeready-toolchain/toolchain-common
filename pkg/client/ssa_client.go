@@ -8,7 +8,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -30,11 +29,12 @@ type SSAApplyClient struct {
 	FieldOwner string
 }
 
-// NewSSAApplyClient constructs a new apply client using the client and rest config of the manager.
-func NewSSAApplyClient(mgr ctrl.Manager, fieldOwner string) *SSAApplyClient {
+// NewSSAApplyClient creates a new SSAApplyClient from the provided parameters using the default non-SSA field owner.
+// See SSAApplyClient.NonSSAFieldOwner for what that is.
+func NewSSAApplyClient(cl client.Client, cfg *rest.Config, fieldOwner string) *SSAApplyClient {
 	return &SSAApplyClient{
-		Client:           mgr.GetClient(),
-		NonSSAFieldOwner: GetDefaultFieldOwner(mgr.GetConfig()),
+		Client:           cl,
+		NonSSAFieldOwner: GetDefaultFieldOwner(cfg),
 		FieldOwner:       fieldOwner,
 	}
 }
