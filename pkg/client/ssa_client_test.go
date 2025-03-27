@@ -57,7 +57,7 @@ func TestSsaClient(t *testing.T) {
 			// then
 			assert.Equal(t, "c", inCluster.Data["a"])
 		})
-		t.Run("SetOwner", func(t *testing.T) {
+		t.Run("SetOwnerReference", func(t *testing.T) {
 			// given
 			owner := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -85,25 +85,51 @@ func TestSsaClient(t *testing.T) {
 			assert.Equal(t, "owner", inCluster.OwnerReferences[0].Name)
 		})
 		t.Run("EnsureLabels", func(t *testing.T) {
-			// given
-			obj := &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "obj",
-					Namespace: "default",
-				},
-			}
-			cl, acl := NewTestSsaApplyClient(t, obj)
+			t.Run("merge with existing", func(t *testing.T) {
+				// given
+				obj := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "obj",
+						Namespace: "default",
+						Labels:    map[string]string{"k": "l", "m": "n"},
+					},
+				}
+				cl, acl := NewTestSsaApplyClient(t, obj)
 
-			// when
-			require.NoError(t, acl.ApplyObject(context.TODO(), obj, client.EnsureLabels(map[string]string{"a": "b", "c": "d"})))
-			inCluster := &corev1.ConfigMap{}
-			require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
+				// when
+				require.NoError(t, acl.ApplyObject(context.TODO(), obj, client.EnsureLabels(map[string]string{"a": "b", "c": "d"})))
+				inCluster := &corev1.ConfigMap{}
+				require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
 
-			// then
-			require.NotNil(t, inCluster.Labels)
-			require.Len(t, inCluster.Labels, 2)
-			assert.Equal(t, "b", inCluster.Labels["a"])
-			assert.Equal(t, "d", inCluster.Labels["c"])
+				// then
+				require.NotNil(t, inCluster.Labels)
+				require.Len(t, inCluster.Labels, 4)
+				assert.Equal(t, "b", inCluster.Labels["a"])
+				assert.Equal(t, "d", inCluster.Labels["c"])
+				assert.Equal(t, "l", inCluster.Labels["k"])
+				assert.Equal(t, "n", inCluster.Labels["m"])
+			})
+			t.Run("add to empty", func(t *testing.T) {
+				// given
+				obj := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "obj",
+						Namespace: "default",
+					},
+				}
+				cl, acl := NewTestSsaApplyClient(t, obj)
+
+				// when
+				require.NoError(t, acl.ApplyObject(context.TODO(), obj, client.EnsureLabels(map[string]string{"a": "b", "c": "d"})))
+				inCluster := &corev1.ConfigMap{}
+				require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
+
+				// then
+				require.NotNil(t, inCluster.Labels)
+				require.Len(t, inCluster.Labels, 2)
+				assert.Equal(t, "b", inCluster.Labels["a"])
+				assert.Equal(t, "d", inCluster.Labels["c"])
+			})
 		})
 		t.Run("SkipIf", func(t *testing.T) {
 			// given
@@ -162,8 +188,7 @@ func NewTestSsaApplyClient(t *testing.T, initObjs ...runtimeclient.Object) (runt
 	test.FakeSSA(cl)
 
 	return cl, &client.SSAApplyClient{
-		Client:           cl,
-		NonSSAFieldOwner: client.GetDefaultFieldOwner(nil),
-		FieldOwner:       "test-field-owner",
+		Client:     cl,
+		FieldOwner: "test-field-owner",
 	}
 }

@@ -34,60 +34,6 @@ func NewFakeClient(t T, initObjs ...client.Object) *FakeClient {
 }
 
 func FakeSSA(fakeClient *FakeClient) {
-	fakeClient.MockPatch = FakeSSAPatchFunction(fakeClient)
-}
-
-func FakeSSAPatchFunction(fakeClient *FakeClient) func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
-	return func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
-		// fake client doesn't support SSA yet, so we have to be creative here and try to mock it out. Hopefully, SSA will be merged soon and we will
-		// be able to remove this.
-		//
-		// NOTE: this doesn't really implement SSA in any sense. It is just here so that the existing tests pass.
-
-		// A non-SSA patch assumes the object must already exist and should break if it doesn't. The SSA patch, on the other hand, creates the object
-		// if it doesn't exist.
-
-		found := true
-		orig := obj.DeepCopyObject().(client.Object)
-		if err := fakeClient.Get(ctx, client.ObjectKeyFromObject(orig), orig); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-			found = false
-		}
-
-		if patch == client.Apply {
-			if !found {
-				if err := Create(ctx, fakeClient, obj); err != nil {
-					return err
-				}
-			}
-			// the fake client actively complains if it sees an SSA patch...
-			patch = client.Merge
-		}
-
-		if found {
-			dryRunOpts := make([]client.PatchOption, len(opts)+1)
-			copy(dryRunOpts, opts)
-			dryRunOpts[len(opts)] = client.DryRunAll
-			dryRunObj := obj.DeepCopyObject().(client.Object)
-			if err := fakeClient.Client.Patch(ctx, dryRunObj, patch, dryRunOpts...); err != nil {
-				return err
-			}
-
-			var err error
-			shouldUpdateGeneration, err := isGenerationChangeNeeded(orig, dryRunObj)
-			if err != nil {
-				return err
-			}
-
-			if shouldUpdateGeneration {
-				obj.SetGeneration(orig.GetGeneration() + 1)
-			}
-		}
-
-		return fakeClient.Client.Patch(ctx, obj, patch, opts...)
-	}
 }
 
 type FakeClient struct {
@@ -294,5 +240,66 @@ func (c *FakeClient) Patch(ctx context.Context, obj client.Object, patch client.
 	if c.MockPatch != nil {
 		return c.MockPatch(ctx, obj, patch, opts...)
 	}
-	return c.Client.Patch(ctx, obj, patch, opts...)
+	return Patch(ctx, c, obj, patch, opts...)
+}
+
+func Patch(ctx context.Context, fakeClient *FakeClient, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	// Our tests assume that an update to the spec increases the Generation - this is what we do by default in the Create and Update
+	// methods, too. We need replicate this behavior in Patch, too.
+
+	// Fake client doesn't support SSA yet, so we have to be creative here and try to mock it out. Hopefully, SSA will be merged soon and we will
+	// be able to remove this. See https://github.com/kubernetes-sigs/controller-runtime/issues/2341 and
+	// https://github.com/kubernetes-sigs/controller-runtime/pull/2981.
+	//
+	// NOTE: this doesn't really implement SSA in any sense. It is just here so that the existing tests pass.
+
+	found := true
+	orig := obj.DeepCopyObject().(client.Object)
+	if err := fakeClient.Get(ctx, client.ObjectKeyFromObject(orig), orig); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+		found = false
+	}
+
+	// A non-SSA patch assumes the object must already exist and should break if it doesn't. The SSA patch, on the other hand, creates the object
+	// if it doesn't exist.
+	if patch == client.Apply {
+		if !found {
+			if err := Create(ctx, fakeClient, obj); err != nil {
+				return err
+			}
+		}
+		// the fake client actively complains if it sees an SSA patch...
+		patch = client.Merge
+	}
+
+	if found {
+		// we need to figure out whether we should update the generation or not.
+		// We do that by applying the patch in a dry-run and comparing the changes it made
+		// to the original object.
+		//
+		// If the generation should change, we bump the generation of the object going into
+		// the patch so that it is applied as such in the fake client.
+
+		dryRunOpts := make([]client.PatchOption, len(opts)+1)
+		copy(dryRunOpts, opts)
+		dryRunOpts[len(opts)] = client.DryRunAll
+		dryRunObj := obj.DeepCopyObject().(client.Object)
+		if err := fakeClient.Client.Patch(ctx, dryRunObj, patch, dryRunOpts...); err != nil {
+			return err
+		}
+
+		var err error
+		shouldUpdateGeneration, err := isGenerationChangeNeeded(orig, dryRunObj)
+		if err != nil {
+			return err
+		}
+
+		if shouldUpdateGeneration {
+			obj.SetGeneration(orig.GetGeneration() + 1)
+		}
+	}
+
+	return fakeClient.Client.Patch(ctx, obj, patch, opts...)
 }

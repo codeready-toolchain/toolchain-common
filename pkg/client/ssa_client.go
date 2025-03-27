@@ -3,11 +3,9 @@ package client
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -16,51 +14,24 @@ import (
 )
 
 // SSAApplyClient the client to use when creating or updating objects. It uses SSA to apply the objects
-// to the cluster and takes care of migrating the objects from ordinary "CRUD" flow to SSA.
+// to the cluster.
+//
+// It doesn't try to migrate the objects from ordinary "CRUD" flow to SSA to be as efficient as possible.
+// If you need to do that check k8s.io/client-go/util/csaupgrade.UpgradeManagedFields().
 type SSAApplyClient struct {
 	Client client.Client
-
-	// NonSSAFieldOwner is the field owner that is used by the operations that do not set the field owner explicitly.
-	//
-	// If you don't use an explicit field owner in your CRUD operations, set this to the value obtained from GetDefaultFieldOwner.
-	NonSSAFieldOwner string
 
 	// The field owner to use for SSA-applied objects.
 	FieldOwner string
 }
 
-// NewSSAApplyClient creates a new SSAApplyClient from the provided parameters using the default non-SSA field owner.
-// See SSAApplyClient.NonSSAFieldOwner for what that is.
-func NewSSAApplyClient(cl client.Client, cfg *rest.Config, fieldOwner string) *SSAApplyClient {
+// NewSSAApplyClient creates a new SSAApplyClient from the provided parameters that will use the provided field owner
+// for the patches.
+func NewSSAApplyClient(cl client.Client, fieldOwner string) *SSAApplyClient {
 	return &SSAApplyClient{
-		Client:           cl,
-		NonSSAFieldOwner: GetDefaultFieldOwner(cfg),
-		FieldOwner:       fieldOwner,
+		Client:     cl,
+		FieldOwner: fieldOwner,
 	}
-}
-
-// GetDefaultFieldOwner returns the default field owner that is applied if no explicit field owner is set.
-// This can be used to determine the field owner used by the non-SSA CRUD operations performed by
-// the kubernetes client.
-//
-// This value is obtained from the user agent header defined in the provided config, or, if it is not set,
-// from the default kubernetes user agent string.
-//
-// If the provided config is nil, the default kubernetes user agent is returned
-func GetDefaultFieldOwner(cfg *rest.Config) string {
-	var ua string
-	if cfg != nil {
-		ua = cfg.UserAgent
-	}
-
-	if len(ua) == 0 {
-		ua = rest.DefaultKubernetesUserAgent()
-	}
-
-	// the default field owner is the name of the binary, which is also
-	// the first portion of the default User-Agent.
-	name := strings.Split(ua, "/")[0]
-	return name
 }
 
 type ssaApplyObjectConfiguration struct {
