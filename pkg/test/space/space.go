@@ -33,15 +33,15 @@ func WithSpecTargetClusterRoles(roles []string) Option {
 
 func WithName(name string) Option {
 	return func(space *toolchainv1alpha1.Space) {
-		space.ObjectMeta.Name = name
-		space.ObjectMeta.GenerateName = ""
+		space.Name = name
+		space.GenerateName = ""
 	}
 }
 
 func WithGenerateName(namePrefix string) Option {
 	return func(space *toolchainv1alpha1.Space) {
-		space.ObjectMeta.Name = ""
-		space.ObjectMeta.GenerateName = namePrefix + "-"
+		space.Name = ""
+		space.GenerateName = namePrefix + "-"
 	}
 }
 
@@ -53,19 +53,19 @@ func WithSpecParentSpace(name string) Option {
 
 func WithLabel(key, value string) Option {
 	return func(space *toolchainv1alpha1.Space) {
-		if space.ObjectMeta.Labels == nil {
-			space.ObjectMeta.Labels = map[string]string{}
+		if space.Labels == nil {
+			space.Labels = map[string]string{}
 		}
-		space.ObjectMeta.Labels[key] = value
+		space.Labels[key] = value
 	}
 }
 
 func WithAnnotation(key, value string) Option {
 	return func(space *toolchainv1alpha1.Space) {
-		if space.ObjectMeta.Annotations == nil {
-			space.ObjectMeta.Annotations = map[string]string{}
+		if space.Annotations == nil {
+			space.Annotations = map[string]string{}
 		}
-		space.ObjectMeta.Annotations[key] = value
+		space.Annotations[key] = value
 	}
 }
 
@@ -90,10 +90,10 @@ func WithDisableInheritance(disableInheritance bool) Option {
 func WithTierHashLabelFor(tier *toolchainv1alpha1.NSTemplateTier) Option {
 	return func(space *toolchainv1alpha1.Space) {
 		h, _ := hash.ComputeHashForNSTemplateTier(tier) // we can assume the JSON marshalling will always work
-		if space.ObjectMeta.Labels == nil {
-			space.ObjectMeta.Labels = map[string]string{}
+		if space.Labels == nil {
+			space.Labels = map[string]string{}
 		}
-		space.ObjectMeta.Labels[hash.TemplateTierHashLabelKey(tier.Name)] = h
+		space.Labels[hash.TemplateTierHashLabelKey(tier.Name)] = h
 	}
 }
 
@@ -161,7 +161,7 @@ func WithStateLabel(stateValue string) Option {
 
 func CreatedBefore(before time.Duration) Option {
 	return func(space *toolchainv1alpha1.Space) {
-		space.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now().Add(-before)}
+		space.CreationTimestamp = metav1.Time{Time: time.Now().Add(-before)}
 	}
 }
 

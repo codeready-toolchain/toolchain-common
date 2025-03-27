@@ -65,9 +65,9 @@ func WithBindings(bindings []toolchainv1alpha1.Binding) WorkspaceOption {
 
 func WithObjectMetaFrom(from metav1.ObjectMeta) WorkspaceOption {
 	return func(workspace *toolchainv1alpha1.Workspace) {
-		workspace.ObjectMeta.ResourceVersion = from.ResourceVersion
-		workspace.ObjectMeta.UID = from.UID
-		workspace.ObjectMeta.Generation = from.Generation
-		workspace.ObjectMeta.CreationTimestamp = from.CreationTimestamp
+		workspace.ResourceVersion = from.ResourceVersion
+		workspace.UID = from.UID
+		workspace.Generation = from.Generation
+		workspace.CreationTimestamp = from.CreationTimestamp
 	}
 }

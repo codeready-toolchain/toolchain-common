@@ -122,7 +122,7 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	}
 	// gets current object (if exists)
 	namespacedName := types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}
-	if err := c.Client.Get(ctx, namespacedName, existing); err != nil {
+	if err := c.Get(ctx, namespacedName, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			obj.SetResourceVersion("") // reset resource version when creating to avoid error: resourceVersion should not be set on objects to be created
 			return true, c.createObj(ctx, obj, config.owner)
@@ -163,7 +163,7 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 	if err := RetainClusterIP(obj, existing); err != nil {
 		return false, err
 	}
-	if err := c.Client.Update(ctx, obj); err != nil {
+	if err := c.Update(ctx, obj); err != nil {
 		return false, errors.Wrapf(err, "unable to update the resource '%v'", obj)
 	}
 
@@ -233,12 +233,12 @@ func marshalObjectContent(newResource runtime.Object) ([]byte, error) {
 
 func (c ApplyClient) createObj(ctx context.Context, newResource client.Object, owner v1.Object) error {
 	if owner != nil {
-		err := controllerutil.SetControllerReference(owner, newResource, c.Client.Scheme())
+		err := controllerutil.SetControllerReference(owner, newResource, c.Scheme())
 		if err != nil {
 			return errors.Wrap(err, "unable to set controller references")
 		}
 	}
-	return c.Client.Create(ctx, newResource)
+	return c.Create(ctx, newResource)
 }
 
 // Apply applies the objects, ie, creates or updates them on the cluster

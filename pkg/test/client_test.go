@@ -175,7 +175,7 @@ func TestNewClient(t *testing.T) {
 			dep2.ResourceVersion = ""
 			require.NoError(t, fclient.Create(context.TODO(), dep2))
 
-			require.NoError(t, fclient.DeleteAllOf(context.TODO(), retrieved, client.InNamespace("somenamespace"), client.MatchingLabels(retrieved.ObjectMeta.Labels)))
+			require.NoError(t, fclient.DeleteAllOf(context.TODO(), retrieved, client.InNamespace("somenamespace"), client.MatchingLabels(retrieved.Labels)))
 			err := fclient.Get(context.TODO(), types.NamespacedName{Namespace: "somenamespace", Name: created.Name}, retrieved)
 			require.Error(t, err)
 			assert.True(t, errs.IsNotFound(err))

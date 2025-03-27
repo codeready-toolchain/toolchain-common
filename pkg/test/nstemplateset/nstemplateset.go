@@ -135,10 +135,10 @@ func WithFinalizer() Option {
 
 func WithAnnotation(key, value string) Option {
 	return func(nstmplSet *toolchainv1alpha1.NSTemplateSet) {
-		if nstmplSet.ObjectMeta.Annotations == nil {
-			nstmplSet.ObjectMeta.Annotations = map[string]string{}
+		if nstmplSet.Annotations == nil {
+			nstmplSet.Annotations = map[string]string{}
 		}
-		nstmplSet.ObjectMeta.Annotations[key] = value
+		nstmplSet.Annotations[key] = value
 
 	}
 }

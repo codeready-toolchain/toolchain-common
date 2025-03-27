@@ -134,7 +134,7 @@ func TestGitHubSecret(t *testing.T) {
 		cfg := commonconfig.NewMemberOperatorConfigWithReset(t)
 		memberOperatorCfg := Configuration{cfg: &cfg.Spec}
 
-		assert.Equal(t, "", memberOperatorCfg.GitHubSecret().AccessTokenKey())
+		assert.Empty(t, memberOperatorCfg.GitHubSecret().AccessTokenKey())
 	})
 	t.Run("non-default", func(t *testing.T) {
 		cfg := commonconfig.NewMemberOperatorConfigWithReset(t, testconfig.MemberStatus().
@@ -269,7 +269,7 @@ func TestWebhook(t *testing.T) {
 		memberOperatorCfg := Configuration{cfg: &cfg.Spec}
 
 		assert.True(t, memberOperatorCfg.Webhook().Deploy())
-		assert.Equal(t, "", memberOperatorCfg.Webhook().VMSSHKey())
+		assert.Empty(t, memberOperatorCfg.Webhook().VMSSHKey())
 	})
 	t.Run("non-default", func(t *testing.T) {
 		cfg := commonconfig.NewMemberOperatorConfigWithReset(t, testconfig.Webhook().
