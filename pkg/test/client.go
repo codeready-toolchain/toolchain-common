@@ -4,13 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake" //nolint: staticcheck // not deprecated anymore: see https://github.com/kubernetes-sigs/controller-runtime/pull/1101
 )
@@ -116,11 +118,34 @@ func (c *FakeClient) Update(ctx context.Context, obj client.Object, opts ...clie
 }
 
 func Update(ctx context.Context, cl *FakeClient, obj client.Object, opts ...client.UpdateOption) error {
-	// Update Generation if needed since the kube fake client doesn't update generations.
-	// Increment the generation if spec (for objects with Spec) or data/stringData (for objects like CM and Secrets) is changed.
-	updatingMap, err := toMap(obj)
+	current, err := cleanObject(obj)
 	if err != nil {
 		return err
+	}
+	if err := cl.Client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}, current); err != nil {
+		return err
+	}
+
+	generationShouldChange, err := isGenerationChangeNeeded(current, obj)
+	if err != nil {
+		return err
+	}
+
+	if generationShouldChange {
+		obj.SetGeneration(current.GetGeneration() + 1)
+	} else {
+		obj.SetGeneration(current.GetGeneration())
+	}
+
+	return cl.Client.Update(ctx, obj, opts...)
+}
+
+func isGenerationChangeNeeded(currentObj, updatedObj client.Object) (bool, error) {
+	// Update Generation if needed since the kube fake client doesn't update generations.
+	// Increment the generation if spec (for objects with Spec) or data/stringData (for objects like CM and Secrets) is changed.
+	updatingMap, err := toMap(updatedObj)
+	if err != nil {
+		return false, err
 	}
 	updatingMap["metadata"] = nil
 	updatingMap["status"] = nil
@@ -130,16 +155,9 @@ func Update(ctx context.Context, cl *FakeClient, obj client.Object, opts ...clie
 		updatingMap["spec"] = map[string]interface{}{}
 	}
 
-	current, err := cleanObject(obj)
+	currentMap, err := toMap(currentObj)
 	if err != nil {
-		return err
-	}
-	if err := cl.Client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}, current); err != nil {
-		return err
-	}
-	currentMap, err := toMap(current)
-	if err != nil {
-		return err
+		return false, err
 	}
 	currentMap["metadata"] = nil
 	currentMap["status"] = nil
@@ -154,12 +172,7 @@ func Update(ctx context.Context, cl *FakeClient, obj client.Object, opts ...clie
 		}
 	}
 
-	if !reflect.DeepEqual(updatingMap, currentMap) {
-		obj.SetGeneration(current.GetGeneration() + 1)
-	} else {
-		obj.SetGeneration(current.GetGeneration())
-	}
-	return cl.Client.Update(ctx, obj, opts...)
+	return !reflect.DeepEqual(updatingMap, currentMap), nil
 }
 
 func cleanObject(obj client.Object) (client.Object, error) {
@@ -224,5 +237,66 @@ func (c *FakeClient) Patch(ctx context.Context, obj client.Object, patch client.
 	if c.MockPatch != nil {
 		return c.MockPatch(ctx, obj, patch, opts...)
 	}
-	return c.Client.Patch(ctx, obj, patch, opts...)
+	return Patch(ctx, c, obj, patch, opts...)
+}
+
+func Patch(ctx context.Context, fakeClient *FakeClient, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	// Our tests assume that an update to the spec increases the Generation - this is what we do by default in the Create and Update
+	// methods, too. We need replicate this behavior in Patch, too.
+
+	// Fake client doesn't support SSA yet, so we have to be creative here and try to mock it out. Hopefully, SSA will be merged soon and we will
+	// be able to remove this. See https://github.com/kubernetes-sigs/controller-runtime/issues/2341 and
+	// https://github.com/kubernetes-sigs/controller-runtime/pull/2981.
+	//
+	// NOTE: this doesn't really implement SSA in any sense. It is just here so that the existing tests pass.
+
+	found := true
+	orig := obj.DeepCopyObject().(client.Object)
+	if err := fakeClient.Get(ctx, client.ObjectKeyFromObject(orig), orig); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+		found = false
+	}
+
+	// A non-SSA patch assumes the object must already exist and should break if it doesn't. The SSA patch, on the other hand, creates the object
+	// if it doesn't exist.
+	if patch == client.Apply {
+		if !found {
+			if err := Create(ctx, fakeClient, obj); err != nil {
+				return err
+			}
+		}
+		// the fake client actively complains if it sees an SSA patch...
+		patch = client.Merge
+	}
+
+	if found {
+		// we need to figure out whether we should update the generation or not.
+		// We do that by applying the patch in a dry-run and comparing the changes it made
+		// to the original object.
+		//
+		// If the generation should change, we bump the generation of the object going into
+		// the patch so that it is applied as such in the fake client.
+
+		dryRunOpts := make([]client.PatchOption, len(opts)+1)
+		copy(dryRunOpts, opts)
+		dryRunOpts[len(opts)] = client.DryRunAll
+		dryRunObj := obj.DeepCopyObject().(client.Object)
+		if err := fakeClient.Client.Patch(ctx, dryRunObj, patch, dryRunOpts...); err != nil {
+			return err
+		}
+
+		var err error
+		shouldUpdateGeneration, err := isGenerationChangeNeeded(orig, dryRunObj)
+		if err != nil {
+			return err
+		}
+
+		if shouldUpdateGeneration {
+			obj.SetGeneration(orig.GetGeneration() + 1)
+		}
+	}
+
+	return fakeClient.Client.Patch(ctx, obj, patch, opts...)
 }
