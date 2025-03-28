@@ -105,8 +105,8 @@ func TestNewBannedUser(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, got)
 
-				assert.Equal(t, tt.expectedBannedUser.ObjectMeta.Namespace, got.ObjectMeta.Namespace)
-				assert.Equal(t, tt.expectedBannedUser.ObjectMeta.Name, got.ObjectMeta.Name)
+				assert.Equal(t, tt.expectedBannedUser.Namespace, got.Namespace)
+				assert.Equal(t, tt.expectedBannedUser.Name, got.Name)
 				assert.Equal(t, tt.expectedBannedUser.Spec.Email, got.Spec.Email)
 				assert.Equal(t, tt.expectedBannedUser.Spec.Reason, got.Spec.Reason)
 

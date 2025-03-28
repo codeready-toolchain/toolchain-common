@@ -58,7 +58,7 @@ func TestCreateTokenRequest(t *testing.T) {
 			// then
 			require.Error(t, err)                                                    // an error should be returned
 			assert.Equal(t, "unable to create token, got empty string", err.Error()) // error message should match expected one
-			assert.Equal(t, "", token)                                               // token should be empty
+			assert.Empty(t, token)                                                   // token should be empty
 		})
 	})
 }

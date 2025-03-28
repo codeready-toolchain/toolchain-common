@@ -17,7 +17,7 @@ import (
 // because the LastTransitionTime of the actual conditions can be modified but the conditions
 // still should be treated as matched
 func AssertConditionsMatch(t T, actual []toolchainv1alpha1.Condition, expected ...toolchainv1alpha1.Condition) {
-	require.Equal(t, len(expected), len(actual))
+	require.Len(t, actual, len(expected))
 	for _, c := range expected {
 		AssertContainsCondition(t, actual, c)
 	}

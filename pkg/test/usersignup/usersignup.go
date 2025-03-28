@@ -152,7 +152,7 @@ func WithStateLabel(stateValue string) Modifier {
 func WithEmail(email string) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		emailHash := hash.EncodeString(email)
-		userSignup.ObjectMeta.Labels[toolchainv1alpha1.UserSignupUserEmailHashLabelKey] = emailHash
+		userSignup.Labels[toolchainv1alpha1.UserSignupUserEmailHashLabelKey] = emailHash
 		userSignup.Spec.IdentityClaims.Email = email
 	}
 }
@@ -204,13 +204,13 @@ func WithScheduledDeactivationTimestamp(scheduledDeactivationTimestamp *metav1.T
 
 func CreatedBefore(before time.Duration) Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
-		userSignup.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now().Add(-before)}
+		userSignup.CreationTimestamp = metav1.Time{Time: time.Now().Add(-before)}
 	}
 }
 
 func BeingDeleted() Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
-		userSignup.ObjectMeta.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+		userSignup.DeletionTimestamp = &metav1.Time{Time: time.Now()}
 	}
 }
 

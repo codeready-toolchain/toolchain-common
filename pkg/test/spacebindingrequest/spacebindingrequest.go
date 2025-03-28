@@ -41,10 +41,10 @@ func WithSpaceRole(spaceRole string) Option {
 
 func WithLabel(key, value string) Option {
 	return func(space *toolchainv1alpha1.SpaceBindingRequest) {
-		if space.ObjectMeta.Labels == nil {
-			space.ObjectMeta.Labels = map[string]string{}
+		if space.Labels == nil {
+			space.Labels = map[string]string{}
 		}
-		space.ObjectMeta.Labels[key] = value
+		space.Labels[key] = value
 	}
 }
 

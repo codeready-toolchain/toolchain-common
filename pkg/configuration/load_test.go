@@ -48,7 +48,7 @@ func TestLoadFromConfigMap(t *testing.T) {
 
 		// test that the secret was not found since no secret name was set
 		testTest := os.Getenv("HOST_OPERATOR_SUPER_SPECIAL_KEY")
-		assert.Equal(t, "", testTest)
+		assert.Empty(t, testTest)
 	})
 	t.Run("cannot get configmap", func(t *testing.T) {
 		// given
@@ -73,7 +73,7 @@ func TestLoadFromConfigMap(t *testing.T) {
 
 		// test env vars are parsed and created correctly
 		testTest := os.Getenv("MEMBER_OPERATOR_TEST_KEY_ONE")
-		assert.Equal(t, "", testTest)
+		assert.Empty(t, testTest)
 	})
 	t.Run("env overwrite", func(t *testing.T) {
 		// given

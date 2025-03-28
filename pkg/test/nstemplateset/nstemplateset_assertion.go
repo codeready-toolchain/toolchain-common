@@ -82,7 +82,7 @@ func (a *Assertion) HasConditions(expected ...toolchainv1alpha1.Condition) *Asse
 func (a *Assertion) HasNoOwnerReferences() *Assertion {
 	err := a.loadNSTemplateSet()
 	require.NoError(a.t, err)
-	assert.Empty(a.t, a.nsTmplSet.ObjectMeta.OwnerReferences)
+	assert.Empty(a.t, a.nsTmplSet.OwnerReferences)
 	return a
 }
 

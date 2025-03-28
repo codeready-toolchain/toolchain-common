@@ -74,23 +74,23 @@ func (b *notificationBuilderImpl) Create(ctx context.Context, recipient string) 
 }
 
 func generateName(notification *toolchainv1alpha1.Notification) {
-	if notification.ObjectMeta.Name == "" {
+	if notification.Name == "" {
 		if username, found := notification.Spec.Context["UserName"]; found && username != "" {
 			notificationType, found := notification.Labels[toolchainv1alpha1.NotificationTypeLabelKey]
 			if found {
-				notification.ObjectMeta.GenerateName = fmt.Sprintf("%s-%s-", username, notificationType)
+				notification.GenerateName = fmt.Sprintf("%s-%s-", username, notificationType)
 				return
 			}
-			notification.ObjectMeta.GenerateName = fmt.Sprintf("%s-untyped", username)
+			notification.GenerateName = fmt.Sprintf("%s-untyped", username)
 			return
 		}
-		notification.ObjectMeta.GenerateName = fmt.Sprintf("%s-untyped", uuid.NewString())
+		notification.GenerateName = fmt.Sprintf("%s-untyped", uuid.NewString())
 	}
 }
 
 func (b *notificationBuilderImpl) WithName(name string) Builder {
 	b.options = append(b.options, func(n *toolchainv1alpha1.Notification) error {
-		n.ObjectMeta.Name = name
+		n.Name = name
 		return nil
 	})
 	return b
@@ -115,7 +115,7 @@ func (b *notificationBuilderImpl) WithSubjectAndContent(subject, content string)
 
 func (b *notificationBuilderImpl) WithNotificationType(notificationType string) Builder {
 	b.options = append(b.options, func(n *toolchainv1alpha1.Notification) error {
-		n.ObjectMeta.Labels[toolchainv1alpha1.NotificationTypeLabelKey] = notificationType
+		n.Labels[toolchainv1alpha1.NotificationTypeLabelKey] = notificationType
 		return nil
 	})
 	return b
@@ -148,7 +148,7 @@ func (b *notificationBuilderImpl) WithUserContext(userSignup *toolchainv1alpha1.
 		n.Spec.Context["LastName"] = userSignup.Spec.IdentityClaims.FamilyName
 		n.Spec.Context["CompanyName"] = userSignup.Spec.IdentityClaims.Company
 
-		n.ObjectMeta.Labels[toolchainv1alpha1.NotificationUserNameLabelKey] = userSignup.Status.CompliantUsername
+		n.Labels[toolchainv1alpha1.NotificationUserNameLabelKey] = userSignup.Status.CompliantUsername
 
 		if userSignup.Spec.IdentityClaims.Email != "" {
 			n.Spec.Context["UserEmail"] = userSignup.Spec.IdentityClaims.Email

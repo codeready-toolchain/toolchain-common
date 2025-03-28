@@ -99,7 +99,7 @@ func getLatestCommit(ctx context.Context, GetCommit getCommitFunc, githubRepo cl
 		return nil, errors.New(errMsg)
 	}
 	if commitResponse.StatusCode != http.StatusOK {
-		err = errs.New(fmt.Sprintf("invalid response code from github commits API. resp.Response.StatusCode: %d, repoName: %s, repoBranch: %s", commitResponse.Response.StatusCode, githubRepo.Name, githubRepo.Branch))
+		err = errs.New(fmt.Sprintf("invalid response code from github commits API. resp.Response.StatusCode: %d, repoName: %s, repoBranch: %s", commitResponse.StatusCode, githubRepo.Name, githubRepo.Branch))
 		return nil, err
 	}
 

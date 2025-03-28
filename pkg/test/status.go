@@ -24,7 +24,7 @@ func AssertHostOperatorStatusMatch(t T, actual toolchainv1alpha1.HostOperatorSta
 // We can't use assert.ElementsMatch because the LastTransitionTime of the actual
 // conditions can be modified but the conditions still should be treated as matched
 func AssertMembersMatch(t T, actual []toolchainv1alpha1.Member, expected ...toolchainv1alpha1.Member) {
-	require.Equal(t, len(expected), len(actual))
+	require.Len(t, actual, len(expected))
 	for _, c := range expected {
 		AssertContainsMember(t, actual, c)
 	}

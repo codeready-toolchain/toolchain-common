@@ -244,7 +244,7 @@ func TestGenerateTiers(t *testing.T) {
 				tier := toolchainv1alpha1.NSTemplateTier{}
 				err = clt.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: tierName}, &tier)
 				require.NoError(t, err)
-				assert.Equal(t, int64(1), tier.ObjectMeta.Generation)
+				assert.Equal(t, int64(1), tier.Generation)
 
 				// check the `clusterresources` templateRef
 				if tier.Name == "nocluster" {
@@ -292,7 +292,7 @@ func TestGenerateTiers(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, tierTmpls.Items, 16) // 4 items for advanced and base tiers + 3 for nocluster tier + 4 for appstudio
 			for _, tierTmpl := range tierTmpls.Items {
-				assert.Equal(t, int64(1), tierTmpl.ObjectMeta.Generation) // unchanged
+				assert.Equal(t, int64(1), tierTmpl.Generation) // unchanged
 			}
 
 			// verify that 4 NSTemplateTier CRs were created:
@@ -300,7 +300,7 @@ func TestGenerateTiers(t *testing.T) {
 				tier := toolchainv1alpha1.NSTemplateTier{}
 				err = clt.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: tierName}, &tier)
 				require.NoError(t, err)
-				assert.Equal(t, int64(1), tier.ObjectMeta.Generation)
+				assert.Equal(t, int64(1), tier.Generation)
 
 				// check the `clusterresources` templateRef
 				if tier.Name == "nocluster" {
@@ -365,7 +365,7 @@ func TestGenerateTiers(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, tierTmpls.Items, 32) // two versions of: 4 items for advanced and base tiers + 3 for nocluster tier + 4 for appstudio
 			for _, tierTmpl := range tierTmpls.Items {
-				assert.Equal(t, int64(1), tierTmpl.ObjectMeta.Generation) // unchanged
+				assert.Equal(t, int64(1), tierTmpl.Generation) // unchanged
 			}
 
 			expectedTemplateRefs := map[string]map[string]interface{}{
@@ -416,7 +416,7 @@ func TestGenerateTiers(t *testing.T) {
 				tier := toolchainv1alpha1.NSTemplateTier{}
 				err = clt.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: tierName}, &tier)
 				require.NoError(t, err)
-				assert.Equal(t, int64(2), tier.ObjectMeta.Generation)
+				assert.Equal(t, int64(2), tier.Generation)
 
 				// check the `clusteresources` templateRefs
 				if tier.Name == "nocluster" {
@@ -881,8 +881,8 @@ func TestNewNSTemplateTiers(t *testing.T) {
 			tier := runtimeObjectToNSTemplateTier(t, s, tierObjs[0])
 
 			require.True(t, found)
-			assert.Equal(t, name, tier.ObjectMeta.Name)
-			assert.Equal(t, namespace, tier.ObjectMeta.Namespace)
+			assert.Equal(t, name, tier.Name)
+			assert.Equal(t, namespace, tier.Namespace)
 			for _, ns := range tier.Spec.Namespaces {
 				assert.NotEmpty(t, ns.TemplateRef, "expected namespace reference not empty for tier %v", name)
 			}
