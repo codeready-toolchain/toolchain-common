@@ -3,6 +3,7 @@ package client_test
 import (
 	"context"
 	stderrors "errors"
+	"fmt"
 	"testing"
 
 	"github.com/codeready-toolchain/toolchain-common/pkg/client"
@@ -234,6 +235,65 @@ func TestSsaClient(t *testing.T) {
 				// then
 				assert.Equal(t, "unable to patch '/v1, Kind=ConfigMap' called 'obj' in namespace 'default': forbidden: fabricated", err.Error())
 			})
+		})
+	})
+	t.Run("Apply", func(t *testing.T) {
+		t.Run("executes a for loop", func(t *testing.T) {
+			// given
+			cl, acl := NewTestSsaApplyClient(t)
+			obj1 := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "obj1",
+					Namespace: "default",
+				},
+			}
+			obj2 := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "obj2",
+					Namespace: "default",
+				},
+			}
+
+			// when
+			require.NoError(t, acl.Apply(context.TODO(), []runtimeclient.Object{obj1, obj2}))
+
+			// then
+			inCluster := &corev1.ConfigMapList{}
+			require.NoError(t, cl.List(context.TODO(), inCluster))
+			assert.Len(t, inCluster.Items, 2)
+		})
+		t.Run("exits early", func(t *testing.T) {
+			// given
+			cl, acl := NewTestSsaApplyClient(t)
+			obj1 := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "obj1",
+					Namespace: "default",
+				},
+			}
+			obj2 := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "obj2",
+					Namespace: "default",
+				},
+			}
+			counter := 0
+			cl.MockPatch = func(ctx context.Context, obj runtimeclient.Object, patch runtimeclient.Patch, opts ...runtimeclient.PatchOption) error {
+				if counter == 0 {
+					counter += 1
+					return test.Patch(ctx, cl, obj, patch, opts...)
+				}
+				return fmt.Errorf("boom")
+			}
+
+			// when
+			err := acl.Apply(context.TODO(), []runtimeclient.Object{obj1, obj2})
+
+			// then
+			require.Error(t, err)
+			inCluster := &corev1.ConfigMapList{}
+			require.NoError(t, cl.List(context.TODO(), inCluster))
+			assert.Len(t, inCluster.Items, 1)
 		})
 	})
 }
