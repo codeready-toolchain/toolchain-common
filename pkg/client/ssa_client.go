@@ -121,6 +121,10 @@ func composeError(obj client.Object, err error) error {
 }
 
 func prepareForSSA(obj client.Object, scheme *runtime.Scheme) error {
+	// Managed fields need to be set to nil when doing the SSA apply.
+	// This will not overwrite the field in the cluster - managed fields
+	// is treated specially by the api server so that clients that do not
+	// set it, don't cause its deletion.
 	obj.SetManagedFields(nil)
 	return EnsureGVK(obj, scheme)
 }
