@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -111,7 +112,12 @@ func (c *SSAApplyClient) ApplyObject(ctx context.Context, obj client.Object, opt
 }
 
 func composeError(obj client.Object, err error) error {
-	return fmt.Errorf("unable to patch '%s' called '%s' in namespace '%s': %w", obj.GetObjectKind().GroupVersionKind(), obj.GetName(), obj.GetNamespace(), err)
+	message := "unable to patch '%s' called '%s' in namespace '%s': %w"
+	if !obj.GetObjectKind().GroupVersionKind().Empty() {
+		return fmt.Errorf(message, obj.GetObjectKind().GroupVersionKind(), obj.GetName(), obj.GetNamespace(), err)
+	} else {
+		return fmt.Errorf(message, reflect.TypeOf(obj), obj.GetName(), obj.GetNamespace(), err)
+	}
 }
 
 func prepareForSSA(obj client.Object, scheme *runtime.Scheme) error {

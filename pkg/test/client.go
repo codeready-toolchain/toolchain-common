@@ -33,9 +33,6 @@ func NewFakeClient(t T, initObjs ...client.Object) *FakeClient {
 	return &FakeClient{Client: cl, T: t}
 }
 
-func FakeSSA(fakeClient *FakeClient) {
-}
-
 type FakeClient struct {
 	client.Client
 	T                T

@@ -2,6 +2,7 @@ package client_test
 
 import (
 	"context"
+	stderrors "errors"
 	"testing"
 
 	"github.com/codeready-toolchain/toolchain-common/pkg/client"
@@ -13,7 +14,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestSsaClient(t *testing.T) {
@@ -150,6 +153,88 @@ func TestSsaClient(t *testing.T) {
 			inCluster := &corev1.ConfigMap{}
 			require.True(t, errors.IsNotFound(cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster)))
 		})
+		t.Run("propagates k8s errors", func(t *testing.T) {
+			// given
+			cl, acl := NewTestSsaApplyClient(t)
+			cl.MockPatch = func(ctx context.Context, obj runtimeclient.Object, patch runtimeclient.Patch, opts ...runtimeclient.PatchOption) error {
+				return errors.NewForbidden(schema.GroupResource{}, "asdf", stderrors.New("fabricated"))
+			}
+			obj := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "obj",
+					Namespace: "default",
+				},
+			}
+
+			// when
+			err := acl.ApplyObject(context.TODO(), obj)
+
+			// then
+			assert.True(t, errors.IsForbidden(err))
+		})
+		t.Run("error message format", func(t *testing.T) {
+			t.Run("on option application error", func(t *testing.T) {
+				// given
+				_, acl := NewTestSsaApplyClient(t)
+				obj := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "obj",
+						Namespace: "default",
+					},
+				}
+				invalidOwner := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "obj",
+						Namespace: "differentNamespace",
+					},
+				}
+
+				// when
+				err := acl.ApplyObject(context.TODO(), obj, client.SetOwnerReference(invalidOwner))
+
+				// then
+				require.Error(t, err)
+				assert.Equal(t, "unable to patch '*v1.ConfigMap' called 'obj' in namespace 'default': failed to configure the apply function: cross-namespace owner references are disallowed, owner's namespace differentNamespace, obj's namespace default", err.Error())
+			})
+			t.Run("on SSA prep error", func(t *testing.T) {
+				// given
+				cl := fake.NewClientBuilder().WithScheme(runtime.NewScheme()).Build()
+				acl := client.NewSSAApplyClient(cl, "testOwner")
+
+				obj := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "obj",
+						Namespace: "default",
+					},
+				}
+
+				// when
+				err := acl.ApplyObject(context.TODO(), obj)
+
+				// then
+				require.Error(t, err)
+				assert.Equal(t, "unable to patch '*v1.ConfigMap' called 'obj' in namespace 'default': failed to prepare the object for SSA: no kind is registered for the type v1.ConfigMap in scheme \"pkg/runtime/scheme.go:100\"", err.Error())
+			})
+			t.Run("on k8s error", func(t *testing.T) {
+				// given
+				cl, acl := NewTestSsaApplyClient(t)
+				cl.MockPatch = func(ctx context.Context, obj runtimeclient.Object, patch runtimeclient.Patch, opts ...runtimeclient.PatchOption) error {
+					return errors.NewForbidden(schema.GroupResource{}, "asdf", stderrors.New("fabricated"))
+				}
+				obj := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "obj",
+						Namespace: "default",
+					},
+				}
+
+				// when
+				err := acl.ApplyObject(context.TODO(), obj)
+
+				// then
+				assert.Equal(t, "unable to patch '/v1, Kind=ConfigMap' called 'obj' in namespace 'default': forbidden: fabricated", err.Error())
+			})
+		})
 	})
 }
 
@@ -183,9 +268,8 @@ func TestEnsureGVK(t *testing.T) {
 	})
 }
 
-func NewTestSsaApplyClient(t *testing.T, initObjs ...runtimeclient.Object) (runtimeclient.Client, *client.SSAApplyClient) {
+func NewTestSsaApplyClient(t *testing.T, initObjs ...runtimeclient.Object) (*test.FakeClient, *client.SSAApplyClient) {
 	cl := test.NewFakeClient(t, initObjs...)
-	test.FakeSSA(cl)
 
 	return cl, &client.SSAApplyClient{
 		Client:     cl,
