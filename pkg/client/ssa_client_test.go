@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/codeready-toolchain/toolchain-common/pkg/client"
@@ -16,6 +17,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/rest"
+	"k8s.io/utils/pointer"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -153,6 +156,91 @@ func TestSsaClient(t *testing.T) {
 			// then
 			inCluster := &corev1.ConfigMap{}
 			require.True(t, errors.IsNotFound(cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster)))
+		})
+		t.Run("MigrateSSA", func(t *testing.T) {
+			for _, setup := range []struct {
+				defaultMigrate    bool
+				explicitMigrate   *bool
+				migrationExpected bool
+			}{
+				{
+					defaultMigrate:    false,
+					explicitMigrate:   pointer.Bool(true),
+					migrationExpected: true,
+				},
+				{
+					defaultMigrate:    false,
+					explicitMigrate:   pointer.Bool(false),
+					migrationExpected: false,
+				},
+				{
+					defaultMigrate:    false,
+					explicitMigrate:   nil,
+					migrationExpected: false,
+				},
+				{
+					defaultMigrate:    true,
+					explicitMigrate:   pointer.Bool(true),
+					migrationExpected: true,
+				},
+				{
+					defaultMigrate:    true,
+					explicitMigrate:   pointer.Bool(false),
+					migrationExpected: false,
+				},
+				{
+					defaultMigrate:    true,
+					explicitMigrate:   nil,
+					migrationExpected: true,
+				},
+			} {
+				testName := fmt.Sprintf("default: %v, explicit: %v", setup.defaultMigrate, setup.explicitMigrate)
+				t.Run(testName, func(t *testing.T) {
+					// given
+					obj := &corev1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "obj",
+							Namespace: "default",
+							ManagedFields: []metav1.ManagedFieldsEntry{
+								{
+									FieldsType: "FieldsV1",
+									FieldsV1:   &metav1.FieldsV1{Raw: []byte(`{"f:spec": {"f:selector": {}}}`)},
+									Manager:    strings.Split(rest.DefaultKubernetesUserAgent(), "/")[0],
+									Operation:  metav1.ManagedFieldsOperationUpdate,
+								},
+							},
+						},
+						Spec: corev1.ServiceSpec{},
+					}
+					toApply := obj.DeepCopy()
+					toApply.SetManagedFields(nil)
+
+					cl, acl := NewTestSsaApplyClient(t, obj)
+					acl.MigrateSSAByDefault = setup.defaultMigrate
+
+					// when
+					var opts []client.SSAApplyObjectOption
+					if setup.explicitMigrate != nil {
+						opts = append(opts, client.MigrateSSA(*setup.explicitMigrate))
+					}
+					inCluster := &corev1.Service{}
+					require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
+					require.NoError(t, acl.ApplyObject(context.TODO(), toApply, opts...))
+
+					// then
+					inCluster = &corev1.Service{}
+					require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
+					if setup.migrationExpected {
+						assert.Len(t, inCluster.ManagedFields, 1)
+						assert.Equal(t, "test-field-owner", inCluster.ManagedFields[0].Manager)
+						assert.Equal(t, metav1.ManagedFieldsOperationApply, inCluster.ManagedFields[0].Operation)
+					} else {
+						assert.Len(t, inCluster.ManagedFields, 1)
+						assert.NotEqual(t, "test-field-owner", inCluster.ManagedFields[0].Manager)
+						assert.Equal(t, metav1.ManagedFieldsOperationUpdate, inCluster.ManagedFields[0].Operation)
+					}
+				})
+			}
 		})
 		t.Run("propagates k8s errors", func(t *testing.T) {
 			// given
