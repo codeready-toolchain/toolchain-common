@@ -18,7 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -165,12 +165,12 @@ func TestSsaClient(t *testing.T) {
 			}{
 				{
 					defaultMigrate:    false,
-					explicitMigrate:   pointer.Bool(true),
+					explicitMigrate:   ptr.To(true),
 					migrationExpected: true,
 				},
 				{
 					defaultMigrate:    false,
-					explicitMigrate:   pointer.Bool(false),
+					explicitMigrate:   ptr.To(false),
 					migrationExpected: false,
 				},
 				{
@@ -180,12 +180,12 @@ func TestSsaClient(t *testing.T) {
 				},
 				{
 					defaultMigrate:    true,
-					explicitMigrate:   pointer.Bool(true),
+					explicitMigrate:   ptr.To(true),
 					migrationExpected: true,
 				},
 				{
 					defaultMigrate:    true,
-					explicitMigrate:   pointer.Bool(false),
+					explicitMigrate:   ptr.To(false),
 					migrationExpected: false,
 				},
 				{
@@ -194,7 +194,15 @@ func TestSsaClient(t *testing.T) {
 					migrationExpected: true,
 				},
 			} {
-				testName := fmt.Sprintf("default: %v, explicit: %v", setup.defaultMigrate, setup.explicitMigrate)
+				explicit := "<nil>"
+				if setup.explicitMigrate != nil {
+					if *setup.explicitMigrate {
+						explicit = "true"
+					} else {
+						explicit = "false"
+					}
+				}
+				testName := fmt.Sprintf("default: %v, explicit: %s", setup.defaultMigrate, explicit)
 				t.Run(testName, func(t *testing.T) {
 					// given
 					obj := &corev1.Service{
@@ -216,7 +224,7 @@ func TestSsaClient(t *testing.T) {
 					toApply.SetManagedFields(nil)
 
 					cl, acl := NewTestSsaApplyClient(t, obj)
-					acl.MigrateSSAByDefault = setup.defaultMigrate
+					acl.DefaultBehavior.MigrateSSA = setup.defaultMigrate
 
 					// when
 					var opts []client.SSAApplyObjectOption
@@ -238,6 +246,219 @@ func TestSsaClient(t *testing.T) {
 						assert.Len(t, inCluster.ManagedFields, 1)
 						assert.NotEqual(t, "test-field-owner", inCluster.ManagedFields[0].Manager)
 						assert.Equal(t, metav1.ManagedFieldsOperationUpdate, inCluster.ManagedFields[0].Operation)
+					}
+				})
+			}
+		})
+		t.Run("EnsureExclusiveFieldOwnership", func(t *testing.T) {
+			for _, setup := range []struct {
+				defaultEnsure  bool
+				explicitEnsure *bool
+				ensureExpected bool
+			}{
+				{
+					defaultEnsure:  false,
+					explicitEnsure: ptr.To(true),
+					ensureExpected: true,
+				},
+				{
+					defaultEnsure:  false,
+					explicitEnsure: ptr.To(false),
+					ensureExpected: false,
+				},
+				{
+					defaultEnsure:  false,
+					explicitEnsure: nil,
+					ensureExpected: false,
+				},
+				{
+					defaultEnsure:  true,
+					explicitEnsure: ptr.To(true),
+					ensureExpected: true,
+				},
+				{
+					defaultEnsure:  true,
+					explicitEnsure: ptr.To(false),
+					ensureExpected: false,
+				},
+				{
+					defaultEnsure:  true,
+					explicitEnsure: nil,
+					ensureExpected: true,
+				},
+			} {
+				explicit := "<nil>"
+				if setup.explicitEnsure != nil {
+					if *setup.explicitEnsure {
+						explicit = "true"
+					} else {
+						explicit = "false"
+					}
+				}
+				testName := fmt.Sprintf("perform default: %v, explicit: %s", setup.defaultEnsure, explicit)
+				t.Run(testName, func(t *testing.T) {
+					// given
+					obj := &corev1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "obj",
+							Namespace: "default",
+							ManagedFields: []metav1.ManagedFieldsEntry{
+								{
+									FieldsType: "FieldsV1",
+									FieldsV1:   &metav1.FieldsV1{Raw: []byte(`{"f:spec":{"f:selector":{"f:a":{}}}}`)},
+									Manager:    "the-other-guy",
+									Operation:  metav1.ManagedFieldsOperationUpdate,
+								},
+								{
+									FieldsType: "FieldsV1",
+									FieldsV1:   &metav1.FieldsV1{Raw: []byte(`{"f:spec":{"f:selector":{"f:a":{}}}}`)},
+									Manager:    "test-field-owner",
+									Operation:  metav1.ManagedFieldsOperationUpdate,
+								},
+							},
+						},
+						Spec: corev1.ServiceSpec{
+							Selector: map[string]string{"a": "b"},
+						},
+					}
+					toApply := obj.DeepCopy()
+					toApply.SetManagedFields(nil)
+
+					cl, acl := NewTestSsaApplyClient(t, obj)
+					acl.DefaultBehavior.EnsureExclusiveFieldOwnership = setup.defaultEnsure
+
+					// when
+					var opts []client.SSAApplyObjectOption
+					if setup.explicitEnsure != nil {
+						opts = append(opts, client.EnsureExclusiveFieldOwnership(*setup.explicitEnsure))
+					}
+					require.NoError(t, acl.ApplyObject(context.TODO(), toApply, opts...))
+
+					// then
+					inCluster := &corev1.Service{}
+					require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
+					if setup.ensureExpected {
+						assert.Len(t, inCluster.ManagedFields, 1)
+						assert.Equal(t, "test-field-owner", inCluster.ManagedFields[0].Manager)
+						assert.Equal(t, metav1.ManagedFieldsOperationApply, inCluster.ManagedFields[0].Operation)
+					} else {
+						assert.Len(t, inCluster.ManagedFields, 2)
+						assert.NotEqual(t, "test-field-owner", inCluster.ManagedFields[0].Manager)
+						assert.Equal(t, metav1.ManagedFieldsOperationUpdate, inCluster.ManagedFields[0].Operation)
+					}
+				})
+			}
+
+			for _, setup := range []struct {
+				firstManager            string
+				firstOperation          metav1.ManagedFieldsOperationType
+				firstFields             []byte
+				secondManager           string
+				secondOperation         metav1.ManagedFieldsOperationType
+				secondFields            []byte
+				expectedNumberOfEntries int
+				expectedFirstManager    string
+				expectedSecondManager   string
+				expectedFirstFields     []byte
+				expectedFirstOperation  metav1.ManagedFieldsOperationType
+				expectedSecondOperation metav1.ManagedFieldsOperationType
+				expectedSecondFields    []byte
+			}{
+				{
+					firstManager:            "the-other-guy",
+					firstOperation:          metav1.ManagedFieldsOperationApply,
+					firstFields:             []byte(`{"f:spec":{"f:selector":{"f:a":{}}}}`),
+					secondManager:           "test-field-owner",
+					secondOperation:         metav1.ManagedFieldsOperationUpdate,
+					secondFields:            []byte(`{"f:spec":{"f:selector":{"f:a":{}}}}`),
+					expectedNumberOfEntries: 1,
+					expectedFirstManager:    "test-field-owner",
+					expectedFirstOperation:  metav1.ManagedFieldsOperationApply,
+					expectedFirstFields:     []byte(`{"f:metadata":{"f:annotations":{"f:a":{}}},"f:spec":{"f:selector":{"f:a":{}}}}`),
+				},
+				{
+					firstManager:            "test-field-owner",
+					firstOperation:          metav1.ManagedFieldsOperationUpdate,
+					firstFields:             []byte(`{"f:metadata":{"f:annotations":{"f:a":{}}}}`),
+					secondManager:           "test-field-owner",
+					secondOperation:         metav1.ManagedFieldsOperationApply,
+					secondFields:            []byte(`{"f:spec":{"f:selector":{"f:a":{}}}}`),
+					expectedNumberOfEntries: 1,
+					expectedFirstManager:    "test-field-owner",
+					expectedFirstOperation:  metav1.ManagedFieldsOperationApply,
+					expectedFirstFields:     []byte(`{"f:metadata":{"f:annotations":{"f:a":{}}},"f:spec":{"f:selector":{"f:a":{}}}}`),
+				},
+				{
+					firstManager:            "the-other-guy",
+					firstOperation:          metav1.ManagedFieldsOperationUpdate,
+					firstFields:             []byte(`{"f:metadata":{"f:annotations":{"f:a":{},"f:c":{}}}}`),
+					secondManager:           "test-field-owner",
+					secondOperation:         metav1.ManagedFieldsOperationApply,
+					secondFields:            []byte(`{"f:spec":{"f:selector":{"f:a":{}}}}`),
+					expectedNumberOfEntries: 2,
+					expectedFirstManager:    "the-other-guy",
+					expectedFirstOperation:  metav1.ManagedFieldsOperationUpdate,
+					expectedFirstFields:     []byte(`{"f:metadata":{"f:annotations":{"f:c":{}}}}`),
+					expectedSecondManager:   "test-field-owner",
+					expectedSecondOperation: metav1.ManagedFieldsOperationApply,
+					expectedSecondFields:    []byte(`{"f:metadata":{"f:annotations":{"f:a":{}}},"f:spec":{"f:selector":{"f:a":{}}}}`),
+				},
+			} {
+				testName := fmt.Sprintf("shape setup: first(manager: %s, operation: %s, fields: %s), second(manager: %s, operation: %s, fields: %s)", setup.firstManager, setup.firstOperation, string(setup.firstFields), setup.secondManager, setup.secondOperation, string(setup.secondFields))
+				t.Run(testName, func(t *testing.T) {
+					// given
+					obj := &corev1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:          "obj",
+							Namespace:     "default",
+							ManagedFields: []metav1.ManagedFieldsEntry{},
+							Annotations:   map[string]string{"a": "b"},
+						},
+						Spec: corev1.ServiceSpec{
+							Selector: map[string]string{"a": "b"},
+						},
+					}
+					if setup.firstManager != "" {
+						obj.ManagedFields = append(obj.ManagedFields, metav1.ManagedFieldsEntry{
+							FieldsType: "FieldsV1",
+							FieldsV1:   &metav1.FieldsV1{Raw: setup.firstFields},
+							Manager:    setup.firstManager,
+							Operation:  setup.firstOperation,
+						})
+					}
+					if setup.secondManager != "" {
+						obj.ManagedFields = append(obj.ManagedFields, metav1.ManagedFieldsEntry{
+							FieldsType: "FieldsV1",
+							FieldsV1:   &metav1.FieldsV1{Raw: setup.secondFields},
+							Manager:    setup.secondManager,
+							Operation:  setup.secondOperation,
+						})
+					}
+
+					toApply := obj.DeepCopy()
+					toApply.SetManagedFields(nil)
+
+					cl, acl := NewTestSsaApplyClient(t, obj)
+					acl.DefaultBehavior.EnsureExclusiveFieldOwnership = true
+
+					// when
+					require.NoError(t, acl.ApplyObject(context.TODO(), toApply))
+
+					// then
+					inCluster := &corev1.Service{}
+					require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
+
+					assert.Len(t, inCluster.ManagedFields, setup.expectedNumberOfEntries)
+
+					if setup.expectedNumberOfEntries > 0 {
+						assert.Equal(t, setup.expectedFirstManager, inCluster.ManagedFields[0].Manager)
+						assert.Equal(t, setup.expectedFirstOperation, inCluster.ManagedFields[0].Operation)
+						assert.Equal(t, string(setup.expectedFirstFields), string(inCluster.ManagedFields[0].FieldsV1.Raw))
+					}
+					if setup.expectedNumberOfEntries > 1 {
+						assert.Equal(t, setup.expectedSecondManager, inCluster.ManagedFields[1].Manager)
+						assert.Equal(t, setup.expectedSecondOperation, inCluster.ManagedFields[1].Operation)
+						assert.Equal(t, string(setup.expectedSecondFields), string(inCluster.ManagedFields[1].FieldsV1.Raw))
 					}
 				})
 			}
