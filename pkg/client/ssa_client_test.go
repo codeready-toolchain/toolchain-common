@@ -18,7 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -165,12 +165,12 @@ func TestSsaClient(t *testing.T) {
 			}{
 				{
 					defaultMigrate:    false,
-					explicitMigrate:   pointer.Bool(true),
+					explicitMigrate:   ptr.To(true),
 					migrationExpected: true,
 				},
 				{
 					defaultMigrate:    false,
-					explicitMigrate:   pointer.Bool(false),
+					explicitMigrate:   ptr.To(false),
 					migrationExpected: false,
 				},
 				{
@@ -180,12 +180,12 @@ func TestSsaClient(t *testing.T) {
 				},
 				{
 					defaultMigrate:    true,
-					explicitMigrate:   pointer.Bool(true),
+					explicitMigrate:   ptr.To(true),
 					migrationExpected: true,
 				},
 				{
 					defaultMigrate:    true,
-					explicitMigrate:   pointer.Bool(false),
+					explicitMigrate:   ptr.To(false),
 					migrationExpected: false,
 				},
 				{
