@@ -31,6 +31,7 @@ func NewReconciler(mgr manager.Manager, namespace string, timeout time.Duration)
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		Named("ToolchainClusterCache").
 		For(&toolchainv1alpha1.ToolchainCluster{}, builder.WithPredicates(namespacePredicate{namespace: r.namespace})).
 		Complete(r)
 }

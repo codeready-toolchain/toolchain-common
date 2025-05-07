@@ -171,7 +171,7 @@ func TestNewClient(t *testing.T) {
 		t.Run("deleteAllOf", func(t *testing.T) {
 			created, retrieved := createAndGetDeployment(t, fclient)
 			dep2 := retrieved.DeepCopy()
-			dep2.Name = dep2.Name + "-2"
+			dep2.Name += "-2"
 			dep2.ResourceVersion = ""
 			require.NoError(t, fclient.Create(context.TODO(), dep2))
 
