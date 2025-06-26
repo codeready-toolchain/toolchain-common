@@ -21,7 +21,7 @@ import (
 
 var log = logf.Log.WithName("templates")
 
-type EnsureObject func(toEnsure runtimeclient.Object, canUpdate bool, tierName string) (bool, error)
+type EnsureObject func(toEnsure runtimeclient.Object, tierName string) error
 
 type TierGenerator struct {
 	ensureObject    EnsureObject
@@ -76,7 +76,6 @@ func GenerateTiers(s *runtime.Scheme, ensureObject EnsureObject, namespace strin
 
 // newNSTemplateTierGenerator loads templates from the provided assets and processes the tierTemplates and NSTemplateTiers
 func newNSTemplateTierGenerator(s *runtime.Scheme, ensureObject EnsureObject, namespace string, metadata map[string]string, files map[string][]byte) (*TierGenerator, error) {
-
 	templatesByTier, err := loadTemplatesByTiers(metadata, files)
 	if err != nil {
 		return nil, err
@@ -141,7 +140,6 @@ type BasedOnTier struct {
 // an optional `template` for the cluster resources (`clusterTemplate`) and the NSTemplateTier resource object.
 // Each `template` object contains a `revision` (`string`) and the `content` of the template to apply (`[]byte`)
 func loadTemplatesByTiers(metadata map[string]string, files map[string][]byte) (map[string]*tierData, error) {
-
 	results := make(map[string]*tierData)
 	for name, content := range files {
 		// split the name using the `/` separator
@@ -203,7 +201,6 @@ func loadTemplatesByTiers(metadata map[string]string, files map[string][]byte) (
 
 // initTierTemplates generates all TierTemplate resources, and adds them to the tier map indexed by tier name
 func (t *TierGenerator) initTierTemplates() error {
-
 	// process tiers in alphabetical order
 	tiers := make([]string, 0, len(t.templatesByTier))
 	for tier := range t.templatesByTier {
@@ -279,7 +276,7 @@ func (t *TierGenerator) createTierTemplates() error {
 		for _, tierTmpl := range tierTmpls.tierTemplates {
 			log.Info("creating TierTemplate", "namespace", tierTmpl.Namespace, "name", tierTmpl.Name)
 			// using the "standard" client since we don't need to support updates on such resources, they should be immutable
-			if _, err := t.ensureObject(tierTmpl, false, tierName); err != nil {
+			if err := t.ensureObject(tierTmpl, tierName); err != nil {
 				return errors.Wrapf(err, "unable to create the '%s' TierTemplate in namespace '%s'", tierTmpl.Name, tierTmpl.Namespace)
 			}
 			log.Info("TierTemplate resource created", "namespace", tierTmpl.Namespace, "name", tierTmpl.Name)
@@ -336,7 +333,6 @@ func newTierTemplateName(tier, kind, revision string) string {
 
 // newNSTemplateTiers generates all NSTemplateTier resources and adds them to the tier map
 func (t *TierGenerator) initNSTemplateTiers() error {
-
 	for tierName, tierData := range t.templatesByTier {
 		nsTemplateTier := tierData.rawTemplates.nsTemplateTier
 		tierTemplates := tierData.tierTemplates
@@ -360,7 +356,6 @@ func (t *TierGenerator) initNSTemplateTiers() error {
 
 // createNSTemplateTiers creates the NSTemplateTier resources from the tier map
 func (t *TierGenerator) createNSTemplateTiers() error {
-
 	for tierName, tierData := range t.templatesByTier {
 		if len(tierData.objects) != 1 {
 			return fmt.Errorf("there is an unexpected number of NSTemplateTier object to be applied for tier name '%s'; expected: 1; actual: %d", tierName, len(tierData.objects))
@@ -380,7 +375,7 @@ func (t *TierGenerator) createNSTemplateTiers() error {
 			labels = make(map[string]string)
 		}
 		labels[toolchainv1alpha1.ProviderLabelKey] = toolchainv1alpha1.ProviderLabelValue
-		updated, err := t.ensureObject(tier, true, tierName)
+		err := t.ensureObject(tier, tierName)
 		if err != nil {
 			return errors.Wrapf(err, "unable to create or update the '%s' NSTemplateTier", tierName)
 		}
@@ -394,11 +389,7 @@ func (t *TierGenerator) createNSTemplateTiers() error {
 		for role, nsTemplate := range tier.Spec.SpaceRoles {
 			tierLog = tierLog.WithValues(fmt.Sprintf("spaceRoleTemplate-%s", role), nsTemplate.TemplateRef)
 		}
-		if updated {
-			tierLog.Info("NSTemplateTier was either updated or created")
-		} else {
-			tierLog.Info("NSTemplateTier wasn't updated nor created: the spec was already set as expected")
-		}
+		tierLog.Info("NSTemplateTier was patched")
 	}
 	return nil
 }
