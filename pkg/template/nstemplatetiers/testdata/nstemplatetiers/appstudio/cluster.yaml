@@ -19,7 +19,6 @@ objects:
         requests.ephemeral-storage: 7Gi
         count/persistentvolumeclaims: "5"
     selector:
-      annotations: null
       labels:
         matchLabels:
           toolchain.dev.openshift.com/space: ${SPACE_NAME}

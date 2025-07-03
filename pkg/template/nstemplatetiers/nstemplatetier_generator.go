@@ -275,7 +275,6 @@ func (t *TierGenerator) createTierTemplates() error {
 	for tierName, tierTmpls := range t.templatesByTier {
 		for _, tierTmpl := range tierTmpls.tierTemplates {
 			log.Info("creating TierTemplate", "namespace", tierTmpl.Namespace, "name", tierTmpl.Name)
-			// using the "standard" client since we don't need to support updates on such resources, they should be immutable
 			if err := t.ensureObject(tierTmpl, tierName); err != nil {
 				return errors.Wrapf(err, "unable to create the '%s' TierTemplate in namespace '%s'", tierTmpl.Name, tierTmpl.Namespace)
 			}

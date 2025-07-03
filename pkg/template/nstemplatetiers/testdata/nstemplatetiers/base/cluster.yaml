@@ -17,7 +17,6 @@ objects:
         requests.storage: 7Gi
         persistentvolumeclaims: "5"
     selector:
-      annotations: null
       labels:
         matchLabels:
           toolchain.dev.openshift.com/space: ${SPACE_NAME}

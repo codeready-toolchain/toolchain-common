@@ -284,7 +284,7 @@ func TestGenerateTiers(t *testing.T) {
 			require.Len(t, tierTmpls.Items, 16) // 4 items for advanced and base tiers + 3 for nocluster tier + 4 for appstudio
 			origTemplates := map[string]*toolchainv1alpha1.TierTemplate{}
 			for _, tmpl := range tierTmpls.Items {
-				origTemplates[tmpl.Name] = &tmpl
+				origTemplates[tmpl.Name] = tmpl.DeepCopy()
 			}
 
 			// when calling CreateOrUpdateResources a second time
@@ -299,10 +299,13 @@ func TestGenerateTiers(t *testing.T) {
 			require.Len(t, tierTmpls.Items, 16) // 4 items for advanced and base tiers + 3 for nocluster tier + 4 for appstudio
 			// check that the tier templates are unchanged
 			for _, tierTmpl := range tierTmpls.Items {
-				assert.True(t, reflect.DeepEqual(origTemplates[tierTmpl.Name].Spec, tierTmpl.Spec))
-			}
-
-			// verify that 4 NSTemplateTier CRs were created:
+				// these two should always mean the same thing. If they don't, it means there's an issue with serde of
+				// the templates where template json -> object in cluster -> template json doesn't yield the same thing.
+				// (the json reprentation is used to detect generation change in our test.Client).
+				// This is usually caused by e.g explicitly using a zero value of some property in the template file.
+				assert.True(t, reflect.DeepEqual(origTemplates[tierTmpl.Name].Spec, tierTmpl.Spec), "deep equal different on %T %s", tierTmpl, tierTmpl.Name)
+				assert.Equal(t, int64(1), tierTmpl.Generation, "generation different on %T %s", tierTmpl, tierTmpl.Name) // unchanged
+			} // verify that 4 NSTemplateTier CRs were created:
 			for _, tierName := range []string{"advanced", "base", "nocluster", "appstudio"} {
 				tier := toolchainv1alpha1.NSTemplateTier{}
 				err = clt.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: tierName}, &tier)
