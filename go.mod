@@ -1,8 +1,6 @@
 module github.com/codeready-toolchain/toolchain-common
 
-go 1.22.0
-
-toolchain go1.22.12
+go 1.23.0
 
 require (
 	github.com/go-logr/logr v1.4.2
@@ -34,7 +32,7 @@ require (
 	github.com/migueleliasweb/go-github-mock v0.0.18
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/client_model v0.6.1
-	golang.org/x/oauth2 v0.21.0
+	golang.org/x/oauth2 v0.27.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/kubectl v0.31.2
 	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
