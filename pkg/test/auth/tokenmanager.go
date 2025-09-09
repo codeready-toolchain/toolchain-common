@@ -151,6 +151,13 @@ func WithAccountIDClaim(accountID string) ExtraClaim {
 	}
 }
 
+// WithAccountNumberClaim sets the `account_number` claim in the token to generate
+func WithAccountNumberClaim(accountNumber string) ExtraClaim {
+	return func(token *jwt.Token) {
+		token.Claims.(*MyClaims).AccountNumber = accountNumber
+	}
+}
+
 // WithAudClaim sets the `aud` claim in the token to generate
 func WithAudClaim(aud []string) ExtraClaim {
 	return func(token *jwt.Token) {
@@ -234,6 +241,7 @@ type MyClaims struct {
 	OriginalSub       string `json:"original_sub"`
 	UserID            string `json:"user_id"`
 	AccountID         string `json:"account_id"`
+	AccountNumber     string `json:"account_number,omitempty"`
 }
 
 // GenerateToken generates a default token.

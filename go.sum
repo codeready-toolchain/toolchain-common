@@ -27,8 +27,8 @@ github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDk
 github.com/cloudflare/circl v1.1.0/go.mod h1:prBCrKB9DV4poKZY1l9zBXg2QJY7mvgRvtMxxK7fi4I=
 github.com/cloudflare/circl v1.6.1 h1:zqIqSPIndyBh1bjLVVDHMPpVKqp8Su/V+6MeDzzQBQ0=
 github.com/cloudflare/circl v1.6.1/go.mod h1:uddAzsPgqdMAYatqJ0lsjX1oECcQLIlRpzZh3pJrofs=
-github.com/codeready-toolchain/api v0.0.0-20250506092100-39b4862e1271 h1:AHrFr/aPuJ4+0zHw4sFXcfMA92kChy12JAPS5bLODlw=
-github.com/codeready-toolchain/api v0.0.0-20250506092100-39b4862e1271/go.mod h1:20258od6i5+jP406Z76YaI2ow/vc7URwsDU2bokpkRE=
+github.com/codeready-toolchain/api v0.0.0-20250909075145-ca043a618f0f h1:IZ3Wq4iC0765HP369U3+08NFb0rK/NJCKfRjj8OdPVo=
+github.com/codeready-toolchain/api v0.0.0-20250909075145-ca043a618f0f/go.mod h1:20258od6i5+jP406Z76YaI2ow/vc7URwsDU2bokpkRE=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
