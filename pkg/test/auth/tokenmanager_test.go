@@ -356,6 +356,25 @@ func TestTokenManagerTokens(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, "987654321", claims.AccountID)
 	})
+	t.Run("create token with account_number extra claim", func(t *testing.T) {
+		username := uuid.NewString()
+		identity0 := &Identity{
+			ID:       uuid.New(),
+			Username: username,
+		}
+		// generate the token
+		encodedToken, err := tokenManager.GenerateSignedToken(*identity0, kid0, WithAccountNumberClaim("987654320"))
+		require.NoError(t, err)
+		// unmarshall it again
+		decodedToken, err := jwt.ParseWithClaims(encodedToken, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return &(key0.PublicKey), nil
+		})
+		require.NoError(t, err)
+		require.True(t, decodedToken.Valid)
+		claims, ok := decodedToken.Claims.(*MyClaims)
+		require.True(t, ok)
+		require.Equal(t, "987654320", claims.AccountNumber)
+	})
 }
 
 func TestTokenManagerKeyService(t *testing.T) {
