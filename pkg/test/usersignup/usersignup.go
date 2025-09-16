@@ -281,6 +281,7 @@ func NewUserSignup(modifiers ...Modifier) *toolchainv1alpha1.UserSignup {
 				GivenName:         "Foo",
 				FamilyName:        "Bar",
 				Company:           "Red Hat",
+				AccountNumber:     "4242",
 			},
 		},
 	}
