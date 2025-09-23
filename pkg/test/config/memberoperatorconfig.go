@@ -89,41 +89,6 @@ func (o AutoscalerOption) BufferReplicas(value int) AutoscalerOption {
 	return o
 }
 
-type CheOption struct {
-	*MemberOperatorConfigOptionImpl
-}
-
-func Che() *CheOption {
-	o := &CheOption{
-		MemberOperatorConfigOptionImpl: &MemberOperatorConfigOptionImpl{},
-	}
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.Che = toolchainv1alpha1.CheConfig{}
-	})
-	return o
-}
-
-func (o CheOption) Required(value bool) CheOption {
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.Che.Required = &value
-	})
-	return o
-}
-
-func (o CheOption) Namespace(value string) CheOption {
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.Che.Namespace = &value
-	})
-	return o
-}
-
-func (o CheOption) RouteName(value string) CheOption {
-	o.addFunction(func(config *toolchainv1alpha1.MemberOperatorConfig) {
-		config.Spec.Che.RouteName = &value
-	})
-	return o
-}
-
 type ConsoleOption struct {
 	*MemberOperatorConfigOptionImpl
 }

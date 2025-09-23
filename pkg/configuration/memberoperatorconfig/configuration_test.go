@@ -84,51 +84,6 @@ func TestAutoscaler(t *testing.T) {
 	})
 }
 
-func TestChe(t *testing.T) {
-	t.Run("is required", func(t *testing.T) {
-		t.Run("default", func(t *testing.T) {
-			cfg := commonconfig.NewMemberOperatorConfigWithReset(t)
-			memberOperatorCfg := Configuration{cfg: &cfg.Spec}
-
-			assert.False(t, memberOperatorCfg.Che().IsRequired())
-		})
-		t.Run("non-default", func(t *testing.T) {
-			cfg := commonconfig.NewMemberOperatorConfigWithReset(t, testconfig.Che().Required(true))
-			memberOperatorCfg := Configuration{cfg: &cfg.Spec}
-
-			assert.True(t, memberOperatorCfg.Che().IsRequired())
-		})
-	})
-	t.Run("namespace", func(t *testing.T) {
-		t.Run("default", func(t *testing.T) {
-			cfg := commonconfig.NewMemberOperatorConfigWithReset(t)
-			memberOperatorCfg := Configuration{cfg: &cfg.Spec}
-
-			assert.Equal(t, "codeready-workspaces-operator", memberOperatorCfg.Che().Namespace())
-		})
-		t.Run("non-default", func(t *testing.T) {
-			cfg := commonconfig.NewMemberOperatorConfigWithReset(t, testconfig.Che().Namespace("crw"))
-			memberOperatorCfg := Configuration{cfg: &cfg.Spec}
-
-			assert.Equal(t, "crw", memberOperatorCfg.Che().Namespace())
-		})
-	})
-	t.Run("route name", func(t *testing.T) {
-		t.Run("default", func(t *testing.T) {
-			cfg := commonconfig.NewMemberOperatorConfigWithReset(t)
-			memberOperatorCfg := Configuration{cfg: &cfg.Spec}
-
-			assert.Equal(t, "codeready", memberOperatorCfg.Che().RouteName())
-		})
-		t.Run("non-default", func(t *testing.T) {
-			cfg := commonconfig.NewMemberOperatorConfigWithReset(t, testconfig.Che().RouteName("crw"))
-			memberOperatorCfg := Configuration{cfg: &cfg.Spec}
-
-			assert.Equal(t, "crw", memberOperatorCfg.Che().RouteName())
-		})
-	})
-}
-
 func TestGitHubSecret(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
 		cfg := commonconfig.NewMemberOperatorConfigWithReset(t)

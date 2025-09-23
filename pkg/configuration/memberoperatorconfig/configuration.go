@@ -75,12 +75,6 @@ func (c *Configuration) Autoscaler() AutoscalerConfig {
 	return AutoscalerConfig{autoscaler: c.cfg.Autoscaler}
 }
 
-func (c *Configuration) Che() CheConfig {
-	return CheConfig{
-		che: c.cfg.Che,
-	}
-}
-
 func (c *Configuration) Console() ConsoleConfig {
 	return ConsoleConfig{console: c.cfg.Console}
 }
@@ -156,26 +150,6 @@ func (gh GitHubSecret) githubSecret(secretKey string) string {
 func (gh GitHubSecret) AccessTokenKey() string {
 	key := commonconfig.GetString(gh.s.AccessTokenKey, "")
 	return gh.githubSecret(key)
-}
-
-type CheConfig struct {
-	che toolchainv1alpha1.CheConfig
-}
-
-func (a CheConfig) IsRequired() bool {
-	return commonconfig.GetBool(a.che.Required, false)
-}
-
-func (a CheConfig) Namespace() string {
-	return commonconfig.GetString(a.che.Namespace, "codeready-workspaces-operator")
-}
-
-func (a CheConfig) RouteName() string {
-	return commonconfig.GetString(a.che.RouteName, "codeready")
-}
-
-func (a CheConfig) IsDevSpacesMode() bool {
-	return a.Namespace() == "crw" && a.RouteName() == "devspaces"
 }
 
 type ConsoleConfig struct {
