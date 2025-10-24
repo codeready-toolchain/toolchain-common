@@ -69,7 +69,7 @@ func TestGetOwners(t *testing.T) {
 				noiseObjects = append(noiseObjects, noise)
 
 				// switch the type of the ownerReference (controller owner, non-controller owner) every second object to test both options properly
-				if i/2 == 0 {
+				if i%2 == 0 {
 					err := controllerruntime.SetControllerReference(owner, initObjects[len(initObjects)-1].(client.Object), scheme.Scheme)
 					require.NoError(t, err)
 				} else {

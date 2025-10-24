@@ -87,7 +87,7 @@ func (o *OwnerFetcher) GetOwners(ctx context.Context, obj metav1.Object) ([]*Obj
 	}
 	// Recursively try to find the top owner
 	ownerOwners, err := o.GetOwners(ctx, ownerObject)
-	if err != nil || owners == nil {
+	if err != nil || ownerOwners == nil {
 		return append(ownerOwners, owner), err
 	}
 	return append(ownerOwners, owner), nil
