@@ -216,7 +216,7 @@ func TestGetOwnersFailures(t *testing.T) {
 				t.Run("general error", func(t *testing.T) {
 					assertCanNotGetObject(t, inaccessibleResource, inaccessibleObject, false)
 				})
-				t.Run("general error", func(t *testing.T) {
+				t.Run("not found error", func(t *testing.T) {
 					assertCanNotGetObject(t, inaccessibleResource, inaccessibleObject, true)
 				})
 			})
