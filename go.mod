@@ -27,7 +27,6 @@ require (
 
 require (
 	github.com/codeready-toolchain/api v0.0.0-20251008084914-06282b83d4cd
-	github.com/codeready-toolchain/member-operator v0.0.0-20251021123459-0568ed2989cf
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-github/v52 v52.0.0
@@ -117,7 +116,6 @@ require (
 	k8s.io/cli-runtime v0.32.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
-	k8s.io/metrics v0.32.2 // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
 	sigs.k8s.io/kustomize/api v0.18.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.18.1 // indirect

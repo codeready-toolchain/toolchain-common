@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
-	"github.com/codeready-toolchain/member-operator/pkg/apis"
 	apiv1 "github.com/openshift/api/apps/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -307,7 +306,9 @@ func (c *fakeDiscoveryClient) ServerPreferredResources() ([]*metav1.APIResourceL
 var vmGVR = schema.GroupVersionResource{Group: "kubevirt.io", Version: "v1", Resource: "virtualmachines"}
 
 func apiSchemeResourceList(t *testing.T) []*metav1.APIResourceList {
-	require.NoError(t, apis.AddToScheme(scheme.Scheme))
+	require.NoError(t, toolchainv1alpha1.AddToScheme(scheme.Scheme))
+	require.NoError(t, appsv1.AddToScheme(scheme.Scheme))
+	require.NoError(t, apiv1.AddToScheme(scheme.Scheme))
 	var resources = []*metav1.APIResourceList{}
 	for gvk := range scheme.Scheme.AllKnownTypes() {
 		resource, _ := meta.UnsafeGuessKindToResource(gvk)
