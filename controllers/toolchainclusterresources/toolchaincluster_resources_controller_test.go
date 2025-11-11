@@ -110,6 +110,7 @@ func prepareReconcile(sa *v1.ServiceAccount, cl *test.FakeClient, templates *emb
 		Client:          cl,
 		Scheme:          scheme.Scheme,
 		Templates:       templates,
+		FieldManager:    "testOwner",
 		templateObjects: templateObjects,
 	}
 	req := reconcile.Request{

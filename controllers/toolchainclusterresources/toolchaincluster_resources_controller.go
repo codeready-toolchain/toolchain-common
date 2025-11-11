@@ -41,6 +41,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager, operatorNamespace string
 	if err != nil {
 		return err
 	}
+
 	mapToOwnerByLabel := handler.EnqueueRequestsFromMapFunc(commoncontroller.MapToControllerByMatchingLabel(toolchainv1alpha1.ProviderLabelKey, ResourceControllerLabelValue))
 	for _, obj := range r.templateObjects {
 		build = build.Watches(obj.DeepCopyObject().(runtimeclient.Object), mapToOwnerByLabel, builder.WithPredicates(commonpredicates.LabelsAndGenerationPredicate{}))
@@ -53,6 +54,7 @@ type Reconciler struct {
 	Client          runtimeclient.Client
 	Scheme          *runtime.Scheme
 	Templates       *embed.FS
+	FieldManager    string
 	templateObjects []*unstructured.Unstructured
 }
 
@@ -72,5 +74,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 
 	// TODO implement delete logic for objects that were renamed/removed from the templates
 
-	return reconcile.Result{}, applycl.ApplyUnstructuredObjectsWithNewLabels(ctx, r.Client, r.templateObjects, newLabels) // apply objects on the cluster
+	cl := applycl.NewSSAApplyClient(r.Client, r.FieldManager)
+	return reconcile.Result{}, applycl.ApplyAll(ctx, cl, r.templateObjects, applycl.EnsureLabels(newLabels)) // apply objects on the cluster
 }
