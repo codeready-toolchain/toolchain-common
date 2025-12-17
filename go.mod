@@ -36,7 +36,7 @@ require (
 	github.com/prometheus/client_model v0.6.1
 	golang.org/x/oauth2 v0.27.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/kubectl v0.32.2
+	k8s.io/kubectl v0.33.2
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 )
 
@@ -112,12 +112,12 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.33.2 // indirect
-	k8s.io/cli-runtime v0.32.2 // indirect
+	k8s.io/cli-runtime v0.33.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
-	sigs.k8s.io/kustomize/api v0.18.0 // indirect
-	sigs.k8s.io/kustomize/kyaml v0.18.1 // indirect
+	sigs.k8s.io/kustomize/api v0.19.0 // indirect
+	sigs.k8s.io/kustomize/kyaml v0.19.0 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
