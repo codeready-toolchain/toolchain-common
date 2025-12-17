@@ -302,7 +302,7 @@ func TestSsaClient(t *testing.T) {
 
 				// then
 				require.Error(t, err)
-				assert.Equal(t, "unable to patch '*v1.ConfigMap' called 'obj' in namespace 'default': failed to prepare the object for SSA: no kind is registered for the type v1.ConfigMap in scheme \"pkg/runtime/scheme.go:100\"", err.Error())
+				assert.Equal(t, "unable to patch '*v1.ConfigMap' called 'obj' in namespace 'default': failed to prepare the object for SSA: no kind is registered for the type v1.ConfigMap in scheme \"pkg/runtime/scheme.go:110\"", err.Error())
 			})
 			t.Run("on k8s error", func(t *testing.T) {
 				// given
