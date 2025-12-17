@@ -238,8 +238,13 @@ func EnsureGVK(obj client.Object, scheme *runtime.Scheme) error {
 
 // Apply is a utility function that just calls `ApplyObject` in a loop on all the supplied objects.
 func (c *SSAApplyClient) Apply(ctx context.Context, toolchainObjects []client.Object, opts ...SSAApplyObjectOption) error {
+	return ApplyAll(ctx, c, toolchainObjects, opts...)
+}
+
+// ApplyAll is a generic version of c.Apply that can accept a slice of anything that implements client.Object.
+func ApplyAll[T client.Object](ctx context.Context, cl *SSAApplyClient, toolchainObjects []T, opts ...SSAApplyObjectOption) error {
 	for _, toolchainObject := range toolchainObjects {
-		if err := c.ApplyObject(ctx, toolchainObject, opts...); err != nil {
+		if err := cl.ApplyObject(ctx, toolchainObject, opts...); err != nil {
 			return err
 		}
 	}
