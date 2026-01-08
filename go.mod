@@ -1,6 +1,6 @@
 module github.com/codeready-toolchain/toolchain-common
 
-go 1.24.0
+go 1.24.4
 
 toolchain go1.24.11
 
@@ -26,7 +26,7 @@ require (
 )
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20260108101803-54d23a1b4f3c
+	github.com/codeready-toolchain/api v0.0.0-20260108115150-4c6695ed18de
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-github/v52 v52.0.0
