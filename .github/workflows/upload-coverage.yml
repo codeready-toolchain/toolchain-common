@@ -18,6 +18,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
 
+      # The 'files' attribute consists of 'coverage/coverage.txt'. 
+      # The 'coverage' directory is created upon the download of the coverage artifact from previous step (it creates a directory with the name of the artifact).
+
       - name: Upload to Codecov
         uses: codecov/codecov-action@v5
         with:
