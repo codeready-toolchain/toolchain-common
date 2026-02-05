@@ -2,7 +2,7 @@ module github.com/codeready-toolchain/toolchain-common
 
 go 1.24.4
 
-toolchain go1.24.11
+toolchain go1.24.13
 
 require (
 	github.com/go-logr/logr v1.4.2
