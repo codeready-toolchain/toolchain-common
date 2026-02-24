@@ -79,13 +79,15 @@ func (o *OwnerFetcher) GetOwners(ctx context.Context, obj metav1.Object) ([]*Obj
 	// Get the owner object; use namespace only for namespaced resources
 	resourceClient := o.dynamicClient.Resource(*gvr)
 	var ownerObject *unstructured.Unstructured
+	nsdName := ownerReference.Name
 	if namespaced {
 		ownerObject, err = resourceClient.Namespace(obj.GetNamespace()).Get(ctx, ownerReference.Name, metav1.GetOptions{})
+		nsdName = fmt.Sprintf("%s/%s", obj.GetNamespace(), ownerReference.Name)
 	} else {
 		ownerObject, err = resourceClient.Get(ctx, ownerReference.Name, metav1.GetOptions{})
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch owner object %s %s (in namespace %s): %w", ownerReference.Name, gvr.String(), obj.GetNamespace(), err)
+		return nil, fmt.Errorf("failed to fetch owner object %s %s : %w", nsdName, gvr.String(), err)
 	}
 	owner := &ObjectWithGVR{
 		Object: ownerObject,
