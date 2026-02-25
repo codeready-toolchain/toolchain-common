@@ -586,13 +586,6 @@ func (o TiersOption) DefaultSpaceTier(value string) TiersOption {
 	return o
 }
 
-func (o TiersOption) DurationBeforeChangeTierRequestDeletion(value string) TiersOption {
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.Tiers.DurationBeforeChangeTierRequestDeletion = &value
-	})
-	return o
-}
-
 func (o TiersOption) FeatureToggle(name string, weight *uint) TiersOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		if config.Spec.Host.Tiers.FeatureToggles == nil {
