@@ -72,14 +72,22 @@ func (o *OwnerFetcher) GetOwners(ctx context.Context, obj metav1.Object) ([]*Obj
 		return nil, nil // No owner
 	}
 	// Get the GVR for the owner
-	gvr, err := gvrForKind(ownerReference.Kind, ownerReference.APIVersion, o.resourceLists)
+	gvr, namespaced, err := gvrForKind(ownerReference.Kind, ownerReference.APIVersion, o.resourceLists)
 	if err != nil {
 		return nil, err
 	}
-	// Get the owner object
-	ownerObject, err := o.dynamicClient.Resource(*gvr).Namespace(obj.GetNamespace()).Get(ctx, ownerReference.Name, metav1.GetOptions{})
+	// Get the owner object; use namespace only for namespaced resources
+	resourceClient := o.dynamicClient.Resource(*gvr)
+	var ownerObject *unstructured.Unstructured
+	nsdName := ownerReference.Name
+	if namespaced {
+		ownerObject, err = resourceClient.Namespace(obj.GetNamespace()).Get(ctx, ownerReference.Name, metav1.GetOptions{})
+		nsdName = fmt.Sprintf("%s/%s", obj.GetNamespace(), ownerReference.Name)
+	} else {
+		ownerObject, err = resourceClient.Get(ctx, ownerReference.Name, metav1.GetOptions{})
+	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch owner object %s %s : %w", nsdName, gvr.String(), err)
 	}
 	owner := &ObjectWithGVR{
 		Object: ownerObject,
@@ -93,24 +101,26 @@ func (o *OwnerFetcher) GetOwners(ctx context.Context, obj metav1.Object) ([]*Obj
 	return append(ownerOwners, owner), nil
 }
 
-// gvrForKind returns GVR for the kind, if it's found in the available API list in the cluster
-// returns an error if not found or failed to parse the API version
-func gvrForKind(kind, apiVersion string, resourceLists []*metav1.APIResourceList) (*schema.GroupVersionResource, error) {
-	gvr, err := findGVRForKind(kind, apiVersion, resourceLists)
+// gvrForKind returns GVR and whether the resource is namespaced for the kind,
+// if it's found in the available API list in the cluster.
+// Returns an error if not found or failed to parse the API version.
+func gvrForKind(kind, apiVersion string, resourceLists []*metav1.APIResourceList) (*schema.GroupVersionResource, bool, error) {
+	gvr, namespaced, err := findGVRForKind(kind, apiVersion, resourceLists)
 	if gvr == nil && err == nil {
-		return nil, fmt.Errorf("no resource found for kind %s in %s", kind, apiVersion)
+		return nil, false, fmt.Errorf("no resource found for kind %s in %s", kind, apiVersion)
 	}
-	return gvr, err
+	return gvr, namespaced, err
 }
 
-// findGVRForKind returns GVR for the kind, if it's found in the available API list in the cluster
-// if not found then returns nil, nil
-// returns nil, error if failed to parse the API version
-func findGVRForKind(kind, apiVersion string, resourceLists []*metav1.APIResourceList) (*schema.GroupVersionResource, error) {
+// findGVRForKind returns GVR and whether the resource is namespaced for the kind,
+// if it's found in the available API list in the cluster.
+// If not found then returns nil, false, nil.
+// Returns nil, false, error if failed to parse the API version.
+func findGVRForKind(kind, apiVersion string, resourceLists []*metav1.APIResourceList) (*schema.GroupVersionResource, bool, error) {
 	// Parse the group and version from the APIVersion (e.g., "apps/v1" -> group: "apps", version: "v1")
 	gv, err := schema.ParseGroupVersion(apiVersion)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse APIVersion %s: %w", apiVersion, err)
+		return nil, false, fmt.Errorf("failed to parse APIVersion %s: %w", apiVersion, err)
 	}
 
 	// Look for a matching resource
@@ -123,11 +133,11 @@ func findGVRForKind(kind, apiVersion string, resourceLists []*metav1.APIResource
 						Group:    gv.Group,
 						Version:  gv.Version,
 						Resource: apiResource.Name,
-					}, nil
+					}, apiResource.Namespaced, nil
 				}
 			}
 		}
 	}
 
-	return nil, nil
+	return nil, false, nil
 }

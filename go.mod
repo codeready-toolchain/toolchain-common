@@ -2,7 +2,7 @@ module github.com/codeready-toolchain/toolchain-common
 
 go 1.24.4
 
-toolchain go1.24.11
+toolchain go1.24.13
 
 replace github.com/codeready-toolchain/api => github.com/rajivnathan/api v0.0.0-20260225164436-80c782ea57de
 
