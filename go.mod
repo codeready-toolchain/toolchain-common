@@ -4,8 +4,6 @@ go 1.24.4
 
 toolchain go1.24.13
 
-replace github.com/codeready-toolchain/api => github.com/rajivnathan/api v0.0.0-20260225164436-80c782ea57de
-
 require (
 	github.com/go-logr/logr v1.4.2
 	github.com/golang-jwt/jwt/v5 v5.2.2
@@ -28,7 +26,7 @@ require (
 )
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20260108115150-4c6695ed18de
+	github.com/codeready-toolchain/api v0.0.0-20260226033043-912fcbd23dc7
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-github/v52 v52.0.0
