@@ -10,12 +10,12 @@ coverage:
   # solid green color.
   range: "20...60"
 
-# See https://docs.codecov.com/docs/commit-status
+  # See https://docs.codecov.com/docs/commit-status
   status:
     # project will give us the diff in the total code coverage between a commit
     # and its parent
     project:
-       default:
+      default:
          # Allow the coverage to drop by 1% and posting a success status.
          threshold: 1%
     # Patch gives just the coverage of the patch
