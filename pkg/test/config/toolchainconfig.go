@@ -145,24 +145,6 @@ func (o DeactivationOption) UserSignupUnverifiedRetentionDays(value int) Deactiv
 	return o
 }
 
-type MetricsOption struct {
-	*ToolchainConfigOptionImpl
-}
-
-func Metrics() *MetricsOption {
-	o := &MetricsOption{
-		ToolchainConfigOptionImpl: &ToolchainConfigOptionImpl{},
-	}
-	return o
-}
-
-func (o MetricsOption) ForceSynchronization(value bool) MetricsOption {
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.Metrics.ForceSynchronization = &value
-	})
-	return o
-}
-
 type NotificationsOption struct {
 	*ToolchainConfigOptionImpl
 }
