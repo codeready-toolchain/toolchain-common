@@ -26,7 +26,7 @@ require (
 )
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20260226033043-912fcbd23dc7
+	github.com/codeready-toolchain/api v0.0.0-20260305144020-4ff0e6b6e174
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-github/v52 v52.0.0
@@ -39,8 +39,6 @@ require (
 	k8s.io/kubectl v0.33.4
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 )
-
-replace github.com/codeready-toolchain/api => github.com/xcoulon/api v0.0.0-20260302105036-669d151cfca4
 
 require (
 	github.com/BurntSushi/toml v1.3.2 // indirect
