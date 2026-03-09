@@ -100,6 +100,13 @@ func Sub(sub string) MurModifier {
 	}
 }
 
+func Email(email string) MurModifier {
+	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
+		mur.Spec.PropagatedClaims.Email = email
+		return nil
+	}
+}
+
 func StatusCondition(con toolchainv1alpha1.Condition) MurModifier {
 	return func(mur *toolchainv1alpha1.MasterUserRecord) error {
 		mur.Status.Conditions, _ = condition.AddOrUpdateStatusConditions(mur.Status.Conditions, con)

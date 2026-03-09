@@ -1,0 +1,13 @@
+inheritance: true
+knowledge_base:
+  linked_repositories:
+    - repository: 'codeready-toolchain/api'
+      instructions: >
+        api contains the shared API types consumed by toolchain-common.
+        When reviewing toolchain-common changes:      
+        - Check if toolchain-common is using deprecated or outdated fields or types from api - suggest migrating to the recommended alternatives.
+        - Verify assumptions — if toolchain-common expects specific constants (condition types, reasons, labels) or type structures from api, check if those match the actual api definitions.
+        - If toolchain-common duplicates constants or type definitions that already exist in api, suggest using the api definitions instead.
+        - Flag if toolchain-common is making assumptions about api's internal state or behavior that isn't documented or guaranteed.
+        - Check if changes in toolchain-common (especially in pkg/cluster, pkg/condition, pkg/configuration, pkg/status) align with api patterns and conventions.
+      

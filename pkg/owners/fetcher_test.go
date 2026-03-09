@@ -36,6 +36,7 @@ func TestGetOwners(t *testing.T) {
 	replica := &appsv1.ReplicaSet{ObjectMeta: metav1.ObjectMeta{Name: "test-replica", Namespace: "test-namespace"}}
 	deployment := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "test-deployment", Namespace: "test-namespace"}}
 	vm, vmi := newVMResources(t, "test-vm", "test-namespace")
+	node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "test-node"}}
 
 	testCases := map[string]struct {
 		expectedOwners []client.Object
@@ -48,6 +49,9 @@ func TestGetOwners(t *testing.T) {
 		},
 		"with deployment & replica as owners": {
 			expectedOwners: []client.Object{deployment, replica},
+		},
+		"with cluster-scoped owner": {
+			expectedOwners: []client.Object{node, replica},
 		},
 		"with vm, vmi, deployment & replica as owners": {
 			expectedOwners: []client.Object{vm, vmi, deployment, replica},
@@ -162,7 +166,8 @@ func TestGetOwnersFailures(t *testing.T) {
 						require.ErrorContains(t, err, inaccessibleResource)
 						assert.True(t, apierrors.IsNotFound(err))
 					} else {
-						require.EqualError(t, err, "some error")
+						require.ErrorContains(t, err, "failed to fetch owner object")
+						require.ErrorContains(t, err, "some error")
 					}
 					require.Nil(t, owners)
 				})
@@ -192,7 +197,8 @@ func TestGetOwnersFailures(t *testing.T) {
 						require.ErrorContains(t, err, inaccessibleResource)
 						assert.True(t, apierrors.IsNotFound(err))
 					} else {
-						require.EqualError(t, err, "some error")
+						require.ErrorContains(t, err, "failed to fetch owner object")
+						require.ErrorContains(t, err, "some error")
 					}
 					require.Len(t, owners, 1)
 				})
@@ -315,7 +321,7 @@ func apiSchemeResourceList(t *testing.T) []*metav1.APIResourceList {
 		resources = append(resources, &metav1.APIResourceList{
 			GroupVersion: gvk.GroupVersion().String(),
 			APIResources: []metav1.APIResource{
-				{Name: resource.Resource, Namespaced: true, Kind: gvk.Kind},
+				{Name: resource.Resource, Namespaced: gvk.Kind != "Node", Kind: gvk.Kind},
 			},
 		})
 	}
