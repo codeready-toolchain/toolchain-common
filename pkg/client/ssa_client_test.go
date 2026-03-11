@@ -203,6 +203,7 @@ func TestSsaClient(t *testing.T) {
 							Namespace: "default",
 							ManagedFields: []metav1.ManagedFieldsEntry{
 								{
+									APIVersion: "v1",
 									FieldsType: "FieldsV1",
 									FieldsV1:   &metav1.FieldsV1{Raw: []byte(`{"f:spec": {"f:selector": {}}}`)},
 									Manager:    strings.Split(rest.DefaultKubernetesUserAgent(), "/")[0],
@@ -210,7 +211,9 @@ func TestSsaClient(t *testing.T) {
 								},
 							},
 						},
-						Spec: corev1.ServiceSpec{},
+						Spec: corev1.ServiceSpec{
+							Selector: map[string]string{"app": "test"},
+						},
 					}
 					toApply := obj.DeepCopy()
 					toApply.SetManagedFields(nil)
@@ -230,14 +233,28 @@ func TestSsaClient(t *testing.T) {
 					// then
 					inCluster = &corev1.Service{}
 					require.NoError(t, cl.Get(context.TODO(), runtimeclient.ObjectKeyFromObject(obj), inCluster))
+
+					// The SSA Apply always creates a managed field entry for the field owner.
+					// When migration is expected, the old Update entry is converted to Apply
+					// with the new owner, and the subsequent SSA Apply merges with it.
+					// When migration is NOT expected, the old Update entry persists alongside
+					// the new Apply entry.
+					hasApplyEntry := false
+					hasOldUpdateEntry := false
+					oldOwner := strings.Split(rest.DefaultKubernetesUserAgent(), "/")[0]
+					for _, mf := range inCluster.ManagedFields {
+						if mf.Manager == "test-field-owner" && mf.Operation == metav1.ManagedFieldsOperationApply {
+							hasApplyEntry = true
+						}
+						if mf.Manager == oldOwner && mf.Operation == metav1.ManagedFieldsOperationUpdate {
+							hasOldUpdateEntry = true
+						}
+					}
+					assert.True(t, hasApplyEntry, "expected Apply entry for test-field-owner")
 					if setup.migrationExpected {
-						assert.Len(t, inCluster.ManagedFields, 1)
-						assert.Equal(t, "test-field-owner", inCluster.ManagedFields[0].Manager)
-						assert.Equal(t, metav1.ManagedFieldsOperationApply, inCluster.ManagedFields[0].Operation)
+						assert.False(t, hasOldUpdateEntry, "expected old Update entry to be migrated away")
 					} else {
-						assert.Len(t, inCluster.ManagedFields, 1)
-						assert.NotEqual(t, "test-field-owner", inCluster.ManagedFields[0].Manager)
-						assert.Equal(t, metav1.ManagedFieldsOperationUpdate, inCluster.ManagedFields[0].Operation)
+						assert.True(t, hasOldUpdateEntry, "expected old Update entry to still exist")
 					}
 				})
 			}
@@ -417,7 +434,7 @@ func TestEnsureGVK(t *testing.T) {
 }
 
 func NewTestSsaApplyClient(t *testing.T, initObjs ...runtimeclient.Object) (*test.FakeClient, *client.SSAApplyClient) {
-	cl := test.NewFakeClient(t, initObjs...)
+	cl := test.NewFakeClientWithManagedFields(t, initObjs...)
 
 	return cl, &client.SSAApplyClient{
 		Client:     cl,
