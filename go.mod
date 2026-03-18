@@ -22,7 +22,7 @@ require (
 	k8s.io/api v0.34.1
 	k8s.io/apimachinery v0.34.1
 	k8s.io/client-go v0.34.1
-	sigs.k8s.io/controller-runtime v0.22.0
+	sigs.k8s.io/controller-runtime v0.22.1
 )
 
 require (
@@ -124,4 +124,4 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-replace github.com/codeready-toolchain/api => github.com/metlos/api v0.0.0-20260311111036-f94bc6f41690
+replace github.com/codeready-toolchain/api => github.com/metlos/api v0.0.0-20260318102359-237e681a639a
