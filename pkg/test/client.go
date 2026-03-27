@@ -19,30 +19,17 @@ import (
 
 // NewFakeClient creates a fake K8s client with ability to override specific Get/List/Create/Update/StatusUpdate/Delete functions
 func NewFakeClient(t T, initObjs ...client.Object) *FakeClient {
-	return newFakeClient(t, false, initObjs...)
-}
-
-// NewFakeClientWithManagedFields is like NewFakeClient but configures the fake client to return managed fields.
-// This is needed for tests that verify SSA managed fields behavior.
-func NewFakeClientWithManagedFields(t T, initObjs ...client.Object) *FakeClient {
-	return newFakeClient(t, true, initObjs...)
-}
-
-func newFakeClient(t T, returnManagedFields bool, initObjs ...client.Object) *FakeClient {
 	s := scheme.Scheme
 	err := toolchainv1alpha1.AddToScheme(s)
 	require.NoError(t, err)
 
 	toolchainObjs := getAllToolchainResources(s)
 
-	builder := fake.NewClientBuilder().
+	cl := fake.NewClientBuilder().
 		WithScheme(s).
 		WithObjects(initObjs...).
-		WithStatusSubresource(toolchainObjs...)
-	if returnManagedFields {
-		builder = builder.WithReturnManagedFields()
-	}
-	cl := builder.Build()
+		WithStatusSubresource(toolchainObjs...).
+		Build()
 	return &FakeClient{Client: cl, T: t}
 }
 
@@ -150,35 +137,7 @@ func Update(ctx context.Context, cl *FakeClient, obj client.Object, opts ...clie
 		obj.SetGeneration(current.GetGeneration())
 	}
 
-	// Work around a controller-runtime fake client bug where Update unconditionally
-	// replaces managed fields with the stored version, discarding caller-set values.
-	// A real API server preserves managed fields set by the caller, which is needed
-	// for csaupgrade.UpgradeManagedFields to work correctly.
-	managedFields := obj.GetManagedFields()
-
-	if err := cl.Client.Update(ctx, obj, opts...); err != nil {
-		return err
-	}
-
-	if managedFields != nil {
-		// Fix the stored managed fields in the tracker using a MergePatch.
-		// The fake client's Update unconditionally replaces managed fields with
-		// the stored version, so we use Patch to correct them.
-		mfJSON, err := json.Marshal(map[string]any{
-			"metadata": map[string]any{
-				"managedFields": managedFields,
-			},
-		})
-		if err != nil {
-			return err
-		}
-		if err := cl.Client.Patch(ctx, obj, client.RawPatch(types.MergePatchType, mfJSON)); err != nil {
-			return err
-		}
-		obj.SetManagedFields(managedFields)
-	}
-
-	return nil
+	return cl.Client.Update(ctx, obj, opts...)
 }
 
 func isGenerationChangeNeeded(currentObj, updatedObj client.Object) (bool, error) {
@@ -283,9 +242,19 @@ func (c *FakeClient) Patch(ctx context.Context, obj client.Object, patch client.
 
 func Patch(ctx context.Context, fakeClient *FakeClient, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	// Our tests assume that an update to the spec increases the Generation - this is what we do by default in the Create and Update
-	// methods, too. We need to replicate this behavior in Patch, too.
+	// methods, too. We need replicate this behavior in Patch, too.
 
-	// SSA patches are fully supported by the fake client now, so we just need to handle the generation bump.
+	// Fake client doesn't support SSA yet, so we have to be creative here and try to mock it out. Hopefully, SSA will be merged soon and we will
+	// be able to remove this. See https://github.com/kubernetes-sigs/controller-runtime/issues/2341 and
+	// https://github.com/kubernetes-sigs/controller-runtime/pull/2981.
+	//
+	// The above PR is merged but the SSA implementation in the fake client is still problematic. There is an issue and PR
+	// that we created to fix the problem we have with controller-runtime 0.22 and 0.23:
+	//
+	// https://github.com/kubernetes-sigs/controller-runtime/issues/3484
+	// https://github.com/kubernetes-sigs/controller-runtime/pull/3485
+	//
+	// NOTE: this doesn't really implement SSA in any sense. It is just here so that the existing tests pass.
 
 	found := true
 	orig := obj.DeepCopyObject().(client.Object)
@@ -294,6 +263,18 @@ func Patch(ctx context.Context, fakeClient *FakeClient, obj client.Object, patch
 			return err
 		}
 		found = false
+	}
+
+	// A non-SSA patch assumes the object must already exist and should break if it doesn't. The SSA patch, on the other hand, creates the object
+	// if it doesn't exist.
+	if patch == client.Apply {
+		if !found {
+			if err := Create(ctx, fakeClient, obj); err != nil {
+				return err
+			}
+		}
+		// the fake client actively complains if it sees an SSA patch...
+		patch = client.Merge
 	}
 
 	if found {
@@ -321,10 +302,6 @@ func Patch(ctx context.Context, fakeClient *FakeClient, obj client.Object, patch
 		if shouldUpdateGeneration {
 			obj.SetGeneration(orig.GetGeneration() + 1)
 		}
-	} else if patch == client.Apply {
-		// SSA Apply creates the object if it doesn't exist. Set Generation to 1
-		// since the fake client doesn't do this automatically.
-		obj.SetGeneration(1)
 	}
 
 	return fakeClient.Client.Patch(ctx, obj, patch, opts...)
