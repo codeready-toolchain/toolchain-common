@@ -248,6 +248,12 @@ func Patch(ctx context.Context, fakeClient *FakeClient, obj client.Object, patch
 	// be able to remove this. See https://github.com/kubernetes-sigs/controller-runtime/issues/2341 and
 	// https://github.com/kubernetes-sigs/controller-runtime/pull/2981.
 	//
+	// The above PR is merged but the SSA implementation in the fake client is still problematic. There is an issue and PR
+	// that we created to fix the problem we have with controller-runtime 0.22 and 0.23:
+	//
+	// https://github.com/kubernetes-sigs/controller-runtime/issues/3484
+	// https://github.com/kubernetes-sigs/controller-runtime/pull/3485
+	//
 	// NOTE: this doesn't really implement SSA in any sense. It is just here so that the existing tests pass.
 
 	found := true
