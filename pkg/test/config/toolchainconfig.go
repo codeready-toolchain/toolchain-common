@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"os"
+	"slices"
 	"testing"
 
 	toolchainv1alpha1 "github.com/codeready-toolchain/api/api/v1alpha1"
@@ -272,6 +273,13 @@ func (o RegistrationServiceOption) Replicas(value int32) RegistrationServiceOpti
 func (o RegistrationServiceOption) RegistrationServiceURL(value string) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.RegistrationServiceURL = &value
+	})
+	return o
+}
+
+func (o RegistrationServiceOption) DisabledIntegrations(values []string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.DisabledIntegrations = slices.Clone(values)
 	})
 	return o
 }
