@@ -217,4 +217,3 @@ func TestGVKForGR(t *testing.T) {
 		require.EqualError(t, err, "discovery failed")
 	})
 }
-
