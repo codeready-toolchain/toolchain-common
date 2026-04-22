@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"sync"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -9,6 +10,7 @@ import (
 )
 
 type ResourceCache struct {
+	mutex           sync.Mutex                // guard the initialization ofthe resourceLists
 	resourceLists   []*metav1.APIResourceList // All available API in the cluster
 	discoveryClient discovery.ServerResourcesInterface
 }
@@ -87,13 +89,20 @@ func (rc *ResourceCache) GVKForGR(gr schema.GroupResource) (gvk schema.GroupVers
 }
 
 func (rc *ResourceCache) ensureResourceList() error {
+	rc.mutex.Lock()
+	defer rc.mutex.Unlock()
+
 	if rc.resourceLists == nil {
 		// Get all API resources from the cluster using the discovery client. We need it for constructing GVRs for unstructured objects.
 		// Do it here once, so we do not have to list it multiple times before listing/getting every unstructured resource.
+		//
+		// The ServerPreferredResources() method is meant to return partial results on failure.
+		// We ignore them here for the sake of simplicity. Let's just retry to get the full results the next time.
 		resourceList, err := rc.discoveryClient.ServerPreferredResources()
 		if err != nil {
 			return err
 		}
+
 		rc.resourceLists = resourceList
 	}
 
