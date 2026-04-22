@@ -74,7 +74,7 @@ func (o *OwnerFetcher) GetOwners(ctx context.Context, obj metav1.Object) ([]*Obj
 		return nil, err
 	}
 	if !found {
-		return nil, fmt.Errorf("GVR not found for owner reference: %s/%s", &ownerReference.APIVersion, &ownerReference.Kind)
+		return nil, fmt.Errorf("GVR not found for owner reference: %s/%s", ownerReference.APIVersion, ownerReference.Kind)
 	}
 
 	// Get the owner object; use namespace only for namespaced resources
