@@ -2,6 +2,8 @@ package client
 
 import (
 	"errors"
+	"fmt"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,7 +15,7 @@ import (
 type fakeDiscoveryClient struct {
 	resources []*metav1.APIResourceList
 	err       error
-	calls     int
+	calls     atomic.Int32
 }
 
 func (f *fakeDiscoveryClient) ServerResourcesForGroupVersion(string) (*metav1.APIResourceList, error) {
@@ -25,7 +27,7 @@ func (f *fakeDiscoveryClient) ServerGroupsAndResources() ([]*metav1.APIGroup, []
 }
 
 func (f *fakeDiscoveryClient) ServerPreferredResources() ([]*metav1.APIResourceList, error) {
-	f.calls++
+	f.calls.Add(1)
 	return f.resources, f.err
 }
 
@@ -131,7 +133,7 @@ func TestGVRForKind(t *testing.T) {
 		_, _, _, err = rc.GVRForKind("Deployment", "apps/v1")
 		require.NoError(t, err)
 
-		assert.Equal(t, 1, dc.calls, "discovery should have been called only once")
+		assert.Equal(t, int32(1), dc.calls.Load(), "discovery should have been called only once")
 	})
 }
 
@@ -216,4 +218,24 @@ func TestGVKForGR(t *testing.T) {
 
 		require.EqualError(t, err, "discovery failed")
 	})
+}
+
+func TestThreadSafety(t *testing.T) {
+	// given
+	cl := &fakeDiscoveryClient{resources: []*metav1.APIResourceList{}}
+	rc := NewResourceCache(cl)
+
+	// when
+	t.Run("wrap", func(t *testing.T) { // wrap so that the parallel inner tests complete before we check in the then.
+		for i := range 20 {
+			t.Run(fmt.Sprintf("concurrent-%d", i), func(t *testing.T) {
+				t.Parallel()
+				_, _, _, err := rc.GVRForKind("SomeKind", "v1")
+				assert.NoError(t, err)
+			})
+		}
+	})
+
+	// then
+	assert.Equal(t, int32(1), cl.calls.Load())
 }
