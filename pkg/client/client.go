@@ -97,7 +97,7 @@ func (c ApplyClient) ApplyObject(ctx context.Context, obj client.Object, options
 	gvk := obj.GetObjectKind().GroupVersionKind()
 	createdOrUpdated, err := c.applyObject(ctx, obj, options...)
 	if err != nil {
-		return createdOrUpdated, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", gvk.Kind, gvk.Version)
+		return createdOrUpdated, fmt.Errorf("unable to create resource of kind: %s, version: %s: %w", gvk.Kind, gvk.Version, err)
 	}
 	return createdOrUpdated, nil
 }
@@ -127,7 +127,7 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 			obj.SetResourceVersion("") // reset resource version when creating to avoid error: resourceVersion should not be set on objects to be created
 			return true, c.createObj(ctx, obj, config.owner)
 		}
-		return false, errors.Wrapf(err, "unable to get the resource '%v'", existing)
+		return false, fmt.Errorf("unable to get the resource '%v': %w", existing, err)
 	}
 
 	// as it already exists, check using the UpdateStrategy if it should be updated
@@ -164,7 +164,7 @@ func (c ApplyClient) applyObject(ctx context.Context, obj client.Object, options
 		return false, err
 	}
 	if err := c.Update(ctx, obj); err != nil {
-		return false, errors.Wrapf(err, "unable to update the resource '%v'", obj)
+		return false, fmt.Errorf("unable to update the resource '%v': %w", obj, err)
 	}
 
 	// check if it was changed or not
@@ -251,7 +251,7 @@ func (c ApplyClient) Apply(ctx context.Context, toolchainObjects []client.Object
 
 		result, err := c.ApplyObject(ctx, toolchainObject, ForceUpdate(true))
 		if err != nil {
-			return false, errors.Wrapf(err, "unable to create resource of kind: %s, version: %s", toolchainObject.GetObjectKind().GroupVersionKind().Kind, toolchainObject.GetObjectKind().GroupVersionKind().Version)
+			return false, fmt.Errorf("unable to create resource of kind: %s, version: %s: %w", toolchainObject.GetObjectKind().GroupVersionKind().Kind, toolchainObject.GetObjectKind().GroupVersionKind().Version, err)
 		}
 		createdOrUpdated = createdOrUpdated || result
 	}
