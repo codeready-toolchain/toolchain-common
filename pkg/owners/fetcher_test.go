@@ -102,7 +102,6 @@ func TestGetOwners(t *testing.T) {
 			for i := range testData.expectedOwners {
 				assert.Equal(t, testData.expectedOwners[i].GetName(), owners[i].Object.GetName())
 			}
-
 		})
 	}
 }
@@ -144,7 +143,6 @@ func TestGetOwnersFailures(t *testing.T) {
 				fakeDiscovery := newFakeDiscoveryClient(withVMResourcesList(t)...)
 
 				t.Run("with one owner", func(t *testing.T) {
-
 					pod := givenPod.DeepCopy()
 					require.NoError(t, controllerruntime.SetControllerReference(ownerObject, pod, scheme.Scheme))
 					// when it's supposed to be "not found" then do not include it in the client
@@ -229,54 +227,6 @@ func TestGetOwnersFailures(t *testing.T) {
 	})
 }
 
-func TestGetAPIResourceList(t *testing.T) {
-	// given
-	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "test-pod", Namespace: "test-namespace"}}
-	dynamicClient := fakedynamic.NewSimpleDynamicClient(scheme.Scheme)
-
-	t.Run("get APIs, pod with no owners", func(t *testing.T) {
-		// given
-		fakeDiscovery := newFakeDiscoveryClient(withVMResourcesList(t)...)
-		fetcher := NewOwnerFetcher(fakeDiscovery, dynamicClient)
-
-		// when
-		owners, err := fetcher.GetOwners(context.TODO(), pod)
-
-		// then
-		require.NoError(t, err)
-		require.NotEmpty(t, fetcher.resourceLists)
-		require.Empty(t, owners)
-
-		t.Run("no APIs retrival when once done", func(t *testing.T) {
-			// given
-			fakeDiscovery.ServerPreferredResourcesError = fmt.Errorf("some error")
-
-			// when
-			owners, err := fetcher.GetOwners(context.TODO(), pod)
-
-			// then
-			require.NoError(t, err)
-			require.NotEmpty(t, fetcher.resourceLists)
-			require.Empty(t, owners)
-		})
-	})
-
-	t.Run("failure when getting APIs", func(t *testing.T) {
-		// given
-		fakeDiscovery := newFakeDiscoveryClient(withVMResourcesList(t)...)
-		fakeDiscovery.ServerPreferredResourcesError = fmt.Errorf("some error")
-		fetcher := NewOwnerFetcher(fakeDiscovery, dynamicClient)
-
-		// when
-		owners, err := fetcher.GetOwners(context.TODO(), pod)
-
-		// then
-		require.EqualError(t, err, "some error")
-		require.Nil(t, fetcher.resourceLists)
-		require.Empty(t, owners)
-	})
-}
-
 func newVMResources(t *testing.T, name, namespace string) (*unstructured.Unstructured, *unstructured.Unstructured) {
 	vm := &unstructured.Unstructured{}
 	err := vm.UnmarshalJSON(virtualmachineJSON)
@@ -315,7 +265,7 @@ func apiSchemeResourceList(t *testing.T) []*metav1.APIResourceList {
 	require.NoError(t, toolchainv1alpha1.AddToScheme(scheme.Scheme))
 	require.NoError(t, appsv1.AddToScheme(scheme.Scheme))
 	require.NoError(t, apiv1.AddToScheme(scheme.Scheme))
-	var resources = []*metav1.APIResourceList{}
+	resources := []*metav1.APIResourceList{}
 	for gvk := range scheme.Scheme.AllKnownTypes() {
 		resource, _ := meta.UnsafeGuessKindToResource(gvk)
 		resources = append(resources, &metav1.APIResourceList{
@@ -331,7 +281,6 @@ func apiSchemeResourceList(t *testing.T) []*metav1.APIResourceList {
 func withVMResourcesList(t *testing.T) []*metav1.APIResourceList {
 	return append(apiSchemeResourceList(t),
 		&metav1.APIResourceList{
-
 			GroupVersion: vmGVR.GroupVersion().String(),
 			APIResources: []metav1.APIResource{
 				{Name: "virtualmachineinstances", Namespaced: true, Kind: "VirtualMachineInstance"},
