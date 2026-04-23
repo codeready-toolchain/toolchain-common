@@ -178,7 +178,7 @@ func loadTemplatesByTiers(metadata map[string]string, files map[string][]byte) (
 		case filename == "based_on_tier.yaml":
 			basedOnTier := &BasedOnTier{}
 			if err := yaml.Unmarshal(content, basedOnTier); err != nil {
-				return nil, errors.Wrapf(err, "unable to unmarshal '%s'", name)
+				return nil, fmt.Errorf("unable to unmarshal '%s': %w", name, err)
 			}
 			results[tier].rawTemplates.basedOnTier = &tmpl
 			results[tier].basedOnTier = basedOnTier
@@ -276,7 +276,7 @@ func (t *TierGenerator) createTierTemplates() error {
 		for _, tierTmpl := range tierTmpls.tierTemplates {
 			log.Info("creating TierTemplate", "namespace", tierTmpl.Namespace, "name", tierTmpl.Name)
 			if err := t.ensureObject(tierTmpl, tierName); err != nil {
-				return errors.Wrapf(err, "unable to create the '%s' TierTemplate in namespace '%s'", tierTmpl.Name, tierTmpl.Namespace)
+				return fmt.Errorf("unable to create the '%s' TierTemplate in namespace '%s': %w", tierTmpl.Name, tierTmpl.Namespace, err)
 			}
 			log.Info("TierTemplate resource created", "namespace", tierTmpl.Namespace, "name", tierTmpl.Name)
 		}
@@ -294,7 +294,7 @@ func (t *TierGenerator) newTierTemplate(decoder runtime.Decoder, basedOnTierFile
 	tmplObj := &templatev1.Template{}
 	_, _, err := decoder.Decode(tmpl.content, nil, tmplObj)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to generate '%s' TierTemplate manifest", name)
+		return nil, fmt.Errorf("unable to generate '%s' TierTemplate manifest: %w", name, err)
 	}
 	setParams(parameters, tmplObj)
 
@@ -376,7 +376,7 @@ func (t *TierGenerator) createNSTemplateTiers() error {
 		labels[toolchainv1alpha1.ProviderLabelKey] = toolchainv1alpha1.ProviderLabelValue
 		err := t.ensureObject(tier, tierName)
 		if err != nil {
-			return errors.Wrapf(err, "unable to create or update the '%s' NSTemplateTier", tierName)
+			return fmt.Errorf("unable to create or update the '%s' NSTemplateTier: %w", tierName, err)
 		}
 		tierLog := log.WithValues("name", tierName)
 		if tier.Spec.ClusterResources != nil {
@@ -426,7 +426,7 @@ func (t *TierGenerator) newNSTemplateTier(sourceTierName, tierName string, nsTem
 	tmplObj := &templatev1.Template{}
 	_, _, err := decoder.Decode(nsTemplateTier.content, nil, tmplObj)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to generate '%s' NSTemplateTier manifest", tierName)
+		return nil, fmt.Errorf("unable to generate '%s' NSTemplateTier manifest: %w", tierName, err)
 	}
 
 	tmplProcessor := commonTemplate.NewProcessor(t.scheme)

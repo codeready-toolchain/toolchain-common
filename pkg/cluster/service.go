@@ -166,7 +166,7 @@ func NewClusterConfig(cl client.Client, toolchainCluster *toolchainv1alpha1.Tool
 	}
 	err := cl.Get(context.TODO(), name, secret)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to get secret %s for cluster %s", name, toolchainCluster.Name)
+		return nil, fmt.Errorf("unable to get secret %s for cluster %s: %w", name, toolchainCluster.Name, err)
 	}
 
 	return loadConfigFromKubeConfig(toolchainCluster, secret, timeout)
