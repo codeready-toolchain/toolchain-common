@@ -284,6 +284,13 @@ func (o RegistrationServiceOption) DisabledIntegrations(values []string) Registr
 	return o
 }
 
+func (o RegistrationServiceOption) AccountVerifierURL(value string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.AccountVerifierURL = &value
+	})
+	return o
+}
+
 func (o RegistrationServiceOption) Analytics() RegistrationServiceAnalyticsOption {
 	c := RegistrationServiceAnalyticsOption{
 		ToolchainConfigOptionImpl: o.ToolchainConfigOptionImpl,
