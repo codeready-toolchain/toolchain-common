@@ -49,6 +49,14 @@ func SetDeactivated(userSignup *toolchainv1alpha1.UserSignup, deactivated bool) 
 	}
 }
 
+func Rejected(userSignup *toolchainv1alpha1.UserSignup) bool {
+	return contains(userSignup.Spec.States, toolchainv1alpha1.UserSignupStateRejected)
+}
+
+func SetRejected(userSignup *toolchainv1alpha1.UserSignup, rejected bool) {
+	setState(userSignup, toolchainv1alpha1.UserSignupStateRejected, rejected)
+}
+
 func setState(userSignup *toolchainv1alpha1.UserSignup, state toolchainv1alpha1.UserSignupState, val bool) {
 	if val && !contains(userSignup.Spec.States, state) {
 		userSignup.Spec.States = append(userSignup.Spec.States, state)
