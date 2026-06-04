@@ -505,7 +505,7 @@ func (o RegistrationServiceVerificationOption) CaptchaAllowLowScoreReactivation(
 	return o.parent
 }
 
-func (o RegistrationServiceVerificationOption) PhoneLookupMode(value string) RegistrationServiceOption {
+func (o RegistrationServiceVerificationOption) PhoneLookupMode(value toolchainv1alpha1.PhoneLookupMode) RegistrationServiceOption {
 	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
 		config.Spec.Host.RegistrationService.Verification.PhoneLookupMode = &value
 	})
