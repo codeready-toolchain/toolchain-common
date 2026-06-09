@@ -505,6 +505,20 @@ func (o RegistrationServiceVerificationOption) CaptchaAllowLowScoreReactivation(
 	return o.parent
 }
 
+func (o RegistrationServiceVerificationOption) PhoneLookupMode(value toolchainv1alpha1.PhoneLookupMode) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.PhoneLookupMode = &value
+	})
+	return o.parent
+}
+
+func (o RegistrationServiceVerificationOption) PhoneLookupExcludedCountries(values []string) RegistrationServiceOption {
+	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
+		config.Spec.Host.RegistrationService.Verification.PhoneLookupExcludedCountries = values
+	})
+	return o.parent
+}
+
 func (o RegistrationServiceVerificationOption) Secret() *RegistrationVerificationSecretOption {
 	c := &RegistrationVerificationSecretOption{
 		ToolchainConfigOptionImpl: o.ToolchainConfigOptionImpl,
