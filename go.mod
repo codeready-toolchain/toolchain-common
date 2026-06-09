@@ -26,7 +26,7 @@ require (
 )
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20260603082246-cfa3dd9db9cc
+	github.com/codeready-toolchain/api v0.0.0-20260609071155-c8f486b1a581
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-github/v52 v52.0.0
@@ -122,5 +122,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
-
-replace github.com/codeready-toolchain/api => github.com/fbm3307/toolchainapi v0.0.0-20260608110443-4e4fa9fe0621
