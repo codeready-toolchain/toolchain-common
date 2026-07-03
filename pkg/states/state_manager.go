@@ -14,6 +14,7 @@ func SetApprovedManually(userSignup *toolchainv1alpha1.UserSignup, approved bool
 		setState(userSignup, toolchainv1alpha1.UserSignupStateVerificationRequired, false)
 		setState(userSignup, toolchainv1alpha1.UserSignupStateDeactivating, false)
 		setState(userSignup, toolchainv1alpha1.UserSignupStateDeactivated, false)
+		setState(userSignup, toolchainv1alpha1.UserSignupStateRejected, false)
 	}
 }
 

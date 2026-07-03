@@ -41,6 +41,14 @@ func TestStateManager(t *testing.T) {
 
 		// Setting approved should remove deactivating
 		require.False(t, Deactivating(u))
+
+		SetApprovedManually(u, false)
+
+		SetRejected(u, true)
+		SetApprovedManually(u, true)
+
+		// Setting approved should remove rejected
+		require.False(t, Rejected(u))
 	})
 
 	t.Run("test verification required", func(t *testing.T) {
