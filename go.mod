@@ -40,6 +40,8 @@ require (
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 )
 
+replace github.com/codeready-toolchain/api => github.com/xcoulon/api v0.0.0-20260729134446-c03e305d17dc
+
 require (
 	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect

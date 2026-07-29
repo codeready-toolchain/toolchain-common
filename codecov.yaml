@@ -16,8 +16,8 @@ coverage:
     # and its parent
     project:
       default:
-         # Allow the coverage to drop by 1% and posting a success status.
-         threshold: 1%
+        # Allow the coverage to drop by 1% and posting a success status.
+        threshold: 1%
     # Patch gives just the coverage of the patch
     patch: true
     # changes tells us if there are unexpected code coverage changes in other files

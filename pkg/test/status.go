@@ -51,7 +51,6 @@ func AssertRegistrationServiceStatusMatch(t T, actual toolchainv1alpha1.HostRegi
 	AssertRegistrationServiceDeploymentStatusMatch(t, actual.Deployment, expected.Deployment)
 	AssertRegistrationServiceResourcesStatusMatch(t, actual.RegistrationServiceResources, expected.RegistrationServiceResources)
 	AssertRegistrationServiceHealthStatusMatch(t, actual.Health, expected.Health)
-	AssertRegistrationServiceRevisionMatch(t, actual.RevisionCheck, expected.RevisionCheck)
 }
 
 // AssertRegistrationServiceDeploymentStatusMatch asserts that the specified registration service deployment status matches the expected one
@@ -67,10 +66,5 @@ func AssertRegistrationServiceResourcesStatusMatch(t T, actual toolchainv1alpha1
 
 // AssertRegistrationServiceHealthStatusMatch asserts that the specified registration service health status matches the expected one
 func AssertRegistrationServiceHealthStatusMatch(t T, actual toolchainv1alpha1.RegistrationServiceHealth, expected toolchainv1alpha1.RegistrationServiceHealth) {
-	AssertConditionsMatch(t, actual.Conditions, expected.Conditions...)
-}
-
-// AssertRegistrationServiceRevisionMatch asserts that the specified registration service revision check matches the expected one
-func AssertRegistrationServiceRevisionMatch(t T, actual toolchainv1alpha1.RevisionCheck, expected toolchainv1alpha1.RevisionCheck) {
 	AssertConditionsMatch(t, actual.Conditions, expected.Conditions...)
 }
