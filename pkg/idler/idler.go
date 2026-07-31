@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/codeready-toolchain/toolchain-common/pkg/owners"
 	"github.com/go-logr/logr"
@@ -19,8 +20,22 @@ import (
 
 const vmSubresourceURLFmt = "/apis/subresources.kubevirt.io/%s"
 
-// ErrUnsupportedKind is returned by IdleOwner when the owner kind is not in the idle matrix.
+// ErrUnsupportedKind is returned by IdleOwner when the owner kind is not in the idle matrix,
+// or when the kind requires deletion and SkipDeleteKinds is true.
 var ErrUnsupportedKind = errors.New("unsupported idle owner kind")
+
+// SecondOwnerPolicy controls when IdleFromPod idles a second known owner.
+type SecondOwnerPolicy int
+
+const (
+	// SecondOwnerAlways tries up to two known owners (on-demand).
+	SecondOwnerAlways SecondOwnerPolicy = iota
+	// SecondOwnerAfterTimeout tries the second owner only when the first fails or the pod
+	// has been running longer than 105% of PodTimeoutSeconds. When nothing remains
+	// attempted and the pod exceeds 110%, Kind/Name are cleared and PodDeleteRecommended
+	// is set so the caller may delete the pod.
+	SecondOwnerAfterTimeout
+)
 
 // Idler applies owner-idle actions (scale/stop/patch/delete) for known workload kinds.
 type Idler struct {
@@ -30,12 +45,36 @@ type Idler struct {
 	restClient    rest.Interface
 }
 
-// Options configures idle actions that need caller-supplied parameters.
+// Options configures idle actions and IdleFromPod owner-walk policy.
 type Options struct {
 	// TimeoutSeconds is the ServingRuntime InferenceService age cutoff.
 	// InferenceServices older than now-TimeoutSeconds are deleted.
 	// 0 means delete nothing.
 	TimeoutSeconds int32
+
+	// SkipDeleteKinds skips idling via delete for DaemonSet, Job, DataVolume,
+	// PersistentVolumeClaim, and ServingRuntime (treated as unsupported).
+	// The zero value (false) keeps the full matrix, including deletes.
+	// On-demand callers should set this to true to skip deletes for the safer default.
+	SkipDeleteKinds bool
+
+	// SecondOwnerPolicy controls when a second known owner is idled.
+	// The zero value is SecondOwnerAlways.
+	SecondOwnerPolicy SecondOwnerPolicy
+
+	// PodTimeoutSeconds is used with SecondOwnerAfterTimeout for the 105%/110% gates.
+	// Ignored when SecondOwnerPolicy is SecondOwnerAlways.
+	PodTimeoutSeconds int32
+}
+
+// Result is the outcome of IdleFromPod. Common never deletes the Pod; callers that
+// allow last-resort pod deletion should act when PodDeleteRecommended is true.
+type Result struct {
+	Kind string
+	Name string
+	// PodDeleteRecommended is true when no known owner remains as the idle target
+	// (standalone/unknown chain, or SecondOwnerAfterTimeout 110% stuck case).
+	PodDeleteRecommended bool
 }
 
 // New creates an Idler with the clients required for the full owner-idle kind matrix.
@@ -54,13 +93,17 @@ func (i *Idler) OwnerFetcher() *owners.OwnerFetcher {
 }
 
 // IdleOwner applies the kind-specific idle action for a single known owner.
-// Unknown kinds return ErrUnsupportedKind so callers can skip them.
+// Unknown kinds (and delete-kinds when SkipDeleteKinds is true) return ErrUnsupportedKind
+// so callers can skip them.
 func (i *Idler) IdleOwner(ctx context.Context, ownerWithGVR *owners.ObjectWithGVR, opts Options) error {
 	ownerKind := ownerWithGVR.Object.GetObjectKind().GroupVersionKind().Kind
 	switch ownerKind {
 	case "Deployment", "ReplicaSet", "Integration", "KameletBinding", "StatefulSet", "ReplicationController":
 		return i.scaleToZero(ctx, ownerWithGVR)
 	case "DaemonSet", "Job", "DataVolume", "PersistentVolumeClaim":
+		if opts.SkipDeleteKinds {
+			return ErrUnsupportedKind
+		}
 		return i.deleteResource(ctx, ownerWithGVR)
 	case "DeploymentConfig":
 		return i.scaleDeploymentConfigToZero(ctx, ownerWithGVR)
@@ -71,6 +114,9 @@ func (i *Idler) IdleOwner(ctx context.Context, ownerWithGVR *owners.ObjectWithGV
 	case "Claw":
 		return i.idleClaw(ctx, ownerWithGVR)
 	case "ServingRuntime":
+		if opts.SkipDeleteKinds {
+			return ErrUnsupportedKind
+		}
 		return i.idleServingRuntime(ctx, ownerWithGVR, opts.TimeoutSeconds)
 	default:
 		return ErrUnsupportedKind
@@ -78,10 +124,8 @@ func (i *Idler) IdleOwner(ctx context.Context, ownerWithGVR *owners.ObjectWithGV
 }
 
 // IdleFromPod walks the pod's owner chain and idles up to two known owners.
-// Unlike the member-operator timeout path, this always tries the second known owner
-// when present (no 105%/110% timeout percentages). It never creates Notifications.
-// Returns the kind and name of the first known owner that was attempted.
-func (i *Idler) IdleFromPod(ctx context.Context, pod *corev1.Pod, opts Options) (string, string, error) {
+// It never creates Notifications and never deletes the Pod; see Result.PodDeleteRecommended.
+func (i *Idler) IdleFromPod(ctx context.Context, pod *corev1.Pod, opts Options) (Result, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("Idling owners from pod")
 
@@ -93,9 +137,14 @@ func (i *Idler) IdleFromPod(ctx context.Context, pod *corev1.Pod, opts Options) 
 	LogOwnershipChain(logger, ownerChain, pod)
 
 	var topOwnerKind, topOwnerName string
+	attempted := false
 	var errToReturn error
 	for _, ownerWithGVR := range ownerChain {
 		if util.IsBeingDeleted(ownerWithGVR.Object) {
+			if opts.SecondOwnerPolicy == SecondOwnerAfterTimeout {
+				// Match member Idler: a deleting owner means the previous attempt did not stick.
+				attempted = false
+			}
 			continue
 		}
 		owner := ownerWithGVR.Object
@@ -106,6 +155,7 @@ func (i *Idler) IdleFromPod(ctx context.Context, pod *corev1.Pod, opts Options) 
 			continue
 		}
 
+		attempted = true
 		if topOwnerKind == "" {
 			topOwnerKind = ownerKind
 			topOwnerName = owner.GetName()
@@ -114,13 +164,46 @@ func (i *Idler) IdleFromPod(ctx context.Context, pod *corev1.Pod, opts Options) 
 			errToReturn = errors.Join(errToReturn, err)
 			break
 		}
+
+		if opts.SecondOwnerPolicy == SecondOwnerAfterTimeout {
+			// Stop after the first owner when it succeeded and the pod is still under 105%.
+			if err == nil && !podRunningLongerThan(pod, opts.PodTimeoutSeconds, 1.05) {
+				return resultForOwners(topOwnerKind, topOwnerName), nil
+			}
+			logger.Info("Scaling the first known owner down either failed or the pod has been running for longer than 105% of the idler timeout. Scaling the next known owner.")
+			continue
+		}
+		// SecondOwnerAlways: fall through and try a second known owner when present.
 	}
 
-	// If no known owner was attempted, surface the GetOwners failure instead of a silent empty success.
-	if topOwnerKind == "" && fetchErr != nil {
-		return "", "", fetchErr
+	if opts.SecondOwnerPolicy == SecondOwnerAfterTimeout &&
+		!attempted &&
+		podRunningLongerThan(pod, opts.PodTimeoutSeconds, 1.10) {
+		// Nothing remains attempted (e.g. top owner idled but remaining owners are deleting).
+		// Clear owner so the caller can delete the pod as a last resort.
+		return Result{PodDeleteRecommended: true}, errToReturn
 	}
-	return topOwnerKind, topOwnerName, errToReturn
+
+	if topOwnerKind == "" && fetchErr != nil {
+		return Result{}, fetchErr
+	}
+	return resultForOwners(topOwnerKind, topOwnerName), errToReturn
+}
+
+func resultForOwners(kind, name string) Result {
+	return Result{
+		Kind:                 kind,
+		Name:                 name,
+		PodDeleteRecommended: kind == "",
+	}
+}
+
+func podRunningLongerThan(pod *corev1.Pod, timeoutSeconds int32, ratio float64) bool {
+	if pod.Status.StartTime == nil || timeoutSeconds <= 0 {
+		return false
+	}
+	deadline := pod.Status.StartTime.Add(time.Duration(float64(timeoutSeconds)*ratio) * time.Second)
+	return time.Now().After(deadline)
 }
 
 // LogOwnershipChain logs the controller ownership chain for the given pod.

@@ -373,14 +373,32 @@ func TestIdleServingRuntimeCutoff(t *testing.T) {
 		_, err = clients.dynamicClient.Resource(isvcGVR).Namespace(ns).Get(context.TODO(), "new-isvc", metav1.GetOptions{})
 		require.NoError(t, err)
 	})
+
+	t.Run("skipped when SkipDeleteKinds is set", func(t *testing.T) {
+		idler, _ := newTestIdler(t)
+		err := idler.IdleOwner(context.TODO(), newServingRuntimeOwner(), Options{TimeoutSeconds: 3600, SkipDeleteKinds: true})
+		require.ErrorIs(t, err, ErrUnsupportedKind)
+	})
+}
+
+func TestIdleOwnerSkipDeleteKinds(t *testing.T) {
+	idler, clients := newTestIdler(t)
+	owner := createAndGetOwner(t, clients.dynamicClient, &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{Name: "job", Namespace: "test-ns"},
+	}, batchv1.SchemeGroupVersion.WithResource("jobs"))
+
+	err := idler.IdleOwner(context.TODO(), owner, Options{SkipDeleteKinds: true})
+	require.ErrorIs(t, err, ErrUnsupportedKind)
+	_, err = clients.dynamicClient.Resource(*owner.GVR).Namespace("test-ns").Get(context.TODO(), "job", metav1.GetOptions{})
+	require.NoError(t, err)
 }
 
 func TestIdleFromPod(t *testing.T) {
 	ns := "test-ns"
 	replicas := int32(3)
 
-	t.Run("single known owner", func(t *testing.T) {
-		idler, clients := newTestIdler(t)
+	deployRSPod := func(t *testing.T, clients *testClients) *corev1.Pod {
+		t.Helper()
 		deployment := &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{Name: "app", Namespace: ns},
 			Spec:       appsv1.DeploymentSpec{Replicas: &replicas},
@@ -394,44 +412,39 @@ func TestIdleFromPod(t *testing.T) {
 		require.NoError(t, controllerruntime.SetControllerReference(rs, pod, scheme.Scheme))
 		createTyped(t, clients.dynamicClient, deployment)
 		createTyped(t, clients.dynamicClient, rs)
+		return pod
+	}
 
-		kind, name, err := idler.IdleFromPod(context.TODO(), pod, Options{})
+	t.Run("SecondOwnerAlways idles two known owners", func(t *testing.T) {
+		idler, clients := newTestIdler(t)
+		pod := deployRSPod(t, clients)
+
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{})
 		require.NoError(t, err)
-		assert.Equal(t, "Deployment", kind)
-		assert.Equal(t, "app", name)
+		assert.Equal(t, "Deployment", result.Kind)
+		assert.Equal(t, "app", result.Name)
+		assert.False(t, result.PodDeleteRecommended)
 		assertScaledToZero(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("deployments"), ns, "app")
-		// second owner (ReplicaSet) is also idled by on-demand path when present
 		assertScaledToZero(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("replicasets"), ns, "app-rs")
 	})
 
-	t.Run("unknown-only chain returns empty", func(t *testing.T) {
+	t.Run("unknown-only chain recommends pod delete", func(t *testing.T) {
 		idler, clients := newTestIdler(t)
 		cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "cm-owner", Namespace: ns}}
 		pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod", Namespace: ns}}
 		require.NoError(t, controllerruntime.SetControllerReference(cm, pod, scheme.Scheme))
 		createTyped(t, clients.dynamicClient, cm)
 
-		kind, name, err := idler.IdleFromPod(context.TODO(), pod, Options{})
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{})
 		require.NoError(t, err)
-		assert.Empty(t, kind)
-		assert.Empty(t, name)
+		assert.Empty(t, result.Kind)
+		assert.Empty(t, result.Name)
+		assert.True(t, result.PodDeleteRecommended)
 	})
 
 	t.Run("joins errors from two known owners", func(t *testing.T) {
 		idler, clients := newTestIdler(t)
-		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{Name: "app", Namespace: ns},
-			Spec:       appsv1.DeploymentSpec{Replicas: &replicas},
-		}
-		rs := &appsv1.ReplicaSet{
-			ObjectMeta: metav1.ObjectMeta{Name: "app-rs", Namespace: ns},
-			Spec:       appsv1.ReplicaSetSpec{Replicas: &replicas},
-		}
-		pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "app-pod", Namespace: ns}}
-		require.NoError(t, controllerruntime.SetControllerReference(deployment, rs, scheme.Scheme))
-		require.NoError(t, controllerruntime.SetControllerReference(rs, pod, scheme.Scheme))
-		createTyped(t, clients.dynamicClient, deployment)
-		createTyped(t, clients.dynamicClient, rs)
+		pod := deployRSPod(t, clients)
 
 		clients.dynamicClient.PrependReactor("patch", "deployments", func(action clienttest.Action) (bool, runtime.Object, error) {
 			return true, nil, errors.New("deploy patch failed")
@@ -440,10 +453,11 @@ func TestIdleFromPod(t *testing.T) {
 			return true, nil, errors.New("rs patch failed")
 		})
 
-		kind, name, err := idler.IdleFromPod(context.TODO(), pod, Options{})
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{})
 		require.EqualError(t, err, "deploy patch failed\nrs patch failed")
-		assert.Equal(t, "Deployment", kind)
-		assert.Equal(t, "app", name)
+		assert.Equal(t, "Deployment", result.Kind)
+		assert.Equal(t, "app", result.Name)
+		assert.False(t, result.PodDeleteRecommended)
 	})
 
 	t.Run("returns GetOwners error when no owner was attempted", func(t *testing.T) {
@@ -462,11 +476,223 @@ func TestIdleFromPod(t *testing.T) {
 		pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "app-pod", Namespace: ns}}
 		require.NoError(t, controllerruntime.SetControllerReference(deployment, pod, scheme.Scheme))
 
-		kind, name, err := idler.IdleFromPod(context.TODO(), pod, Options{})
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{})
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "no resource found for kind Deployment")
-		assert.Empty(t, kind)
-		assert.Empty(t, name)
+		assert.Empty(t, result.Kind)
+		assert.Empty(t, result.Name)
+	})
+
+	t.Run("SecondOwnerAfterTimeout under 105% idles only first owner", func(t *testing.T) {
+		idler, clients := newTestIdler(t)
+		pod := deployRSPod(t, clients)
+		start := metav1.NewTime(time.Now().Add(-time.Hour))
+		pod.Status.StartTime = &start
+
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{
+			SecondOwnerPolicy: SecondOwnerAfterTimeout,
+			PodTimeoutSeconds: 3600,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Deployment", result.Kind)
+		assert.Equal(t, "app", result.Name)
+		assert.False(t, result.PodDeleteRecommended)
+		assertScaledToZero(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("deployments"), ns, "app")
+		// ReplicaSet must remain scaled up
+		got, err := clients.dynamicClient.Resource(appsv1.SchemeGroupVersion.WithResource("replicasets")).Namespace(ns).Get(context.TODO(), "app-rs", metav1.GetOptions{})
+		require.NoError(t, err)
+		replicasVal, _, err := unstructured.NestedInt64(got.Object, "spec", "replicas")
+		require.NoError(t, err)
+		assert.Equal(t, int64(3), replicasVal)
+	})
+
+	t.Run("SecondOwnerAfterTimeout over 105% idles two owners", func(t *testing.T) {
+		idler, clients := newTestIdler(t)
+		pod := deployRSPod(t, clients)
+		start := metav1.NewTime(time.Now().Add(-3960 * time.Second)) // > 105% of 3600s
+		pod.Status.StartTime = &start
+
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{
+			SecondOwnerPolicy: SecondOwnerAfterTimeout,
+			PodTimeoutSeconds: 3600,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Deployment", result.Kind)
+		assert.False(t, result.PodDeleteRecommended)
+		assertScaledToZero(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("deployments"), ns, "app")
+		assertScaledToZero(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("replicasets"), ns, "app-rs")
+	})
+
+	t.Run("SecondOwnerAfterTimeout 110% stuck recommends pod delete but does not delete the pod", func(t *testing.T) {
+		idler, clients := newTestIdler(t)
+		pod := deployRSPod(t, clients)
+		createTyped(t, clients.dynamicClient, pod)
+		start := metav1.NewTime(time.Now().Add(-4140 * time.Second)) // > 110% of 3600s
+		pod.Status.StartTime = &start
+
+		// Mark ReplicaSet as deleting so after Deployment is idled, attempted is cleared.
+		rs, err := clients.dynamicClient.Resource(appsv1.SchemeGroupVersion.WithResource("replicasets")).Namespace(ns).Get(context.TODO(), "app-rs", metav1.GetOptions{})
+		require.NoError(t, err)
+		now := metav1.Now()
+		rs.SetDeletionTimestamp(&now)
+		rs.SetFinalizers([]string{"dummy"})
+		_, err = clients.dynamicClient.Resource(appsv1.SchemeGroupVersion.WithResource("replicasets")).Namespace(ns).Update(context.TODO(), rs, metav1.UpdateOptions{})
+		require.NoError(t, err)
+
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{
+			SecondOwnerPolicy: SecondOwnerAfterTimeout,
+			PodTimeoutSeconds: 3600,
+		})
+		require.NoError(t, err)
+		assert.Empty(t, result.Kind)
+		assert.Empty(t, result.Name)
+		assert.True(t, result.PodDeleteRecommended)
+		// Common only recommends; the Pod must still exist for the caller to delete.
+		_, err = clients.dynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace(ns).Get(context.TODO(), pod.Name, metav1.GetOptions{})
+		require.NoError(t, err)
+	})
+
+	t.Run("SecondOwnerAfterTimeout first owner failure tries second under 105%", func(t *testing.T) {
+		idler, clients := newTestIdler(t)
+		pod := deployRSPod(t, clients)
+		start := metav1.NewTime(time.Now().Add(-time.Hour)) // under 105% of 3600s
+		pod.Status.StartTime = &start
+
+		clients.dynamicClient.PrependReactor("patch", "deployments", func(action clienttest.Action) (bool, runtime.Object, error) {
+			return true, nil, errors.New("deploy patch failed")
+		})
+
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{
+			SecondOwnerPolicy: SecondOwnerAfterTimeout,
+			PodTimeoutSeconds: 3600,
+		})
+		require.EqualError(t, err, "deploy patch failed")
+		assert.Equal(t, "Deployment", result.Kind)
+		assert.Equal(t, "app", result.Name)
+		assert.False(t, result.PodDeleteRecommended)
+		assertScaledToZero(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("replicasets"), ns, "app-rs")
+	})
+
+	t.Run("SecondOwnerAfterTimeout over 105% under 110% with deleting second keeps first owner", func(t *testing.T) {
+		idler, clients := newTestIdler(t)
+		pod := deployRSPod(t, clients)
+		// >105% (3780s) and <110% (3960s) of 3600s — must not clear the owner yet.
+		start := metav1.NewTime(time.Now().Add(-3900 * time.Second))
+		pod.Status.StartTime = &start
+
+		rs, err := clients.dynamicClient.Resource(appsv1.SchemeGroupVersion.WithResource("replicasets")).Namespace(ns).Get(context.TODO(), "app-rs", metav1.GetOptions{})
+		require.NoError(t, err)
+		now := metav1.Now()
+		rs.SetDeletionTimestamp(&now)
+		rs.SetFinalizers([]string{"dummy"})
+		_, err = clients.dynamicClient.Resource(appsv1.SchemeGroupVersion.WithResource("replicasets")).Namespace(ns).Update(context.TODO(), rs, metav1.UpdateOptions{})
+		require.NoError(t, err)
+
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{
+			SecondOwnerPolicy: SecondOwnerAfterTimeout,
+			PodTimeoutSeconds: 3600,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Deployment", result.Kind)
+		assert.Equal(t, "app", result.Name)
+		assert.False(t, result.PodDeleteRecommended)
+		assertScaledToZero(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("deployments"), ns, "app")
+	})
+
+	t.Run("SecondOwnerAfterTimeout skips deleting first owner and idles second", func(t *testing.T) {
+		idler, clients := newTestIdler(t)
+		pod := deployRSPod(t, clients)
+		start := metav1.NewTime(time.Now().Add(-time.Hour))
+		pod.Status.StartTime = &start
+
+		dep, err := clients.dynamicClient.Resource(appsv1.SchemeGroupVersion.WithResource("deployments")).Namespace(ns).Get(context.TODO(), "app", metav1.GetOptions{})
+		require.NoError(t, err)
+		now := metav1.Now()
+		dep.SetDeletionTimestamp(&now)
+		dep.SetFinalizers([]string{"dummy"})
+		_, err = clients.dynamicClient.Resource(appsv1.SchemeGroupVersion.WithResource("deployments")).Namespace(ns).Update(context.TODO(), dep, metav1.UpdateOptions{})
+		require.NoError(t, err)
+
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{
+			SecondOwnerPolicy: SecondOwnerAfterTimeout,
+			PodTimeoutSeconds: 3600,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "ReplicaSet", result.Kind)
+		assert.Equal(t, "app-rs", result.Name)
+		assert.False(t, result.PodDeleteRecommended)
+		assertScaledToZero(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("replicasets"), ns, "app-rs")
+	})
+
+	t.Run("SecondOwnerAfterTimeout with nil StartTime idles only first owner on success", func(t *testing.T) {
+		idler, clients := newTestIdler(t)
+		pod := deployRSPod(t, clients)
+		require.Nil(t, pod.Status.StartTime)
+
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{
+			SecondOwnerPolicy: SecondOwnerAfterTimeout,
+			PodTimeoutSeconds: 3600,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Deployment", result.Kind)
+		assert.False(t, result.PodDeleteRecommended)
+		assertScaledToZero(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("deployments"), ns, "app")
+		got, err := clients.dynamicClient.Resource(appsv1.SchemeGroupVersion.WithResource("replicasets")).Namespace(ns).Get(context.TODO(), "app-rs", metav1.GetOptions{})
+		require.NoError(t, err)
+		replicasVal, _, err := unstructured.NestedInt64(got.Object, "spec", "replicas")
+		require.NoError(t, err)
+		assert.Equal(t, int64(3), replicasVal)
+	})
+
+	t.Run("default Options deletes Job owner via IdleFromPod", func(t *testing.T) {
+		idler, clients := newTestIdler(t)
+		job := &batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "job", Namespace: ns}}
+		pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "job-pod", Namespace: ns}}
+		require.NoError(t, controllerruntime.SetControllerReference(job, pod, scheme.Scheme))
+		createTyped(t, clients.dynamicClient, job)
+		createTyped(t, clients.dynamicClient, pod)
+
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{})
+		require.NoError(t, err)
+		assert.Equal(t, "Job", result.Kind)
+		assert.Equal(t, "job", result.Name)
+		assert.False(t, result.PodDeleteRecommended)
+		_, err = clients.dynamicClient.Resource(batchv1.SchemeGroupVersion.WithResource("jobs")).Namespace(ns).Get(context.TODO(), "job", metav1.GetOptions{})
+		require.True(t, apierrors.IsNotFound(err), "expected Job deleted, got %v", err)
+		// Pod itself is not deleted by common.
+		_, err = clients.dynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace(ns).Get(context.TODO(), pod.Name, metav1.GetOptions{})
+		require.NoError(t, err)
+	})
+
+	t.Run("skips delete-kinds when SkipDeleteKinds is set", func(t *testing.T) {
+		idler, clients := newTestIdler(t)
+		job := &batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "job", Namespace: ns}}
+		pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "job-pod", Namespace: ns}}
+		require.NoError(t, controllerruntime.SetControllerReference(job, pod, scheme.Scheme))
+		createTyped(t, clients.dynamicClient, job)
+		createTyped(t, clients.dynamicClient, pod)
+
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{SkipDeleteKinds: true})
+		require.NoError(t, err)
+		assert.Empty(t, result.Kind)
+		assert.True(t, result.PodDeleteRecommended)
+		_, err = clients.dynamicClient.Resource(batchv1.SchemeGroupVersion.WithResource("jobs")).Namespace(ns).Get(context.TODO(), "job", metav1.GetOptions{})
+		require.NoError(t, err)
+		_, err = clients.dynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace(ns).Get(context.TODO(), pod.Name, metav1.GetOptions{})
+		require.NoError(t, err)
+	})
+
+	t.Run("standalone pod recommends pod delete without deleting it", func(t *testing.T) {
+		idler, clients := newTestIdler(t)
+		pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "lonely", Namespace: ns}}
+		createTyped(t, clients.dynamicClient, pod)
+
+		result, err := idler.IdleFromPod(context.TODO(), pod, Options{})
+		require.NoError(t, err)
+		assert.Empty(t, result.Kind)
+		assert.True(t, result.PodDeleteRecommended)
+		_, err = clients.dynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace(ns).Get(context.TODO(), "lonely", metav1.GetOptions{})
+		require.NoError(t, err)
 	})
 }
 
