@@ -509,7 +509,8 @@ func TestIdleFromPod(t *testing.T) {
 	t.Run("SecondOwnerAfterTimeout over 105% idles two owners", func(t *testing.T) {
 		idler, clients := newTestIdler(t)
 		pod := deployRSPod(t, clients)
-		start := metav1.NewTime(time.Now().Add(-3960 * time.Second)) // > 105% of 3600s
+		// Strictly between 105% (3780s) and 110% (3960s) of 3600s.
+		start := metav1.NewTime(time.Now().Add(-3900 * time.Second))
 		pod.Status.StartTime = &start
 
 		result, err := idler.IdleFromPod(context.TODO(), pod, Options{
