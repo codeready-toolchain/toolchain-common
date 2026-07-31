@@ -77,7 +77,7 @@ func TestIdleOwnerKindMatrix(t *testing.T) {
 				}, appsv1.SchemeGroupVersion.WithResource("deployments"))
 			},
 			assertIdle: func(t *testing.T, dynamicClient *fakedynamic.FakeDynamicClient, _ *fakescale.FakeScaleClient, owner *owners.ObjectWithGVR) {
-				assertReplicas(t, dynamicClient, *owner.GVR, ns, owner.Object.GetName(), 0)
+				assertScaledToZero(t, dynamicClient, *owner.GVR, ns, owner.Object.GetName())
 			},
 		},
 		{
@@ -90,7 +90,7 @@ func TestIdleOwnerKindMatrix(t *testing.T) {
 				}, appsv1.SchemeGroupVersion.WithResource("replicasets"))
 			},
 			assertIdle: func(t *testing.T, dynamicClient *fakedynamic.FakeDynamicClient, _ *fakescale.FakeScaleClient, owner *owners.ObjectWithGVR) {
-				assertReplicas(t, dynamicClient, *owner.GVR, ns, owner.Object.GetName(), 0)
+				assertScaledToZero(t, dynamicClient, *owner.GVR, ns, owner.Object.GetName())
 			},
 		},
 		{
@@ -103,7 +103,7 @@ func TestIdleOwnerKindMatrix(t *testing.T) {
 				}, appsv1.SchemeGroupVersion.WithResource("statefulsets"))
 			},
 			assertIdle: func(t *testing.T, dynamicClient *fakedynamic.FakeDynamicClient, _ *fakescale.FakeScaleClient, owner *owners.ObjectWithGVR) {
-				assertReplicas(t, dynamicClient, *owner.GVR, ns, owner.Object.GetName(), 0)
+				assertScaledToZero(t, dynamicClient, *owner.GVR, ns, owner.Object.GetName())
 			},
 		},
 		{
@@ -116,7 +116,7 @@ func TestIdleOwnerKindMatrix(t *testing.T) {
 				}, corev1.SchemeGroupVersion.WithResource("replicationcontrollers"))
 			},
 			assertIdle: func(t *testing.T, dynamicClient *fakedynamic.FakeDynamicClient, _ *fakescale.FakeScaleClient, owner *owners.ObjectWithGVR) {
-				assertReplicas(t, dynamicClient, *owner.GVR, ns, owner.Object.GetName(), 0)
+				assertScaledToZero(t, dynamicClient, *owner.GVR, ns, owner.Object.GetName())
 			},
 		},
 		{
@@ -340,12 +340,10 @@ func TestIdleServingRuntimeCutoff(t *testing.T) {
 			"apiVersion": "serving.kserve.io/v1beta1",
 			"kind":       "InferenceService",
 			"metadata": map[string]any{
-				"name":              name,
-				"namespace":         ns,
-				"creationTimestamp": metav1.NewTime(time.Now().Add(-age)).Format(time.RFC3339),
+				"name":      name,
+				"namespace": ns,
 			},
 		}}
-		// SetCreationTimestamp is more reliable than map string for fake client
 		obj.SetName(name)
 		obj.SetNamespace(ns)
 		obj.SetCreationTimestamp(metav1.NewTime(time.Now().Add(-age)))
@@ -401,9 +399,9 @@ func TestIdleFromPod(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "Deployment", kind)
 		assert.Equal(t, "app", name)
-		assertReplicas(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("deployments"), ns, "app", 0)
+		assertScaledToZero(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("deployments"), ns, "app")
 		// second owner (ReplicaSet) is also idled by on-demand path when present
-		assertReplicas(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("replicasets"), ns, "app-rs", 0)
+		assertScaledToZero(t, clients.dynamicClient, appsv1.SchemeGroupVersion.WithResource("replicasets"), ns, "app-rs")
 	})
 
 	t.Run("unknown-only chain returns empty", func(t *testing.T) {
@@ -446,6 +444,29 @@ func TestIdleFromPod(t *testing.T) {
 		require.EqualError(t, err, "deploy patch failed\nrs patch failed")
 		assert.Equal(t, "Deployment", kind)
 		assert.Equal(t, "app", name)
+	})
+
+	t.Run("returns GetOwners error when no owner was attempted", func(t *testing.T) {
+		dynamicClient := fakedynamic.NewSimpleDynamicClientWithCustomListKinds(scheme.Scheme, customListKinds)
+		scalesClient := &fakescale.FakeScaleClient{}
+		restClient, err := testcommon.NewRESTClient("dummy-token", apiEndpoint)
+		require.NoError(t, err)
+		// Discovery has no apps/v1 resources, so owner walk fails for Deployment.
+		fakeDiscovery := newFakeDiscoveryClient()
+		idler := New(fakeDiscovery, dynamicClient, scalesClient, restClient)
+
+		deployment := &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{Name: "app", Namespace: ns},
+			Spec:       appsv1.DeploymentSpec{Replicas: &replicas},
+		}
+		pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "app-pod", Namespace: ns}}
+		require.NoError(t, controllerruntime.SetControllerReference(deployment, pod, scheme.Scheme))
+
+		kind, name, err := idler.IdleFromPod(context.TODO(), pod, Options{})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "no resource found for kind Deployment")
+		assert.Empty(t, kind)
+		assert.Empty(t, name)
 	})
 }
 
@@ -530,14 +551,14 @@ func createTyped(t *testing.T, dynamicClient *fakedynamic.FakeDynamicClient, obj
 	require.NoError(t, err)
 }
 
-func assertReplicas(t *testing.T, dynamicClient *fakedynamic.FakeDynamicClient, gvr schema.GroupVersionResource, namespace, name string, expected int64) {
+func assertScaledToZero(t *testing.T, dynamicClient *fakedynamic.FakeDynamicClient, gvr schema.GroupVersionResource, namespace, name string) {
 	t.Helper()
 	got, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	require.NoError(t, err)
 	replicasVal, found, err := unstructured.NestedInt64(got.Object, "spec", "replicas")
 	require.NoError(t, err)
 	require.True(t, found)
-	assert.Equal(t, expected, replicasVal)
+	assert.Equal(t, int64(0), replicasVal)
 }
 
 func assertScalePatched(t *testing.T, scalesClient *fakescale.FakeScaleClient, name, namespace string) {
@@ -551,7 +572,7 @@ func assertScalePatched(t *testing.T, scalesClient *fakescale.FakeScaleClient, n
 			}
 		}
 	}
-	require.Fail(t, "expected scale patch for %s/%s", namespace, name)
+	require.Failf(t, "expected scale patch", "for %s/%s", namespace, name)
 }
 
 type fakeDiscoveryClient struct {

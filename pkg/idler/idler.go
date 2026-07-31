@@ -85,9 +85,9 @@ func (i *Idler) IdleFromPod(ctx context.Context, pod *corev1.Pod, opts Options) 
 	logger := log.FromContext(ctx)
 	logger.Info("Idling owners from pod")
 
-	ownerChain, err := i.ownerFetcher.GetOwners(ctx, pod)
-	if err != nil {
-		logger.Error(err, "failed to find all owners, try to idle the workload with information that is available")
+	ownerChain, fetchErr := i.ownerFetcher.GetOwners(ctx, pod)
+	if fetchErr != nil {
+		logger.Error(fetchErr, "failed to find all owners, try to idle the workload with information that is available")
 	}
 
 	LogOwnershipChain(logger, ownerChain, pod)
@@ -101,7 +101,7 @@ func (i *Idler) IdleFromPod(ctx context.Context, pod *corev1.Pod, opts Options) 
 		owner := ownerWithGVR.Object
 		ownerKind := owner.GetObjectKind().GroupVersionKind().Kind
 
-		err = i.IdleOwner(ctx, ownerWithGVR, opts)
+		err := i.IdleOwner(ctx, ownerWithGVR, opts)
 		if errors.Is(err, ErrUnsupportedKind) {
 			continue
 		}
@@ -116,6 +116,10 @@ func (i *Idler) IdleFromPod(ctx context.Context, pod *corev1.Pod, opts Options) 
 		}
 	}
 
+	// If no known owner was attempted, surface the GetOwners failure instead of a silent empty success.
+	if topOwnerKind == "" && fetchErr != nil {
+		return "", "", fetchErr
+	}
 	return topOwnerKind, topOwnerName, errToReturn
 }
 

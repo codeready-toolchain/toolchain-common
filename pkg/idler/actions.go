@@ -27,16 +27,14 @@ func (i *Idler) scaleToZero(ctx context.Context, objectWithGVR *owners.ObjectWit
 	logger.Info("Scaling controller owner to zero")
 
 	patch := []byte(`{"spec":{"replicas":0}}`)
-	for _, groupVersionResource := range SupportedScaleResources {
-		if groupVersionResource.String() == objectWithGVR.GVR.String() {
-			logger.Info("Scaling controller owner to zero using the scale subresource")
-			_, err := i.scalesClient.Scales(object.GetNamespace()).Patch(ctx, *objectWithGVR.GVR, object.GetName(), types.MergePatchType, patch, metav1.PatchOptions{})
-			if err != nil {
-				return err
-			}
-			logger.Info("Controller owner scaled to zero using the scale subresource")
-			return nil
+	if scaleGVR, ok := SupportedScaleResources[object.GetObjectKind().GroupVersionKind()]; ok {
+		logger.Info("Scaling controller owner to zero using the scale subresource")
+		_, err := i.scalesClient.Scales(object.GetNamespace()).Patch(ctx, scaleGVR, object.GetName(), types.MergePatchType, patch, metav1.PatchOptions{})
+		if err != nil {
+			return err
 		}
+		logger.Info("Controller owner scaled to zero using the scale subresource")
+		return nil
 	}
 
 	_, err := i.dynamicClient.
@@ -53,55 +51,38 @@ func (i *Idler) scaleToZero(ctx context.Context, objectWithGVR *owners.ObjectWit
 
 // idleAAP idles AAP instance if not already idled
 func (i *Idler) idleAAP(ctx context.Context, objectWithGVR *owners.ObjectWithGVR) error {
-	aapName := objectWithGVR.Object.GetName()
-	logger := log.FromContext(ctx).WithValues("name", aapName)
-	idled, _, err := unstructured.NestedBool(objectWithGVR.Object.UnstructuredContent(), "spec", "idle_aap")
-	if err != nil {
-		logger.Error(err, "Failed to parse AAP CR to get the spec.idle_aap field")
-	}
-	if idled {
-		logger.Info("AAP CR is already idled")
-		return nil
-	}
-	logger.Info("Idling AAP")
-
-	patch := []byte(`{"spec":{"idle_aap":true}}`)
-	_, err = i.dynamicClient.
-		Resource(*objectWithGVR.GVR).
-		Namespace(objectWithGVR.Object.GetNamespace()).
-		Patch(ctx, aapName, types.MergePatchType, patch, metav1.PatchOptions{})
-	if err != nil {
-		return err
-	}
-
-	logger.Info("AAP idled", "name", aapName)
-	return nil
+	return i.idleBySpecBool(ctx, objectWithGVR, "idle_aap", "AAP")
 }
 
 // idleClaw idles a Claw instance if not already idled
 func (i *Idler) idleClaw(ctx context.Context, objectWithGVR *owners.ObjectWithGVR) error {
-	clawName := objectWithGVR.Object.GetName()
-	logger := log.FromContext(ctx).WithValues("name", clawName)
-	idled, _, err := unstructured.NestedBool(objectWithGVR.Object.UnstructuredContent(), "spec", "idle")
+	return i.idleBySpecBool(ctx, objectWithGVR, "idle", "Claw")
+}
+
+// idleBySpecBool sets the given spec bool field to true when the resource is not already idled.
+func (i *Idler) idleBySpecBool(ctx context.Context, objectWithGVR *owners.ObjectWithGVR, field, label string) error {
+	name := objectWithGVR.Object.GetName()
+	logger := log.FromContext(ctx).WithValues("name", name)
+	idled, _, err := unstructured.NestedBool(objectWithGVR.Object.UnstructuredContent(), "spec", field)
 	if err != nil {
-		logger.Error(err, "Failed to parse Claw CR to get the spec.idle field")
+		logger.Error(err, fmt.Sprintf("Failed to parse %s CR to get the spec.%s field", label, field))
 	}
 	if idled {
-		logger.Info("Claw CR is already idled")
+		logger.Info(fmt.Sprintf("%s CR is already idled", label))
 		return nil
 	}
-	logger.Info("Idling Claw")
+	logger.Info(fmt.Sprintf("Idling %s", label))
 
-	patch := []byte(`{"spec":{"idle":true}}`)
+	patch := fmt.Appendf(nil, `{"spec":{%q:true}}`, field)
 	_, err = i.dynamicClient.
 		Resource(*objectWithGVR.GVR).
 		Namespace(objectWithGVR.Object.GetNamespace()).
-		Patch(ctx, clawName, types.MergePatchType, patch, metav1.PatchOptions{})
+		Patch(ctx, name, types.MergePatchType, patch, metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}
 
-	logger.Info("Claw idled", "name", clawName)
+	logger.Info(fmt.Sprintf("%s idled", label), "name", name)
 	return nil
 }
 
