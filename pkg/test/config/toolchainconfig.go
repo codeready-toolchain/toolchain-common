@@ -635,20 +635,6 @@ func (o ToolchainStatusOption) ToolchainStatusRefreshTime(value string) Toolchai
 	return o
 }
 
-func (o ToolchainStatusOption) GitHubSecretRef(value string) ToolchainStatusOption {
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.ToolchainStatus.GitHubSecret.Ref = &value
-	})
-	return o
-}
-
-func (o ToolchainStatusOption) GitHubSecretAccessTokenKey(value string) ToolchainStatusOption {
-	o.addFunction(func(config *toolchainv1alpha1.ToolchainConfig) {
-		config.Spec.Host.ToolchainStatus.GitHubSecret.AccessTokenKey = &value
-	})
-	return o
-}
-
 type UsersOption struct {
 	*ToolchainConfigOptionImpl
 }
