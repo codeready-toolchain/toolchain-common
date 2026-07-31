@@ -14,7 +14,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var supportedScaleResources = map[schema.GroupVersionKind]schema.GroupVersionResource{
+// SupportedScaleResources maps Camel kinds that must be idled via the scale subresource
+// (rather than a direct dynamic client patch of spec.replicas).
+var SupportedScaleResources = map[schema.GroupVersionKind]schema.GroupVersionResource{
 	schema.GroupVersion{Group: "camel.apache.org", Version: "v1"}.WithKind("Integration"):          schema.GroupVersion{Group: "camel.apache.org", Version: "v1"}.WithResource("integrations"),
 	schema.GroupVersion{Group: "camel.apache.org", Version: "v1alpha1"}.WithKind("KameletBinding"): schema.GroupVersion{Group: "camel.apache.org", Version: "v1alpha1"}.WithResource("kameletbindings"),
 }
@@ -25,7 +27,7 @@ func (i *Idler) scaleToZero(ctx context.Context, objectWithGVR *owners.ObjectWit
 	logger.Info("Scaling controller owner to zero")
 
 	patch := []byte(`{"spec":{"replicas":0}}`)
-	for _, groupVersionResource := range supportedScaleResources {
+	for _, groupVersionResource := range SupportedScaleResources {
 		if groupVersionResource.String() == objectWithGVR.GVR.String() {
 			logger.Info("Scaling controller owner to zero using the scale subresource")
 			_, err := i.scalesClient.Scales(object.GetNamespace()).Patch(ctx, *objectWithGVR.GVR, object.GetName(), types.MergePatchType, patch, metav1.PatchOptions{})

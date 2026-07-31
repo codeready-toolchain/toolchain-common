@@ -624,7 +624,7 @@ func allResourcesList(t *testing.T) []*metav1.APIResourceList {
 			},
 		})
 	}
-	for gvk, gvr := range supportedScaleResources {
+	for gvk, gvr := range SupportedScaleResources {
 		resources = append(resources, &metav1.APIResourceList{
 			GroupVersion: gvr.GroupVersion().String(),
 			APIResources: []metav1.APIResource{
