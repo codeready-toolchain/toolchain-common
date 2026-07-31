@@ -48,6 +48,11 @@ func New(discoveryClient discovery.ServerResourcesInterface, dynamicClient dynam
 	}
 }
 
+// OwnerFetcher returns the OwnerFetcher used to walk controller owner chains.
+func (i *Idler) OwnerFetcher() *owners.OwnerFetcher {
+	return i.ownerFetcher
+}
+
 // IdleOwner applies the kind-specific idle action for a single known owner.
 // Unknown kinds return ErrUnsupportedKind so callers can skip them.
 func (i *Idler) IdleOwner(ctx context.Context, ownerWithGVR *owners.ObjectWithGVR, opts Options) error {
@@ -85,7 +90,7 @@ func (i *Idler) IdleFromPod(ctx context.Context, pod *corev1.Pod, opts Options) 
 		logger.Error(err, "failed to find all owners, try to idle the workload with information that is available")
 	}
 
-	logOwnershipChain(logger, ownerChain, pod)
+	LogOwnershipChain(logger, ownerChain, pod)
 
 	var topOwnerKind, topOwnerName string
 	var errToReturn error
@@ -114,7 +119,8 @@ func (i *Idler) IdleFromPod(ctx context.Context, pod *corev1.Pod, opts Options) 
 	return topOwnerKind, topOwnerName, errToReturn
 }
 
-func logOwnershipChain(logger logr.Logger, ownerChain []*owners.ObjectWithGVR, pod *corev1.Pod) {
+// LogOwnershipChain logs the controller ownership chain for the given pod.
+func LogOwnershipChain(logger logr.Logger, ownerChain []*owners.ObjectWithGVR, pod *corev1.Pod) {
 	if len(ownerChain) == 0 {
 		logger.Info("No ownership chain, it's a standalone pod")
 		return
