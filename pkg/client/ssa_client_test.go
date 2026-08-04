@@ -219,7 +219,7 @@ func TestSsaClient(t *testing.T) {
 					acl.MigrateSSAByDefault = setup.defaultMigrate
 
 					// when
-					var opts []client.SSAApplyObjectOption
+					var opts []client.ServerSideApplyObjectOption
 					if setup.explicitMigrate != nil {
 						opts = append(opts, client.MigrateSSA(*setup.explicitMigrate))
 					}
@@ -288,7 +288,7 @@ func TestSsaClient(t *testing.T) {
 			t.Run("on SSA prep error", func(t *testing.T) {
 				// given
 				cl := fake.NewClientBuilder().WithScheme(runtime.NewScheme()).Build()
-				acl := client.NewSSAApplyClient(cl, "testOwner")
+				acl := client.NewServerSideApplyClient(cl, "testOwner")
 
 				obj := &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
@@ -416,10 +416,10 @@ func TestEnsureGVK(t *testing.T) {
 	})
 }
 
-func NewTestSsaApplyClient(t *testing.T, initObjs ...runtimeclient.Object) (*test.FakeClient, *client.SSAApplyClient) {
+func NewTestSsaApplyClient(t *testing.T, initObjs ...runtimeclient.Object) (*test.FakeClient, *client.ServerSideApplyClient) {
 	cl := test.NewFakeClient(t, initObjs...)
 
-	return cl, &client.SSAApplyClient{
+	return cl, &client.ServerSideApplyClient{
 		Client:     cl,
 		FieldOwner: "test-field-owner",
 	}

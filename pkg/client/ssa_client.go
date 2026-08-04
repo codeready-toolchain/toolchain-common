@@ -19,12 +19,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// SSAApplyClient the client to use when creating or updating objects. It uses SSA to apply the objects
+// ServerSideApplyClient the client to use when creating or updating objects. It uses SSA to apply the objects
 // to the cluster.
 //
 // It doesn't try to migrate the objects from ordinary "CRUD" flow to SSA to be as efficient as possible.
 // If you need to do that check k8s.io/client-go/util/csaupgrade.UpgradeManagedFields().
-type SSAApplyClient struct {
+type ServerSideApplyClient struct {
 	Client client.Client
 
 	// The field owner to use for SSA-applied objects.
@@ -57,12 +57,12 @@ type SSAApplyClient struct {
 	NonSSAFieldOwner string
 }
 
-// NewSSAApplyClient creates a new SSAApplyClient from the provided parameters that will use the provided field owner
+// NewServerSideApplyClient creates a new ServerSideApplyClient from the provided parameters that will use the provided field owner
 // for the patches.
 //
 // The returned client checks for the SSA migration by default.
-func NewSSAApplyClient(cl client.Client, fieldOwner string) *SSAApplyClient {
-	return &SSAApplyClient{
+func NewServerSideApplyClient(cl client.Client, fieldOwner string) *ServerSideApplyClient {
+	return &ServerSideApplyClient{
 		Client:              cl,
 		FieldOwner:          fieldOwner,
 		MigrateSSAByDefault: true,
@@ -77,27 +77,27 @@ const (
 	migrateSSANo
 )
 
-type ssaApplyObjectConfiguration struct {
+type ssaObjectConfiguration struct {
 	owner      metav1.Object
 	newLabels  map[string]string
 	skipIf     func(client.Object) bool
 	migrateSSA migrateSSA
 }
 
-func newSSAApplyObjectConfiguration(options ...SSAApplyObjectOption) ssaApplyObjectConfiguration {
-	config := ssaApplyObjectConfiguration{}
+func newServerSideApplyObjectConfiguration(options ...ServerSideApplyObjectOption) ssaObjectConfiguration {
+	config := ssaObjectConfiguration{}
 	for _, apply := range options {
 		apply(&config)
 	}
 	return config
 }
 
-// SSAApplyObjectOption an option when creating or updating a resource
-type SSAApplyObjectOption func(*ssaApplyObjectConfiguration)
+// ServerSideApplyObjectOption an option when creating or updating a resource
+type ServerSideApplyObjectOption func(*ssaObjectConfiguration)
 
 // SetOwnerReference sets the owner reference of the resource (default: `nil`)
-func SetOwnerReference(owner metav1.Object) SSAApplyObjectOption {
-	return func(config *ssaApplyObjectConfiguration) {
+func SetOwnerReference(owner metav1.Object) ServerSideApplyObjectOption {
+	return func(config *ssaObjectConfiguration) {
 		config.owner = owner
 	}
 }
@@ -105,16 +105,16 @@ func SetOwnerReference(owner metav1.Object) SSAApplyObjectOption {
 // SkipIf will cause the apply function skip the update of the object if
 // the provided function returns true. The supplied object is guaranteed to
 // have its GVK set.
-func SkipIf(test func(client.Object) bool) SSAApplyObjectOption {
-	return func(config *ssaApplyObjectConfiguration) {
+func SkipIf(test func(client.Object) bool) ServerSideApplyObjectOption {
+	return func(config *ssaObjectConfiguration) {
 		config.skipIf = test
 	}
 }
 
 // EnsureLabels makes sure that the provided labels are applied to the object even if
 // the supplied object doesn't have them set.
-func EnsureLabels(labels map[string]string) SSAApplyObjectOption {
-	return func(config *ssaApplyObjectConfiguration) {
+func EnsureLabels(labels map[string]string) ServerSideApplyObjectOption {
+	return func(config *ssaObjectConfiguration) {
 		config.newLabels = labels
 	}
 }
@@ -122,8 +122,8 @@ func EnsureLabels(labels map[string]string) SSAApplyObjectOption {
 // MigrateSSA instructs the apply to do the SSA managed fields migration or not.
 // If not used at all, the MigrateSSAByDefault field of the SSA client determines
 // whether the fields will be migrated or not.
-func MigrateSSA(value bool) SSAApplyObjectOption {
-	return func(config *ssaApplyObjectConfiguration) {
+func MigrateSSA(value bool) ServerSideApplyObjectOption {
+	return func(config *ssaObjectConfiguration) {
 		if value {
 			config.migrateSSA = migrateSSAYes
 		} else {
@@ -134,7 +134,7 @@ func MigrateSSA(value bool) SSAApplyObjectOption {
 
 // Configure sets the owner reference and merges the labels. Other options modify the logic
 // of apply function and therefore need to be checked manually.
-func (c *ssaApplyObjectConfiguration) Configure(obj client.Object, s *runtime.Scheme) error {
+func (c *ssaObjectConfiguration) Configure(obj client.Object, s *runtime.Scheme) error {
 	if c.owner != nil {
 		if err := controllerutil.SetControllerReference(c.owner, obj, s); err != nil {
 			return err
@@ -146,8 +146,8 @@ func (c *ssaApplyObjectConfiguration) Configure(obj client.Object, s *runtime.Sc
 }
 
 // ApplyObject creates the object if is missing or update it if it already exists using an SSA patch.
-func (c *SSAApplyClient) ApplyObject(ctx context.Context, obj client.Object, options ...SSAApplyObjectOption) error {
-	config := newSSAApplyObjectConfiguration(options...)
+func (c *ServerSideApplyClient) ApplyObject(ctx context.Context, obj client.Object, options ...ServerSideApplyObjectOption) error {
+	config := newServerSideApplyObjectConfiguration(options...)
 	if err := config.Configure(obj, c.Client.Scheme()); err != nil {
 		return composeError(obj, fmt.Errorf("failed to configure the apply function: %w", err))
 	}
@@ -173,7 +173,7 @@ func (c *SSAApplyClient) ApplyObject(ctx context.Context, obj client.Object, opt
 	return nil
 }
 
-func (c *SSAApplyClient) migrateSSA(ctx context.Context, obj client.Object) error {
+func (c *ServerSideApplyClient) migrateSSA(ctx context.Context, obj client.Object) error {
 	orig := obj.DeepCopyObject().(client.Object)
 	if err := c.Client.Get(ctx, client.ObjectKeyFromObject(obj), orig); err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -237,12 +237,12 @@ func EnsureGVK(obj client.Object, scheme *runtime.Scheme) error {
 }
 
 // Apply is a utility function that just calls `ApplyObject` in a loop on all the supplied objects.
-func (c *SSAApplyClient) Apply(ctx context.Context, toolchainObjects []client.Object, opts ...SSAApplyObjectOption) error {
+func (c *ServerSideApplyClient) Apply(ctx context.Context, toolchainObjects []client.Object, opts ...ServerSideApplyObjectOption) error {
 	return ApplyAll(ctx, c, toolchainObjects, opts...)
 }
 
 // ApplyAll is a generic version of c.Apply that can accept a slice of anything that implements client.Object.
-func ApplyAll[T client.Object](ctx context.Context, cl *SSAApplyClient, toolchainObjects []T, opts ...SSAApplyObjectOption) error {
+func ApplyAll[T client.Object](ctx context.Context, cl *ServerSideApplyClient, toolchainObjects []T, opts ...ServerSideApplyObjectOption) error {
 	for _, toolchainObject := range toolchainObjects {
 		if err := cl.ApplyObject(ctx, toolchainObject, opts...); err != nil {
 			return err
