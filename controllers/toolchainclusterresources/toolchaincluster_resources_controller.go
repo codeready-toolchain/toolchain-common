@@ -74,6 +74,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 
 	// TODO implement delete logic for objects that were renamed/removed from the templates
 
-	cl := applycl.NewSSAApplyClient(r.Client, r.FieldManager)
+	cl := applycl.NewServerSideApplyClient(r.Client, r.FieldManager)
 	return reconcile.Result{}, applycl.ApplyAll(ctx, cl, r.templateObjects, applycl.EnsureLabels(newLabels)) // apply objects on the cluster
 }
