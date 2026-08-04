@@ -774,7 +774,7 @@ func TestNewTierTemplate(t *testing.T) {
 
 func ensureObjectFuncForClient(cl runtimeclient.Client) EnsureObject {
 	return func(toEnsure runtimeclient.Object, _ string) error {
-		applyCl := commonclient.NewSSAApplyClient(cl, "testFieldManager")
+		applyCl := commonclient.NewServerSideApplyClient(cl, "testFieldManager")
 		return applyCl.ApplyObject(context.TODO(), toEnsure)
 	}
 }
