@@ -7,12 +7,10 @@ GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
 GO111MODULE?=on
 export GO111MODULE
 
-GOFORMAT_FILES := $(shell find  . -name '*.go' | grep -vEf ./make/gofmt_exclude)
-
 .PHONY: format-go-code
 ## Formats any go file that does not match formatting defined by gofmt
 format-go-code:
-	$(Q)gofmt -s -l -w ${GOFORMAT_FILES}
+	$(Q)find . -name '*.go' | grep -vEf ./make/gofmt_exclude | tr '\n' '\0' | xargs -0 gofmt -s -l -w
 
 .PHONY: build
 ## runs go build
