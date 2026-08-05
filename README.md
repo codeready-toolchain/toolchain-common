@@ -4,8 +4,8 @@
 [![GoDoc](https://godoc.org/github.com/codeready-toolchain/toolchain-common?status.png)](https://godoc.org/github.com/codeready-toolchain/toolchain-common)
 [![Codecov.io](https://codecov.io/gh/codeready-toolchain/toolchain-common/branch/master/graph/badge.svg)](https://codecov.io/gh/codeready-toolchain/toolchain-common)
 
-This repo is for controllers, libs, scripts, make files, etc to be shared between the [host-operator](github.com/codeready-toolchain/host-operator) and [member operator](github.com/codeready-toolchain/member-operator) of Dev Sandbox. 
-It is also used in [toolchain-e2e](github.com/codeready-toolchain/toolchain-e2e)
+This repo is for controllers, libs, scripts, make files, etc to be shared between the [host-operator](https://github.com/codeready-toolchain/host-operator) and [member operator](https://github.com/codeready-toolchain/member-operator) of Dev Sandbox. 
+It is also used in [toolchain-e2e](https://github.com/codeready-toolchain/toolchain-e2e)
 
 ## Build
 
