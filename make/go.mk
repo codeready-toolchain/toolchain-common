@@ -10,7 +10,10 @@ export GO111MODULE
 .PHONY: format-go-code
 ## Formats any go file that does not match formatting defined by gofmt
 format-go-code:
-	$(Q)find . -name '*.go' | grep -vEf ./make/gofmt_exclude | tr '\n' '\0' | xargs -0 gofmt -s -l -w
+# The + tells find to batch multiple found files into a single gofmt invocation (like xargs),
+# which is much faster than the alternative \;, which runs gofmt once per file. Removing it
+# would be a syntax error — find -exec requires either + or \; as a terminator.
+	$(Q)find . -name '*.go' -not -path '*/vendor/*' -not -path '*/.git/*' -exec gofmt -s -l -w {} +
 
 .PHONY: build
 ## runs go build
