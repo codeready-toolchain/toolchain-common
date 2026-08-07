@@ -25,10 +25,8 @@ require (
 	sigs.k8s.io/controller-runtime v0.21.0
 )
 
-replace github.com/codeready-toolchain/api => github.com/xcoulon/api v0.0.0-20260805080027-7512d38caa3b
-
 require (
-	github.com/codeready-toolchain/api v0.0.0-20260731065234-734640c901d2
+	github.com/codeready-toolchain/api v0.0.0-20260807105126-2b86e7860815
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
