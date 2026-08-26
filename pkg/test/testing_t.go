@@ -1,6 +1,6 @@
 package test
 
-// T our minimal testing interface for our custom assertions.
+// T our minimal testing interface for our custom assertions
 type T interface {
 	Log(args ...interface{})
 	Logf(format string, args ...interface{})
