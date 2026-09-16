@@ -9,100 +9,208 @@ import (
 
 func TestStateManager(t *testing.T) {
 
-	u := &toolchainv1alpha1.UserSignup{}
-
 	t.Run("test manually approved", func(t *testing.T) {
+		t.Run("true", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
 
-		SetApprovedManually(u, true)
+			// when
+			SetApprovedManually(u, true)
 
-		require.True(t, ApprovedManually(u))
-		require.Len(t, u.Spec.States, 1)
-		require.Equal(t, toolchainv1alpha1.UserSignupStateApproved, u.Spec.States[0])
+			// then
+			require.True(t, ApprovedManually(u))
+			require.Len(t, u.Spec.States, 1)
+			require.Equal(t, toolchainv1alpha1.UserSignupStateApproved, u.Spec.States[0])
+		})
+		t.Run("false", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
 
-		SetApprovedManually(u, false)
+			// when
+			SetApprovedManually(u, false)
 
-		require.Empty(t, u.Spec.States)
-		require.False(t, ApprovedManually(u))
+			// then
+			require.Empty(t, u.Spec.States)
+			require.False(t, ApprovedManually(u))
+		})
 
-		SetDeactivated(u, true)
-		SetVerificationRequired(u, true)
-		SetApprovedManually(u, true)
+		t.Run("true with verification required and deactivated states", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
+			SetDeactivated(u, true)
+			SetVerificationRequired(u, true)
 
-		// Setting approved should remove verification required
-		require.False(t, VerificationRequired(u))
+			// when
+			SetApprovedManually(u, true)
 
-		// Setting approved should remove deactivated
-		require.False(t, Deactivated(u))
+			// then
+			// Setting approved should remove verification required
+			require.False(t, VerificationRequired(u))
 
-		SetApprovedManually(u, false)
+			// Setting approved should remove deactivated
+			require.False(t, Deactivated(u))
+		})
 
-		SetDeactivating(u, true)
-		SetApprovedManually(u, true)
+		t.Run("true with deactivating state", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
+			SetDeactivating(u, true)
 
-		// Setting approved should remove deactivating
-		require.False(t, Deactivating(u))
+			// when
+			SetApprovedManually(u, true)
 
-		SetApprovedManually(u, false)
+			// then
+			// Setting approved should remove deactivating
+			require.False(t, Deactivating(u))
+		})
 
-		SetRejected(u, true)
-		SetApprovedManually(u, true)
+		t.Run("true with rejected state", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
+			SetRejected(u, true)
 
-		// Setting approved should remove rejected
-		require.False(t, Rejected(u))
+			// when
+			SetApprovedManually(u, true)
+
+			// then
+			// Setting approved should remove rejected
+			require.False(t, Rejected(u))
+		})
+
+		t.Run("true with no-provisioning state", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
+			SetNoProvisioning(u, true)
+
+			// when
+			SetApprovedManually(u, true)
+
+			// then
+			require.False(t, NoProvisioning(u))
+		})
 	})
 
 	t.Run("test verification required", func(t *testing.T) {
-		SetApprovedManually(u, false)
-		SetVerificationRequired(u, true)
+		t.Run("true", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
+			SetApprovedManually(u, false)
 
-		require.True(t, VerificationRequired(u))
+			// when
+			SetVerificationRequired(u, true)
 
-		require.Len(t, u.Spec.States, 1)
-		require.Equal(t, toolchainv1alpha1.UserSignupStateVerificationRequired, u.Spec.States[0])
+			// then
+			require.True(t, VerificationRequired(u))
+			require.Len(t, u.Spec.States, 1)
+			require.Equal(t, toolchainv1alpha1.UserSignupStateVerificationRequired, u.Spec.States[0])
+		})
 
-		SetVerificationRequired(u, false)
+		t.Run("true", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
 
-		require.Empty(t, u.Spec.States)
-		require.False(t, VerificationRequired(u))
+			// when
+			SetVerificationRequired(u, false)
+
+			// then
+			require.Empty(t, u.Spec.States)
+			require.False(t, VerificationRequired(u))
+		})
 	})
 
 	t.Run("test deactivating", func(t *testing.T) {
-		SetDeactivating(u, true)
+		t.Run("true", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
+			SetDeactivated(u, true)
 
-		require.True(t, Deactivating(u))
+			// when
+			SetDeactivating(u, true)
 
-		require.False(t, Deactivated(u))
-		require.Len(t, u.Spec.States, 1)
-		require.Equal(t, toolchainv1alpha1.UserSignupStateDeactivating, u.Spec.States[0])
+			// then
+			require.True(t, Deactivating(u))
+			require.False(t, Deactivated(u))
+			require.Len(t, u.Spec.States, 1)
+			require.Equal(t, toolchainv1alpha1.UserSignupStateDeactivating, u.Spec.States[0])
+		})
 
-		SetDeactivating(u, false)
+		t.Run("false", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
 
-		require.Empty(t, u.Spec.States)
-		require.False(t, Deactivating(u))
+			// when
+			SetDeactivating(u, false)
 
-		SetDeactivated(u, true)
-		SetDeactivating(u, true)
-
-		// Setting deactivating should also set deactivated to false
-		require.False(t, Deactivated(u))
+			// then
+			require.Empty(t, u.Spec.States)
+			require.False(t, Deactivating(u))
+		})
 	})
 
 	t.Run("test deactivated", func(t *testing.T) {
-		SetDeactivated(u, true)
+		t.Run("true", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
 
-		require.True(t, Deactivated(u))
-		require.Len(t, u.Spec.States, 1)
-		require.Equal(t, toolchainv1alpha1.UserSignupStateDeactivated, u.Spec.States[0])
+			// when
+			SetDeactivated(u, true)
 
-		SetDeactivated(u, false)
-		require.Empty(t, u.Spec.States)
+			// then
+			require.True(t, Deactivated(u))
+			require.Len(t, u.Spec.States, 1)
+			require.Equal(t, toolchainv1alpha1.UserSignupStateDeactivated, u.Spec.States[0])
+		})
 
-		SetDeactivating(u, true)
-		SetApprovedManually(u, true)
-		SetDeactivated(u, true)
+		t.Run("false", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
 
-		// Setting deactivated should also set approved and deactivating to false
-		require.False(t, ApprovedManually(u))
-		require.False(t, Deactivating(u))
+			// when
+			SetDeactivated(u, false)
+
+			// then
+			require.Empty(t, u.Spec.States)
+		})
+
+		t.Run("true with existing states", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
+			SetDeactivating(u, true)
+			SetApprovedManually(u, true)
+
+			// when
+			SetDeactivated(u, true)
+
+			// then
+			require.False(t, ApprovedManually(u))
+			require.False(t, Deactivating(u))
+		})
+	})
+
+	t.Run("test no provisioning", func(t *testing.T) {
+		t.Run("true", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
+			SetDeactivated(u, false)
+			// when
+			SetNoProvisioning(u, true)
+
+			// then
+			require.True(t, NoProvisioning(u))
+			require.Len(t, u.Spec.States, 1)
+			require.Equal(t, toolchainv1alpha1.UserSignupStateNoProvisioning, u.Spec.States[0])
+		})
+
+		t.Run("false", func(t *testing.T) {
+			// given
+			u := &toolchainv1alpha1.UserSignup{}
+
+			// when
+			SetNoProvisioning(u, false)
+
+			// then
+			require.Empty(t, u.Spec.States)
+			require.False(t, NoProvisioning(u))
+		})
 	})
 }

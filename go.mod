@@ -25,6 +25,8 @@ require (
 	sigs.k8s.io/controller-runtime v0.21.0
 )
 
+replace github.com/codeready-toolchain/api => github.com/matousjobanek/api v0.0.0-20260916071327-e3aa4e2b4efc
+
 require (
 	github.com/codeready-toolchain/api v0.0.0-20260807111559-e29da2fc346c
 	github.com/ghodss/yaml v1.0.0
