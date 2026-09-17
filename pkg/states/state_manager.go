@@ -15,6 +15,7 @@ func SetApprovedManually(userSignup *toolchainv1alpha1.UserSignup, approved bool
 		setState(userSignup, toolchainv1alpha1.UserSignupStateDeactivating, false)
 		setState(userSignup, toolchainv1alpha1.UserSignupStateDeactivated, false)
 		setState(userSignup, toolchainv1alpha1.UserSignupStateRejected, false)
+		setState(userSignup, toolchainv1alpha1.UserSignupStateNoProvisioning, false)
 	}
 }
 
@@ -56,6 +57,14 @@ func Rejected(userSignup *toolchainv1alpha1.UserSignup) bool {
 
 func SetRejected(userSignup *toolchainv1alpha1.UserSignup, rejected bool) {
 	setState(userSignup, toolchainv1alpha1.UserSignupStateRejected, rejected)
+}
+
+func NoProvisioning(userSignup *toolchainv1alpha1.UserSignup) bool {
+	return contains(userSignup.Spec.States, toolchainv1alpha1.UserSignupStateNoProvisioning)
+}
+
+func SetNoProvisioning(userSignup *toolchainv1alpha1.UserSignup, noProvisioning bool) {
+	setState(userSignup, toolchainv1alpha1.UserSignupStateNoProvisioning, noProvisioning)
 }
 
 func setState(userSignup *toolchainv1alpha1.UserSignup, state toolchainv1alpha1.UserSignupState, val bool) {

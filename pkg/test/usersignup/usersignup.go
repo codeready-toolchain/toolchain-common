@@ -73,6 +73,12 @@ func Deactivated() Modifier {
 	}
 }
 
+func NoProvisioning() Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		states.SetNoProvisioning(userSignup, true)
+	}
+}
+
 func VerificationRequired() Modifier {
 	return func(userSignup *toolchainv1alpha1.UserSignup) {
 		states.SetVerificationRequired(userSignup, true)
@@ -99,6 +105,22 @@ func DeactivatedAgo(before time.Duration) Modifier {
 		}
 
 		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions, deactivatedCondition)
+	}
+}
+
+// NoProvisioningAgo sets the UserSignup states to [`noprovisioning`] and adds a status condition
+func NoProvisioningAgo(before time.Duration) Modifier {
+	return func(userSignup *toolchainv1alpha1.UserSignup) {
+		states.SetNoProvisioning(userSignup, true)
+
+		noProvisioningCondition := toolchainv1alpha1.Condition{
+			Type:               toolchainv1alpha1.UserSignupComplete,
+			Status:             corev1.ConditionTrue,
+			Reason:             toolchainv1alpha1.UserSignupInNoProvisioningStateReason,
+			LastTransitionTime: metav1.Time{Time: time.Now().Add(-before)},
+		}
+
+		userSignup.Status.Conditions = condition.AddStatusConditions(userSignup.Status.Conditions, noProvisioningCondition)
 	}
 }
 
