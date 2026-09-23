@@ -2,7 +2,7 @@ module github.com/codeready-toolchain/toolchain-common
 
 go 1.26.0
 
-toolchain go1.26.5
+toolchain go1.26.8
 
 require (
 	github.com/go-logr/logr v1.4.2
@@ -26,7 +26,7 @@ require (
 )
 
 require (
-	github.com/codeready-toolchain/api v0.0.0-20260917102240-88cd1578ea41
+	github.com/codeready-toolchain/api v0.0.0-20260923121658-43ad10110efe
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
