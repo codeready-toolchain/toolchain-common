@@ -56,7 +56,7 @@ func TestClusterControllerChecks(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recResult)
+		require.Equal(t, reconcile.Result{RequeueAfter: 0}, recResult)
 	})
 
 	t.Run("Error while getting ToolchainCluster", func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestClusterControllerChecks(t *testing.T) {
 
 		// then
 		require.EqualError(t, err, "mock error")
-		require.Equal(t, reconcile.Result{Requeue: false, RequeueAfter: 0}, recResult)
+		require.Equal(t, reconcile.Result{RequeueAfter: 0}, recResult)
 	})
 
 	t.Run("reconcile successful and requeued", func(t *testing.T) {
