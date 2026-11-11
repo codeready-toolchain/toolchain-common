@@ -1,12 +1,14 @@
 module github.com/codeready-toolchain/toolchain-common
 
-go 1.26.0
-
-toolchain go1.26.8
+go 1.27.4
 
 require (
+	github.com/codeready-toolchain/api v0.0.0-20260923121658-43ad10110efe
+	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v1.4.2
 	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/google/go-cmp v0.7.0
+	github.com/google/uuid v1.6.0
 	github.com/lestrrat-go/jwx v1.2.29
 	github.com/magiconair/properties v1.8.5
 	// using latest commit from 'github.com/openshift/api branch release-4.20'
@@ -14,27 +16,20 @@ require (
 	// using latest commit from 'github.com/openshift/library-go branch release-4.20'
 	github.com/openshift/library-go v0.0.0-20251110200504-2685cf1242fc
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.22.0
+	github.com/prometheus/client_model v0.6.1
 	github.com/redhat-cop/operator-utils v1.3.8
 	github.com/stretchr/testify v1.10.0
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 	gopkg.in/h2non/gock.v1 v1.0.14
+	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.33.4
 	k8s.io/apimachinery v0.33.4
 	k8s.io/client-go v0.33.4
-	sigs.k8s.io/controller-runtime v0.21.0
-)
-
-require (
-	github.com/codeready-toolchain/api v0.0.0-20260923121658-43ad10110efe
-	github.com/ghodss/yaml v1.0.0
-	github.com/google/go-cmp v0.7.0
-	github.com/google/uuid v1.6.0
-	github.com/prometheus/client_golang v1.22.0
-	github.com/prometheus/client_model v0.6.1
-	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/kubectl v0.33.4
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
+	sigs.k8s.io/controller-runtime v0.21.0
 )
 
 require (
